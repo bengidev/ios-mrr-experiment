@@ -2,13 +2,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class DemoListPresenter;
-@class DemoScreenFactory;
+@protocol DemoListPresenting;
+@protocol DemoScreenBuilding;
 
 @interface DemoListViewController : UIViewController
 
-- (instancetype)initWithPresenter:(DemoListPresenter *)presenter
-                    screenFactory:(DemoScreenFactory *)screenFactory;
+- (instancetype)initWithPresenter:(id<DemoListPresenting>)presenter
+                    screenFactory:(id<DemoScreenBuilding>)screenFactory;
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder *)coder NS_UNAVAILABLE;
 

@@ -1,9 +1,12 @@
 #import <XCTest/XCTest.h>
-#import "../MRR Project/Core/Data/StaticMRRDemoRepository.h"
 #import "../MRR Project/Core/Domain/Models/MRRDemoCategory.h"
 #import "../MRR Project/Core/Domain/Models/MRRDemoDetail.h"
-#import "../MRR Project/Core/Domain/UseCases/LoadDemoDetailUseCase.h"
-#import "../MRR Project/Core/Domain/UseCases/LoadDemoListUseCase.h"
+#import "../MRR Project/Features/Basics/Data/BasicsDemoRepository.h"
+#import "../MRR Project/Features/Basics/Domain/UseCases/BasicsLoadDemoDetailUseCase.h"
+#import "../MRR Project/Features/Relationships/Data/RelationshipsDemoRepository.h"
+#import "../MRR Project/Features/Relationships/Domain/UseCases/RelationshipsLoadDemoListUseCase.h"
+#import "../MRR Project/Features/Lifecycle/Data/LifecycleDemoRepository.h"
+#import "../MRR Project/Features/Lifecycle/Domain/UseCases/LifecycleLoadDemoDetailUseCase.h"
 
 @interface RepositoryAndUseCaseTests : XCTestCase
 @end
@@ -11,18 +14,16 @@
 @implementation RepositoryAndUseCaseTests
 
 - (void)testRepositoryExposesThreeCategories {
-    StaticMRRDemoRepository *repository = [[StaticMRRDemoRepository alloc] init];
+    BasicsDemoRepository *repository = [[BasicsDemoRepository alloc] init];
     NSArray<MRRDemoCategory *> *categories = [repository fetchCategories];
 
-    XCTAssertEqual(categories.count, 3U);
+    XCTAssertEqual(categories.count, 1U);
     XCTAssertEqualObjects(categories[0].identifier, MRRDemoCategoryIdentifierBasics);
-    XCTAssertEqualObjects(categories[1].identifier, MRRDemoCategoryIdentifierRelationships);
-    XCTAssertEqualObjects(categories[2].identifier, MRRDemoCategoryIdentifierLifecycle);
 }
 
 - (void)testListUseCaseReturnsSummariesForRelationships {
-    StaticMRRDemoRepository *repository = [[StaticMRRDemoRepository alloc] init];
-    LoadDemoListUseCase *useCase = [[LoadDemoListUseCase alloc] initWithRepository:repository];
+    RelationshipsDemoRepository *repository = [[RelationshipsDemoRepository alloc] init];
+    RelationshipsLoadDemoListUseCase *useCase = [[RelationshipsLoadDemoListUseCase alloc] initWithRepository:repository];
 
     NSArray *summaries = [useCase loadDemoSummariesForCategoryIdentifier:MRRDemoCategoryIdentifierRelationships];
 
@@ -30,8 +31,8 @@
 }
 
 - (void)testDetailUseCaseReturnsExpectedSections {
-    StaticMRRDemoRepository *repository = [[StaticMRRDemoRepository alloc] init];
-    LoadDemoDetailUseCase *useCase = [[LoadDemoDetailUseCase alloc] initWithRepository:repository];
+    LifecycleDemoRepository *repository = [[LifecycleDemoRepository alloc] init];
+    LifecycleLoadDemoDetailUseCase *useCase = [[LifecycleLoadDemoDetailUseCase alloc] initWithRepository:repository];
 
     MRRDemoDetail *detail = [useCase loadDemoDetailForIdentifier:@"lifecycle.dealloc-order"];
 

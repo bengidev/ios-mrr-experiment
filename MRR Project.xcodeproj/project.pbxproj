@@ -13,12 +13,7 @@
 		A00000000000000000000703 /* MRRDemoSummary.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000060A /* MRRDemoSummary.m */; };
 		A00000000000000000000704 /* MRRDemoSection.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000060C /* MRRDemoSection.m */; };
 		A00000000000000000000705 /* MRRDemoDetail.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000060E /* MRRDemoDetail.m */; };
-		A00000000000000000000706 /* StaticMRRDemoRepository.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000611 /* StaticMRRDemoRepository.m */; };
-		A00000000000000000000707 /* LoadDemoListUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000613 /* LoadDemoListUseCase.m */; };
-		A00000000000000000000708 /* LoadDemoDetailUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000615 /* LoadDemoDetailUseCase.m */; };
-		A00000000000000000000709 /* DemoListPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000619 /* DemoListPresenter.m */; };
 		A0000000000000000000070A /* DemoDetailPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000061B /* DemoDetailPresenter.m */; };
-		A0000000000000000000070B /* DemoScreenFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000061D /* DemoScreenFactory.m */; };
 		A0000000000000000000070C /* DemoListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000061F /* DemoListViewController.m */; };
 		A0000000000000000000070D /* DemoDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000621 /* DemoDetailViewController.m */; };
 		A0000000000000000000070E /* BasicsListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000623 /* BasicsListViewController.m */; };
@@ -29,6 +24,21 @@
 		A00000000000000000000713 /* DemoScreenFactoryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000062A /* DemoScreenFactoryTests.m */; };
 		A00000000000000000000714 /* DemoListViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000062B /* DemoListViewControllerTests.m */; };
 		A00000000000000000000715 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000602 /* XCTest.framework */; };
+		A00000000000000000000716 /* BasicsDemoRepository.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000062C /* BasicsDemoRepository.m */; };
+		A00000000000000000000717 /* BasicsLoadDemoListUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000062D /* BasicsLoadDemoListUseCase.m */; };
+		A00000000000000000000718 /* BasicsLoadDemoDetailUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000062E /* BasicsLoadDemoDetailUseCase.m */; };
+		A00000000000000000000719 /* BasicsListPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000062F /* BasicsListPresenter.m */; };
+		A0000000000000000000071A /* BasicsScreenFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000630 /* BasicsScreenFactory.m */; };
+		A0000000000000000000071B /* RelationshipsDemoRepository.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000631 /* RelationshipsDemoRepository.m */; };
+		A0000000000000000000071C /* RelationshipsLoadDemoListUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000632 /* RelationshipsLoadDemoListUseCase.m */; };
+		A0000000000000000000071D /* RelationshipsLoadDemoDetailUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000633 /* RelationshipsLoadDemoDetailUseCase.m */; };
+		A0000000000000000000071E /* RelationshipsListPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000634 /* RelationshipsListPresenter.m */; };
+		A0000000000000000000071F /* RelationshipsScreenFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000635 /* RelationshipsScreenFactory.m */; };
+		A00000000000000000000720 /* LifecycleDemoRepository.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000636 /* LifecycleDemoRepository.m */; };
+		A00000000000000000000721 /* LifecycleLoadDemoListUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000637 /* LifecycleLoadDemoListUseCase.m */; };
+		A00000000000000000000722 /* LifecycleLoadDemoDetailUseCase.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000638 /* LifecycleLoadDemoDetailUseCase.m */; };
+		A00000000000000000000723 /* LifecycleListPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000639 /* LifecycleListPresenter.m */; };
+		A00000000000000000000724 /* LifecycleScreenFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000063A /* LifecycleScreenFactory.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,20 +68,10 @@
 		A0000000000000000000060D /* MRRDemoDetail.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRDemoDetail.h; sourceTree = "<group>"; };
 		A0000000000000000000060E /* MRRDemoDetail.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRDemoDetail.m; sourceTree = "<group>"; };
 		A0000000000000000000060F /* MRRDemoRepository.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRDemoRepository.h; sourceTree = "<group>"; };
-		A00000000000000000000610 /* StaticMRRDemoRepository.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StaticMRRDemoRepository.h; sourceTree = "<group>"; };
-		A00000000000000000000611 /* StaticMRRDemoRepository.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StaticMRRDemoRepository.m; sourceTree = "<group>"; };
-		A00000000000000000000612 /* LoadDemoListUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LoadDemoListUseCase.h; sourceTree = "<group>"; };
-		A00000000000000000000613 /* LoadDemoListUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LoadDemoListUseCase.m; sourceTree = "<group>"; };
-		A00000000000000000000614 /* LoadDemoDetailUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LoadDemoDetailUseCase.h; sourceTree = "<group>"; };
-		A00000000000000000000615 /* LoadDemoDetailUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LoadDemoDetailUseCase.m; sourceTree = "<group>"; };
 		A00000000000000000000616 /* DemoListView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoListView.h; sourceTree = "<group>"; };
 		A00000000000000000000617 /* DemoDetailView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoDetailView.h; sourceTree = "<group>"; };
-		A00000000000000000000618 /* DemoListPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoListPresenter.h; sourceTree = "<group>"; };
-		A00000000000000000000619 /* DemoListPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoListPresenter.m; sourceTree = "<group>"; };
 		A0000000000000000000061A /* DemoDetailPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoDetailPresenter.h; sourceTree = "<group>"; };
 		A0000000000000000000061B /* DemoDetailPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoDetailPresenter.m; sourceTree = "<group>"; };
-		A0000000000000000000061C /* DemoScreenFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoScreenFactory.h; sourceTree = "<group>"; };
-		A0000000000000000000061D /* DemoScreenFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoScreenFactory.m; sourceTree = "<group>"; };
 		A0000000000000000000061E /* DemoListViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoListViewController.h; sourceTree = "<group>"; };
 		A0000000000000000000061F /* DemoListViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoListViewController.m; sourceTree = "<group>"; };
 		A00000000000000000000620 /* DemoDetailViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoDetailViewController.h; sourceTree = "<group>"; };
@@ -86,6 +86,40 @@
 		A00000000000000000000629 /* PresenterTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PresenterTests.m; sourceTree = "<group>"; };
 		A0000000000000000000062A /* DemoScreenFactoryTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoScreenFactoryTests.m; sourceTree = "<group>"; };
 		A0000000000000000000062B /* DemoListViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoListViewControllerTests.m; sourceTree = "<group>"; };
+		A0000000000000000000062C /* BasicsDemoRepository.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BasicsDemoRepository.m; sourceTree = "<group>"; };
+		A0000000000000000000062D /* BasicsLoadDemoListUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BasicsLoadDemoListUseCase.m; sourceTree = "<group>"; };
+		A0000000000000000000062E /* BasicsLoadDemoDetailUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BasicsLoadDemoDetailUseCase.m; sourceTree = "<group>"; };
+		A0000000000000000000062F /* BasicsListPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BasicsListPresenter.m; sourceTree = "<group>"; };
+		A00000000000000000000630 /* BasicsScreenFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BasicsScreenFactory.m; sourceTree = "<group>"; };
+		A00000000000000000000631 /* RelationshipsDemoRepository.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RelationshipsDemoRepository.m; sourceTree = "<group>"; };
+		A00000000000000000000632 /* RelationshipsLoadDemoListUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RelationshipsLoadDemoListUseCase.m; sourceTree = "<group>"; };
+		A00000000000000000000633 /* RelationshipsLoadDemoDetailUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RelationshipsLoadDemoDetailUseCase.m; sourceTree = "<group>"; };
+		A00000000000000000000634 /* RelationshipsListPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RelationshipsListPresenter.m; sourceTree = "<group>"; };
+		A00000000000000000000635 /* RelationshipsScreenFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RelationshipsScreenFactory.m; sourceTree = "<group>"; };
+		A00000000000000000000636 /* LifecycleDemoRepository.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LifecycleDemoRepository.m; sourceTree = "<group>"; };
+		A00000000000000000000637 /* LifecycleLoadDemoListUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LifecycleLoadDemoListUseCase.m; sourceTree = "<group>"; };
+		A00000000000000000000638 /* LifecycleLoadDemoDetailUseCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LifecycleLoadDemoDetailUseCase.m; sourceTree = "<group>"; };
+		A00000000000000000000639 /* LifecycleListPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LifecycleListPresenter.m; sourceTree = "<group>"; };
+		A0000000000000000000063A /* LifecycleScreenFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LifecycleScreenFactory.m; sourceTree = "<group>"; };
+		A0000000000000000000063B /* DemoListLoading.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoListLoading.h; sourceTree = "<group>"; };
+		A0000000000000000000063C /* DemoDetailLoading.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoDetailLoading.h; sourceTree = "<group>"; };
+		A0000000000000000000063D /* DemoListPresenting.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoListPresenting.h; sourceTree = "<group>"; };
+		A0000000000000000000063E /* DemoScreenBuilding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoScreenBuilding.h; sourceTree = "<group>"; };
+		A0000000000000000000063F /* BasicsDemoRepository.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicsDemoRepository.h; sourceTree = "<group>"; };
+		A00000000000000000000640 /* BasicsLoadDemoListUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicsLoadDemoListUseCase.h; sourceTree = "<group>"; };
+		A00000000000000000000641 /* BasicsLoadDemoDetailUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicsLoadDemoDetailUseCase.h; sourceTree = "<group>"; };
+		A00000000000000000000642 /* BasicsListPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicsListPresenter.h; sourceTree = "<group>"; };
+		A00000000000000000000643 /* BasicsScreenFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicsScreenFactory.h; sourceTree = "<group>"; };
+		A00000000000000000000644 /* RelationshipsDemoRepository.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RelationshipsDemoRepository.h; sourceTree = "<group>"; };
+		A00000000000000000000645 /* RelationshipsLoadDemoListUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RelationshipsLoadDemoListUseCase.h; sourceTree = "<group>"; };
+		A00000000000000000000646 /* RelationshipsLoadDemoDetailUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RelationshipsLoadDemoDetailUseCase.h; sourceTree = "<group>"; };
+		A00000000000000000000647 /* RelationshipsListPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RelationshipsListPresenter.h; sourceTree = "<group>"; };
+		A00000000000000000000648 /* RelationshipsScreenFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RelationshipsScreenFactory.h; sourceTree = "<group>"; };
+		A00000000000000000000649 /* LifecycleDemoRepository.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LifecycleDemoRepository.h; sourceTree = "<group>"; };
+		A0000000000000000000064A /* LifecycleLoadDemoListUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LifecycleLoadDemoListUseCase.h; sourceTree = "<group>"; };
+		A0000000000000000000064B /* LifecycleLoadDemoDetailUseCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LifecycleLoadDemoDetailUseCase.h; sourceTree = "<group>"; };
+		A0000000000000000000064C /* LifecycleListPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LifecycleListPresenter.h; sourceTree = "<group>"; };
+		A0000000000000000000064D /* LifecycleScreenFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LifecycleScreenFactory.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,8 +203,6 @@
 		A00000000000000000000008 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000610 /* StaticMRRDemoRepository.h */,
-				A00000000000000000000611 /* StaticMRRDemoRepository.m */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -212,10 +244,8 @@
 		A0000000000000000000000C /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000612 /* LoadDemoListUseCase.h */,
-				A00000000000000000000613 /* LoadDemoListUseCase.m */,
-				A00000000000000000000614 /* LoadDemoDetailUseCase.h */,
-				A00000000000000000000615 /* LoadDemoDetailUseCase.m */,
+				A0000000000000000000063B /* DemoListLoading.h */,
+				A0000000000000000000063C /* DemoDetailLoading.h */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -225,6 +255,8 @@
 			children = (
 				A00000000000000000000616 /* DemoListView.h */,
 				A00000000000000000000617 /* DemoDetailView.h */,
+				A0000000000000000000063D /* DemoListPresenting.h */,
+				A0000000000000000000063E /* DemoScreenBuilding.h */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -232,8 +264,6 @@
 		A0000000000000000000000E /* Presenters */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000618 /* DemoListPresenter.h */,
-				A00000000000000000000619 /* DemoListPresenter.m */,
 				A0000000000000000000061A /* DemoDetailPresenter.h */,
 				A0000000000000000000061B /* DemoDetailPresenter.m */,
 			);
@@ -243,8 +273,6 @@
 		A0000000000000000000000F /* Factories */ = {
 			isa = PBXGroup;
 			children = (
-				A0000000000000000000061C /* DemoScreenFactory.h */,
-				A0000000000000000000061D /* DemoScreenFactory.m */,
 			);
 			path = Factories;
 			sourceTree = "<group>";
@@ -273,6 +301,8 @@
 		A00000000000000000000012 /* Basics */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000019 /* Data */,
+				A0000000000000000000001A /* Domain */,
 				A00000000000000000000013 /* Presentation */,
 			);
 			path = Basics;
@@ -281,15 +311,73 @@
 		A00000000000000000000013 /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
+				A0000000000000000000001C /* Factories */,
+				A0000000000000000000001D /* Presenters */,
+				A0000000000000000000001E /* ViewControllers */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000019 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000063F /* BasicsDemoRepository.h */,
+				A0000000000000000000062C /* BasicsDemoRepository.m */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000001A /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001B /* UseCases */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000001B /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000640 /* BasicsLoadDemoListUseCase.h */,
+				A0000000000000000000062D /* BasicsLoadDemoListUseCase.m */,
+				A00000000000000000000641 /* BasicsLoadDemoDetailUseCase.h */,
+				A0000000000000000000062E /* BasicsLoadDemoDetailUseCase.m */,
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000001C /* Factories */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000643 /* BasicsScreenFactory.h */,
+				A00000000000000000000630 /* BasicsScreenFactory.m */,
+			);
+			path = Factories;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000001D /* Presenters */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000642 /* BasicsListPresenter.h */,
+				A0000000000000000000062F /* BasicsListPresenter.m */,
+			);
+			path = Presenters;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000001E /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
 				A00000000000000000000622 /* BasicsListViewController.h */,
 				A00000000000000000000623 /* BasicsListViewController.m */,
 			);
-			path = Presentation;
+			path = ViewControllers;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000014 /* Relationships */ = {
 			isa = PBXGroup;
 			children = (
+				A0000000000000000000001F /* Data */,
+				A00000000000000000000020 /* Domain */,
 				A00000000000000000000015 /* Presentation */,
 			);
 			path = Relationships;
@@ -298,15 +386,73 @@
 		A00000000000000000000015 /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000022 /* Factories */,
+				A00000000000000000000023 /* Presenters */,
+				A00000000000000000000024 /* ViewControllers */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000001F /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000644 /* RelationshipsDemoRepository.h */,
+				A00000000000000000000631 /* RelationshipsDemoRepository.m */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000020 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000021 /* UseCases */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000021 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000645 /* RelationshipsLoadDemoListUseCase.h */,
+				A00000000000000000000632 /* RelationshipsLoadDemoListUseCase.m */,
+				A00000000000000000000646 /* RelationshipsLoadDemoDetailUseCase.h */,
+				A00000000000000000000633 /* RelationshipsLoadDemoDetailUseCase.m */,
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000022 /* Factories */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000648 /* RelationshipsScreenFactory.h */,
+				A00000000000000000000635 /* RelationshipsScreenFactory.m */,
+			);
+			path = Factories;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000023 /* Presenters */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000647 /* RelationshipsListPresenter.h */,
+				A00000000000000000000634 /* RelationshipsListPresenter.m */,
+			);
+			path = Presenters;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000024 /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
 				A00000000000000000000624 /* RelationshipsListViewController.h */,
 				A00000000000000000000625 /* RelationshipsListViewController.m */,
 			);
-			path = Presentation;
+			path = ViewControllers;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000016 /* Lifecycle */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000025 /* Data */,
+				A00000000000000000000026 /* Domain */,
 				A00000000000000000000017 /* Presentation */,
 			);
 			path = Lifecycle;
@@ -315,10 +461,66 @@
 		A00000000000000000000017 /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000028 /* Factories */,
+				A00000000000000000000029 /* Presenters */,
+				A0000000000000000000002A /* ViewControllers */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000025 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000649 /* LifecycleDemoRepository.h */,
+				A00000000000000000000636 /* LifecycleDemoRepository.m */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000026 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000027 /* UseCases */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000027 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000064A /* LifecycleLoadDemoListUseCase.h */,
+				A00000000000000000000637 /* LifecycleLoadDemoListUseCase.m */,
+				A0000000000000000000064B /* LifecycleLoadDemoDetailUseCase.h */,
+				A00000000000000000000638 /* LifecycleLoadDemoDetailUseCase.m */,
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000028 /* Factories */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000064D /* LifecycleScreenFactory.h */,
+				A0000000000000000000063A /* LifecycleScreenFactory.m */,
+			);
+			path = Factories;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000029 /* Presenters */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000064C /* LifecycleListPresenter.h */,
+				A00000000000000000000639 /* LifecycleListPresenter.m */,
+			);
+			path = Presenters;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000002A /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
 				A00000000000000000000626 /* LifecycleListViewController.h */,
 				A00000000000000000000627 /* LifecycleListViewController.m */,
 			);
-			path = Presentation;
+			path = ViewControllers;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000018 /* App */ = {
@@ -435,17 +637,27 @@
 				A00000000000000000000703 /* MRRDemoSummary.m in Sources */,
 				A00000000000000000000704 /* MRRDemoSection.m in Sources */,
 				A00000000000000000000705 /* MRRDemoDetail.m in Sources */,
-				A00000000000000000000706 /* StaticMRRDemoRepository.m in Sources */,
-				A00000000000000000000707 /* LoadDemoListUseCase.m in Sources */,
-				A00000000000000000000708 /* LoadDemoDetailUseCase.m in Sources */,
-				A00000000000000000000709 /* DemoListPresenter.m in Sources */,
 				A0000000000000000000070A /* DemoDetailPresenter.m in Sources */,
-				A0000000000000000000070B /* DemoScreenFactory.m in Sources */,
 				A0000000000000000000070C /* DemoListViewController.m in Sources */,
 				A0000000000000000000070D /* DemoDetailViewController.m in Sources */,
 				A0000000000000000000070E /* BasicsListViewController.m in Sources */,
 				A0000000000000000000070F /* RelationshipsListViewController.m in Sources */,
 				A00000000000000000000710 /* LifecycleListViewController.m in Sources */,
+				A00000000000000000000716 /* BasicsDemoRepository.m in Sources */,
+				A00000000000000000000717 /* BasicsLoadDemoListUseCase.m in Sources */,
+				A00000000000000000000718 /* BasicsLoadDemoDetailUseCase.m in Sources */,
+				A00000000000000000000719 /* BasicsListPresenter.m in Sources */,
+				A0000000000000000000071A /* BasicsScreenFactory.m in Sources */,
+				A0000000000000000000071B /* RelationshipsDemoRepository.m in Sources */,
+				A0000000000000000000071C /* RelationshipsLoadDemoListUseCase.m in Sources */,
+				A0000000000000000000071D /* RelationshipsLoadDemoDetailUseCase.m in Sources */,
+				A0000000000000000000071E /* RelationshipsListPresenter.m in Sources */,
+				A0000000000000000000071F /* RelationshipsScreenFactory.m in Sources */,
+				A00000000000000000000720 /* LifecycleDemoRepository.m in Sources */,
+				A00000000000000000000721 /* LifecycleLoadDemoListUseCase.m in Sources */,
+				A00000000000000000000722 /* LifecycleLoadDemoDetailUseCase.m in Sources */,
+				A00000000000000000000723 /* LifecycleListPresenter.m in Sources */,
+				A00000000000000000000724 /* LifecycleScreenFactory.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

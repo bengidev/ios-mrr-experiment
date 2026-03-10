@@ -1,13 +1,13 @@
 #import <XCTest/XCTest.h>
-#import "../MRR Project/Core/Data/StaticMRRDemoRepository.h"
 #import "../MRR Project/Core/Domain/Models/MRRDemoCategory.h"
 #import "../MRR Project/Core/Domain/Models/MRRDemoDetail.h"
-#import "../MRR Project/Core/Domain/UseCases/LoadDemoDetailUseCase.h"
-#import "../MRR Project/Core/Domain/UseCases/LoadDemoListUseCase.h"
 #import "../MRR Project/Core/Presentation/Presenters/DemoDetailPresenter.h"
-#import "../MRR Project/Core/Presentation/Presenters/DemoListPresenter.h"
 #import "../MRR Project/Core/Presentation/Protocols/DemoDetailView.h"
 #import "../MRR Project/Core/Presentation/Protocols/DemoListView.h"
+#import "../MRR Project/Features/Basics/Data/BasicsDemoRepository.h"
+#import "../MRR Project/Features/Basics/Domain/UseCases/BasicsLoadDemoDetailUseCase.h"
+#import "../MRR Project/Features/Basics/Domain/UseCases/BasicsLoadDemoListUseCase.h"
+#import "../MRR Project/Features/Basics/Presentation/Presenters/BasicsListPresenter.h"
 
 @interface DemoListViewSpy : NSObject <DemoListView>
 @property (nonatomic, strong) MRRDemoCategory *displayedCategory;
@@ -45,9 +45,9 @@
 @implementation PresenterTests
 
 - (void)testListPresenterDisplaysMatchedCategory {
-    StaticMRRDemoRepository *repository = [[StaticMRRDemoRepository alloc] init];
-    LoadDemoListUseCase *useCase = [[LoadDemoListUseCase alloc] initWithRepository:repository];
-    DemoListPresenter *presenter = [[DemoListPresenter alloc] initWithUseCase:useCase categoryIdentifier:MRRDemoCategoryIdentifierBasics];
+    BasicsDemoRepository *repository = [[BasicsDemoRepository alloc] init];
+    BasicsLoadDemoListUseCase *useCase = [[BasicsLoadDemoListUseCase alloc] initWithRepository:repository];
+    BasicsListPresenter *presenter = [[BasicsListPresenter alloc] initWithUseCase:useCase];
     DemoListViewSpy *viewSpy = [[DemoListViewSpy alloc] init];
 
     [presenter attachView:viewSpy];
@@ -59,16 +59,16 @@
 }
 
 - (void)testDetailPresenterDisplaysRequestedDetail {
-    StaticMRRDemoRepository *repository = [[StaticMRRDemoRepository alloc] init];
-    LoadDemoDetailUseCase *useCase = [[LoadDemoDetailUseCase alloc] initWithRepository:repository];
-    DemoDetailPresenter *presenter = [[DemoDetailPresenter alloc] initWithUseCase:useCase demoIdentifier:@"relationships.delegate-ownership"];
+    BasicsDemoRepository *repository = [[BasicsDemoRepository alloc] init];
+    BasicsLoadDemoDetailUseCase *useCase = [[BasicsLoadDemoDetailUseCase alloc] initWithRepository:repository];
+    DemoDetailPresenter *presenter = [[DemoDetailPresenter alloc] initWithUseCase:useCase demoIdentifier:@"basics.property-semantics"];
     DemoDetailViewSpy *viewSpy = [[DemoDetailViewSpy alloc] init];
 
     [presenter attachView:viewSpy];
     [presenter viewDidLoad];
 
     XCTAssertNil(viewSpy.errorMessage);
-    XCTAssertEqualObjects(viewSpy.displayedDetail.title, @"Delegate Ownership");
+    XCTAssertEqualObjects(viewSpy.displayedDetail.title, @"Property Semantics");
 }
 
 @end

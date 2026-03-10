@@ -2,13 +2,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class LoadDemoDetailUseCase;
+@protocol DemoDetailLoading;
 @protocol DemoDetailView;
 
 @interface DemoDetailPresenter : NSObject
 
-- (instancetype)initWithUseCase:(LoadDemoDetailUseCase *)useCase
-                 demoIdentifier:(NSString *)demoIdentifier NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithUseCase:(id<DemoDetailLoading>)useCase
+                  demoIdentifier:(NSString *)demoIdentifier NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 
 - (void)attachView:(id<DemoDetailView>)view;

@@ -1,14 +1,14 @@
 #import "DemoListViewController.h"
 #import "../../Domain/Models/MRRDemoCategory.h"
 #import "../../Domain/Models/MRRDemoSummary.h"
-#import "../Factories/DemoScreenFactory.h"
-#import "../Presenters/DemoListPresenter.h"
+#import "../Protocols/DemoListPresenting.h"
+#import "../Protocols/DemoScreenBuilding.h"
 #import "../Protocols/DemoListView.h"
 
 @interface DemoListViewController () <DemoListView, UITableViewDataSource, UITableViewDelegate>
 
-@property (nonatomic, retain) DemoListPresenter *presenter;
-@property (nonatomic, retain) DemoScreenFactory *screenFactory;
+@property (nonatomic, retain) id<DemoListPresenting> presenter;
+@property (nonatomic, retain) id<DemoScreenBuilding> screenFactory;
 @property (nonatomic, retain) UILabel *headingLabel;
 @property (nonatomic, retain) UILabel *summaryLabel;
 @property (nonatomic, retain) UITableView *tableView;
@@ -18,8 +18,8 @@
 
 @implementation DemoListViewController
 
-- (instancetype)initWithPresenter:(DemoListPresenter *)presenter
-                    screenFactory:(DemoScreenFactory *)screenFactory {
+- (instancetype)initWithPresenter:(id<DemoListPresenting>)presenter
+                    screenFactory:(id<DemoScreenBuilding>)screenFactory {
     NSParameterAssert(presenter != nil);
     NSParameterAssert(screenFactory != nil);
 

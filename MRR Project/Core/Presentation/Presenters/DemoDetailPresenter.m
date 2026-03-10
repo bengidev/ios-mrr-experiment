@@ -1,11 +1,11 @@
 #import "DemoDetailPresenter.h"
+#import "../../Domain/UseCases/DemoDetailLoading.h"
 #import "../../Domain/Models/MRRDemoDetail.h"
-#import "../../Domain/UseCases/LoadDemoDetailUseCase.h"
 #import "../Protocols/DemoDetailView.h"
 
 @interface DemoDetailPresenter ()
 
-@property (nonatomic, retain) LoadDemoDetailUseCase *useCase;
+@property (nonatomic, retain) id<DemoDetailLoading> useCase;
 @property (nonatomic, copy) NSString *demoIdentifier;
 @property (nonatomic, assign) id<DemoDetailView> view;
 
@@ -13,8 +13,8 @@
 
 @implementation DemoDetailPresenter
 
-- (instancetype)initWithUseCase:(LoadDemoDetailUseCase *)useCase
-                 demoIdentifier:(NSString *)demoIdentifier {
+- (instancetype)initWithUseCase:(id<DemoDetailLoading>)useCase
+                  demoIdentifier:(NSString *)demoIdentifier {
     NSParameterAssert(useCase != nil);
     NSParameterAssert(demoIdentifier != nil);
 
