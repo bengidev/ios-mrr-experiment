@@ -1,11 +1,6 @@
-BasedOnStyle: LLVM
-IndentWidth: 4
-TabWidth: 4
-UseTab: Never
-ColumnLimit: 120
-PointerAlignment: Left
-SortIncludes: Never
-BreakBeforeBraces: Attach
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortBlocksOnASingleLine: Never
-ObjCSpaceAfterProperty: true
+BasedOnStyle: Google
+ColumnLimit: 150
+IncludeBlocks: Preserve
+IndentWidth: 2
+PointerAlignment: Right
+SortIncludes: false

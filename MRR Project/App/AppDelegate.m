@@ -7,128 +7,124 @@
 
 #import "AppDelegate.h"
 #import "MainMenuViewController.h"
-#include <stdbool.h>
-#include <objc/objc.h>
-#include <stdio.h>
 #import "../Features/Onboarding/Data/OnboardingStateController.h"
 #import "../Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
-#include <UIKit/UIKit.h>
 
 @interface AppDelegate () <OnboardingViewControllerDelegate>
 
-@property (nonatomic, retain) OnboardingStateController *onboardingStateController;
+@property(nonatomic, retain) OnboardingStateController *onboardingStateController;
 
 @end
 
 @implementation AppDelegate
 
 - (instancetype)init {
-    OnboardingStateController *onboardingStateController = [[[OnboardingStateController alloc] initWithUserDefaults:[NSUserDefaults standardUserDefaults]] autorelease];
-    return [self initWithOnboardingStateController:onboardingStateController];
+  OnboardingStateController *onboardingStateController =
+      [[[OnboardingStateController alloc] initWithUserDefaults:[NSUserDefaults standardUserDefaults]] autorelease];
+  return [self initWithOnboardingStateController:onboardingStateController];
 }
 
 - (instancetype)initWithOnboardingStateController:(OnboardingStateController *)onboardingStateController {
-    NSParameterAssert(onboardingStateController != nil);
+  NSParameterAssert(onboardingStateController != nil);
 
-    self = [super init];
-    if (self) {
-        _onboardingStateController = [onboardingStateController retain];
-    }
+  self = [super init];
+  if (self) {
+    _onboardingStateController = [onboardingStateController retain];
+  }
 
-    return self;
+  return self;
 }
 
 #pragma mark - Memory Management
 
 - (void)dealloc {
-    [_onboardingStateController release];
-    [_window release];
-    [super dealloc];
+  [_onboardingStateController release];
+  [_window release];
+  [super dealloc];
 }
 
 #pragma mark - UIApplicationDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
-    UIViewController *initialRootViewController = nil;
-    BOOL hasCompletedOnboarding = [self.onboardingStateController hasCompletedOnboarding];
-
-    if (hasCompletedOnboarding) {
-        initialRootViewController = [self buildMainMenuViewController];
-    } else {
-        initialRootViewController = [self buildOnboardingViewController];
-    }
-
-    [self setRootViewController:initialRootViewController animated:NO];
-    if ([self shouldMakeWindowKeyAndVisible]) {
-        [self.window makeKeyAndVisible];
-    }
-    return YES;
+  self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
+  [self setRootViewController:[self buildInitialRootViewController] animated:NO];
+  if ([self shouldMakeWindowKeyAndVisible]) {
+    [self.window makeKeyAndVisible];
+  }
+  return YES;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
-    // Sent when the application is about to move from active to inactive state
+  // Sent when the application is about to move from active to inactive state
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
-    // Use this method to release shared resources, save user data, etc.
+  // Use this method to release shared resources, save user data, etc.
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
-    // Called as part of the transition from the background to the active state
+  // Called as part of the transition from the background to the active state
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    // Restart any tasks that were paused
+  // Restart any tasks that were paused
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
-    // Called when the application is about to terminate
+  // Called when the application is about to terminate
 }
 
 #pragma mark - OnboardingViewControllerDelegate
 
 - (void)onboardingViewControllerDidFinish:(OnboardingViewController *)viewController {
-    [self.onboardingStateController markOnboardingCompleted];
-    [self setRootViewController:[self buildMainMenuViewController] animated:[self shouldAnimateRootTransitions]];
+  [self.onboardingStateController markOnboardingCompleted];
+  [self setRootViewController:[self buildMainMenuViewController] animated:[self shouldAnimateRootTransitions]];
 }
 
 #pragma mark - Root View Controller Builders
 
+- (UIViewController *)buildInitialRootViewController {
+  if ([self.onboardingStateController hasCompletedOnboarding]) {
+    return [self buildMainMenuViewController];
+  }
+
+  return [self buildOnboardingViewController];
+}
+
 - (UIViewController *)buildOnboardingViewController {
-    OnboardingViewController *viewController = [[[OnboardingViewController alloc] init] autorelease];
-    viewController.delegate = self;
-    return viewController;
+  OnboardingViewController *viewController = [[[OnboardingViewController alloc] init] autorelease];
+  viewController.delegate = self;
+  return viewController;
 }
 
 - (UIViewController *)buildMainMenuViewController {
-    return [[[MainMenuViewController alloc] init] autorelease];
+  return [[[MainMenuViewController alloc] init] autorelease];
 }
 
 - (void)setRootViewController:(UIViewController *)rootViewController animated:(BOOL)animated {
-    if (animated && self.window.rootViewController != nil) {
-        [UIView transitionWithView:self.window
-                          duration:0.25
-                           options:UIViewAnimationOptionTransitionCrossDissolve
-                        animations:^{
-                            BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
-                            [UIView setAnimationsEnabled:NO];
-                            self.window.rootViewController = rootViewController;
-                            [UIView setAnimationsEnabled:animationsWereEnabled];
-                        }
-                        completion:nil];
-        return;
-    }
+  if (animated && self.window.rootViewController != nil) {
+    [UIView transitionWithView:self.window
+                      duration:0.25
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                      BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
+                      [UIView setAnimationsEnabled:NO];
+                      self.window.rootViewController = rootViewController;
+                      [UIView setAnimationsEnabled:animationsWereEnabled];
+                    }
+                    completion:nil];
+    return;
+  }
 
-    self.window.rootViewController = rootViewController;
+  self.window.rootViewController = rootViewController;
 }
 
 - (BOOL)shouldAnimateRootTransitions {
-    return NSClassFromString(@"XCTestCase") == nil;
+  return NSClassFromString(@"XCTestCase") == nil;
 }
 
 - (BOOL)shouldMakeWindowKeyAndVisible {
-    return NSClassFromString(@"XCTestCase") == nil;
+  return NSClassFromString(@"XCTestCase") == nil;
 }
 
 @end

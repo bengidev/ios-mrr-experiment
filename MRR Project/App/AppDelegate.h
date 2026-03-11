@@ -11,7 +11,7 @@
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
-@property (nonatomic, retain) UIWindow *window;
+@property(nonatomic, retain) UIWindow *window;
 
 - (instancetype)initWithOnboardingStateController:(OnboardingStateController *)onboardingStateController;
 
