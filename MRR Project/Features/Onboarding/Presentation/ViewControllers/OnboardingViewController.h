@@ -2,6 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class OnboardingStateController;
 @class OnboardingViewController;
 
 @protocol OnboardingViewControllerDelegate <NSObject>
@@ -13,6 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface OnboardingViewController : UIViewController
 
 @property(nonatomic, assign, nullable) id<OnboardingViewControllerDelegate> delegate;
+
+- (instancetype)initWithStateController:(OnboardingStateController *)stateController;
 
 @end
 

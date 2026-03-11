@@ -92,7 +92,8 @@
 }
 
 - (UIViewController *)buildOnboardingViewController {
-  OnboardingViewController *viewController = [[[OnboardingViewController alloc] init] autorelease];
+  OnboardingViewController *viewController =
+      [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController] autorelease];
   viewController.delegate = self;
   return viewController;
 }
