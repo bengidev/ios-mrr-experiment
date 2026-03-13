@@ -1,8 +1,11 @@
 #import "OnboardingRecipeCarouselCell.h"
 
+#include <math.h>
+
 #import <QuartzCore/QuartzCore.h>
 
 #import "../../Data/OnboardingStateController.h"
+#import "../../../../Layout/MRRLayoutScaling.h"
 
 static UIColor *MRRDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -22,18 +25,26 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   return namedColor ?: MRRDynamicFallbackColor(lightColor, darkColor);
 }
 
+static CGFloat const MRRPureCarouselCardBaseWidth = 176.0;
+static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
+
 @interface OnboardingRecipeCarouselCell ()
 
 @property(nonatomic, retain) UIView *cardView;
 @property(nonatomic, retain) UIImageView *imageView;
-@property(nonatomic, retain) UILabel *subtitleLabel;
 @property(nonatomic, retain) UILabel *titleLabel;
 @property(nonatomic, retain) UILabel *metadataLabel;
 @property(nonatomic, retain) UILabel *hintLabel;
-@property(nonatomic, retain) UIView *badgeView;
+@property(nonatomic, retain) NSLayoutConstraint *titleLeadingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *titleTrailingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *titleBottomConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *metadataLeadingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *metadataTrailingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *metadataBottomConstraint;
 
 - (void)buildViewHierarchy;
 - (void)applyAccessibilityIdentifiersForRecipe:(OnboardingRecipe *)recipe;
+- (void)updateAdaptiveMetricsForCardSize:(CGSize)cardSize;
 
 @end
 
@@ -57,11 +68,15 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 }
 
 - (void)dealloc {
-  [_badgeView release];
+  [_metadataBottomConstraint release];
+  [_metadataTrailingConstraint release];
+  [_metadataLeadingConstraint release];
+  [_titleBottomConstraint release];
+  [_titleTrailingConstraint release];
+  [_titleLeadingConstraint release];
   [_hintLabel release];
   [_metadataLabel release];
   [_titleLabel release];
-  [_subtitleLabel release];
   [_imageView release];
   [_cardView release];
   [super dealloc];
@@ -70,38 +85,45 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 - (void)layoutSubviews {
   [super layoutSubviews];
 
-  self.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.bounds cornerRadius:28.0].CGPath;
+  [self updateAdaptiveMetricsForCardSize:self.contentView.bounds.size];
 }
 
 - (void)prepareForReuse {
   [super prepareForReuse];
 
   self.imageView.image = nil;
-  self.subtitleLabel.text = nil;
   self.titleLabel.text = nil;
   self.metadataLabel.text = nil;
-  self.subtitleLabel.accessibilityIdentifier = nil;
+  self.hintLabel.hidden = YES;
   self.titleLabel.accessibilityIdentifier = nil;
   self.metadataLabel.accessibilityIdentifier = nil;
   self.hintLabel.accessibilityIdentifier = nil;
 }
 
 - (void)configureWithRecipe:(OnboardingRecipe *)recipe {
+  NSString *compactCalorieText = [recipe.calorieText stringByReplacingOccurrencesOfString:@" kcal" withString:@""];
+
   self.imageView.image = [UIImage imageNamed:recipe.assetName];
-  self.subtitleLabel.text = [recipe.subtitle uppercaseString];
   self.titleLabel.text = recipe.title;
-  self.metadataLabel.text = [NSString stringWithFormat:@"%@ / %@", recipe.durationText, recipe.calorieText];
-  self.hintLabel.text = @"Tap for ingredients and steps";
+  self.metadataLabel.text = [NSString stringWithFormat:@"◷ %@   🔥 %@", recipe.durationText, compactCalorieText];
+  self.hintLabel.text = nil;
+  self.hintLabel.hidden = YES;
   [self applyAccessibilityIdentifiersForRecipe:recipe];
 }
 
 #pragma mark - View Setup
 
 - (void)buildViewHierarchy {
+  self.layer.shadowOpacity = 0.25f;
+  self.layer.shadowRadius = 20.0f;
+  self.layer.shadowOffset = CGSizeMake(0.0, 12.0);
+
   UIView *cardView = [[[UIView alloc] init] autorelease];
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
-  cardView.layer.cornerRadius = 28.0;
+  cardView.layer.cornerRadius = 20.0;
   cardView.clipsToBounds = YES;
+  cardView.layer.borderWidth = 1.2;
+  cardView.layer.borderColor = [[UIColor colorWithWhite:1.0 alpha:0.16] CGColor];
   cardView.backgroundColor = MRRNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.16 alpha:1.0]);
   [self.contentView addSubview:cardView];
   self.cardView = cardView;
@@ -113,50 +135,44 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   [cardView addSubview:imageView];
   self.imageView = imageView;
 
-  UIView *badgeView = [[[UIView alloc] init] autorelease];
-  badgeView.translatesAutoresizingMaskIntoConstraints = NO;
-  badgeView.backgroundColor = [MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                                             [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0])
-      colorWithAlphaComponent:0.94];
-  badgeView.layer.cornerRadius = 13.0;
-  [cardView addSubview:badgeView];
-  self.badgeView = badgeView;
-
-  UILabel *subtitleLabel = [[[UILabel alloc] init] autorelease];
-  subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  subtitleLabel.font = [UIFont boldSystemFontOfSize:11.0];
-  subtitleLabel.textColor = [UIColor whiteColor];
-  subtitleLabel.numberOfLines = 1;
-  [badgeView addSubview:subtitleLabel];
-  self.subtitleLabel = subtitleLabel;
+  UIView *bottomOverlayView = [[[UIView alloc] init] autorelease];
+  bottomOverlayView.translatesAutoresizingMaskIntoConstraints = NO;
+  bottomOverlayView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.30];
+  [cardView addSubview:bottomOverlayView];
 
   UILabel *titleLabel = [[[UILabel alloc] init] autorelease];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  titleLabel.font = [UIFont boldSystemFontOfSize:28.0];
+  titleLabel.font = [UIFont boldSystemFontOfSize:20.0];
   titleLabel.textColor = [UIColor whiteColor];
   titleLabel.numberOfLines = 2;
-  titleLabel.shadowColor = [[UIColor blackColor] colorWithAlphaComponent:0.72];
+  titleLabel.shadowColor = [[UIColor blackColor] colorWithAlphaComponent:0.70];
   titleLabel.shadowOffset = CGSizeMake(0.0, 1.0);
   [cardView addSubview:titleLabel];
   self.titleLabel = titleLabel;
 
   UILabel *metadataLabel = [[[UILabel alloc] init] autorelease];
   metadataLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  metadataLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
-  metadataLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.92];
-  metadataLabel.shadowColor = [[UIColor blackColor] colorWithAlphaComponent:0.64];
+  metadataLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium];
+  metadataLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.88];
+  metadataLabel.shadowColor = [[UIColor blackColor] colorWithAlphaComponent:0.60];
   metadataLabel.shadowOffset = CGSizeMake(0.0, 1.0);
+  metadataLabel.adjustsFontSizeToFitWidth = YES;
+  metadataLabel.minimumScaleFactor = 0.84;
   [cardView addSubview:metadataLabel];
   self.metadataLabel = metadataLabel;
 
   UILabel *hintLabel = [[[UILabel alloc] init] autorelease];
   hintLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  hintLabel.font = [UIFont systemFontOfSize:13.0];
-  hintLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.86];
-  hintLabel.shadowColor = [[UIColor blackColor] colorWithAlphaComponent:0.64];
-  hintLabel.shadowOffset = CGSizeMake(0.0, 1.0);
+  hintLabel.hidden = YES;
   [cardView addSubview:hintLabel];
   self.hintLabel = hintLabel;
+
+  self.metadataLeadingConstraint = [metadataLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:14.0];
+  self.metadataTrailingConstraint = [metadataLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-14.0];
+  self.metadataBottomConstraint = [metadataLabel.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor constant:-14.0];
+  self.titleLeadingConstraint = [titleLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:14.0];
+  self.titleTrailingConstraint = [titleLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-14.0];
+  self.titleBottomConstraint = [titleLabel.bottomAnchor constraintEqualToAnchor:metadataLabel.topAnchor constant:-6.0];
 
   [NSLayoutConstraint activateConstraints:@[
     [cardView.topAnchor constraintEqualToAnchor:self.contentView.topAnchor],
@@ -169,34 +185,71 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
     [imageView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
     [imageView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
 
-    [badgeView.topAnchor constraintEqualToAnchor:cardView.topAnchor constant:18.0],
-    [badgeView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:18.0],
+    [bottomOverlayView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
+    [bottomOverlayView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
+    [bottomOverlayView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
+    [bottomOverlayView.heightAnchor constraintEqualToAnchor:cardView.heightAnchor multiplier:0.30],
 
-    [subtitleLabel.topAnchor constraintEqualToAnchor:badgeView.topAnchor constant:7.0],
-    [subtitleLabel.leadingAnchor constraintEqualToAnchor:badgeView.leadingAnchor constant:12.0],
-    [subtitleLabel.trailingAnchor constraintEqualToAnchor:badgeView.trailingAnchor constant:-12.0],
-    [subtitleLabel.bottomAnchor constraintEqualToAnchor:badgeView.bottomAnchor constant:-7.0],
+    self.metadataLeadingConstraint,
+    self.metadataTrailingConstraint,
+    self.metadataBottomConstraint,
 
-    [hintLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:24.0],
-    [hintLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-24.0],
-    [hintLabel.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor constant:-24.0],
-
-    [metadataLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:24.0],
-    [metadataLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-24.0],
-    [metadataLabel.bottomAnchor constraintEqualToAnchor:hintLabel.topAnchor constant:-8.0],
-
-    [titleLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:24.0],
-    [titleLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-24.0],
-    [titleLabel.bottomAnchor constraintEqualToAnchor:metadataLabel.topAnchor constant:-10.0]
+    self.titleLeadingConstraint,
+    self.titleTrailingConstraint,
+    self.titleBottomConstraint
   ]];
 }
 
 - (void)applyAccessibilityIdentifiersForRecipe:(OnboardingRecipe *)recipe {
   NSString *identifierPrefix = [NSString stringWithFormat:@"onboarding.carouselCell.%@", recipe.assetName];
-  self.subtitleLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".subtitleLabel"];
   self.titleLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".titleLabel"];
   self.metadataLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".metadataLabel"];
   self.hintLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".hintLabel"];
+}
+
+- (void)updateAdaptiveMetricsForCardSize:(CGSize)cardSize {
+  CGFloat cardWidth = cardSize.width;
+  CGFloat cardHeight = cardSize.height;
+  if (cardWidth <= 0.0 || cardHeight <= 0.0) {
+    return;
+  }
+
+  CGFloat horizontalPadding = 0.0;
+  CGFloat bottomPadding = 0.0;
+  CGFloat titleSpacing = 0.0;
+  CGFloat cornerRadius = 0.0;
+  CGFloat titleFontSize = 0.0;
+  CGFloat metadataFontSize = 0.0;
+  CGFloat shadowRadius = 0.0;
+  CGFloat shadowOffsetY = 0.0;
+
+  CGFloat widthScaleFactor = cardWidth / MRRPureCarouselCardBaseWidth;
+  CGFloat heightScaleFactor = cardHeight / MRRPureCarouselCardBaseHeight;
+  CGFloat minDimensionScaleFactor = MIN(widthScaleFactor, heightScaleFactor);
+
+  horizontalPadding = MRRLayoutRoundedMetric(14.0 * widthScaleFactor);
+  bottomPadding = MRRLayoutRoundedMetric(14.0 * heightScaleFactor);
+  titleSpacing = MRRLayoutRoundedMetric(5.0 * heightScaleFactor);
+  cornerRadius = MRRLayoutRoundedMetric(20.0 * minDimensionScaleFactor);
+  titleFontSize = MRRLayoutRoundedMetric(19.0 * widthScaleFactor);
+  metadataFontSize = MRRLayoutRoundedMetric(12.5 * widthScaleFactor);
+  shadowRadius = MRRLayoutRoundedMetric(18.0 * heightScaleFactor);
+  shadowOffsetY = MRRLayoutRoundedMetric(10.0 * heightScaleFactor);
+
+  self.cardView.layer.cornerRadius = cornerRadius;
+  self.titleLeadingConstraint.constant = horizontalPadding;
+  self.titleTrailingConstraint.constant = -horizontalPadding;
+  self.titleBottomConstraint.constant = -titleSpacing;
+  self.metadataLeadingConstraint.constant = horizontalPadding;
+  self.metadataTrailingConstraint.constant = -horizontalPadding;
+  self.metadataBottomConstraint.constant = -bottomPadding;
+  self.titleLabel.font = [UIFont boldSystemFontOfSize:titleFontSize];
+  self.metadataLabel.font = [UIFont systemFontOfSize:metadataFontSize weight:UIFontWeightMedium];
+  self.titleLabel.preferredMaxLayoutWidth = MAX(cardWidth - (horizontalPadding * 2.0), 0.0);
+  self.metadataLabel.preferredMaxLayoutWidth = MAX(cardWidth - (horizontalPadding * 2.0), 0.0);
+  self.layer.shadowRadius = shadowRadius;
+  self.layer.shadowOffset = CGSizeMake(0.0, shadowOffsetY);
+  self.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.bounds cornerRadius:cornerRadius].CGPath;
 }
 
 @end

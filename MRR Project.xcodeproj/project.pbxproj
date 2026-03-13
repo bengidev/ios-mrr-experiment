@@ -19,6 +19,9 @@
 		A00000000000000000000731 /* OnboardingRecipeCarouselCell.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000659 /* OnboardingRecipeCarouselCell.m */; };
 		A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000065A /* OnboardingStateControllerTests.m */; };
 		A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000065B /* OnboardingViewControllerTests.m */; };
+		A00000000000000000000734 /* MRRLayoutScaling.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000661 /* MRRLayoutScaling.m */; };
+		A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000662 /* MRRLayoutScalingTests.m */; };
+		A00000000000000000000736 /* MainMenuViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000663 /* MainMenuViewControllerTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +56,10 @@
 		A00000000000000000000659 /* OnboardingRecipeCarouselCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeCarouselCell.m; sourceTree = "<group>"; };
 		A0000000000000000000065A /* OnboardingStateControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingStateControllerTests.m; sourceTree = "<group>"; };
 		A0000000000000000000065B /* OnboardingViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingViewControllerTests.m; sourceTree = "<group>"; };
+		A00000000000000000000660 /* MRRLayoutScaling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRLayoutScaling.h; sourceTree = "<group>"; };
+		A00000000000000000000661 /* MRRLayoutScaling.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLayoutScaling.m; sourceTree = "<group>"; };
+		A00000000000000000000662 /* MRRLayoutScalingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLayoutScalingTests.m; sourceTree = "<group>"; };
+		A00000000000000000000663 /* MainMenuViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainMenuViewControllerTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				B6B2BF092F61293700BF945D /* Resources */,
+				A00000000000000000000033 /* Layout */,
 				A00000000000000000000018 /* App */,
 				A00000000000000000000011 /* Features */,
 			);
@@ -107,6 +115,8 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000654 /* AppLaunchFlowTests.m */,
+				A00000000000000000000663 /* MainMenuViewControllerTests.m */,
+				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A0000000000000000000065A /* OnboardingStateControllerTests.m */,
 				A0000000000000000000065B /* OnboardingViewControllerTests.m */,
 			);
@@ -178,6 +188,15 @@
 				A00000000000000000000659 /* OnboardingRecipeCarouselCell.m */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000033 /* Layout */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000660 /* MRRLayoutScaling.h */,
+				A00000000000000000000661 /* MRRLayoutScaling.m */,
+			);
+			path = Layout;
 			sourceTree = "<group>";
 		};
 		B6B2BF072F61276B00BF945D /* Recovered References */ = {
@@ -297,6 +316,7 @@
 			files = (
 				A00000000000000000000700 /* main.m in Sources */,
 				A00000000000000000000701 /* AppDelegate.m in Sources */,
+				A00000000000000000000734 /* MRRLayoutScaling.m in Sources */,
 				A00000000000000000000725 /* OnboardingStateController.m in Sources */,
 				A00000000000000000000726 /* OnboardingViewController.m in Sources */,
 				A00000000000000000000727 /* MainMenuViewController.m in Sources */,
@@ -310,6 +330,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000728 /* AppLaunchFlowTests.m in Sources */,
+				A00000000000000000000736 /* MainMenuViewControllerTests.m in Sources */,
+				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */,
 				A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */,
 			);

@@ -73,6 +73,29 @@
   XCTAssertFalse([appDelegate.window.rootViewController isKindOfClass:[UITabBarController class]]);
 }
 
+- (void)testLegacyStoredLayoutScalingPreferenceDoesNotAffectLaunchFlow {
+  [self.userDefaults setObject:@"guarded" forKey:@"mrr.layoutScalingMode"];
+  [self.userDefaults synchronize];
+  OnboardingStateController *stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
+  AppDelegate *appDelegate = [[AppDelegate alloc] initWithOnboardingStateController:stateController];
+
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+
+  OnboardingViewController *onboardingViewController = (OnboardingViewController *)appDelegate.window.rootViewController;
+  XCTAssertTrue([onboardingViewController isKindOfClass:[OnboardingViewController class]]);
+}
+
+- (void)testAppDelegateRebuildsRootFlowWhenOnboardingFinishes {
+  AppDelegate *appDelegate = [self makeAppDelegate];
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+
+  UIViewController *initialRootViewController = appDelegate.window.rootViewController;
+  [appDelegate onboardingViewControllerDidFinish:(OnboardingViewController *)initialRootViewController];
+
+  XCTAssertNotEqual(appDelegate.window.rootViewController, initialRootViewController);
+  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[MainMenuViewController class]]);
+}
+
 - (AppDelegate *)makeAppDelegate {
   OnboardingStateController *stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
   AppDelegate *appDelegate = [[AppDelegate alloc] initWithOnboardingStateController:stateController];

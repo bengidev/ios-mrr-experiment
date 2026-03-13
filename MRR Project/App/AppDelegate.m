@@ -19,8 +19,9 @@
 @implementation AppDelegate
 
 - (instancetype)init {
+  NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
   OnboardingStateController *onboardingStateController =
-      [[[OnboardingStateController alloc] initWithUserDefaults:[NSUserDefaults standardUserDefaults]] autorelease];
+      [[[OnboardingStateController alloc] initWithUserDefaults:userDefaults] autorelease];
   return [self initWithOnboardingStateController:onboardingStateController];
 }
 
@@ -92,8 +93,8 @@
 }
 
 - (UIViewController *)buildOnboardingViewController {
-  OnboardingViewController *viewController =
-      [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController] autorelease];
+  OnboardingViewController *viewController = [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController]
+      autorelease];
   viewController.delegate = self;
   return viewController;
 }

@@ -1,5 +1,6 @@
 #import "OnboardingRecipeDetailViewController.h"
 
+#import "../../../../Layout/MRRLayoutScaling.h"
 #import "../../Data/OnboardingStateController.h"
 
 static CGFloat const MRRRecipeDetailHeaderHeight = 292.0;
@@ -27,8 +28,29 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 @property(nonatomic, retain, readwrite) OnboardingRecipe *recipe;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIImageView *heroImageView;
+@property(nonatomic, retain) UIView *cardView;
+@property(nonatomic, retain) UIButton *closeButton;
+@property(nonatomic, retain) UIStackView *contentStackView;
+@property(nonatomic, retain) UILabel *subtitleLabel;
+@property(nonatomic, retain) UILabel *titleLabel;
+@property(nonatomic, retain) UILabel *summaryLabel;
+@property(nonatomic, retain) UIButton *startButton;
+@property(nonatomic, retain) NSLayoutConstraint *cardTopConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *cardLeadingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *cardTrailingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *cardBottomConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *heroContainerHeightConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *heroImageTopConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *heroImageHeightConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *closeButtonTopConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *closeButtonTrailingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *closeButtonWidthConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *closeButtonHeightConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *contentStackTopConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *contentStackLeadingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *contentStackTrailingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *contentStackBottomConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *startButtonHeightConstraint;
 
 - (void)buildViewHierarchy;
 - (UILabel *)buildLabelWithText:(NSString *)text font:(UIFont *)font color:(UIColor *)color;
@@ -41,6 +63,8 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 - (NSString *)detailIdentifierForSuffix:(NSString *)suffix;
 - (void)didTapCloseButton;
 - (void)didTapStartCookingButton;
+- (void)updateLayoutMetricsIfNeeded;
+- (CGSize)layoutViewportSize;
 
 @end
 
@@ -60,8 +84,29 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 }
 
 - (void)dealloc {
+  [_startButtonHeightConstraint release];
+  [_contentStackBottomConstraint release];
+  [_contentStackTrailingConstraint release];
+  [_contentStackLeadingConstraint release];
+  [_contentStackTopConstraint release];
+  [_closeButtonHeightConstraint release];
+  [_closeButtonWidthConstraint release];
+  [_closeButtonTrailingConstraint release];
+  [_closeButtonTopConstraint release];
   [_heroImageHeightConstraint release];
   [_heroImageTopConstraint release];
+  [_heroContainerHeightConstraint release];
+  [_cardBottomConstraint release];
+  [_cardTrailingConstraint release];
+  [_cardLeadingConstraint release];
+  [_cardTopConstraint release];
+  [_startButton release];
+  [_summaryLabel release];
+  [_titleLabel release];
+  [_subtitleLabel release];
+  [_contentStackView release];
+  [_closeButton release];
+  [_cardView release];
   [_heroImageView release];
   [_scrollView release];
   [_recipe release];
@@ -77,6 +122,12 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   [self buildViewHierarchy];
 }
 
+- (void)viewDidLayoutSubviews {
+  [super viewDidLayoutSubviews];
+
+  [self updateLayoutMetricsIfNeeded];
+}
+
 #pragma mark - View Setup
 
 - (void)buildViewHierarchy {
@@ -89,6 +140,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   cardView.layer.borderColor = [[MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.45 alpha:1.0],
                                                [UIColor colorWithWhite:0.62 alpha:1.0]) colorWithAlphaComponent:0.18] CGColor];
   [self.view addSubview:cardView];
+  self.cardView = cardView;
 
   UIScrollView *scrollView = [[[UIScrollView alloc] init] autorelease];
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -125,12 +177,14 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
   [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
   [heroContainerView addSubview:closeButton];
+  self.closeButton = closeButton;
 
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
   contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
   contentStackView.axis = UILayoutConstraintAxisVertical;
   contentStackView.spacing = 18.0;
   [contentView addSubview:contentStackView];
+  self.contentStackView = contentStackView;
 
   UILabel *subtitleLabel = [self buildLabelWithText:[self.recipe.subtitle uppercaseString]
                                                font:[UIFont boldSystemFontOfSize:12.0]
@@ -138,6 +192,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
                                                                   [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0])];
   subtitleLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"subtitleLabel"];
   [contentStackView addArrangedSubview:subtitleLabel];
+  self.subtitleLabel = subtitleLabel;
 
   UILabel *titleLabel = [self buildLabelWithText:self.recipe.title
                                             font:[UIFont boldSystemFontOfSize:32.0]
@@ -146,6 +201,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   titleLabel.numberOfLines = 0;
   titleLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"titleLabel"];
   [contentStackView addArrangedSubview:titleLabel];
+  self.titleLabel = titleLabel;
 
   UIStackView *metadataStackView = [[[UIStackView alloc] init] autorelease];
   metadataStackView.axis = UILayoutConstraintAxisHorizontal;
@@ -167,6 +223,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   summaryLabel.numberOfLines = 0;
   summaryLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"summaryLabel"];
   [contentStackView addArrangedSubview:summaryLabel];
+  self.summaryLabel = summaryLabel;
 
   UILabel *ingredientsTitleLabel =
       [self sectionTitleLabelWithText:@"Ingredients" accessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsTitleLabel"]];
@@ -192,12 +249,28 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   [startButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
   [startButton addTarget:self action:@selector(didTapStartCookingButton) forControlEvents:UIControlEventTouchUpInside];
   [contentStackView addArrangedSubview:startButton];
+  self.startButton = startButton;
+
+  self.cardTopConstraint = [cardView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0];
+  self.cardLeadingConstraint = [cardView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:18.0];
+  self.cardTrailingConstraint = [cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0];
+  self.cardBottomConstraint = [cardView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12.0];
+  self.heroContainerHeightConstraint = [heroContainerView.heightAnchor constraintEqualToConstant:MRRRecipeDetailHeaderHeight];
+  self.closeButtonTopConstraint = [closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
+  self.closeButtonTrailingConstraint = [closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
+  self.closeButtonWidthConstraint = [closeButton.widthAnchor constraintEqualToConstant:38.0];
+  self.closeButtonHeightConstraint = [closeButton.heightAnchor constraintEqualToConstant:38.0];
+  self.contentStackTopConstraint = [contentStackView.topAnchor constraintEqualToAnchor:heroContainerView.bottomAnchor constant:24.0];
+  self.contentStackLeadingConstraint = [contentStackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0];
+  self.contentStackTrailingConstraint = [contentStackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0];
+  self.contentStackBottomConstraint = [contentStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-28.0];
+  self.startButtonHeightConstraint = [startButton.heightAnchor constraintGreaterThanOrEqualToConstant:60.0];
 
   [NSLayoutConstraint activateConstraints:@[
-    [cardView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0],
-    [cardView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:18.0],
-    [cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0],
-    [cardView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12.0],
+    self.cardTopConstraint,
+    self.cardLeadingConstraint,
+    self.cardTrailingConstraint,
+    self.cardBottomConstraint,
 
     [scrollView.topAnchor constraintEqualToAnchor:cardView.topAnchor],
     [scrollView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
@@ -213,19 +286,19 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
     [heroContainerView.topAnchor constraintEqualToAnchor:contentView.topAnchor],
     [heroContainerView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor],
     [heroContainerView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor],
-    [heroContainerView.heightAnchor constraintEqualToConstant:MRRRecipeDetailHeaderHeight],
+    self.heroContainerHeightConstraint,
 
-    [closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0],
-    [closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0],
-    [closeButton.widthAnchor constraintEqualToConstant:38.0],
-    [closeButton.heightAnchor constraintEqualToConstant:38.0],
+    self.closeButtonTopConstraint,
+    self.closeButtonTrailingConstraint,
+    self.closeButtonWidthConstraint,
+    self.closeButtonHeightConstraint,
 
-    [contentStackView.topAnchor constraintEqualToAnchor:heroContainerView.bottomAnchor constant:24.0],
-    [contentStackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
-    [contentStackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
-    [contentStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-28.0],
+    self.contentStackTopConstraint,
+    self.contentStackLeadingConstraint,
+    self.contentStackTrailingConstraint,
+    self.contentStackBottomConstraint,
 
-    [startButton.heightAnchor constraintGreaterThanOrEqualToConstant:60.0]
+    self.startButtonHeightConstraint
   ]];
 
   self.heroImageTopConstraint = [heroImageView.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor];
@@ -427,18 +500,90 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   [self.delegate recipeDetailViewControllerDidStartCooking:self];
 }
 
+- (void)updateLayoutMetricsIfNeeded {
+  CGSize viewportSize = [self layoutViewportSize];
+  if (viewportSize.width <= 0.0 || viewportSize.height <= 0.0) {
+    return;
+  }
+
+  CGFloat cardTopInset = MRRLayoutScaledValue(14.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat cardSideInset = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat cardBottomInset = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat cardCornerRadius = MRRLayoutScaledValue(30.0, viewportSize, MRRLayoutScaleAxisMinDimension);
+  CGFloat headerHeight = MRRLayoutScaledValue(MRRRecipeDetailHeaderHeight, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat closeButtonInset = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat closeButtonSize = MRRLayoutScaledValue(38.0, viewportSize, MRRLayoutScaleAxisMinDimension);
+  CGFloat contentTopInset = MRRLayoutScaledValue(24.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat contentSideInset = MRRLayoutScaledValue(24.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat contentBottomInset = MRRLayoutScaledValue(28.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat stackSpacing = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat subtitleFontSize = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat titleFontSize = MRRLayoutScaledValue(32.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat summaryFontSize = MRRLayoutScaledValue(16.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat startButtonHeight = MRRLayoutScaledValue(60.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat startButtonCornerRadius = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisMinDimension);
+  CGFloat startButtonVerticalInset = MRRLayoutScaledValue(17.0, viewportSize, MRRLayoutScaleAxisHeight);
+  CGFloat startButtonHorizontalInset = MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat startButtonFontSize = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
+
+  self.cardTopConstraint.constant = cardTopInset;
+  self.cardLeadingConstraint.constant = cardSideInset;
+  self.cardTrailingConstraint.constant = -cardSideInset;
+  self.cardBottomConstraint.constant = -cardBottomInset;
+  self.cardView.layer.cornerRadius = cardCornerRadius;
+  self.heroContainerHeightConstraint.constant = headerHeight;
+  self.closeButtonTopConstraint.constant = closeButtonInset;
+  self.closeButtonTrailingConstraint.constant = -closeButtonInset;
+  self.closeButtonWidthConstraint.constant = closeButtonSize;
+  self.closeButtonHeightConstraint.constant = closeButtonSize;
+  self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
+  self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
+  self.contentStackTopConstraint.constant = contentTopInset;
+  self.contentStackLeadingConstraint.constant = contentSideInset;
+  self.contentStackTrailingConstraint.constant = -contentSideInset;
+  self.contentStackBottomConstraint.constant = -contentBottomInset;
+  self.contentStackView.spacing = stackSpacing;
+  self.subtitleLabel.font = [UIFont boldSystemFontOfSize:subtitleFontSize];
+  self.titleLabel.font = [UIFont boldSystemFontOfSize:titleFontSize];
+  self.summaryLabel.font = [UIFont systemFontOfSize:summaryFontSize];
+  self.startButtonHeightConstraint.constant = startButtonHeight;
+  self.startButton.layer.cornerRadius = startButtonCornerRadius;
+  self.startButton.contentEdgeInsets = UIEdgeInsetsMake(startButtonVerticalInset, startButtonHorizontalInset, startButtonVerticalInset,
+                                                        startButtonHorizontalInset);
+  self.startButton.titleLabel.font = [UIFont boldSystemFontOfSize:startButtonFontSize];
+
+  CGFloat offsetY = self.scrollView.contentOffset.y;
+  if (offsetY < 0.0) {
+    self.heroImageTopConstraint.constant = offsetY;
+    self.heroImageHeightConstraint.constant = headerHeight - offsetY;
+  } else {
+    self.heroImageTopConstraint.constant = -offsetY * 0.32;
+    self.heroImageHeightConstraint.constant = headerHeight;
+  }
+}
+
+- (CGSize)layoutViewportSize {
+  CGRect safeFrame = self.view.safeAreaLayoutGuide.layoutFrame;
+  if (CGRectGetWidth(safeFrame) > 0.0 && CGRectGetHeight(safeFrame) > 0.0) {
+    return safeFrame.size;
+  }
+
+  return self.view.bounds.size;
+}
+
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
   CGFloat offsetY = scrollView.contentOffset.y;
+  CGFloat headerHeight = self.heroContainerHeightConstraint.constant > 0.0 ? self.heroContainerHeightConstraint.constant : MRRRecipeDetailHeaderHeight;
   if (offsetY < 0.0) {
     self.heroImageTopConstraint.constant = offsetY;
-    self.heroImageHeightConstraint.constant = MRRRecipeDetailHeaderHeight - offsetY;
+    self.heroImageHeightConstraint.constant = headerHeight - offsetY;
     return;
   }
 
   self.heroImageTopConstraint.constant = -offsetY * 0.32;
-  self.heroImageHeightConstraint.constant = MRRRecipeDetailHeaderHeight;
+  self.heroImageHeightConstraint.constant = headerHeight;
 }
 
 @end
