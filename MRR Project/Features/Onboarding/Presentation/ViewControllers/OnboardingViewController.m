@@ -9,8 +9,7 @@
 
 static NSString *const MRRRecipeCarouselCellReuseIdentifier = @"MRRRecipeCarouselCell";
 static NSInteger const MRRCarouselLoopMultiplier = 5;
-static NSString *const MRROnboardingBrandMarkImageName = @"OnboardingBrandMark";
-static NSString *const MRROnboardingBrandMarkOutlineImageName = @"OnboardingBrandMarkOutline";
+static NSString *const MRROnboardingAppIconImageName = @"OnboardingAppIcon";
 static NSInteger const MRROnboardingAuthButtonIconTag = 101;
 static NSInteger const MRROnboardingAuthButtonTitleTag = 102;
 static CGFloat const MRRCarouselSingleRowSpacingPadding = 32.0;
@@ -275,23 +274,25 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 
   UIView *iconContainerView = [[[UIView alloc] init] autorelease];
   iconContainerView.translatesAutoresizingMaskIntoConstraints = NO;
-  iconContainerView.backgroundColor = [UIColor colorWithWhite:0.12 alpha:1.0];
+  iconContainerView.backgroundColor = [UIColor clearColor];
+  iconContainerView.clipsToBounds = YES;
   iconContainerView.layer.cornerRadius = 24.0;
-  iconContainerView.layer.borderWidth = 1.5;
-  iconContainerView.layer.borderColor = [[UIColor colorWithWhite:1.0 alpha:0.15] CGColor];
+  iconContainerView.layer.borderWidth = 1.0;
+  iconContainerView.layer.borderColor = [[UIColor colorWithWhite:1.0 alpha:0.12] CGColor];
   [iconWrapperView addSubview:iconContainerView];
   self.iconContainerView = iconContainerView;
 
   UIImageView *iconImageView = [[[UIImageView alloc] init] autorelease];
   iconImageView.translatesAutoresizingMaskIntoConstraints = NO;
-  iconImageView.contentMode = UIViewContentModeScaleAspectFit;
+  iconImageView.contentMode = UIViewContentModeScaleAspectFill;
   iconImageView.clipsToBounds = YES;
   iconImageView.accessibilityIdentifier = @"onboarding.logoImageView";
-  iconImageView.image = [UIImage imageNamed:MRROnboardingBrandMarkOutlineImageName];
-  if (iconImageView.image == nil) {
-    iconImageView.image = [UIImage imageNamed:MRROnboardingBrandMarkImageName];
+  NSBundle *resourceBundle = [NSBundle bundleForClass:[OnboardingViewController class]];
+  if (@available(iOS 8.0, *)) {
+    iconImageView.image = [UIImage imageNamed:MRROnboardingAppIconImageName inBundle:resourceBundle compatibleWithTraitCollection:nil];
+  } else {
+    iconImageView.image = [UIImage imageNamed:MRROnboardingAppIconImageName];
   }
-  iconImageView.tintColor = [UIColor colorWithWhite:0.97 alpha:1.0];
   [iconContainerView addSubview:iconImageView];
   self.iconImageView = iconImageView;
 
@@ -700,10 +701,10 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   topInset = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisHeight);
   bottomInset = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisHeight);
   spacerHeight = MRRLayoutScaledValue(7.0, viewportSize, MRRLayoutScaleAxisHeight);
-  iconContainerSize = MRRLayoutScaledValue(66.0, viewportSize, MRRLayoutScaleAxisMinDimension);
+  iconContainerSize = MRRLayoutScaledValue(68.0, viewportSize, MRRLayoutScaleAxisMinDimension);
   iconTopInset = MRRLayoutScaledValue(6.0, viewportSize, MRRLayoutScaleAxisHeight);
   iconBottomInset = MRRLayoutScaledValue(13.0, viewportSize, MRRLayoutScaleAxisHeight);
-  iconImageSize = MRRLayoutScaledValue(36.0, viewportSize, MRRLayoutScaleAxisMinDimension);
+  iconImageSize = MRRLayoutRoundedMetric(iconContainerSize);
   titleFontSize = MRRLayoutScaledValue(42.0, viewportSize, MRRLayoutScaleAxisWidth);
   titleKerning = MRRLayoutScaledValue(0.8, viewportSize, MRRLayoutScaleAxisWidth);
   subtitleFontSize = MRRLayoutScaledValue(16.0, viewportSize, MRRLayoutScaleAxisWidth);
@@ -735,7 +736,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   self.iconContainerHeightConstraint.constant = iconContainerSize;
   self.iconImageWidthConstraint.constant = iconImageSize;
   self.iconImageHeightConstraint.constant = iconImageSize;
-  self.iconContainerView.layer.cornerRadius = MRRLayoutRoundedMetric(iconContainerSize * 0.35);
+  self.iconContainerView.layer.cornerRadius = MRRLayoutRoundedMetric(iconContainerSize * 0.28);
   self.titleLabel.attributedText = [self titleAttributedTextWithFontSize:titleFontSize kerning:titleKerning];
   self.subtitleLabel.font = [UIFont systemFontOfSize:subtitleFontSize weight:UIFontWeightMedium];
   self.captionLabel.attributedText = [self carouselCaptionAttributedTextWithFontSize:captionFontSize kerning:captionKerning];
