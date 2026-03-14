@@ -6,7 +6,7 @@
 
 #import "../../../Authentication/MRRAuthenticationController.h"
 #import "../../../Authentication/MRRAuthErrorMapper.h"
-#import "../../../Authentication/MRREmailAuthenticationViewController.h"
+#import "MRREmailAuthenticationViewController.h"
 #import "../../../Authentication/MRRFirebaseAuthenticationController.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
 #import "../../Data/OnboardingStateController.h"
@@ -138,13 +138,14 @@ static UIColor *MRRSecondaryTextColor(void) {
 - (void)handleGoogleSignupTapped:(id)sender;
 - (void)handleAppleContinueTapped:(id)sender;
 - (void)handleSigninTapped:(id)sender;
-- (void)presentEmailAuthenticationModalWithMode:(MRREmailAuthenticationMode)mode
-                                 prefilledEmail:(nullable NSString *)prefilledEmail
-                                pendingLinkFlow:(BOOL)pendingLinkFlow;
+- (void)pushEmailAuthenticationViewControllerWithMode:(MRREmailAuthenticationMode)mode
+                                        prefilledEmail:(nullable NSString *)prefilledEmail
+                                       pendingLinkFlow:(BOOL)pendingLinkFlow;
 - (void)presentAuthenticationAlertForError:(NSError *)error;
 - (void)presentAuthenticationAlertWithTitle:(NSString *)title
                                     message:(NSString *)message
                         accessibilityIdentifier:(NSString *)accessibilityIdentifier;
+- (void)presentGoogleSignInStubAlert;
 - (void)presentAppleSignInStubAlert;
 - (void)notifyDelegateOfAuthentication;
 - (void)setAuthButtonsEnabled:(BOOL)enabled;
@@ -276,6 +277,12 @@ static UIColor *MRRSecondaryTextColor(void) {
 
   [self buildViewHierarchy];
   [self updateLayoutMetricsIfNeeded];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+  [super viewWillAppear:animated];
+
+  [self.navigationController setNavigationBarHidden:YES animated:NO];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -785,42 +792,11 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (void)handleEmailSignupTapped:(id)sender {
-  [self presentEmailAuthenticationModalWithMode:MRREmailAuthenticationModeSignUp prefilledEmail:nil pendingLinkFlow:NO];
+  [self pushEmailAuthenticationViewControllerWithMode:MRREmailAuthenticationModeSignUp prefilledEmail:nil pendingLinkFlow:NO];
 }
 
 - (void)handleGoogleSignupTapped:(id)sender {
-  [self beginLoadingForAuthButton:self.googleButton];
-
-  [self.authenticationController signInWithGoogleFromPresentingViewController:self
-                                                                   completion:^(MRRAuthSession *_Nullable session,
-                                                                                NSError *_Nullable error) {
-                                                                     [self endLoadingForAuthButton];
-
-                                                                     if (error == nil && session != nil) {
-                                                                       [self notifyDelegateOfAuthentication];
-                                                                       return;
-                                                                     }
-
-                                                                     if (error == nil) {
-                                                                       return;
-                                                                     }
-
-                                                                     if ([error.domain isEqualToString:MRRAuthenticationErrorDomain] &&
-                                                                         error.code == MRRAuthenticationErrorCodeCancelled) {
-                                                                       return;
-                                                                     }
-
-                                                                     if ([error.domain isEqualToString:MRRAuthenticationErrorDomain] &&
-                                                                         error.code == MRRAuthenticationErrorCodeRequiresAccountLinking) {
-                                                                       NSString *email = error.userInfo[MRRAuthPendingLinkEmailUserInfoKey];
-                                                                       [self presentEmailAuthenticationModalWithMode:MRREmailAuthenticationModeSignIn
-                                                                                                      prefilledEmail:email
-                                                                                                     pendingLinkFlow:YES];
-                                                                       return;
-                                                                     }
-
-                                                                     [self presentAuthenticationAlertForError:error];
-                                                                   }];
+  [self presentGoogleSignInStubAlert];
 }
 
 - (void)handleAppleContinueTapped:(id)sender {
@@ -828,19 +804,27 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (void)handleSigninTapped:(id)sender {
-  [self presentEmailAuthenticationModalWithMode:MRREmailAuthenticationModeSignIn prefilledEmail:nil pendingLinkFlow:NO];
+  [self pushEmailAuthenticationViewControllerWithMode:MRREmailAuthenticationModeSignIn prefilledEmail:nil pendingLinkFlow:NO];
 }
 
-- (void)presentEmailAuthenticationModalWithMode:(MRREmailAuthenticationMode)mode
-                                 prefilledEmail:(NSString *)prefilledEmail
-                                pendingLinkFlow:(BOOL)pendingLinkFlow {
+- (void)pushEmailAuthenticationViewControllerWithMode:(MRREmailAuthenticationMode)mode
+                                        prefilledEmail:(NSString *)prefilledEmail
+                                       pendingLinkFlow:(BOOL)pendingLinkFlow {
   MRREmailAuthenticationViewController *viewController =
       [[[MRREmailAuthenticationViewController alloc] initWithAuthenticationController:self.authenticationController
                                                                                  mode:mode
                                                                         prefilledEmail:prefilledEmail
                                                                        pendingLinkFlow:pendingLinkFlow] autorelease];
   viewController.delegate = self;
-  [self presentViewController:viewController animated:[self shouldAnimateModalTransitions] completion:nil];
+
+  if (self.navigationController != nil) {
+    [self.navigationController pushViewController:viewController animated:[self shouldAnimateModalTransitions]];
+    return;
+  }
+
+  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
+  navigationController.navigationBarHidden = YES;
+  [self presentViewController:navigationController animated:[self shouldAnimateModalTransitions] completion:nil];
 }
 
 - (void)presentAuthenticationAlertForError:(NSError *)error {
@@ -873,6 +857,12 @@ static UIColor *MRRSecondaryTextColor(void) {
   [self presentAuthenticationAlertWithTitle:@"Apple Sign-In Planned"
                                     message:message
                       accessibilityIdentifier:@"onboarding.appleStubAlert"];
+}
+
+- (void)presentGoogleSignInStubAlert {
+  [self presentAuthenticationAlertWithTitle:@"Google Sign-In Planned"
+                                    message:@"Continue with Google tetap ditampilkan di onboarding, tetapi untuk milestone ini autentikasi live difokuskan ke email sign up dan sign in terlebih dahulu."
+                      accessibilityIdentifier:@"onboarding.googleStubAlert"];
 }
 
 - (void)notifyDelegateOfAuthentication {
@@ -922,10 +912,7 @@ static UIColor *MRRSecondaryTextColor(void) {
 #pragma mark - MRREmailAuthenticationViewControllerDelegate
 
 - (void)emailAuthenticationViewControllerDidAuthenticate:(MRREmailAuthenticationViewController *)viewController {
-  [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
-                           completion:^{
-                             [self notifyDelegateOfAuthentication];
-                           }];
+  [self notifyDelegateOfAuthentication];
 }
 
 - (void)updateLayoutMetricsIfNeeded {

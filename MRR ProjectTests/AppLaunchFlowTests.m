@@ -63,6 +63,8 @@
 @property(nonatomic, copy) NSString *defaultsSuiteName;
 @property(nonatomic, strong) NSUserDefaults *userDefaults;
 
+- (OnboardingViewController *)onboardingViewControllerFromRootViewController:(UIViewController *)rootViewController;
+
 @end
 
 @implementation AppLaunchFlowTests
@@ -88,7 +90,7 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[OnboardingViewController class]]);
+  XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
 - (void)testLoggedInLaunchShowsHome {
@@ -129,8 +131,7 @@
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
-  OnboardingViewController *onboardingViewController = (OnboardingViewController *)appDelegate.window.rootViewController;
-  XCTAssertTrue([onboardingViewController isKindOfClass:[OnboardingViewController class]]);
+  XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
 - (void)testAuthenticatingFromOnboardingReplacesRootWithHome {
@@ -138,14 +139,16 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[OnboardingViewController class]]);
+  OnboardingViewController *onboardingViewController =
+      [self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController];
+  XCTAssertNotNil(onboardingViewController);
 
   authenticationController.stubSession =
       [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                        email:@"cook@example.com"
                                  displayName:@"Test Cook"
                                 providerType:MRRAuthProviderTypeGoogle];
-  [appDelegate onboardingViewControllerDidAuthenticate:(OnboardingViewController *)appDelegate.window.rootViewController];
+  [appDelegate onboardingViewControllerDidAuthenticate:onboardingViewController];
 
   XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[HomeViewController class]]);
 }
@@ -165,7 +168,7 @@
   authenticationController.stubSession = nil;
   [appDelegate homeViewControllerDidSignOut:(HomeViewController *)appDelegate.window.rootViewController];
 
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[OnboardingViewController class]]);
+  XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
 - (AppDelegate *)makeAppDelegateWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController {
@@ -173,6 +176,13 @@
   AppDelegate *appDelegate =
       [[AppDelegate alloc] initWithOnboardingStateController:stateController authenticationController:authenticationController];
   return appDelegate;
+}
+
+- (OnboardingViewController *)onboardingViewControllerFromRootViewController:(UIViewController *)rootViewController {
+  XCTAssertTrue([rootViewController isKindOfClass:[UINavigationController class]]);
+  UINavigationController *navigationController = (UINavigationController *)rootViewController;
+  XCTAssertTrue([navigationController.topViewController isKindOfClass:[OnboardingViewController class]]);
+  return (OnboardingViewController *)navigationController.topViewController;
 }
 
 @end

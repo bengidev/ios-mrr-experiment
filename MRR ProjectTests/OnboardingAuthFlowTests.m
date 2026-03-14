@@ -1,6 +1,6 @@
 #import <XCTest/XCTest.h>
 
-#import "../MRR Project/Features/Authentication/MRREmailAuthenticationViewController.h"
+#import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/MRREmailAuthenticationViewController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthenticationController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthSession.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
@@ -81,10 +81,12 @@
 @property(nonatomic, strong) OnboardingStateController *stateController;
 @property(nonatomic, strong) OnboardingAuthenticationControllerSpy *authenticationController;
 @property(nonatomic, strong) OnboardingViewController *viewController;
+@property(nonatomic, strong) UINavigationController *navigationController;
 @property(nonatomic, strong) OnboardingAuthDelegateSpy *delegateSpy;
 @property(nonatomic, strong) UIWindow *window;
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
+- (MRREmailAuthenticationViewController *)topAuthenticationViewController;
 - (void)spinMainRunLoop;
 
 @end
@@ -101,12 +103,14 @@
   self.authenticationController = [[OnboardingAuthenticationControllerSpy alloc] init];
   self.viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
                                                           authenticationController:self.authenticationController];
+  self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.viewController];
+  self.navigationController.navigationBarHidden = YES;
   self.delegateSpy = [[OnboardingAuthDelegateSpy alloc] init];
   self.viewController.delegate = self.delegateSpy;
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-  self.window.rootViewController = self.viewController;
+  self.window.rootViewController = self.navigationController;
   [self.window makeKeyAndVisible];
-  [self.viewController loadViewIfNeeded];
+  [self.navigationController loadViewIfNeeded];
   [self.viewController.view layoutIfNeeded];
   [self spinMainRunLoop];
 }
@@ -117,6 +121,7 @@
   [self.userDefaults removePersistentDomainForName:self.defaultsSuiteName];
   self.window.hidden = YES;
   self.window = nil;
+  self.navigationController = nil;
   self.delegateSpy = nil;
   self.viewController = nil;
   self.authenticationController = nil;
@@ -127,33 +132,66 @@
   [super tearDown];
 }
 
-- (void)testEmailButtonPresentsEmailAuthenticationModal {
+- (void)testEmailButtonPushesSignUpScreen {
   UIButton *emailButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.emailButton" inView:self.viewController.view];
   XCTAssertNotNil(emailButton);
 
   [emailButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[MRREmailAuthenticationViewController class]]);
-  UISegmentedControl *modeControl = (UISegmentedControl *)[self findViewWithAccessibilityIdentifier:@"auth.emailModal.modeControl"
-                                                                                              inView:self.viewController.presentedViewController.view];
-  XCTAssertEqual(modeControl.selectedSegmentIndex, 0);
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  XCTAssertNotNil(authenticationViewController);
+  XCTAssertEqualObjects(authenticationViewController.view.accessibilityIdentifier, @"auth.signUp.view");
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"auth.signUp.firstNameField" inView:authenticationViewController.view]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"auth.signUp.lastNameField" inView:authenticationViewController.view]);
 }
 
-- (void)testSigninLabelPresentsEmailAuthenticationModalInSignInMode {
+- (void)testSigninLabelPushesSignInScreen {
   UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
   XCTAssertNotNil(signinButton);
 
   [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[MRREmailAuthenticationViewController class]]);
-  UISegmentedControl *modeControl = (UISegmentedControl *)[self findViewWithAccessibilityIdentifier:@"auth.emailModal.modeControl"
-                                                                                              inView:self.viewController.presentedViewController.view];
-  XCTAssertEqual(modeControl.selectedSegmentIndex, 1);
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  XCTAssertNotNil(authenticationViewController);
+  XCTAssertEqualObjects(authenticationViewController.view.accessibilityIdentifier, @"auth.signIn.view");
+
+  UIView *authView = authenticationViewController.view;
+  [authView layoutIfNeeded];
+  UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField" inView:authView];
+  UIButton *forgotPasswordButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton" inView:authView];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.submitButton" inView:authView];
+  UIStackView *footerStackView = (UIStackView *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.footerStack" inView:authView];
+  CGRect passwordFrame = [passwordField convertRect:passwordField.bounds toView:authView];
+  CGRect forgotPasswordFrame = [forgotPasswordButton convertRect:forgotPasswordButton.bounds toView:authView];
+  CGRect submitButtonFrame = [submitButton convertRect:submitButton.bounds toView:authView];
+  CGRect footerFrame = [footerStackView convertRect:footerStackView.bounds toView:authView];
+  XCTAssertGreaterThan(CGRectGetMinY(forgotPasswordFrame), CGRectGetMaxY(passwordFrame));
+  XCTAssertLessThanOrEqual(CGRectGetMinY(footerFrame) - CGRectGetMaxY(submitButtonFrame), 20.0);
+  XCTAssertGreaterThan(CGRectGetMaxY(footerFrame), CGRectGetHeight(authView.bounds) - 80.0);
 }
 
-- (void)testSubmittingEmailSignupAuthenticatesAndDismissesModal {
+- (void)testAuthenticationScreenUsesArrowBackButtonAndDoesNotAutofocusFields {
+  UIButton *emailButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.emailButton" inView:self.viewController.view];
+  [emailButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UIView *authView = authenticationViewController.view;
+  UIButton *backButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.backButton" inView:authView];
+  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField" inView:authView];
+  UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField" inView:authView];
+  UIScrollView *scrollView = (UIScrollView *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.scrollView" inView:authView];
+
+  XCTAssertEqualObjects([backButton titleForState:UIControlStateNormal], @"←");
+  XCTAssertFalse(emailField.isFirstResponder);
+  XCTAssertFalse(passwordField.isFirstResponder);
+  XCTAssertEqual(scrollView.keyboardDismissMode, UIScrollViewKeyboardDismissModeOnDrag);
+}
+
+- (void)testSubmittingEmailSignupAuthenticatesFromPushedScreen {
   self.authenticationController.sessionToReturn =
       [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                        email:@"cook@example.com"
@@ -164,10 +202,11 @@
   [emailButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  UIView *modalView = self.viewController.presentedViewController.view;
-  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailModal.emailField" inView:modalView];
-  UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailModal.passwordField" inView:modalView];
-  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.emailModal.submitButton" inView:modalView];
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UIView *authView = authenticationViewController.view;
+  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField" inView:authView];
+  UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField" inView:authView];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.submitButton" inView:authView];
   emailField.text = @"cook@example.com";
   passwordField.text = @"password123";
 
@@ -175,41 +214,17 @@
   [self spinMainRunLoop];
 
   XCTAssertTrue(self.delegateSpy.didAuthenticate);
-  XCTAssertNil(self.viewController.presentedViewController);
 }
 
-- (void)testGoogleSuccessAuthenticatesWithoutPresentingModal {
-  self.authenticationController.sessionToReturn =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Google Cook"
-                                providerType:MRRAuthProviderTypeGoogle];
-
+- (void)testGoogleButtonPresentsStubAlertWithoutStartingAuthFlow {
   UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
   [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 1);
-  XCTAssertTrue(self.delegateSpy.didAuthenticate);
-  XCTAssertNil(self.viewController.presentedViewController);
-}
-
-- (void)testGoogleConflictPresentsLinkingEmailModal {
-  self.authenticationController.hasPendingCredentialLinkStub = YES;
-  self.authenticationController.pendingLinkEmailStub = @"cook@example.com";
-  self.authenticationController.nextGoogleError =
-      [NSError errorWithDomain:MRRAuthenticationErrorDomain
-                          code:MRRAuthenticationErrorCodeRequiresAccountLinking
-                      userInfo:@{MRRAuthPendingLinkEmailUserInfoKey : @"cook@example.com"}];
-
-  UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
-  [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self spinMainRunLoop];
-
-  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[MRREmailAuthenticationViewController class]]);
-  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailModal.emailField"
-                                                                               inView:self.viewController.presentedViewController.view];
-  XCTAssertEqualObjects(emailField.text, @"cook@example.com");
+  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 0);
+  XCTAssertFalse(self.delegateSpy.didAuthenticate);
+  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
+  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"onboarding.googleStubAlert");
 }
 
 - (void)testAppleButtonPresentsStubAlert {
@@ -234,6 +249,11 @@
   }
 
   return nil;
+}
+
+- (MRREmailAuthenticationViewController *)topAuthenticationViewController {
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[MRREmailAuthenticationViewController class]]);
+  return (MRREmailAuthenticationViewController *)self.navigationController.topViewController;
 }
 
 - (void)spinMainRunLoop {

@@ -198,6 +198,8 @@
 			children = (
 				A00000000000000000000650 /* OnboardingViewController.h */,
 				A00000000000000000000651 /* OnboardingViewController.m */,
+				A0000000000000000000066A /* MRREmailAuthenticationViewController.h */,
+				A0000000000000000000066B /* MRREmailAuthenticationViewController.m */,
 				A00000000000000000000656 /* OnboardingRecipeDetailViewController.h */,
 				A00000000000000000000657 /* OnboardingRecipeDetailViewController.m */,
 			);
@@ -232,8 +234,6 @@
 				A00000000000000000000667 /* MRRAuthErrorMapper.m */,
 				A00000000000000000000668 /* MRRFirebaseAuthenticationController.h */,
 				A00000000000000000000669 /* MRRFirebaseAuthenticationController.m */,
-				A0000000000000000000066A /* MRREmailAuthenticationViewController.h */,
-				A0000000000000000000066B /* MRREmailAuthenticationViewController.m */,
 			);
 			path = Authentication;
 			sourceTree = "<group>";

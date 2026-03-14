@@ -1,6 +1,6 @@
 #import <UIKit/UIKit.h>
 
-#import "MRRAuthenticationController.h"
+#import "../../../Authentication/MRRAuthenticationController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

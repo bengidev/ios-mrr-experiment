@@ -129,7 +129,10 @@
       [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController
                                          authenticationController:self.authenticationController] autorelease];
   viewController.delegate = self;
-  return viewController;
+
+  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
+  navigationController.navigationBarHidden = YES;
+  return navigationController;
 }
 
 - (UIViewController *)buildHomeViewControllerWithSession:(MRRAuthSession *)session {
