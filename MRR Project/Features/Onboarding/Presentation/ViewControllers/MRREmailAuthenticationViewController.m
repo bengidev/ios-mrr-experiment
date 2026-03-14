@@ -1,6 +1,7 @@
 #import "MRREmailAuthenticationViewController.h"
 
 #import "../../../Authentication/MRRAuthErrorMapper.h"
+#import "MRRForgotPasswordViewController.h"
 
 static UIColor *MRRAuthDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -28,6 +29,14 @@ static UIActivityIndicatorViewStyle MRRAuthLoadingIndicatorStyle(void) {
   return UIActivityIndicatorViewStyleGray;
 }
 
+static UIBlurEffectStyle MRRAuthLoadingOverlayBlurStyle(void) {
+  if (@available(iOS 13.0, *)) {
+    return UIBlurEffectStyleSystemChromeMaterial;
+  }
+
+  return UIBlurEffectStyleLight;
+}
+
 static UIColor *MRRAuthBackgroundColor(void) {
   return MRRAuthNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.99 alpha:1.0], [UIColor colorWithWhite:0.08 alpha:1.0]);
 }
@@ -52,6 +61,14 @@ static UIColor *MRRAuthAccentColor(void) {
   return MRRAuthNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
                            [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
 }
+
+static UIColor *MRRAuthLoadingOverlayTintColor(void) { return [UIColor colorWithWhite:0.0 alpha:0.12]; }
+
+static UIColor *MRRAuthLoadingPanelColor(void) {
+  return MRRAuthNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:0.88], [UIColor colorWithWhite:0.16 alpha:0.9]);
+}
+
+static UIColor *MRRAuthLoadingIndicatorColor(void) { return MRRAuthPrimaryTextColor(); }
 
 static CGFloat const MRRAuthSwitchButtonPressedScale = 0.97;
 static CGFloat const MRRAuthSwitchButtonPressedAlpha = 0.88;
@@ -84,6 +101,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 @property(nonatomic, retain) UILabel *errorLabel;
 @property(nonatomic, retain) UIView *actionSpacerView;
 @property(nonatomic, retain) UIButton *submitButton;
+@property(nonatomic, retain) UIVisualEffectView *loadingOverlayView;
 @property(nonatomic, retain) UIActivityIndicatorView *loadingIndicator;
 @property(nonatomic, retain) UIStackView *footerStackView;
 @property(nonatomic, retain) UILabel *footerPromptLabel;
@@ -115,14 +133,13 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 - (void)handleSubmitTapped:(id)sender;
 - (void)handleForgotPasswordTapped:(id)sender;
 - (void)handleSwitchModeTapped:(id)sender;
+- (void)pushForgotPasswordViewController;
 - (void)setLoading:(BOOL)loading;
 - (void)showError:(NSError *)error;
 - (void)showValidationErrorMessage:(NSString *)message;
 - (NSString *)trimmedValueForTextField:(UITextField *)textField;
 - (void)replaceTopControllerWithMode:(MRREmailAuthenticationMode)mode;
-- (void)presentPlaceholderAlertWithTitle:(NSString *)title
-                                 message:(NSString *)message
-                 accessibilityIdentifier:(NSString *)accessibilityIdentifier;
+- (void)presentPlaceholderAlertWithTitle:(NSString *)title message:(NSString *)message accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 
 @end
 
@@ -130,8 +147,8 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                             mode:(MRREmailAuthenticationMode)mode
-                                   prefilledEmail:(NSString *)prefilledEmail
-                                  pendingLinkFlow:(BOOL)pendingLinkFlow {
+                                  prefilledEmail:(NSString *)prefilledEmail
+                                 pendingLinkFlow:(BOOL)pendingLinkFlow {
   NSParameterAssert(authenticationController != nil);
 
   self = [super initWithNibName:nil bundle:nil];
@@ -155,6 +172,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [_switchModeButton release];
   [_footerPromptLabel release];
   [_footerStackView release];
+  [_loadingOverlayView release];
   [_loadingIndicator release];
   [_submitButton release];
   [_actionSpacerView release];
@@ -223,8 +241,8 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [scrollView addSubview:contentView];
   self.contentView = contentView;
 
-  UITapGestureRecognizer *tapGestureRecognizer =
-      [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleBackgroundTap:)] autorelease];
+  UITapGestureRecognizer *tapGestureRecognizer = [[[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                          action:@selector(handleBackgroundTap:)] autorelease];
   tapGestureRecognizer.cancelsTouchesInView = NO;
   [scrollView addGestureRecognizer:tapGestureRecognizer];
 
@@ -240,15 +258,13 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [contentView addSubview:backButton];
   self.backButton = backButton;
 
-  UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:38.0 weight:UIFontWeightBold]
-                                      color:MRRAuthPrimaryTextColor()];
+  UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:38.0 weight:UIFontWeightBold] color:MRRAuthPrimaryTextColor()];
   titleLabel.accessibilityIdentifier = @"auth.emailScreen.titleLabel";
   titleLabel.numberOfLines = 0;
   [contentView addSubview:titleLabel];
   self.titleLabel = titleLabel;
 
-  UILabel *helperLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightRegular]
-                                       color:MRRAuthSecondaryTextColor()];
+  UILabel *helperLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightRegular] color:MRRAuthSecondaryTextColor()];
   helperLabel.accessibilityIdentifier = @"auth.emailScreen.helperLabel";
   helperLabel.numberOfLines = 0;
   [contentView addSubview:helperLabel];
@@ -262,8 +278,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   UIStackView *firstNameSection = [self verticalSectionWithSpacing:8.0];
   [signUpFieldsStackView addArrangedSubview:firstNameSection];
 
-  UILabel *firstNameLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold]
-                                          color:MRRAuthPrimaryTextColor()];
+  UILabel *firstNameLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold] color:MRRAuthPrimaryTextColor()];
   firstNameLabel.accessibilityIdentifier = @"auth.signUp.firstNameLabel";
   firstNameLabel.text = @"First Name";
   [firstNameSection addArrangedSubview:firstNameLabel];
@@ -279,8 +294,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   UIStackView *lastNameSection = [self verticalSectionWithSpacing:8.0];
   [signUpFieldsStackView addArrangedSubview:lastNameSection];
 
-  UILabel *lastNameLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold]
-                                         color:MRRAuthPrimaryTextColor()];
+  UILabel *lastNameLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold] color:MRRAuthPrimaryTextColor()];
   lastNameLabel.accessibilityIdentifier = @"auth.signUp.lastNameLabel";
   lastNameLabel.text = @"Last Name";
   [lastNameSection addArrangedSubview:lastNameLabel];
@@ -296,8 +310,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   UIStackView *emailSection = [self verticalSectionWithSpacing:8.0];
   [contentView addSubview:emailSection];
 
-  UILabel *emailLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold]
-                                      color:MRRAuthPrimaryTextColor()];
+  UILabel *emailLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold] color:MRRAuthPrimaryTextColor()];
   emailLabel.accessibilityIdentifier = @"auth.emailScreen.emailLabel";
   emailLabel.text = @"Email";
   [emailSection addArrangedSubview:emailLabel];
@@ -318,8 +331,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   UIStackView *passwordSection = [self verticalSectionWithSpacing:8.0];
   [contentView addSubview:passwordSection];
 
-  UILabel *passwordLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold]
-                                         color:MRRAuthPrimaryTextColor()];
+  UILabel *passwordLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold] color:MRRAuthPrimaryTextColor()];
   passwordLabel.accessibilityIdentifier = @"auth.emailScreen.passwordLabel";
   passwordLabel.text = @"Password";
   [passwordSection addArrangedSubview:passwordLabel];
@@ -338,8 +350,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [contentView addSubview:modeDetailsStackView];
   self.modeDetailsStackView = modeDetailsStackView;
 
-  UILabel *termsLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightRegular]
-                                      color:MRRAuthSecondaryTextColor()];
+  UILabel *termsLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightRegular] color:MRRAuthSecondaryTextColor()];
   termsLabel.accessibilityIdentifier = @"auth.signUp.termsLabel";
   termsLabel.numberOfLines = 0;
   termsLabel.text = @"By signing up you agree to the Culina portfolio terms and privacy placeholder.";
@@ -394,13 +405,31 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [contentView addSubview:submitButton];
   self.submitButton = submitButton;
 
+  UIVisualEffectView *loadingOverlayView =
+      [[[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:MRRAuthLoadingOverlayBlurStyle()]] autorelease];
+  loadingOverlayView.translatesAutoresizingMaskIntoConstraints = NO;
+  loadingOverlayView.accessibilityIdentifier = @"auth.emailScreen.loadingOverlay";
+  loadingOverlayView.hidden = YES;
+  loadingOverlayView.alpha = 0.0;
+  loadingOverlayView.contentView.backgroundColor = MRRAuthLoadingOverlayTintColor();
+  [self.view addSubview:loadingOverlayView];
+  self.loadingOverlayView = loadingOverlayView;
+
+  UIView *loadingContainerView = [[[UIView alloc] init] autorelease];
+  loadingContainerView.translatesAutoresizingMaskIntoConstraints = NO;
+  loadingContainerView.accessibilityIdentifier = @"auth.emailScreen.loadingContainer";
+  loadingContainerView.backgroundColor = MRRAuthLoadingPanelColor();
+  loadingContainerView.layer.cornerRadius = 22.0;
+  loadingContainerView.clipsToBounds = YES;
+  [loadingOverlayView.contentView addSubview:loadingContainerView];
+
   UIActivityIndicatorView *loadingIndicator =
       [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:MRRAuthLoadingIndicatorStyle()] autorelease];
   loadingIndicator.translatesAutoresizingMaskIntoConstraints = NO;
   loadingIndicator.accessibilityIdentifier = @"auth.emailScreen.loadingIndicator";
-  loadingIndicator.color = [UIColor whiteColor];
+  loadingIndicator.color = MRRAuthLoadingIndicatorColor();
   loadingIndicator.hidesWhenStopped = YES;
-  [submitButton addSubview:loadingIndicator];
+  [loadingContainerView addSubview:loadingIndicator];
   self.loadingIndicator = loadingIndicator;
 
   UIStackView *footerStackView = [[[UIStackView alloc] init] autorelease];
@@ -412,8 +441,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [contentView addSubview:footerStackView];
   self.footerStackView = footerStackView;
 
-  UILabel *footerPromptLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightRegular]
-                                             color:MRRAuthSecondaryTextColor()];
+  UILabel *footerPromptLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightRegular] color:MRRAuthSecondaryTextColor()];
   footerPromptLabel.accessibilityIdentifier = @"auth.emailScreen.footerPromptLabel";
   [footerStackView addArrangedSubview:footerPromptLabel];
   self.footerPromptLabel = footerPromptLabel;
@@ -487,17 +515,26 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
     [submitButton.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
     [submitButton.heightAnchor constraintEqualToConstant:56.0],
 
-    [loadingIndicator.centerXAnchor constraintEqualToAnchor:submitButton.centerXAnchor],
-    [loadingIndicator.centerYAnchor constraintEqualToAnchor:submitButton.centerYAnchor],
-
     [footerStackView.centerXAnchor constraintEqualToAnchor:contentView.centerXAnchor],
     [footerStackView.leadingAnchor constraintGreaterThanOrEqualToAnchor:contentView.leadingAnchor constant:24.0],
-    [footerStackView.trailingAnchor constraintLessThanOrEqualToAnchor:contentView.trailingAnchor constant:-24.0]
+    [footerStackView.trailingAnchor constraintLessThanOrEqualToAnchor:contentView.trailingAnchor constant:-24.0],
+
+    [loadingOverlayView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+    [loadingOverlayView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [loadingOverlayView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+    [loadingOverlayView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+
+    [loadingContainerView.centerXAnchor constraintEqualToAnchor:loadingOverlayView.contentView.centerXAnchor],
+    [loadingContainerView.centerYAnchor constraintEqualToAnchor:loadingOverlayView.contentView.centerYAnchor],
+    [loadingContainerView.widthAnchor constraintEqualToConstant:88.0],
+    [loadingContainerView.heightAnchor constraintEqualToConstant:88.0],
+
+    [loadingIndicator.centerXAnchor constraintEqualToAnchor:loadingContainerView.centerXAnchor],
+    [loadingIndicator.centerYAnchor constraintEqualToAnchor:loadingContainerView.centerYAnchor]
   ]];
 
   self.emailSectionTopToHelperConstraint = [emailSection.topAnchor constraintEqualToAnchor:helperLabel.bottomAnchor constant:34.0];
-  self.emailSectionTopToSignUpFieldsConstraint =
-      [emailSection.topAnchor constraintEqualToAnchor:signUpFieldsStackView.bottomAnchor constant:22.0];
+  self.emailSectionTopToSignUpFieldsConstraint = [emailSection.topAnchor constraintEqualToAnchor:signUpFieldsStackView.bottomAnchor constant:22.0];
   self.submitButtonTopConstraint = [submitButton.topAnchor constraintEqualToAnchor:actionSpacerView.bottomAnchor constant:16.0];
   self.footerTopConstraint = [footerStackView.topAnchor constraintEqualToAnchor:submitButton.bottomAnchor constant:14.0];
   self.footerBottomConstraint = [footerStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-18.0];
@@ -544,8 +581,8 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 
   UIColor *placeholderColor =
       MRRAuthNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.55 alpha:1.0], [UIColor colorWithWhite:0.52 alpha:1.0]);
-  textField.attributedPlaceholder =
-      [[[NSAttributedString alloc] initWithString:placeholder attributes:@{NSForegroundColorAttributeName : placeholderColor}] autorelease];
+  textField.attributedPlaceholder = [[[NSAttributedString alloc] initWithString:placeholder
+                                                                     attributes:@{NSForegroundColorAttributeName : placeholderColor}] autorelease];
   return textField;
 }
 
@@ -590,10 +627,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 
 - (void)registerForKeyboardNotifications {
   NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
-  [notificationCenter addObserver:self
-                         selector:@selector(handleKeyboardWillChangeFrame:)
-                             name:UIKeyboardWillChangeFrameNotification
-                           object:nil];
+  [notificationCenter addObserver:self selector:@selector(handleKeyboardWillChangeFrame:) name:UIKeyboardWillChangeFrameNotification object:nil];
 }
 
 - (void)unregisterForKeyboardNotifications {
@@ -626,18 +660,18 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   UIViewAnimationOptions animationOptions = ((UIViewAnimationOptions)animationCurve << 16);
 
   [UIView animateWithDuration:duration
-                        delay:0.0
-                      options:animationOptions | UIViewAnimationOptionBeginFromCurrentState
-                   animations:^{
-                     self.scrollView.contentInset = targetInsets;
-                     self.scrollView.scrollIndicatorInsets = targetInsets;
-                     [self.view layoutIfNeeded];
-                   }
-                   completion:^(__unused BOOL finished) {
-                     if (keyboardInset > 0.0) {
-                       [self ensureRelevantControlVisibleForKeyboard];
-                     }
-                   }];
+      delay:0.0
+      options:animationOptions | UIViewAnimationOptionBeginFromCurrentState
+      animations:^{
+        self.scrollView.contentInset = targetInsets;
+        self.scrollView.scrollIndicatorInsets = targetInsets;
+        [self.view layoutIfNeeded];
+      }
+      completion:^(__unused BOOL finished) {
+        if (keyboardInset > 0.0) {
+          [self ensureRelevantControlVisibleForKeyboard];
+        }
+      }];
 }
 
 - (void)ensureRelevantControlVisibleForKeyboard {
@@ -648,8 +682,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   CGRect fieldRect = [self.scrollView convertRect:self.activeTextField.bounds fromView:self.activeTextField];
   CGFloat visibleTopY = self.scrollView.contentOffset.y + 12.0;
   CGFloat visibleBottomY =
-      self.scrollView.contentOffset.y + CGRectGetHeight(self.scrollView.bounds) - self.scrollView.contentInset.bottom -
-      MRRAuthKeyboardFieldGap;
+      self.scrollView.contentOffset.y + CGRectGetHeight(self.scrollView.bounds) - self.scrollView.contentInset.bottom - MRRAuthKeyboardFieldGap;
   CGFloat targetOffsetY = self.scrollView.contentOffset.y;
 
   if (CGRectGetMaxY(fieldRect) > visibleBottomY) {
@@ -662,8 +695,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 
   CGFloat minOffsetY = -self.scrollView.adjustedContentInset.top;
   CGFloat maxOffsetY =
-      MAX(minOffsetY,
-          self.scrollView.contentSize.height + self.scrollView.contentInset.bottom - CGRectGetHeight(self.scrollView.bounds));
+      MAX(minOffsetY, self.scrollView.contentSize.height + self.scrollView.contentInset.bottom - CGRectGetHeight(self.scrollView.bounds));
   targetOffsetY = MIN(MAX(targetOffsetY, minOffsetY), maxOffsetY);
 
   [self.scrollView setContentOffset:CGPointMake(self.scrollView.contentOffset.x, targetOffsetY) animated:YES];
@@ -676,9 +708,8 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 - (void)configurePressFeedbackForButton:(UIButton *)button {
   [button addTarget:self action:@selector(handlePressableButtonTouchDown:) forControlEvents:UIControlEventTouchDown];
   [button addTarget:self
-             action:@selector(handlePressableButtonTouchUp:)
-   forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel |
-                    UIControlEventTouchDragExit];
+                action:@selector(handlePressableButtonTouchUp:)
+      forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel | UIControlEventTouchDragExit];
   [button addTarget:self action:@selector(handlePressableButtonTouchDown:) forControlEvents:UIControlEventTouchDragEnter];
 }
 
@@ -717,7 +748,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   NSString *password = [self trimmedValueForTextField:self.passwordField];
 
   if (email.length == 0 || [email containsString:@"@"] == NO) {
-    [self showValidationErrorMessage:@"Masukkan email yang valid untuk melanjutkan."];
+    [self showValidationErrorMessage:@"Please enter a valid email address to continue."];
     return;
   }
 
@@ -763,9 +794,7 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
 }
 
 - (void)handleForgotPasswordTapped:(id)sender {
-  [self presentPlaceholderAlertWithTitle:@"Reset Password Planned"
-                                 message:@"Password reset flow belum diimplementasikan pada milestone ini, jadi tombol ini masih berupa placeholder."
-                 accessibilityIdentifier:@"auth.signIn.forgotPasswordAlert"];
+  [self pushForgotPasswordViewController];
 }
 
 - (void)handleSwitchModeTapped:(id)sender {
@@ -787,13 +816,16 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   self.forgotPasswordButton.enabled = !loading;
 
   if (loading) {
+    [self.view endEditing:YES];
     self.errorLabel.hidden = YES;
     self.errorLabel.text = nil;
+    self.loadingOverlayView.hidden = NO;
+    self.loadingOverlayView.alpha = 1.0;
     [self.loadingIndicator startAnimating];
-    self.submitButton.titleLabel.alpha = 0.0;
   } else {
     [self.loadingIndicator stopAnimating];
-    self.submitButton.titleLabel.alpha = 1.0;
+    self.loadingOverlayView.alpha = 0.0;
+    self.loadingOverlayView.hidden = YES;
   }
 }
 
@@ -820,8 +852,8 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   MRREmailAuthenticationViewController *viewController =
       [[[MRREmailAuthenticationViewController alloc] initWithAuthenticationController:self.authenticationController
                                                                                  mode:mode
-                                                                        prefilledEmail:[self trimmedValueForTextField:self.emailField]
-                                                                       pendingLinkFlow:NO] autorelease];
+                                                                       prefilledEmail:[self trimmedValueForTextField:self.emailField]
+                                                                      pendingLinkFlow:NO] autorelease];
   viewController.delegate = self.delegate;
 
   if (self.navigationController == nil) {
@@ -836,11 +868,23 @@ static CGFloat const MRRAuthKeyboardFieldGap = 18.0;
   [self.navigationController setViewControllers:viewControllers animated:YES];
 }
 
-- (void)presentPlaceholderAlertWithTitle:(NSString *)title
-                                 message:(NSString *)message
-                 accessibilityIdentifier:(NSString *)accessibilityIdentifier {
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+- (void)pushForgotPasswordViewController {
+  MRRForgotPasswordViewController *viewController =
+      [[[MRRForgotPasswordViewController alloc] initWithAuthenticationController:self.authenticationController
+                                                                  prefilledEmail:[self trimmedValueForTextField:self.emailField]] autorelease];
+
+  if (self.navigationController != nil) {
+    [self.navigationController pushViewController:viewController animated:YES];
+    return;
+  }
+
+  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
+  navigationController.navigationBarHidden = YES;
+  [self presentViewController:navigationController animated:YES completion:nil];
+}
+
+- (void)presentPlaceholderAlertWithTitle:(NSString *)title message:(NSString *)message accessibilityIdentifier:(NSString *)accessibilityIdentifier {
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = accessibilityIdentifier;
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
   [self presentViewController:alertController animated:YES completion:nil];

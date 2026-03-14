@@ -28,6 +28,7 @@ typedef NS_ENUM(NSInteger, MRRAuthenticationErrorCode) {
 - (nullable NSString *)pendingLinkEmail;
 - (void)signUpWithEmail:(NSString *)email password:(NSString *)password completion:(MRRAuthSessionCompletion)completion;
 - (void)signInWithEmail:(NSString *)email password:(NSString *)password completion:(MRRAuthSessionCompletion)completion;
+- (void)sendPasswordResetForEmail:(NSString *)email completion:(MRRAuthCompletion)completion;
 - (void)signInWithGoogleFromPresentingViewController:(UIViewController *)viewController completion:(MRRAuthSessionCompletion)completion;
 - (void)linkCredentialIfNeededWithCompletion:(MRRAuthCompletion)completion;
 - (BOOL)signOut:(NSError *_Nullable *_Nullable)error;

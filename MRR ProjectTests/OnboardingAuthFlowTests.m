@@ -1,20 +1,30 @@
 #import <XCTest/XCTest.h>
 
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/MRREmailAuthenticationViewController.h"
+#import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/MRRForgotPasswordViewController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthenticationController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthSession.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
 
+@interface MRRForgotPasswordViewController (Testing)
+
+- (void)handleSuccessAlertAcknowledged;
+
+@end
+
 @interface OnboardingAuthenticationControllerSpy : NSObject <MRRAuthenticationController>
 
 @property(nonatomic, strong, nullable) MRRAuthSession *sessionToReturn;
 @property(nonatomic, strong, nullable) NSError *nextEmailError;
+@property(nonatomic, strong, nullable) NSError *nextPasswordResetError;
 @property(nonatomic, strong, nullable) NSError *nextGoogleError;
 @property(nonatomic, strong, nullable) NSError *nextLinkError;
 @property(nonatomic, assign) BOOL hasPendingCredentialLinkStub;
 @property(nonatomic, copy, nullable) NSString *pendingLinkEmailStub;
 @property(nonatomic, assign) NSInteger googleSignInCallCount;
+@property(nonatomic, assign) NSInteger passwordResetCallCount;
+@property(nonatomic, copy, nullable) NSString *lastPasswordResetEmail;
 
 @end
 
@@ -38,6 +48,17 @@
 
 - (void)signInWithEmail:(NSString *)email password:(NSString *)password completion:(MRRAuthSessionCompletion)completion {
   completion(self.sessionToReturn, self.nextEmailError);
+}
+
+- (void)sendPasswordResetForEmail:(NSString *)email completion:(MRRAuthCompletion)completion {
+  self.passwordResetCallCount += 1;
+  self.lastPasswordResetEmail = email;
+  if ([self.nextPasswordResetError.domain isEqualToString:@"FIRAuthErrorDomain"] && self.nextPasswordResetError.code == 17011) {
+    completion(nil);
+    return;
+  }
+
+  completion(self.nextPasswordResetError);
 }
 
 - (void)signInWithGoogleFromPresentingViewController:(UIViewController *)viewController completion:(MRRAuthSessionCompletion)completion {
@@ -87,6 +108,7 @@
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
 - (MRREmailAuthenticationViewController *)topAuthenticationViewController;
+- (MRRForgotPasswordViewController *)topForgotPasswordViewController;
 - (void)spinMainRunLoop;
 
 @end
@@ -172,6 +194,189 @@
   XCTAssertGreaterThan(CGRectGetMaxY(footerFrame), CGRectGetHeight(authView.bounds) - 80.0);
 }
 
+- (void)testForgotPasswordPushesResetScreenWithPrefilledEmail {
+  UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField"
+                                                                              inView:authenticationViewController.view];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton"
+                                                                                  inView:authenticationViewController.view];
+  emailField.text = @"cook@example.com";
+
+  [forgotPasswordButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRRForgotPasswordViewController *forgotPasswordViewController = [self topForgotPasswordViewController];
+  UITextField *resetEmailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.emailField"
+                                                                                   inView:forgotPasswordViewController.view];
+
+  XCTAssertEqualObjects(forgotPasswordViewController.view.accessibilityIdentifier, @"auth.resetPassword.view");
+  XCTAssertEqualObjects(resetEmailField.text, @"cook@example.com");
+}
+
+- (void)testForgotPasswordRejectsInvalidEmailInline {
+  UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton"
+                                                                                  inView:authenticationViewController.view];
+  [forgotPasswordButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRRForgotPasswordViewController *forgotPasswordViewController = [self topForgotPasswordViewController];
+  UITextField *resetEmailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.emailField"
+                                                                                   inView:forgotPasswordViewController.view];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.submitButton"
+                                                                          inView:forgotPasswordViewController.view];
+  UILabel *errorLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.errorLabel"
+                                                                      inView:forgotPasswordViewController.view];
+
+  resetEmailField.text = @"invalid-email";
+  [submitButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(self.authenticationController.passwordResetCallCount, 0);
+  XCTAssertFalse(errorLabel.hidden);
+  XCTAssertEqualObjects(errorLabel.text, @"Masukkan email yang valid untuk melanjutkan.");
+}
+
+- (void)testForgotPasswordSuccessPresentsAlertAndReturnsToOnboardingRoot {
+  UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField"
+                                                                              inView:authenticationViewController.view];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton"
+                                                                                  inView:authenticationViewController.view];
+  emailField.text = @"cook@example.com";
+  [forgotPasswordButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRRForgotPasswordViewController *forgotPasswordViewController = [self topForgotPasswordViewController];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.submitButton"
+                                                                          inView:forgotPasswordViewController.view];
+  [submitButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(self.authenticationController.passwordResetCallCount, 1);
+  XCTAssertEqualObjects(self.authenticationController.lastPasswordResetEmail, @"cook@example.com");
+  XCTAssertTrue([forgotPasswordViewController.presentedViewController isKindOfClass:[UIAlertController class]]);
+  XCTAssertEqualObjects(forgotPasswordViewController.presentedViewController.view.accessibilityIdentifier, @"auth.resetPassword.successAlert");
+
+  [forgotPasswordViewController handleSuccessAlertAcknowledged];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[OnboardingViewController class]]);
+}
+
+- (void)testForgotPasswordUserNotFoundStillShowsGenericSuccessAlert {
+  self.authenticationController.nextPasswordResetError = [NSError errorWithDomain:@"FIRAuthErrorDomain"
+                                                                             code:17011
+                                                                         userInfo:@{NSLocalizedDescriptionKey : @"User not found"}];
+
+  UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton"
+                                                                                  inView:authenticationViewController.view];
+  [forgotPasswordButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRRForgotPasswordViewController *forgotPasswordViewController = [self topForgotPasswordViewController];
+  UITextField *resetEmailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.emailField"
+                                                                                   inView:forgotPasswordViewController.view];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.submitButton"
+                                                                          inView:forgotPasswordViewController.view];
+  resetEmailField.text = @"missing@example.com";
+
+  [submitButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue([forgotPasswordViewController.presentedViewController isKindOfClass:[UIAlertController class]]);
+  XCTAssertEqualObjects(forgotPasswordViewController.presentedViewController.view.accessibilityIdentifier, @"auth.resetPassword.successAlert");
+}
+
+- (void)testForgotPasswordRealErrorStaysOnResetScreen {
+  self.authenticationController.nextPasswordResetError = [NSError errorWithDomain:@"FIRAuthErrorDomain"
+                                                                             code:17020
+                                                                         userInfo:@{NSLocalizedDescriptionKey : @"Network issue"}];
+
+  UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton"
+                                                                                  inView:authenticationViewController.view];
+  [forgotPasswordButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRRForgotPasswordViewController *forgotPasswordViewController = [self topForgotPasswordViewController];
+  UITextField *resetEmailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.emailField"
+                                                                                   inView:forgotPasswordViewController.view];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.submitButton"
+                                                                          inView:forgotPasswordViewController.view];
+  UILabel *errorLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.errorLabel"
+                                                                      inView:forgotPasswordViewController.view];
+  resetEmailField.text = @"cook@example.com";
+
+  [submitButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertNil(forgotPasswordViewController.presentedViewController);
+  XCTAssertFalse(errorLabel.hidden);
+  XCTAssertEqualObjects(errorLabel.text, @"Koneksi jaringan sedang bermasalah. Coba lagi sebentar lagi.");
+}
+
+- (void)testForgotPasswordSuccessReturnsToFreshSignInFlow {
+  UIButton *signinButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [signinButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField"
+                                                                              inView:authenticationViewController.view];
+  UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField"
+                                                                                 inView:authenticationViewController.view];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton"
+                                                                                  inView:authenticationViewController.view];
+  emailField.text = @"cook@example.com";
+  passwordField.text = @"password123";
+  [forgotPasswordButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRRForgotPasswordViewController *forgotPasswordViewController = [self topForgotPasswordViewController];
+  UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.resetPassword.submitButton"
+                                                                          inView:forgotPasswordViewController.view];
+  [submitButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+  [forgotPasswordViewController handleSuccessAlertAcknowledged];
+  [self spinMainRunLoop];
+
+  UIButton *reopenedSigninButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
+  [reopenedSigninButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *freshSignInViewController = [self topAuthenticationViewController];
+  UITextField *freshEmailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField"
+                                                                                   inView:freshSignInViewController.view];
+  UITextField *freshPasswordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField"
+                                                                                      inView:freshSignInViewController.view];
+
+  XCTAssertEqualObjects(freshSignInViewController.view.accessibilityIdentifier, @"auth.signIn.view");
+  XCTAssertEqualObjects(freshEmailField.text ?: @"", @"");
+  XCTAssertEqualObjects(freshPasswordField.text ?: @"", @"");
+}
+
 - (void)testAuthenticationScreenUsesArrowBackButtonAndDoesNotAutofocusFields {
   UIButton *emailButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.emailButton" inView:self.viewController.view];
   [emailButton sendActionsForControlEvents:UIControlEventTouchUpInside];
@@ -253,6 +458,11 @@
 - (MRREmailAuthenticationViewController *)topAuthenticationViewController {
   XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[MRREmailAuthenticationViewController class]]);
   return (MRREmailAuthenticationViewController *)self.navigationController.topViewController;
+}
+
+- (MRRForgotPasswordViewController *)topForgotPasswordViewController {
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[MRRForgotPasswordViewController class]]);
+  return (MRRForgotPasswordViewController *)self.navigationController.topViewController;
 }
 
 - (void)spinMainRunLoop {

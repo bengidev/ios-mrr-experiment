@@ -7,7 +7,7 @@ An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polis
 - Logged-out launch: show `OnboardingViewController` inside a hidden `UINavigationController`
 - Onboarding displays the `Culina` brand header, app icon, looping recipe carousel, and auth entry points
 - `Sign up with email` pushes a dedicated full-screen sign-up screen with separate fields for first name, last name, email, and password
-- `Sign in` pushes a dedicated full-screen sign-in screen with email/password plus a placeholder `Forgot Password?` action
+- `Sign in` pushes a dedicated full-screen sign-in screen with email/password plus a live `Forgot Password?` flow that sends a Firebase reset email and returns to onboarding after confirmation
 - `Continue with Google` and `Continue with Apple` remain visible as planned stub actions for the current email-first milestone
 - Auth success routes into `HomeViewController`, which shows the active account summary, auth provider, email verification status, and a destructive `Log Out` button inside the screen body
 - Logging out clears the auth session and returns the app to onboarding

@@ -27,6 +27,7 @@
 		A0000000000000000000073A /* HomeViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066D /* HomeViewController.m */; };
 		A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066E /* OnboardingAuthFlowTests.m */; };
 		A0000000000000000000073C /* HomeViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066F /* HomeViewControllerTests.m */; };
+		A0000000000000000000073D /* MRRForgotPasswordViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000671 /* MRRForgotPasswordViewController.m */; };
 		B62132B22F6531980061670E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B12F6531980061670E /* FirebaseAuth */; };
 		B62132B52F6533030061670E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B42F6533030061670E /* GoogleSignIn */; };
 		B62132BC2F6533890061670E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B62132BB2F6533890061670E /* GoogleService-Info.plist */; };
@@ -79,6 +80,8 @@
 		A0000000000000000000066D /* HomeViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewController.m; sourceTree = "<group>"; };
 		A0000000000000000000066E /* OnboardingAuthFlowTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingAuthFlowTests.m; sourceTree = "<group>"; };
 		A0000000000000000000066F /* HomeViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewControllerTests.m; sourceTree = "<group>"; };
+		A00000000000000000000670 /* MRRForgotPasswordViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRForgotPasswordViewController.h; sourceTree = "<group>"; };
+		A00000000000000000000671 /* MRRForgotPasswordViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRForgotPasswordViewController.m; sourceTree = "<group>"; };
 		B62132BB2F6533890061670E /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -200,6 +203,8 @@
 				A00000000000000000000651 /* OnboardingViewController.m */,
 				A0000000000000000000066A /* MRREmailAuthenticationViewController.h */,
 				A0000000000000000000066B /* MRREmailAuthenticationViewController.m */,
+				A00000000000000000000670 /* MRRForgotPasswordViewController.h */,
+				A00000000000000000000671 /* MRRForgotPasswordViewController.m */,
 				A00000000000000000000656 /* OnboardingRecipeDetailViewController.h */,
 				A00000000000000000000657 /* OnboardingRecipeDetailViewController.m */,
 			);
@@ -380,6 +385,7 @@
 				A00000000000000000000737 /* MRRAuthErrorMapper.m in Sources */,
 				A00000000000000000000736 /* MRRAuthSession.m in Sources */,
 				A00000000000000000000739 /* MRREmailAuthenticationViewController.m in Sources */,
+				A0000000000000000000073D /* MRRForgotPasswordViewController.m in Sources */,
 				A00000000000000000000738 /* MRRFirebaseAuthenticationController.m in Sources */,
 				A00000000000000000000725 /* OnboardingStateController.m in Sources */,
 				A00000000000000000000726 /* OnboardingViewController.m in Sources */,

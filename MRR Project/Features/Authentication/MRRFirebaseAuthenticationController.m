@@ -12,6 +12,7 @@ NSString *const MRRAuthPendingLinkEmailUserInfoKey = @"MRRAuthPendingLinkEmailUs
 static NSString *const MRRGoogleServiceInfoResourceName = @"GoogleService-Info";
 static NSString *const MRRGoogleServiceInfoResourceType = @"plist";
 static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredential = 17012;
+static NSInteger const MRRFirebaseAuthErrorCodeUserNotFound = 17011;
 
 @interface MRRFirebaseAuthenticationController ()
 
@@ -105,6 +106,24 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
 
                          completion([self sessionForUser:authResult.user], nil);
                        }];
+}
+
+- (void)sendPasswordResetForEmail:(NSString *)email completion:(MRRAuthCompletion)completion {
+  if (![self isFirebaseConfigured]) {
+    completion([self authenticationErrorWithCode:MRRAuthenticationErrorCodeUnconfigured description:@"Firebase belum siap untuk reset password."]);
+    return;
+  }
+
+  [[FIRAuth auth] sendPasswordResetWithEmail:email
+                                  completion:^(NSError *_Nullable error) {
+                                    if (error != nil &&
+                                        !([error.domain isEqualToString:FIRAuthErrorDomain] && error.code == MRRFirebaseAuthErrorCodeUserNotFound)) {
+                                      completion(error);
+                                      return;
+                                    }
+
+                                    completion(nil);
+                                  }];
 }
 
 - (void)signInWithGoogleFromPresentingViewController:(UIViewController *)viewController completion:(MRRAuthSessionCompletion)completion {

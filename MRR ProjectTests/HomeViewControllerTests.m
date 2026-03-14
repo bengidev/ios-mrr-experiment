@@ -39,6 +39,10 @@
   completion(self.stubSession, nil);
 }
 
+- (void)sendPasswordResetForEmail:(NSString *)email completion:(MRRAuthCompletion)completion {
+  completion(nil);
+}
+
 - (void)signInWithGoogleFromPresentingViewController:(UIViewController *)viewController completion:(MRRAuthSessionCompletion)completion {
   completion(self.stubSession, nil);
 }
