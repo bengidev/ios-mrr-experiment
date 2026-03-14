@@ -535,7 +535,7 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 - (void)presentSuccessAlert {
   UIAlertController *alertController = [UIAlertController
       alertControllerWithTitle:@"Reset Email Sent"
-                       message:@"If an account matches this email, we sent a password reset link. Check your inbox and spam folder."
+                       message:@"If an account matches this email, we sent a password reset link. Check your inbox, spam folder, and Promotions tab."
                 preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = @"auth.resetPassword.successAlert";
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
