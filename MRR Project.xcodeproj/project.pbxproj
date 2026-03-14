@@ -20,6 +20,17 @@
 		A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000065B /* OnboardingViewControllerTests.m */; };
 		A00000000000000000000734 /* MRRLayoutScaling.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000661 /* MRRLayoutScaling.m */; };
 		A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000662 /* MRRLayoutScalingTests.m */; };
+		A00000000000000000000736 /* MRRAuthSession.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000665 /* MRRAuthSession.m */; };
+		A00000000000000000000737 /* MRRAuthErrorMapper.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000667 /* MRRAuthErrorMapper.m */; };
+		A00000000000000000000738 /* MRRFirebaseAuthenticationController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000669 /* MRRFirebaseAuthenticationController.m */; };
+		A00000000000000000000739 /* MRREmailAuthenticationViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066B /* MRREmailAuthenticationViewController.m */; };
+		A0000000000000000000073A /* HomeViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066D /* HomeViewController.m */; };
+		A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066E /* OnboardingAuthFlowTests.m */; };
+		A0000000000000000000073C /* HomeViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066F /* HomeViewControllerTests.m */; };
+		B62132B22F6531980061670E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B12F6531980061670E /* FirebaseAuth */; };
+		B62132B52F6533030061670E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B42F6533030061670E /* GoogleSignIn */; };
+		B62132BC2F6533890061670E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B62132BB2F6533890061670E /* GoogleService-Info.plist */; };
+		B62132BD2F6533890061670E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B62132BB2F6533890061670E /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +66,20 @@
 		A00000000000000000000660 /* MRRLayoutScaling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRLayoutScaling.h; sourceTree = "<group>"; };
 		A00000000000000000000661 /* MRRLayoutScaling.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLayoutScaling.m; sourceTree = "<group>"; };
 		A00000000000000000000662 /* MRRLayoutScalingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLayoutScalingTests.m; sourceTree = "<group>"; };
+		A00000000000000000000663 /* MRRAuthenticationController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRAuthenticationController.h; sourceTree = "<group>"; };
+		A00000000000000000000664 /* MRRAuthSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRAuthSession.h; sourceTree = "<group>"; };
+		A00000000000000000000665 /* MRRAuthSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRAuthSession.m; sourceTree = "<group>"; };
+		A00000000000000000000666 /* MRRAuthErrorMapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRAuthErrorMapper.h; sourceTree = "<group>"; };
+		A00000000000000000000667 /* MRRAuthErrorMapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRAuthErrorMapper.m; sourceTree = "<group>"; };
+		A00000000000000000000668 /* MRRFirebaseAuthenticationController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRFirebaseAuthenticationController.h; sourceTree = "<group>"; };
+		A00000000000000000000669 /* MRRFirebaseAuthenticationController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRFirebaseAuthenticationController.m; sourceTree = "<group>"; };
+		A0000000000000000000066A /* MRREmailAuthenticationViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRREmailAuthenticationViewController.h; sourceTree = "<group>"; };
+		A0000000000000000000066B /* MRREmailAuthenticationViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRREmailAuthenticationViewController.m; sourceTree = "<group>"; };
+		A0000000000000000000066C /* HomeViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeViewController.h; sourceTree = "<group>"; };
+		A0000000000000000000066D /* HomeViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewController.m; sourceTree = "<group>"; };
+		A0000000000000000000066E /* OnboardingAuthFlowTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingAuthFlowTests.m; sourceTree = "<group>"; };
+		A0000000000000000000066F /* HomeViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewControllerTests.m; sourceTree = "<group>"; };
+		B62132BB2F6533890061670E /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +87,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B62132B22F6531980061670E /* FirebaseAuth in Frameworks */,
+				B62132B52F6533030061670E /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,7 +137,9 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000654 /* AppLaunchFlowTests.m */,
+				A0000000000000000000066F /* HomeViewControllerTests.m */,
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
+				A0000000000000000000066E /* OnboardingAuthFlowTests.m */,
 				A0000000000000000000065A /* OnboardingStateControllerTests.m */,
 				A0000000000000000000065B /* OnboardingViewControllerTests.m */,
 			);
@@ -120,6 +149,8 @@
 		A00000000000000000000011 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000034 /* Authentication */,
+				A00000000000000000000035 /* Home */,
 				A0000000000000000000002E /* Onboarding */,
 			);
 			path = Features;
@@ -191,6 +222,31 @@
 			path = Layout;
 			sourceTree = "<group>";
 		};
+		A00000000000000000000034 /* Authentication */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000663 /* MRRAuthenticationController.h */,
+				A00000000000000000000664 /* MRRAuthSession.h */,
+				A00000000000000000000665 /* MRRAuthSession.m */,
+				A00000000000000000000666 /* MRRAuthErrorMapper.h */,
+				A00000000000000000000667 /* MRRAuthErrorMapper.m */,
+				A00000000000000000000668 /* MRRFirebaseAuthenticationController.h */,
+				A00000000000000000000669 /* MRRFirebaseAuthenticationController.m */,
+				A0000000000000000000066A /* MRREmailAuthenticationViewController.h */,
+				A0000000000000000000066B /* MRREmailAuthenticationViewController.m */,
+			);
+			path = Authentication;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000035 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000066C /* HomeViewController.h */,
+				A0000000000000000000066D /* HomeViewController.m */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
 		B6B2BF072F61276B00BF945D /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
@@ -204,6 +260,7 @@
 			children = (
 				A00000000000000000000655 /* Assets.xcassets */,
 				A00000000000000000000606 /* Info.plist */,
+				B62132BB2F6533890061670E /* GoogleService-Info.plist */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -224,6 +281,10 @@
 			dependencies = (
 			);
 			name = "MRR Project";
+			packageProductDependencies = (
+				B62132B12F6531980061670E /* FirebaseAuth */,
+				B62132B42F6533030061670E /* GoogleSignIn */,
+			);
 			productName = "MRR Project";
 			productReference = A00000000000000000000600 /* MRR Project.app */;
 			productType = "com.apple.product-type.application";
@@ -273,6 +334,10 @@
 				Base,
 			);
 			mainGroup = A00000000000000000000002;
+			packageReferences = (
+				B62132B02F6531980061670E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				B62132B32F6533030061670E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			productRefGroup = A00000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -288,6 +353,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B62132BD2F6533890061670E /* GoogleService-Info.plist in Resources */,
 				A00000000000000000000729 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -296,6 +362,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B62132BC2F6533890061670E /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,7 +375,12 @@
 			files = (
 				A00000000000000000000700 /* main.m in Sources */,
 				A00000000000000000000701 /* AppDelegate.m in Sources */,
+				A0000000000000000000073A /* HomeViewController.m in Sources */,
 				A00000000000000000000734 /* MRRLayoutScaling.m in Sources */,
+				A00000000000000000000737 /* MRRAuthErrorMapper.m in Sources */,
+				A00000000000000000000736 /* MRRAuthSession.m in Sources */,
+				A00000000000000000000739 /* MRREmailAuthenticationViewController.m in Sources */,
+				A00000000000000000000738 /* MRRFirebaseAuthenticationController.m in Sources */,
 				A00000000000000000000725 /* OnboardingStateController.m in Sources */,
 				A00000000000000000000726 /* OnboardingViewController.m in Sources */,
 				A00000000000000000000730 /* OnboardingRecipeDetailViewController.m in Sources */,
@@ -321,7 +393,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000728 /* AppLaunchFlowTests.m in Sources */,
+				A0000000000000000000073C /* HomeViewControllerTests.m in Sources */,
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
+				A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */,
 				A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */,
 				A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */,
 			);
@@ -467,11 +541,16 @@
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bengidev.MRR-Project";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -495,11 +574,16 @@
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bengidev.MRR-Project";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -594,6 +678,37 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		B62132B02F6531980061670E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = exactVersion;
+				version = 10.29.0;
+			};
+		};
+		B62132B32F6533030061670E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = exactVersion;
+				version = 7.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B62132B12F6531980061670E /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B62132B02F6531980061670E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		B62132B42F6533030061670E /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B62132B32F6533030061670E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A00000000000000000000001 /* Project object */;
 }

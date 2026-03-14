@@ -2,6 +2,12 @@
 
 #include <math.h>
 
+#import <AuthenticationServices/AuthenticationServices.h>
+
+#import "../../../Authentication/MRRAuthenticationController.h"
+#import "../../../Authentication/MRRAuthErrorMapper.h"
+#import "../../../Authentication/MRREmailAuthenticationViewController.h"
+#import "../../../Authentication/MRRFirebaseAuthenticationController.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
 #import "../../Data/OnboardingStateController.h"
 #import "../Views/OnboardingRecipeCarouselCell.h"
@@ -12,6 +18,7 @@ static NSInteger const MRRCarouselLoopMultiplier = 5;
 static NSString *const MRROnboardingAppIconImageName = @"OnboardingAppIcon";
 static NSInteger const MRROnboardingAuthButtonIconTag = 101;
 static NSInteger const MRROnboardingAuthButtonTitleTag = 102;
+static NSInteger const MRROnboardingAuthButtonContentWrapperTag = 103;
 static CGFloat const MRRCarouselSingleRowSpacingPadding = 32.0;
 static CGFloat const MRROnboardingButtonPressedScale = 0.97;
 static CGFloat const MRROnboardingButtonPressedAlpha = 0.88;
@@ -34,6 +41,14 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   return namedColor ?: MRRDynamicFallbackColor(lightColor, darkColor);
 }
 
+static UIActivityIndicatorViewStyle MRROnboardingLoadingIndicatorStyle(void) {
+  if (@available(iOS 13.0, *)) {
+    return UIActivityIndicatorViewStyleMedium;
+  }
+
+  return UIActivityIndicatorViewStyleGray;
+}
+
 static UIColor *MRRBackgroundSurfaceColor(void) {
   return MRRNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 }
@@ -54,9 +69,11 @@ static UIColor *MRRSecondaryTextColor(void) {
                                         UICollectionViewDelegate,
                                         UICollectionViewDelegateFlowLayout,
                                         UIScrollViewDelegate,
-                                        OnboardingRecipeDetailViewControllerDelegate>
+                                        OnboardingRecipeDetailViewControllerDelegate,
+                                        MRREmailAuthenticationViewControllerDelegate>
 
 @property(nonatomic, retain) OnboardingStateController *stateController;
+@property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
 @property(nonatomic, copy) NSArray<OnboardingRecipe *> *recipes;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIStackView *contentStackView;
@@ -78,6 +95,8 @@ static UIColor *MRRSecondaryTextColor(void) {
 @property(nonatomic, retain) UIButton *emailButton;
 @property(nonatomic, retain) UIButton *googleButton;
 @property(nonatomic, retain) UIButton *appleButton;
+@property(nonatomic, retain) UIActivityIndicatorView *authLoadingIndicator;
+@property(nonatomic, retain) UIButton *activeLoadingButton;
 @property(nonatomic, retain) NSLayoutConstraint *stackLeadingConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *stackTrailingConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *stackTopConstraint;
@@ -119,7 +138,18 @@ static UIColor *MRRSecondaryTextColor(void) {
 - (void)handleGoogleSignupTapped:(id)sender;
 - (void)handleAppleContinueTapped:(id)sender;
 - (void)handleSigninTapped:(id)sender;
-- (void)presentAuthComingSoonAlertWithProvider:(NSString *)provider;
+- (void)presentEmailAuthenticationModalWithMode:(MRREmailAuthenticationMode)mode
+                                 prefilledEmail:(nullable NSString *)prefilledEmail
+                                pendingLinkFlow:(BOOL)pendingLinkFlow;
+- (void)presentAuthenticationAlertForError:(NSError *)error;
+- (void)presentAuthenticationAlertWithTitle:(NSString *)title
+                                    message:(NSString *)message
+                        accessibilityIdentifier:(NSString *)accessibilityIdentifier;
+- (void)presentAppleSignInStubAlert;
+- (void)notifyDelegateOfAuthentication;
+- (void)setAuthButtonsEnabled:(BOOL)enabled;
+- (void)beginLoadingForAuthButton:(UIButton *)button;
+- (void)endLoadingForAuthButton;
 - (void)configurePressFeedbackForButton:(UIButton *)button;
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
@@ -158,15 +188,24 @@ static UIColor *MRRSecondaryTextColor(void) {
 - (instancetype)init {
   OnboardingStateController *stateController =
       [[[OnboardingStateController alloc] initWithUserDefaults:[NSUserDefaults standardUserDefaults]] autorelease];
-  return [self initWithStateController:stateController];
+  id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
+  return [self initWithStateController:stateController authenticationController:authenticationController];
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController {
+  id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
+  return [self initWithStateController:stateController authenticationController:authenticationController];
+}
+
+- (instancetype)initWithStateController:(OnboardingStateController *)stateController
+                authenticationController:(id<MRRAuthenticationController>)authenticationController {
   NSParameterAssert(stateController != nil);
+  NSParameterAssert(authenticationController != nil);
 
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
     _stateController = [stateController retain];
+    _authenticationController = [authenticationController retain];
     _recipes = [[self loadRecipes] copy];
     _currentRecipeIndex = 0;
     if (_recipes.count > 0) {
@@ -179,6 +218,8 @@ static UIColor *MRRSecondaryTextColor(void) {
 
 - (void)dealloc {
   [self pauseCarouselAutoscroll];
+  [_activeLoadingButton release];
+  [_authLoadingIndicator release];
   [_scrollView release];
   [_contentStackView release];
   _carouselCollectionView.delegate = nil;
@@ -219,6 +260,7 @@ static UIColor *MRRSecondaryTextColor(void) {
   [_carouselCollectionView release];
   [_pageControl release];
   [_recipes release];
+  [_authenticationController release];
   [_stateController release];
   [super dealloc];
 }
@@ -623,6 +665,7 @@ static UIColor *MRRSecondaryTextColor(void) {
   UIView *contentWrapper = [[[UIView alloc] init] autorelease];
   contentWrapper.translatesAutoresizingMaskIntoConstraints = NO;
   contentWrapper.userInteractionEnabled = NO;
+  contentWrapper.tag = MRROnboardingAuthButtonContentWrapperTag;
   contentWrapper.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".contentWrapper"];
   [button addSubview:contentWrapper];
 
@@ -742,28 +785,147 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (void)handleEmailSignupTapped:(id)sender {
-  [self presentAuthComingSoonAlertWithProvider:@"Email"];
+  [self presentEmailAuthenticationModalWithMode:MRREmailAuthenticationModeSignUp prefilledEmail:nil pendingLinkFlow:NO];
 }
 
 - (void)handleGoogleSignupTapped:(id)sender {
-  [self presentAuthComingSoonAlertWithProvider:@"Google"];
+  [self beginLoadingForAuthButton:self.googleButton];
+
+  [self.authenticationController signInWithGoogleFromPresentingViewController:self
+                                                                   completion:^(MRRAuthSession *_Nullable session,
+                                                                                NSError *_Nullable error) {
+                                                                     [self endLoadingForAuthButton];
+
+                                                                     if (error == nil && session != nil) {
+                                                                       [self notifyDelegateOfAuthentication];
+                                                                       return;
+                                                                     }
+
+                                                                     if (error == nil) {
+                                                                       return;
+                                                                     }
+
+                                                                     if ([error.domain isEqualToString:MRRAuthenticationErrorDomain] &&
+                                                                         error.code == MRRAuthenticationErrorCodeCancelled) {
+                                                                       return;
+                                                                     }
+
+                                                                     if ([error.domain isEqualToString:MRRAuthenticationErrorDomain] &&
+                                                                         error.code == MRRAuthenticationErrorCodeRequiresAccountLinking) {
+                                                                       NSString *email = error.userInfo[MRRAuthPendingLinkEmailUserInfoKey];
+                                                                       [self presentEmailAuthenticationModalWithMode:MRREmailAuthenticationModeSignIn
+                                                                                                      prefilledEmail:email
+                                                                                                     pendingLinkFlow:YES];
+                                                                       return;
+                                                                     }
+
+                                                                     [self presentAuthenticationAlertForError:error];
+                                                                   }];
 }
 
 - (void)handleAppleContinueTapped:(id)sender {
-  [self presentAuthComingSoonAlertWithProvider:@"Apple"];
+  [self presentAppleSignInStubAlert];
 }
 
 - (void)handleSigninTapped:(id)sender {
-  [self presentAuthComingSoonAlertWithProvider:@"Sign in"];
+  [self presentEmailAuthenticationModalWithMode:MRREmailAuthenticationModeSignIn prefilledEmail:nil pendingLinkFlow:NO];
 }
 
-- (void)presentAuthComingSoonAlertWithProvider:(NSString *)provider {
-  NSString *title = [NSString stringWithFormat:@"%@ sign up", provider];
-  NSString *message = @"Auth flow belum diimplementasikan di project ini. Untuk saat ini layar onboarding baru menampilkan CTA sesuai konsep UI.";
-  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
-  UIAlertAction *dismissAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil];
-  [alertController addAction:dismissAction];
-  [self presentViewController:alertController animated:YES completion:nil];
+- (void)presentEmailAuthenticationModalWithMode:(MRREmailAuthenticationMode)mode
+                                 prefilledEmail:(NSString *)prefilledEmail
+                                pendingLinkFlow:(BOOL)pendingLinkFlow {
+  MRREmailAuthenticationViewController *viewController =
+      [[[MRREmailAuthenticationViewController alloc] initWithAuthenticationController:self.authenticationController
+                                                                                 mode:mode
+                                                                        prefilledEmail:prefilledEmail
+                                                                       pendingLinkFlow:pendingLinkFlow] autorelease];
+  viewController.delegate = self;
+  [self presentViewController:viewController animated:[self shouldAnimateModalTransitions] completion:nil];
+}
+
+- (void)presentAuthenticationAlertForError:(NSError *)error {
+  NSString *message = [MRRAuthErrorMapper messageForError:error];
+  if (message.length == 0) {
+    return;
+  }
+
+  [self presentAuthenticationAlertWithTitle:[MRRAuthErrorMapper titleForError:error]
+                                    message:message
+                      accessibilityIdentifier:@"onboarding.authErrorAlert"];
+}
+
+- (void)presentAuthenticationAlertWithTitle:(NSString *)title
+                                    message:(NSString *)message
+                        accessibilityIdentifier:(NSString *)accessibilityIdentifier {
+  UIAlertController *alertController =
+      [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+  alertController.view.accessibilityIdentifier = accessibilityIdentifier;
+  [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+  [self presentViewController:alertController animated:[self shouldAnimateModalTransitions] completion:nil];
+}
+
+- (void)presentAppleSignInStubAlert {
+  BOOL appleAPIAvailable = NSClassFromString(@"ASAuthorizationAppleIDProvider") != nil;
+  NSString *message = appleAPIAvailable
+                          ? @"Struktur Sign in with Apple sudah disiapkan, tetapi aktivasi live masih membutuhkan Apple Developer Program dan konfigurasi capability resmi."
+                          : @"AuthenticationServices belum tersedia di environment ini, jadi Sign in with Apple tetap ditahan sebagai stub.";
+
+  [self presentAuthenticationAlertWithTitle:@"Apple Sign-In Planned"
+                                    message:message
+                      accessibilityIdentifier:@"onboarding.appleStubAlert"];
+}
+
+- (void)notifyDelegateOfAuthentication {
+  [self.delegate onboardingViewControllerDidAuthenticate:self];
+}
+
+- (void)setAuthButtonsEnabled:(BOOL)enabled {
+  self.emailButton.enabled = enabled;
+  self.googleButton.enabled = enabled;
+  self.appleButton.enabled = enabled;
+  self.signinLabel.enabled = enabled;
+}
+
+- (void)beginLoadingForAuthButton:(UIButton *)button {
+  [self endLoadingForAuthButton];
+  [self setAuthButtonsEnabled:NO];
+
+  self.activeLoadingButton = button;
+  UIView *contentWrapper = [button viewWithTag:MRROnboardingAuthButtonContentWrapperTag];
+  contentWrapper.alpha = 0.0;
+
+  UIActivityIndicatorView *indicator =
+      [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:MRROnboardingLoadingIndicatorStyle()] autorelease];
+  indicator.translatesAutoresizingMaskIntoConstraints = NO;
+  indicator.accessibilityIdentifier = @"onboarding.authLoadingIndicator";
+  indicator.color = MRRPrimaryTextColor();
+  [button addSubview:indicator];
+  [NSLayoutConstraint activateConstraints:@[
+    [indicator.centerXAnchor constraintEqualToAnchor:button.centerXAnchor],
+    [indicator.centerYAnchor constraintEqualToAnchor:button.centerYAnchor]
+  ]];
+  [indicator startAnimating];
+  self.authLoadingIndicator = indicator;
+}
+
+- (void)endLoadingForAuthButton {
+  [self setAuthButtonsEnabled:YES];
+
+  UIView *contentWrapper = [self.activeLoadingButton viewWithTag:MRROnboardingAuthButtonContentWrapperTag];
+  contentWrapper.alpha = 1.0;
+  [self.authLoadingIndicator stopAnimating];
+  [self.authLoadingIndicator removeFromSuperview];
+  self.authLoadingIndicator = nil;
+  self.activeLoadingButton = nil;
+}
+
+#pragma mark - MRREmailAuthenticationViewControllerDelegate
+
+- (void)emailAuthenticationViewControllerDidAuthenticate:(MRREmailAuthenticationViewController *)viewController {
+  [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
+                           completion:^{
+                             [self notifyDelegateOfAuthentication];
+                           }];
 }
 
 - (void)updateLayoutMetricsIfNeeded {
