@@ -30,27 +30,12 @@
 
 @end
 
-@interface OnboardingViewControllerDelegateSpy : NSObject <OnboardingViewControllerDelegate>
-
-@property(nonatomic, assign) BOOL didFinishOnboarding;
-
-@end
-
-@implementation OnboardingViewControllerDelegateSpy
-
-- (void)onboardingViewControllerDidFinish:(OnboardingViewController *)viewController {
-  self.didFinishOnboarding = YES;
-}
-
-@end
-
 @interface OnboardingViewControllerTests : XCTestCase
 
 @property(nonatomic, copy) NSString *defaultsSuiteName;
 @property(nonatomic, strong) NSUserDefaults *userDefaults;
 @property(nonatomic, strong) OnboardingStateController *stateController;
 @property(nonatomic, strong) OnboardingViewController *viewController;
-@property(nonatomic, strong) OnboardingViewControllerDelegateSpy *delegateSpy;
 @property(nonatomic, strong) UIWindow *window;
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
@@ -78,8 +63,6 @@
   [self.userDefaults removePersistentDomainForName:self.defaultsSuiteName];
   self.stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
   self.viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController];
-  self.delegateSpy = [[OnboardingViewControllerDelegateSpy alloc] init];
-  self.viewController.delegate = self.delegateSpy;
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.viewController;
   [self.window makeKeyAndVisible];
@@ -94,7 +77,6 @@
   [self.userDefaults removePersistentDomainForName:self.defaultsSuiteName];
   self.window.hidden = YES;
   self.window = nil;
-  self.delegateSpy = nil;
   self.viewController = nil;
   self.stateController = nil;
   self.userDefaults = nil;
@@ -488,7 +470,7 @@
   }
 }
 
-- (void)testStartCookingInvokesFinishDelegate {
+- (void)testStartCookingMarksOnboardingCompletedAndDismissesDetail {
   [self presentFirstRecipe];
 
   UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton"
@@ -498,10 +480,11 @@
   [startButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertTrue(self.delegateSpy.didFinishOnboarding);
+  XCTAssertTrue([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
+  XCTAssertNil(self.viewController.presentedViewController);
 }
 
-- (void)testClosingDetailDoesNotInvokeFinishDelegate {
+- (void)testClosingDetailDoesNotMarkOnboardingCompleted {
   [self presentFirstRecipe];
 
   UIButton *closeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton"
@@ -511,7 +494,7 @@
   [closeButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertFalse(self.delegateSpy.didFinishOnboarding);
+  XCTAssertFalse([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
   XCTAssertNil(self.viewController.presentedViewController);
 }
 
@@ -801,7 +784,6 @@
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
   OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController];
-  viewController.delegate = self.delegateSpy;
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
 
@@ -825,7 +807,6 @@
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
   OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController];
-  viewController.delegate = self.delegateSpy;
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
 

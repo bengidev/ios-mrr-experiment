@@ -8,14 +8,14 @@ An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polis
 - Onboarding displays the `Culina` brand header, app icon, looping recipe carousel, and auth CTA placeholders
 - Tapping a carousel card presents `OnboardingRecipeDetailViewController`
 - Tapping `Start Cooking` in the detail modal completes onboarding and persists a flag in `NSUserDefaults`
-- Next launches: show `MainMenuViewController`
+- Next launches: continue showing `OnboardingViewController`
 
-The onboarding screen is no longer a static placeholder. It now carries the active first-run product experience.
+The onboarding screen is no longer a static placeholder. It now carries the active app experience.
 
 ## Project Structure
 
 - `MRR Project/App`
-  Root app wiring, `AppDelegate`, `main.m`, and `MainMenuViewController`
+  Root app wiring, `AppDelegate`, and `main.m`
 - `MRR Project/Resources`
   Shared application resources, including `Info.plist` and `Assets.xcassets`
 - `MRR Project/Features/Onboarding`
@@ -48,7 +48,7 @@ The active unit-test coverage focuses on both root flow and onboarding presentat
 
 - first launch shows onboarding
 - finishing onboarding persists the completion flag
-- returning users go directly to the main menu
+- returning users still land on onboarding
 - the app no longer routes into a tab-bar-based learning flow
 - carousel centering, recentering, and auto-scroll behavior
 - recipe detail presentation and `Start Cooking` completion flow

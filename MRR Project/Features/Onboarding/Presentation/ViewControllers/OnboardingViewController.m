@@ -1343,9 +1343,11 @@ static UIColor *MRRSecondaryTextColor(void) {
 
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
   self.detailPresented = NO;
+  [self.stateController markOnboardingCompleted];
   [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
                            completion:^{
-                             [self.delegate onboardingViewControllerDidFinish:self];
+                             self.viewVisible = YES;
+                             [self resumeCarouselAutoscrollIfPossible];
                            }];
 }
 

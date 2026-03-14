@@ -1,14 +1,7 @@
 #import <XCTest/XCTest.h>
 #import "../MRR Project/App/AppDelegate.h"
-#import "../MRR Project/App/MainMenuViewController.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
-
-@interface AppDelegate (Testing)
-
-- (void)onboardingViewControllerDidFinish:(OnboardingViewController *)viewController;
-
-@end
 
 @interface AppLaunchFlowTests : XCTestCase
 
@@ -42,25 +35,14 @@
   XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[OnboardingViewController class]]);
 }
 
-- (void)testCompletingOnboardingShowsMainMenuAndPersistsFlag {
-  AppDelegate *appDelegate = [self makeAppDelegate];
-  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-
-  OnboardingViewController *onboardingViewController = (OnboardingViewController *)appDelegate.window.rootViewController;
-  [appDelegate onboardingViewControllerDidFinish:onboardingViewController];
-
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[MainMenuViewController class]]);
-  XCTAssertTrue([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
-}
-
-- (void)testReturningUserShowsMainMenu {
+- (void)testReturningUserStillShowsOnboarding {
   OnboardingStateController *stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
   [stateController markOnboardingCompleted];
 
   AppDelegate *appDelegate = [self makeAppDelegate];
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[MainMenuViewController class]]);
+  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[OnboardingViewController class]]);
 }
 
 - (void)testReturningUserDoesNotSeeTabBarController {
@@ -83,17 +65,6 @@
 
   OnboardingViewController *onboardingViewController = (OnboardingViewController *)appDelegate.window.rootViewController;
   XCTAssertTrue([onboardingViewController isKindOfClass:[OnboardingViewController class]]);
-}
-
-- (void)testAppDelegateRebuildsRootFlowWhenOnboardingFinishes {
-  AppDelegate *appDelegate = [self makeAppDelegate];
-  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-
-  UIViewController *initialRootViewController = appDelegate.window.rootViewController;
-  [appDelegate onboardingViewControllerDidFinish:(OnboardingViewController *)initialRootViewController];
-
-  XCTAssertNotEqual(appDelegate.window.rootViewController, initialRootViewController);
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[MainMenuViewController class]]);
 }
 
 - (AppDelegate *)makeAppDelegate {
