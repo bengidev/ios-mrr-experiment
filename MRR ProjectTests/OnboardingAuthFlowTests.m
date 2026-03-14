@@ -54,7 +54,7 @@
   completion(self.nextLinkError);
 }
 
-- (BOOL)signOut:(NSError *__autoreleasing  _Nullable *)error {
+- (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   return YES;
 }
 
@@ -102,7 +102,7 @@
   self.stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
   self.authenticationController = [[OnboardingAuthenticationControllerSpy alloc] init];
   self.viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
-                                                          authenticationController:self.authenticationController];
+                                                         authenticationController:self.authenticationController];
   self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.viewController];
   self.navigationController.navigationBarHidden = YES;
   self.delegateSpy = [[OnboardingAuthDelegateSpy alloc] init];
@@ -160,8 +160,7 @@
   UIView *authView = authenticationViewController.view;
   [authView layoutIfNeeded];
   UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField" inView:authView];
-  UIButton *forgotPasswordButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton" inView:authView];
+  UIButton *forgotPasswordButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.signIn.forgotPasswordButton" inView:authView];
   UIButton *submitButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.submitButton" inView:authView];
   UIStackView *footerStackView = (UIStackView *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.footerStack" inView:authView];
   CGRect passwordFrame = [passwordField convertRect:passwordField.bounds toView:authView];
@@ -192,11 +191,11 @@
 }
 
 - (void)testSubmittingEmailSignupAuthenticatesFromPushedScreen {
-  self.authenticationController.sessionToReturn =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Email Cook"
-                                providerType:MRRAuthProviderTypeEmail];
+  self.authenticationController.sessionToReturn = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                                   email:@"cook@example.com"
+                                                                             displayName:@"Email Cook"
+                                                                            providerType:MRRAuthProviderTypeEmail
+                                                                           emailVerified:NO];
 
   UIButton *emailButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.emailButton" inView:self.viewController.view];
   [emailButton sendActionsForControlEvents:UIControlEventTouchUpInside];

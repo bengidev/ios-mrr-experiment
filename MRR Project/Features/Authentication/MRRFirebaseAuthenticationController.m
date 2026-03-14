@@ -38,8 +38,7 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
     return YES;
   }
 
-  NSString *configurationPath =
-      [[NSBundle mainBundle] pathForResource:MRRGoogleServiceInfoResourceName ofType:MRRGoogleServiceInfoResourceType];
+  NSString *configurationPath = [[NSBundle mainBundle] pathForResource:MRRGoogleServiceInfoResourceName ofType:MRRGoogleServiceInfoResourceType];
   if (configurationPath.length == 0) {
     return NO;
   }
@@ -154,15 +153,12 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
                                   return;
                                 }
 
-                                FIRAuthCredential *credential =
-                                    [FIRGoogleAuthProvider credentialWithIDToken:idToken accessToken:accessToken];
+                                FIRAuthCredential *credential = [FIRGoogleAuthProvider credentialWithIDToken:idToken accessToken:accessToken];
 
                                 [[FIRAuth auth] signInWithCredential:credential
-                                                          completion:^(FIRAuthDataResult *_Nullable authResult,
-                                                                       NSError *_Nullable authError) {
+                                                          completion:^(FIRAuthDataResult *_Nullable authResult, NSError *_Nullable authError) {
                                                             if (authError != nil) {
-                                                              if (authError.code ==
-                                                                  MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredential) {
+                                                              if (authError.code == MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredential) {
                                                                 self.pendingCredential = credential;
                                                                 self.pendingLinkEmailValue = signInResult.user.profile.email;
 
@@ -171,9 +167,10 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
                                                                   userInfo[MRRAuthPendingLinkEmailUserInfoKey] = self.pendingLinkEmailValue;
                                                                 }
 
-                                                                NSError *linkError = [NSError errorWithDomain:MRRAuthenticationErrorDomain
-                                                                                                         code:MRRAuthenticationErrorCodeRequiresAccountLinking
-                                                                                                     userInfo:userInfo];
+                                                                NSError *linkError =
+                                                                    [NSError errorWithDomain:MRRAuthenticationErrorDomain
+                                                                                        code:MRRAuthenticationErrorCodeRequiresAccountLinking
+                                                                                    userInfo:userInfo];
                                                                 completion(nil, linkError);
                                                                 return;
                                                               }
@@ -202,8 +199,7 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
 
   FIRAuthCredential *pendingCredential = [[self.pendingCredential retain] autorelease];
   [[FIRAuth auth].currentUser linkWithCredential:pendingCredential
-                                      completion:^(__unused FIRAuthDataResult *_Nullable authResult,
-                                                   NSError *_Nullable error) {
+                                      completion:^(__unused FIRAuthDataResult *_Nullable authResult, NSError *_Nullable error) {
                                         if (error == nil) {
                                           [self clearPendingCredentialLinkState];
                                         }
@@ -228,8 +224,7 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
 }
 
 - (nullable NSDictionary *)googleServiceConfiguration {
-  NSString *configurationPath =
-      [[NSBundle mainBundle] pathForResource:MRRGoogleServiceInfoResourceName ofType:MRRGoogleServiceInfoResourceType];
+  NSString *configurationPath = [[NSBundle mainBundle] pathForResource:MRRGoogleServiceInfoResourceName ofType:MRRGoogleServiceInfoResourceType];
   if (configurationPath.length == 0) {
     return nil;
   }
@@ -288,7 +283,8 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
   return [[[MRRAuthSession alloc] initWithUserID:user.uid
                                            email:user.email
                                      displayName:user.displayName
-                                    providerType:[self primaryProviderTypeForUser:user]] autorelease];
+                                    providerType:[self primaryProviderTypeForUser:user]
+                                   emailVerified:user.emailVerified] autorelease];
 }
 
 - (MRRAuthProviderType)primaryProviderTypeForUser:(FIRUser *)user {
@@ -310,9 +306,7 @@ static NSInteger const MRRFirebaseAuthErrorCodeAccountExistsWithDifferentCredent
 }
 
 - (NSError *)authenticationErrorWithCode:(MRRAuthenticationErrorCode)code description:(NSString *)description {
-  return [NSError errorWithDomain:MRRAuthenticationErrorDomain
-                             code:code
-                         userInfo:@{NSLocalizedDescriptionKey : description}];
+  return [NSError errorWithDomain:MRRAuthenticationErrorDomain code:code userInfo:@{NSLocalizedDescriptionKey : description}];
 }
 
 - (void)clearPendingCredentialLinkState {

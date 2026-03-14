@@ -17,11 +17,13 @@ FOUNDATION_EXPORT NSString *MRRAuthDisplayNameForProviderType(MRRAuthProviderTyp
 @property(nonatomic, copy, readonly, nullable) NSString *email;
 @property(nonatomic, copy, readonly, nullable) NSString *displayName;
 @property(nonatomic, assign, readonly) MRRAuthProviderType providerType;
+@property(nonatomic, assign, readonly) BOOL emailVerified;
 
 - (instancetype)initWithUserID:(NSString *)userID
                          email:(nullable NSString *)email
                    displayName:(nullable NSString *)displayName
-                  providerType:(MRRAuthProviderType)providerType;
+                  providerType:(MRRAuthProviderType)providerType
+                 emailVerified:(BOOL)emailVerified;
 
 - (NSString *)displayNameOrFallback;
 

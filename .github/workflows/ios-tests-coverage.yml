@@ -1,0 +1,41 @@
+name: iOS Tests and Coverage
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-with-coverage:
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift package dependencies
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -project "MRR Project.xcodeproj" \
+            -scheme "MRR Project"
+
+      - name: Run unit tests with code coverage
+        run: ./scripts/run-tests-with-coverage.sh
+
+      - name: Upload xcresult and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-coverage-artifacts
+          path: |
+            ci_artifacts/coverage
+            ci_artifacts/test-results
+          if-no-files-found: warn

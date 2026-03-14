@@ -20,6 +20,7 @@ NSString *MRRAuthDisplayNameForProviderType(MRRAuthProviderType providerType) {
 @property(nonatomic, copy, readwrite, nullable) NSString *email;
 @property(nonatomic, copy, readwrite, nullable) NSString *displayName;
 @property(nonatomic, assign, readwrite) MRRAuthProviderType providerType;
+@property(nonatomic, assign, readwrite) BOOL emailVerified;
 
 @end
 
@@ -28,7 +29,8 @@ NSString *MRRAuthDisplayNameForProviderType(MRRAuthProviderType providerType) {
 - (instancetype)initWithUserID:(NSString *)userID
                          email:(NSString *)email
                    displayName:(NSString *)displayName
-                  providerType:(MRRAuthProviderType)providerType {
+                  providerType:(MRRAuthProviderType)providerType
+                 emailVerified:(BOOL)emailVerified {
   NSParameterAssert(userID.length > 0);
 
   self = [super init];
@@ -37,6 +39,7 @@ NSString *MRRAuthDisplayNameForProviderType(MRRAuthProviderType providerType) {
     _email = [email copy];
     _displayName = [displayName copy];
     _providerType = providerType;
+    _emailVerified = emailVerified;
   }
 
   return self;

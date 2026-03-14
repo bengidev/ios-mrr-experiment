@@ -30,6 +30,7 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 @property(nonatomic, retain) UILabel *displayNameLabel;
 @property(nonatomic, retain) UILabel *emailLabel;
 @property(nonatomic, retain) UILabel *providerLabel;
+@property(nonatomic, retain) UILabel *emailVerificationLabel;
 @property(nonatomic, retain) UILabel *statusLabel;
 @property(nonatomic, retain) UIButton *logoutButton;
 
@@ -44,8 +45,7 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 
 @implementation HomeViewController
 
-- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
-                                         session:(MRRAuthSession *)session {
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController session:(MRRAuthSession *)session {
   NSParameterAssert(authenticationController != nil);
   NSParameterAssert(session != nil);
 
@@ -61,6 +61,7 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 - (void)dealloc {
   [_logoutButton release];
   [_statusLabel release];
+  [_emailVerificationLabel release];
   [_providerLabel release];
   [_emailLabel release];
   [_displayNameLabel release];
@@ -76,8 +77,7 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 
   self.title = @"Home";
   self.view.accessibilityIdentifier = @"home.view";
-  self.view.backgroundColor =
-      MRRHomeNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
+  self.view.backgroundColor = MRRHomeNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 
   [self buildViewHierarchy];
 }
@@ -93,12 +93,11 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   UIView *summaryCardView = [[[UIView alloc] init] autorelease];
   summaryCardView.translatesAutoresizingMaskIntoConstraints = NO;
   summaryCardView.accessibilityIdentifier = @"home.summaryCard";
-  summaryCardView.backgroundColor =
-      MRRHomeNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.14 alpha:1.0]);
+  summaryCardView.backgroundColor = MRRHomeNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.14 alpha:1.0]);
   summaryCardView.layer.cornerRadius = 28.0;
   summaryCardView.layer.borderWidth = 1.0;
-  summaryCardView.layer.borderColor = [[MRRHomeNamedColor(@"TextPrimaryColor", [UIColor blackColor], [UIColor whiteColor])
-      colorWithAlphaComponent:0.08] CGColor];
+  summaryCardView.layer.borderColor =
+      [[MRRHomeNamedColor(@"TextPrimaryColor", [UIColor blackColor], [UIColor whiteColor]) colorWithAlphaComponent:0.08] CGColor];
   [stackView addArrangedSubview:summaryCardView];
   self.summaryCardView = summaryCardView;
 
@@ -110,9 +109,9 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   eyebrowLabel.accessibilityIdentifier = @"home.eyebrowLabel";
   [summaryCardView addSubview:eyebrowLabel];
 
-  UILabel *displayNameLabel = [self labelWithFont:[UIFont boldSystemFontOfSize:30.0]
-                                            color:MRRHomeNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                                    [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *displayNameLabel =
+      [self labelWithFont:[UIFont boldSystemFontOfSize:30.0]
+                    color:MRRHomeNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   displayNameLabel.translatesAutoresizingMaskIntoConstraints = NO;
   displayNameLabel.accessibilityIdentifier = @"home.displayNameLabel";
   displayNameLabel.numberOfLines = 0;
@@ -120,9 +119,9 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   [summaryCardView addSubview:displayNameLabel];
   self.displayNameLabel = displayNameLabel;
 
-  UILabel *emailLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0]
-                                      color:MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                                              [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *emailLabel =
+      [self labelWithFont:[UIFont systemFontOfSize:16.0]
+                    color:MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   emailLabel.translatesAutoresizingMaskIntoConstraints = NO;
   emailLabel.accessibilityIdentifier = @"home.emailLabel";
   emailLabel.numberOfLines = 0;
@@ -130,9 +129,9 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   [summaryCardView addSubview:emailLabel];
   self.emailLabel = emailLabel;
 
-  UILabel *providerLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
-                                         color:MRRHomeNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                                 [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *providerLabel =
+      [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
+                    color:MRRHomeNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   providerLabel.translatesAutoresizingMaskIntoConstraints = NO;
   providerLabel.accessibilityIdentifier = @"home.providerLabel";
   providerLabel.numberOfLines = 0;
@@ -140,9 +139,19 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   [summaryCardView addSubview:providerLabel];
   self.providerLabel = providerLabel;
 
-  UILabel *statusLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0]
-                                       color:MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                                               [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *emailVerificationLabel =
+      [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
+                    color:MRRHomeNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
+  emailVerificationLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  emailVerificationLabel.accessibilityIdentifier = @"home.emailVerificationLabel";
+  emailVerificationLabel.numberOfLines = 0;
+  emailVerificationLabel.text = [NSString stringWithFormat:@"Email verified: %@", self.session.emailVerified ? @"Yes" : @"No"];
+  [summaryCardView addSubview:emailVerificationLabel];
+  self.emailVerificationLabel = emailVerificationLabel;
+
+  UILabel *statusLabel =
+      [self labelWithFont:[UIFont systemFontOfSize:15.0]
+                    color:MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
   statusLabel.accessibilityIdentifier = @"home.statusLabel";
   statusLabel.numberOfLines = 0;
@@ -183,7 +192,11 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
     [providerLabel.leadingAnchor constraintEqualToAnchor:summaryCardView.leadingAnchor constant:22.0],
     [providerLabel.trailingAnchor constraintEqualToAnchor:summaryCardView.trailingAnchor constant:-22.0],
 
-    [statusLabel.topAnchor constraintEqualToAnchor:providerLabel.bottomAnchor constant:8.0],
+    [emailVerificationLabel.topAnchor constraintEqualToAnchor:providerLabel.bottomAnchor constant:8.0],
+    [emailVerificationLabel.leadingAnchor constraintEqualToAnchor:summaryCardView.leadingAnchor constant:22.0],
+    [emailVerificationLabel.trailingAnchor constraintEqualToAnchor:summaryCardView.trailingAnchor constant:-22.0],
+
+    [statusLabel.topAnchor constraintEqualToAnchor:emailVerificationLabel.bottomAnchor constant:8.0],
     [statusLabel.leadingAnchor constraintEqualToAnchor:summaryCardView.leadingAnchor constant:22.0],
     [statusLabel.trailingAnchor constraintEqualToAnchor:summaryCardView.trailingAnchor constant:-22.0],
     [statusLabel.bottomAnchor constraintEqualToAnchor:summaryCardView.bottomAnchor constant:-22.0],
@@ -215,27 +228,25 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 }
 
 - (void)presentLogoutConfirmationAlert {
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:@"Log out?"
-                                          message:@"You will return to onboarding until another account signs in."
-                                   preferredStyle:UIAlertControllerStyleAlert];
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Log out?"
+                                                                           message:@"You will return to onboarding until another account signs in."
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = @"home.logoutAlert";
 
   [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
   [alertController addAction:[UIAlertAction actionWithTitle:@"Log Out"
-                                                    style:UIAlertActionStyleDestructive
-                                                  handler:^(__unused UIAlertAction *action) {
-                                                    [self performConfirmedLogout];
-                                                  }]];
+                                                      style:UIAlertActionStyleDestructive
+                                                    handler:^(__unused UIAlertAction *action) {
+                                                      [self performConfirmedLogout];
+                                                    }]];
   [self presentViewController:alertController animated:YES completion:nil];
 }
 
 - (void)presentLogoutError:(NSError *)error {
   NSString *message = [MRRAuthErrorMapper messageForError:error];
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:@"Couldn't Log Out"
-                                          message:message
-                                   preferredStyle:UIAlertControllerStyleAlert];
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Couldn't Log Out"
+                                                                           message:message
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = @"home.logoutErrorAlert";
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
   [self presentViewController:alertController animated:YES completion:nil];

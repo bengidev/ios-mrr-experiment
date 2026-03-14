@@ -47,7 +47,7 @@
   completion(nil);
 }
 
-- (BOOL)signOut:(NSError *__autoreleasing  _Nullable *)error {
+- (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   self.signOutCallCount += 1;
   self.stubSession = nil;
   return YES;
@@ -87,11 +87,11 @@
   [super setUp];
 
   self.authenticationController = [[HomeAuthenticationControllerSpy alloc] init];
-  self.authenticationController.stubSession =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Home Cook"
-                                providerType:MRRAuthProviderTypeGoogle];
+  self.authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                               email:@"cook@example.com"
+                                                                         displayName:@"Home Cook"
+                                                                        providerType:MRRAuthProviderTypeGoogle
+                                                                       emailVerified:YES];
   self.viewController = [[HomeViewController alloc] initWithAuthenticationController:self.authenticationController
                                                                              session:self.authenticationController.stubSession];
   self.delegateSpy = [[HomeDelegateSpy alloc] init];
@@ -118,17 +118,20 @@
 
 - (void)testHomeExposesCoreAccessibilityIdentifiers {
   NSArray<NSString *> *identifiers = @[
-    @"home.summaryCard",
-    @"home.displayNameLabel",
-    @"home.emailLabel",
-    @"home.providerLabel",
-    @"home.statusLabel",
+    @"home.summaryCard", @"home.displayNameLabel", @"home.emailLabel", @"home.providerLabel", @"home.emailVerificationLabel", @"home.statusLabel",
     @"home.logoutButton"
   ];
 
   for (NSString *identifier in identifiers) {
     XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:self.viewController.view], @"Missing %@", identifier);
   }
+}
+
+- (void)testHomeShowsEmailVerificationStatus {
+  UILabel *verificationLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.emailVerificationLabel" inView:self.viewController.view];
+
+  XCTAssertNotNil(verificationLabel);
+  XCTAssertEqualObjects(verificationLabel.text, @"Email verified: Yes");
 }
 
 - (void)testLogoutButtonPresentsConfirmationAlert {

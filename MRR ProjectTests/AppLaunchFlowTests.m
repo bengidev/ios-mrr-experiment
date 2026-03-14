@@ -50,7 +50,7 @@
   completion(nil);
 }
 
-- (BOOL)signOut:(NSError *__autoreleasing  _Nullable *)error {
+- (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   self.signOutCallCount += 1;
   self.stubSession = nil;
   return YES;
@@ -95,11 +95,11 @@
 
 - (void)testLoggedInLaunchShowsHome {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
-  authenticationController.stubSession =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Test Cook"
-                                providerType:MRRAuthProviderTypeGoogle];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeGoogle
+                                                                  emailVerified:YES];
 
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
@@ -109,11 +109,11 @@
 
 - (void)testLoggedInLaunchDoesNotShowTabBarController {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
-  authenticationController.stubSession =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Test Cook"
-                                providerType:MRRAuthProviderTypeEmail];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeEmail
+                                                                  emailVerified:NO];
 
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
@@ -126,8 +126,8 @@
   [self.userDefaults synchronize];
   OnboardingStateController *stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
-  AppDelegate *appDelegate =
-      [[AppDelegate alloc] initWithOnboardingStateController:stateController authenticationController:authenticationController];
+  AppDelegate *appDelegate = [[AppDelegate alloc] initWithOnboardingStateController:stateController
+                                                           authenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
@@ -139,15 +139,14 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-  OnboardingViewController *onboardingViewController =
-      [self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController];
+  OnboardingViewController *onboardingViewController = [self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController];
   XCTAssertNotNil(onboardingViewController);
 
-  authenticationController.stubSession =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Test Cook"
-                                providerType:MRRAuthProviderTypeGoogle];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeGoogle
+                                                                  emailVerified:YES];
   [appDelegate onboardingViewControllerDidAuthenticate:onboardingViewController];
 
   XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[HomeViewController class]]);
@@ -155,11 +154,11 @@
 
 - (void)testSigningOutFromHomeReplacesRootWithOnboarding {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
-  authenticationController.stubSession =
-      [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                       email:@"cook@example.com"
-                                 displayName:@"Test Cook"
-                                providerType:MRRAuthProviderTypeGoogle];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeGoogle
+                                                                  emailVerified:YES];
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
@@ -173,8 +172,8 @@
 
 - (AppDelegate *)makeAppDelegateWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController {
   OnboardingStateController *stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
-  AppDelegate *appDelegate =
-      [[AppDelegate alloc] initWithOnboardingStateController:stateController authenticationController:authenticationController];
+  AppDelegate *appDelegate = [[AppDelegate alloc] initWithOnboardingStateController:stateController
+                                                           authenticationController:authenticationController];
   return appDelegate;
 }
 

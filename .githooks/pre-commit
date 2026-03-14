@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+declare -a staged_objc_files=()
+while IFS= read -r -d '' file_path; do
+  case "$file_path" in
+    *.h|*.m|*.mm)
+      staged_objc_files+=("$file_path")
+      ;;
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if [[ "${#staged_objc_files[@]}" -eq 0 ]]; then
+  echo "pre-commit: no staged Objective-C files, skipping formatter and lint."
+  exit 0
+fi
+
+echo "pre-commit: formatting staged Objective-C files with clang-format (Google, 150 columns)."
+"$REPO_ROOT/scripts/format-objc.sh" "${staged_objc_files[@]}"
+
+for file_path in "${staged_objc_files[@]}"; do
+  git add -- "$file_path"
+done
+
+echo "pre-commit: running Objective-C static analyzer."
+"$REPO_ROOT/scripts/lint-objc.sh"

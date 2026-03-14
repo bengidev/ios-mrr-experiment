@@ -17,6 +17,7 @@ DerivedData/
 
 # Build generated
 build/
+ci_artifacts/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
