@@ -23,7 +23,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 - `MRR Project/Features/Home`
   Minimal signed-in home screen, email verification summary, and logout flow
 - `MRR Project/Resources`
-  Shared application resources, including `Info.plist` and `Assets.xcassets`
+  Shared application resources, including `Info.plist`, `Assets.xcassets`, and the safe `GoogleService-Info.example.plist` template
 - `MRR Project/Features/Onboarding`
   Onboarding layout, pushed email auth screens, carousel cells, recipe detail presentation, and auth CTA integration
 - `MRR ProjectTests`
@@ -38,8 +38,8 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 | `Objective-C` with Manual Retain-Release | Core application language and explicit memory-management practice | Entire app target under `MRR Project/` | The app intentionally keeps `CLANG_ENABLE_OBJC_ARC = NO` so retain/release behavior stays visible and educational. |
 | `UIKit` programmatic UI | All screens, navigation, layout, and interactions | `OnboardingViewController`, `MRREmailAuthenticationViewController`, `HomeViewController`, `OnboardingRecipeDetailViewController` | No storyboards or xibs are used anywhere in the app. |
 | `UINavigationController` | Logged-out navigation shell | Built in `AppDelegate.m` for the onboarding flow | Keeps sign-up and sign-in as pushed onboarding-owned screens. |
-| `Firebase Authentication` | Live email/password authentication and session state | `MRRFirebaseAuthenticationController` and `MRRAuthSession` | This is the live auth provider for the current milestone. It also drives the root flow by checking `currentUser`. |
-| `GoogleSignIn` | Live Google authentication from onboarding | `AppDelegate.m` URL handling and Firebase auth wiring | The onboarding flow now uses the package directly, including Firebase account-linking fallback when a Google email collides with an existing email/password account. |
+| `Firebase Authentication` | Live email/password authentication and session state | `MRRFirebaseAuthenticationController` and `MRRAuthSession` | This is the live auth provider for the current milestone. It also drives the root flow by checking `currentUser`. Firebase bootstraps only when a local `GoogleService-Info` file has been copied into the app bundle. |
+| `GoogleSignIn` | Live Google authentication from onboarding | `AppDelegate.m` URL handling and Firebase auth wiring | The onboarding flow now uses the package directly, including Firebase account-linking fallback when a Google email collides with an existing email/password account. The real Firebase plist stays local and untracked. |
 | `AuthenticationServices` | Planned Apple sign-in integration path | Referenced from onboarding stub behavior | Apple sign-in is intentionally shipped as a structured stub until capability and developer-account setup are ready. |
 | `NSUserDefaults` | Small local persistence for recipe-onboarding completion | `OnboardingStateController` | This flag is kept for the recipe detail flow, but it no longer decides the app root. |
 | `Assets.xcassets` named colors and images | Shared theming and onboarding visuals | `MRR Project/Resources/Assets.xcassets` | The onboarding UI and auth screens reuse the same asset-backed color system for light and dark appearance. |
@@ -49,7 +49,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 | Stack | Used for | Where it shows up | Notes |
 | --- | --- | --- | --- |
 | `XCTest` | Unit and UI-structure regression coverage | `MRR ProjectTests/` | Covers root routing, onboarding, pushed auth screens, home summary, logout flow, and carousel behavior. |
-| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled and uploads `.xcresult` plus `xccov` artifacts. The workflow uses only tracked repo contents; local `Packages/CocoaLumberjack/` checkouts are ignored. |
+| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled and uploads `.xcresult` plus `xccov` artifacts. The workflow uses only tracked repo contents and does not depend on a committed Firebase plist. |
 | `clang-format` | Objective-C formatting | `.clang-format`, `scripts/format-objc.sh`, `.githooks/pre-commit` | Uses Google-based formatting rules with a `ColumnLimit` of `150`. |
 | `xcodebuild analyze` | Objective-C static analysis lint pass | `scripts/lint-objc.sh` | Used by the pre-commit hook so analyzer findings block a bad commit. |
 | `Git pre-commit hook` | Local guardrail before commits | `.githooks/pre-commit` | Formats staged Objective-C files, re-stages them, then runs the analyzer. |
@@ -90,12 +90,20 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 
 The current milestone is email-first, but the project is already wired to grow into multi-provider auth later.
 
-1. Add `GoogleService-Info.plist` to the `MRR Project` app target so Firebase can initialize correctly.
-2. Enable `Email/Password` and `Google` inside Firebase Authentication. Both providers are live in the current onboarding flow.
-3. Add the `REVERSED_CLIENT_ID` value from `GoogleService-Info.plist` into `CFBundleURLTypes` in [Info.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/Info.plist) so the Google callback can return to the app.
-4. Keep Apple sign-in as stubbed UI until the Apple capability and Developer Program setup are available.
+1. Download your Firebase plist from the Firebase console and keep it out of git.
+2. Copy [GoogleService-Info.example.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/GoogleService-Info.example.plist) to `MRR Project/Resources/GoogleService-Info.local.plist`, then replace the placeholder values with your real Firebase values.
+3. Build the app normally. The app target contains a tracked build phase that copies `GoogleService-Info.local.plist` into the app bundle as `GoogleService-Info.plist` when present.
+4. Enable `Email/Password` and `Google` inside Firebase Authentication. Both providers are live in the current onboarding flow.
+5. Add the `REVERSED_CLIENT_ID` value from your local Firebase plist into `CFBundleURLTypes` in [Info.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/Info.plist) so the Google callback can return to the app.
+6. Keep Apple sign-in as stubbed UI until the Apple capability and Developer Program setup are available.
 
 Without Firebase configuration, the app will still build, and the email screens will surface setup-aware auth errors instead of failing silently.
+
+## Security Notes
+
+- Never commit `GoogleService-Info.plist` or `GoogleService-Info.local.plist`. Both paths are gitignored, and the pre-commit hook blocks them explicitly.
+- The pre-commit hook also rejects staged changes that look like a Google API key so accidental leaks are caught before they reach GitHub.
+- If a Firebase or Google API key was ever committed publicly, rotate or restrict that key in Firebase / Google Cloud even after cleaning the repository history.
 
 ## Tests
 
@@ -134,6 +142,7 @@ For a matching local batch run, use:
 
 - The hook formats staged Objective-C files with `clang-format` using the tracked [.clang-format](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/.clang-format) rules, which are based on Google style with a `ColumnLimit` of `150`.
 - After formatting, the hook re-stages those files and runs `./scripts/lint-objc.sh` before the commit is allowed to proceed.
+- The hook also blocks `GoogleService-Info.plist`, `GoogleService-Info.local.plist`, and staged Google API key patterns from being committed.
 
 ## VSCode Save Behavior
 
@@ -152,6 +161,7 @@ For a matching local batch run, use:
 - The app target is pinned back to an iOS 12 deployment target.
 - For iOS 12 compatibility, the project should stay on the pre-Firebase-11 line, paired with a GoogleSignIn version that still resolves against `GoogleUtilities 7.x`.
 - Sign-up currently collects first and last name for UI completeness, but the live auth session still persists email/password identity only.
+- Firebase bootstrapping is driven by a local ignored `GoogleService-Info.local.plist` that gets copied into the bundle at build time.
 - `Packages/CocoaLumberjack/` may exist locally as a developer-side checkout, but it is ignored by git and is not part of the tracked app or CI graph.
 - The test target may use ARC-backed XCTest conveniences.
 - UI is programmatic; there are no storyboards or xibs.

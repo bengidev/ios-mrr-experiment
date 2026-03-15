@@ -41,3 +41,5 @@ Carthage/Build/
 # Local repo guidance
 AGENTS.md
 Packages/CocoaLumberjack/
+MRR Project/Resources/GoogleService-Info.plist
+MRR Project/Resources/GoogleService-Info.local.plist

@@ -15,12 +15,13 @@ The user-facing runtime now contains five main screens:
 The app shell also owns one shared asset catalog:
 
 - `Resources/Assets.xcassets` for `AppIcon`, `OnboardingAppIcon`, named colors, and onboarding recipe imagery
+- `Resources/GoogleService-Info.example.plist` as the tracked Firebase template, while the real Firebase plist stays local and is copied into the bundle at build time
 
 ## Executive Summary
 
 The application is a small state-aware iOS app centered on a polished onboarding surface, a Firebase-backed authentication session, and a retained recipe-exploration flow.
 
-`AppDelegate` is the composition root. On launch, it configures Firebase when possible, asks the authentication controller for a current session, and installs either the onboarding navigation stack or the signed-in home screen as the window root. `OnboardingViewController` owns the branded onboarding UI, looping carousel, auth CTA entry points, and recipe-detail presentation. Its email CTAs push `MRREmailAuthenticationViewController`, which handles separate full-screen sign-up and sign-in layouts while keeping that UI under the onboarding feature. The sign-in flow can push `MRRForgotPasswordViewController` for Firebase reset-email handling. `HomeViewController` shows the active session summary, including provider and `emailVerified` state, and delegates sign-out back to the app root.
+`AppDelegate` is the composition root. On launch, it configures Firebase when possible, asks the authentication controller for a current session, and installs either the onboarding navigation stack or the signed-in home screen as the window root. Firebase configuration is loaded only if a local ignored `GoogleService-Info` file has been copied into the bundle by the build phase. `OnboardingViewController` owns the branded onboarding UI, looping carousel, auth CTA entry points, and recipe-detail presentation. Its email CTAs push `MRREmailAuthenticationViewController`, which handles separate full-screen sign-up and sign-in layouts while keeping that UI under the onboarding feature. The sign-in flow can push `MRRForgotPasswordViewController` for Firebase reset-email handling. `HomeViewController` shows the active session summary, including provider and `emailVerified` state, and delegates sign-out back to the app root.
 
 `OnboardingStateController` still persists whether the recipe flow reached `Start Cooking`, but that flag is now separate from launch routing. The root flow is driven by the auth session instead.
 
@@ -30,6 +31,8 @@ The application is a small state-aware iOS app centered on a polished onboarding
 flowchart TB
   main["App/main.m<br/>manual NSAutoreleasePool + UIApplicationMain"]
   plist["Resources/Info.plist"]
+  firebaseTemplate["Resources/GoogleService-Info.example.plist"]
+  buildPhase["App target build phase<br/>copies local GoogleService-Info into bundle"]
   assets["Resources/Assets.xcassets"]
   app["App/AppDelegate<br/>composition root + root flow"]
   auth["Features/Authentication/MRRFirebaseAuthenticationController"]
@@ -45,6 +48,8 @@ flowchart TB
 
   main --> app
   plist --> app
+  firebaseTemplate --> buildPhase
+  buildPhase --> auth
   plist --> auth
   assets --> onboardingVC
   assets --> emailAuthVC

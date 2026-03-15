@@ -30,8 +30,6 @@
 		A0000000000000000000073D /* MRRForgotPasswordViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000671 /* MRRForgotPasswordViewController.m */; };
 		B62132B22F6531980061670E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B12F6531980061670E /* FirebaseAuth */; };
 		B62132B52F6533030061670E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B42F6533030061670E /* GoogleSignIn */; };
-		B62132BC2F6533890061670E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B62132BB2F6533890061670E /* GoogleService-Info.plist */; };
-		B62132BD2F6533890061670E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B62132BB2F6533890061670E /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,7 +80,7 @@
 		A0000000000000000000066F /* HomeViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewControllerTests.m; sourceTree = "<group>"; };
 		A00000000000000000000670 /* MRRForgotPasswordViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRForgotPasswordViewController.h; sourceTree = "<group>"; };
 		A00000000000000000000671 /* MRRForgotPasswordViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRForgotPasswordViewController.m; sourceTree = "<group>"; };
-		B62132BB2F6533890061670E /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		C0FFEE000000000000000101 /* GoogleService-Info.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.example.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -265,7 +263,7 @@
 			children = (
 				A00000000000000000000655 /* Assets.xcassets */,
 				A00000000000000000000606 /* Info.plist */,
-				B62132BB2F6533890061670E /* GoogleService-Info.plist */,
+				C0FFEE000000000000000101 /* GoogleService-Info.example.plist */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -279,6 +277,7 @@
 			buildPhases = (
 				A00000000000000000000400 /* Sources */,
 				A00000000000000000000401 /* Frameworks */,
+				C0FFEE000000000000000201 /* Copy Local GoogleService-Info */,
 				A00000000000000000000402 /* Resources */,
 			);
 			buildRules = (
@@ -358,7 +357,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B62132BD2F6533890061670E /* GoogleService-Info.plist in Resources */,
 				A00000000000000000000729 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -367,11 +365,34 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B62132BC2F6533890061670E /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C0FFEE000000000000000201 /* Copy Local GoogleService-Info */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/MRR Project/Resources/GoogleService-Info.local.plist",
+				"$(SRCROOT)/MRR Project/Resources/GoogleService-Info.plist",
+			);
+			name = "Copy Local GoogleService-Info";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "RESOURCE_DIR=\"$SRCROOT/MRR Project/Resources\"\nLOCAL_PLIST_PATH=\"$RESOURCE_DIR/GoogleService-Info.local.plist\"\nLEGACY_PLIST_PATH=\"$RESOURCE_DIR/GoogleService-Info.plist\"\nDESTINATION_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nDESTINATION_PLIST_PATH=\"$DESTINATION_DIR/GoogleService-Info.plist\"\nSOURCE_PLIST_PATH=\"\"\nif [ -f \"$LOCAL_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LOCAL_PLIST_PATH\"\nelif [ -f \"$LEGACY_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LEGACY_PLIST_PATH\"\nfi\nif [ -z \"$SOURCE_PLIST_PATH\" ]; then\n  echo \"note: GoogleService-Info.local.plist is not present. Firebase will stay unconfigured for this build.\"\n  rm -f \"$DESTINATION_PLIST_PATH\"\n  exit 0\nfi\nmkdir -p \"$DESTINATION_DIR\"\ncp \"$SOURCE_PLIST_PATH\" \"$DESTINATION_PLIST_PATH\"\necho \"Copied $(basename \"$SOURCE_PLIST_PATH\") into the app bundle as GoogleService-Info.plist.\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A00000000000000000000400 /* Sources */ = {

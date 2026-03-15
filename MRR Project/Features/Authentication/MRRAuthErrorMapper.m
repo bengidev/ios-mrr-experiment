@@ -22,8 +22,7 @@ static NSInteger const MRRFirebaseAuthErrorCodeWeakPassword = 17026;
       return @"Link Existing Account";
     }
 
-    if (error.code == MRRAuthenticationErrorCodeUnconfigured ||
-        error.code == MRRAuthenticationErrorCodeMissingGoogleClientID ||
+    if (error.code == MRRAuthenticationErrorCodeUnconfigured || error.code == MRRAuthenticationErrorCodeMissingGoogleClientID ||
         error.code == MRRAuthenticationErrorCodeMissingGoogleCallbackScheme) {
       return @"Auth Setup Needed";
     }
@@ -50,11 +49,14 @@ static NSInteger const MRRFirebaseAuthErrorCodeWeakPassword = 17026;
   if ([error.domain isEqualToString:MRRAuthenticationErrorDomain]) {
     switch ((MRRAuthenticationErrorCode)error.code) {
       case MRRAuthenticationErrorCodeUnconfigured:
-        return @"Firebase belum dikonfigurasi. Tambahkan GoogleService-Info.plist ke target app lalu aktifkan Email/Password dan Google di Firebase Authentication.";
+        return @"Firebase belum dikonfigurasi. Simpan file Firebase Anda sebagai GoogleService-Info.local.plist di MRR Project/Resources, lalu build "
+               @"ulang dan aktifkan Email/Password serta Google di Firebase Authentication.";
       case MRRAuthenticationErrorCodeMissingGoogleClientID:
-        return @"Client ID Google belum tersedia. Pastikan GoogleService-Info.plist sudah ada dan Firebase berhasil dikonfigurasi.";
+        return @"Client ID Google belum tersedia. Pastikan GoogleService-Info.local.plist berisi konfigurasi Firebase yang benar dan build app sudah "
+               @"memuat file itu ke bundle.";
       case MRRAuthenticationErrorCodeMissingGoogleCallbackScheme:
-        return @"URL scheme Google Sign-In belum terpasang di Info.plist. Tambahkan REVERSED_CLIENT_ID dari GoogleService-Info.plist ke CFBundleURLTypes.";
+        return @"URL scheme Google Sign-In belum terpasang di Info.plist. Tambahkan REVERSED_CLIENT_ID dari file Firebase lokal Anda ke "
+               @"CFBundleURLTypes.";
       case MRRAuthenticationErrorCodeMissingGoogleToken:
         return @"Google Sign-In selesai, tetapi token autentikasi belum tersedia. Coba lagi setelah konfigurasi OAuth diperiksa.";
       case MRRAuthenticationErrorCodeRequiresAccountLinking:
