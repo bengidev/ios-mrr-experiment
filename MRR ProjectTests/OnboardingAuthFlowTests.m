@@ -21,10 +21,13 @@
 @property(nonatomic, strong, nullable) NSError *nextGoogleError;
 @property(nonatomic, strong, nullable) NSError *nextLinkError;
 @property(nonatomic, assign) BOOL hasPendingCredentialLinkStub;
+@property(nonatomic, assign) BOOL delaysGoogleCompletion;
 @property(nonatomic, copy, nullable) NSString *pendingLinkEmailStub;
 @property(nonatomic, assign) NSInteger googleSignInCallCount;
 @property(nonatomic, assign) NSInteger passwordResetCallCount;
 @property(nonatomic, copy, nullable) NSString *lastPasswordResetEmail;
+@property(nonatomic, strong, nullable) UIViewController *lastGooglePresentingViewController;
+@property(nonatomic, copy, nullable) MRRAuthSessionCompletion pendingGoogleCompletion;
 
 @end
 
@@ -63,6 +66,12 @@
 
 - (void)signInWithGoogleFromPresentingViewController:(UIViewController *)viewController completion:(MRRAuthSessionCompletion)completion {
   self.googleSignInCallCount += 1;
+  self.lastGooglePresentingViewController = viewController;
+  if (self.delaysGoogleCompletion) {
+    self.pendingGoogleCompletion = completion;
+    return;
+  }
+
   completion(self.sessionToReturn, self.nextGoogleError);
 }
 
@@ -77,6 +86,14 @@
 
 - (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   return YES;
+}
+
+- (void)completePendingGoogleSignIn {
+  MRRAuthSessionCompletion completion = self.pendingGoogleCompletion;
+  self.pendingGoogleCompletion = nil;
+  if (completion != nil) {
+    completion(self.sessionToReturn, self.nextGoogleError);
+  }
 }
 
 @end
@@ -242,7 +259,7 @@
 
   XCTAssertEqual(self.authenticationController.passwordResetCallCount, 0);
   XCTAssertFalse(errorLabel.hidden);
-  XCTAssertEqualObjects(errorLabel.text, @"Masukkan email yang valid untuk melanjutkan.");
+  XCTAssertEqualObjects(errorLabel.text, @"Please enter a valid email address to continue.");
 }
 
 - (void)testForgotPasswordSuccessPresentsAlertAndReturnsToOnboardingRoot {
@@ -420,15 +437,109 @@
   XCTAssertTrue(self.delegateSpy.didAuthenticate);
 }
 
-- (void)testGoogleButtonPresentsStubAlertWithoutStartingAuthFlow {
+- (void)testGoogleButtonStartsGoogleAuthAndAuthenticatesOnSuccess {
+  self.authenticationController.sessionToReturn = [[MRRAuthSession alloc] initWithUserID:@"google-uid"
+                                                                                   email:@"cook@example.com"
+                                                                             displayName:@"Google Cook"
+                                                                            providerType:MRRAuthProviderTypeGoogle
+                                                                           emailVerified:YES];
+
   UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
   [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 0);
+  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 1);
+  XCTAssertEqualObjects(self.authenticationController.lastGooglePresentingViewController, self.viewController);
+  XCTAssertTrue(self.delegateSpy.didAuthenticate);
+  XCTAssertNil(self.viewController.presentedViewController);
+}
+
+- (void)testGoogleButtonShowsCenteredLoadingOverlayWhileWaitingForResult {
+  self.authenticationController.delaysGoogleCompletion = YES;
+  self.authenticationController.sessionToReturn = [[MRRAuthSession alloc] initWithUserID:@"google-uid"
+                                                                                   email:@"cook@example.com"
+                                                                             displayName:@"Google Cook"
+                                                                            providerType:MRRAuthProviderTypeGoogle
+                                                                           emailVerified:YES];
+
+  UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
+  UIButton *emailButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.emailButton" inView:self.viewController.view];
+  UIVisualEffectView *loadingOverlay = (UIVisualEffectView *)[self findViewWithAccessibilityIdentifier:@"onboarding.loadingOverlay"
+                                                                                                inView:self.viewController.view];
+  UIActivityIndicatorView *loadingIndicator = (UIActivityIndicatorView *)[self findViewWithAccessibilityIdentifier:@"onboarding.loadingIndicator"
+                                                                                                            inView:self.viewController.view];
+
+  [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self.viewController.view layoutIfNeeded];
+
+  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 1);
+  XCTAssertFalse(loadingOverlay.hidden);
+  XCTAssertEqualWithAccuracy(loadingOverlay.alpha, 1.0, 0.001);
+  XCTAssertTrue(loadingIndicator.isAnimating);
+  XCTAssertFalse(emailButton.enabled);
+  XCTAssertFalse(googleButton.enabled);
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.authLoadingIndicator" inView:self.viewController.view]);
+
+  [self.authenticationController completePendingGoogleSignIn];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue(loadingOverlay.hidden);
+  XCTAssertTrue(self.delegateSpy.didAuthenticate);
+}
+
+- (void)testGoogleButtonCancellationStopsWithoutAlert {
+  self.authenticationController.nextGoogleError = [NSError errorWithDomain:MRRAuthenticationErrorDomain
+                                                                      code:MRRAuthenticationErrorCodeCancelled
+                                                                  userInfo:nil];
+
+  UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
+  [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 1);
+  XCTAssertFalse(self.delegateSpy.didAuthenticate);
+  XCTAssertNil(self.viewController.presentedViewController);
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[OnboardingViewController class]]);
+}
+
+- (void)testGoogleButtonErrorPresentsAuthAlert {
+  self.authenticationController.nextGoogleError = [NSError errorWithDomain:MRRAuthenticationErrorDomain
+                                                                      code:MRRAuthenticationErrorCodeMissingGoogleCallbackScheme
+                                                                  userInfo:nil];
+
+  UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
+  [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 1);
   XCTAssertFalse(self.delegateSpy.didAuthenticate);
   XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
-  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"onboarding.googleStubAlert");
+  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"onboarding.authErrorAlert");
+}
+
+- (void)testGoogleButtonRequiresAccountLinkingPushesPrefilledSignInFlow {
+  self.authenticationController.pendingLinkEmailStub = @"cook@example.com";
+  self.authenticationController.nextGoogleError = [NSError errorWithDomain:MRRAuthenticationErrorDomain
+                                                                      code:MRRAuthenticationErrorCodeRequiresAccountLinking
+                                                                  userInfo:@{MRRAuthPendingLinkEmailUserInfoKey : @"cook@example.com"}];
+
+  UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
+  [googleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  MRREmailAuthenticationViewController *authenticationViewController = [self topAuthenticationViewController];
+  UILabel *helperLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.helperLabel"
+                                                                       inView:authenticationViewController.view];
+  UITextField *emailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField"
+                                                                              inView:authenticationViewController.view];
+  UIButton *switchModeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.switchModeButton"
+                                                                              inView:authenticationViewController.view];
+
+  XCTAssertEqual(self.authenticationController.googleSignInCallCount, 1);
+  XCTAssertEqualObjects(authenticationViewController.view.accessibilityIdentifier, @"auth.signIn.view");
+  XCTAssertEqualObjects(emailField.text, @"cook@example.com");
+  XCTAssertEqualObjects(helperLabel.text, @"Sign in with your existing email account to finish linking the pending credential.");
+  XCTAssertTrue(switchModeButton.hidden);
 }
 
 - (void)testAppleButtonPresentsStubAlert {

@@ -49,6 +49,14 @@ static UIActivityIndicatorViewStyle MRROnboardingLoadingIndicatorStyle(void) {
   return UIActivityIndicatorViewStyleGray;
 }
 
+static UIBlurEffectStyle MRROnboardingLoadingOverlayBlurStyle(void) {
+  if (@available(iOS 13.0, *)) {
+    return UIBlurEffectStyleSystemChromeMaterial;
+  }
+
+  return UIBlurEffectStyleLight;
+}
+
 static UIColor *MRRBackgroundSurfaceColor(void) {
   return MRRNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 }
@@ -64,6 +72,10 @@ static UIColor *MRRPrimaryTextColor(void) {
 static UIColor *MRRSecondaryTextColor(void) {
   return MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.63 alpha:1.0]);
 }
+
+static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor colorWithWhite:0.0 alpha:0.12]; }
+
+static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceColor() colorWithAlphaComponent:0.9]; }
 
 @interface OnboardingViewController () <UICollectionViewDataSource,
                                         UICollectionViewDelegate,
@@ -95,8 +107,8 @@ static UIColor *MRRSecondaryTextColor(void) {
 @property(nonatomic, retain) UIButton *emailButton;
 @property(nonatomic, retain) UIButton *googleButton;
 @property(nonatomic, retain) UIButton *appleButton;
-@property(nonatomic, retain) UIActivityIndicatorView *authLoadingIndicator;
-@property(nonatomic, retain) UIButton *activeLoadingButton;
+@property(nonatomic, retain) UIVisualEffectView *loadingOverlayView;
+@property(nonatomic, retain) UIActivityIndicatorView *loadingIndicator;
 @property(nonatomic, retain) NSLayoutConstraint *stackLeadingConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *stackTrailingConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *stackTopConstraint;
@@ -139,18 +151,15 @@ static UIColor *MRRSecondaryTextColor(void) {
 - (void)handleAppleContinueTapped:(id)sender;
 - (void)handleSigninTapped:(id)sender;
 - (void)pushEmailAuthenticationViewControllerWithMode:(MRREmailAuthenticationMode)mode
-                                        prefilledEmail:(nullable NSString *)prefilledEmail
-                                       pendingLinkFlow:(BOOL)pendingLinkFlow;
+                                       prefilledEmail:(nullable NSString *)prefilledEmail
+                                      pendingLinkFlow:(BOOL)pendingLinkFlow;
 - (void)presentAuthenticationAlertForError:(NSError *)error;
-- (void)presentAuthenticationAlertWithTitle:(NSString *)title
-                                    message:(NSString *)message
-                        accessibilityIdentifier:(NSString *)accessibilityIdentifier;
-- (void)presentGoogleSignInStubAlert;
+- (void)presentAuthenticationAlertWithTitle:(NSString *)title message:(NSString *)message accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (void)presentAppleSignInStubAlert;
 - (void)notifyDelegateOfAuthentication;
 - (void)setAuthButtonsEnabled:(BOOL)enabled;
-- (void)beginLoadingForAuthButton:(UIButton *)button;
-- (void)endLoadingForAuthButton;
+- (void)beginLoadingForGoogleSignIn;
+- (void)endLoadingForGoogleSignIn;
 - (void)configurePressFeedbackForButton:(UIButton *)button;
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
@@ -162,9 +171,7 @@ static UIColor *MRRSecondaryTextColor(void) {
 - (NSAttributedString *)carouselCaptionAttributedTextWithFontSize:(CGFloat)fontSize kerning:(CGFloat)kerning;
 - (UICollectionViewFlowLayout *)carouselLayout;
 - (void)updateCarouselLayoutIfNeeded;
-- (CGSize)carouselItemSizeForAvailableWidth:(CGFloat)availableWidth
-                          availableHeight:(CGFloat)availableHeight
-                               lineSpacing:(CGFloat)lineSpacing;
+- (CGSize)carouselItemSizeForAvailableWidth:(CGFloat)availableWidth availableHeight:(CGFloat)availableHeight lineSpacing:(CGFloat)lineSpacing;
 - (NSInteger)virtualCarouselItemCount;
 - (NSInteger)recipeIndexForCarouselItemIndex:(NSInteger)itemIndex;
 - (NSInteger)middleCarouselItemIndexForRecipeIndex:(NSInteger)recipeIndex;
@@ -199,7 +206,7 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
-                authenticationController:(id<MRRAuthenticationController>)authenticationController {
+               authenticationController:(id<MRRAuthenticationController>)authenticationController {
   NSParameterAssert(stateController != nil);
   NSParameterAssert(authenticationController != nil);
 
@@ -219,8 +226,8 @@ static UIColor *MRRSecondaryTextColor(void) {
 
 - (void)dealloc {
   [self pauseCarouselAutoscroll];
-  [_activeLoadingButton release];
-  [_authLoadingIndicator release];
+  [_loadingIndicator release];
+  [_loadingOverlayView release];
   [_scrollView release];
   [_contentStackView release];
   _carouselCollectionView.delegate = nil;
@@ -501,7 +508,7 @@ static UIColor *MRRSecondaryTextColor(void) {
   dividerView.accessibilityIdentifier = @"onboarding.authDividerView";
   [stackView addArrangedSubview:dividerView];
 
-  UIButton *googleButton = [self authButtonWithTitle:@"Sign up with Google"
+  UIButton *googleButton = [self authButtonWithTitle:@"Continue with Google"
                                             iconText:@"G"
                                          filledStyle:NO
                              accessibilityIdentifier:@"onboarding.googleButton"
@@ -516,6 +523,33 @@ static UIColor *MRRSecondaryTextColor(void) {
                                              action:@selector(handleAppleContinueTapped:)];
   [stackView addArrangedSubview:appleButton];
   self.appleButton = appleButton;
+
+  UIVisualEffectView *loadingOverlayView =
+      [[[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:MRROnboardingLoadingOverlayBlurStyle()]] autorelease];
+  loadingOverlayView.translatesAutoresizingMaskIntoConstraints = NO;
+  loadingOverlayView.accessibilityIdentifier = @"onboarding.loadingOverlay";
+  loadingOverlayView.hidden = YES;
+  loadingOverlayView.alpha = 0.0;
+  loadingOverlayView.contentView.backgroundColor = MRROnboardingLoadingOverlayTintColor();
+  [self.view addSubview:loadingOverlayView];
+  self.loadingOverlayView = loadingOverlayView;
+
+  UIView *loadingContainerView = [[[UIView alloc] init] autorelease];
+  loadingContainerView.translatesAutoresizingMaskIntoConstraints = NO;
+  loadingContainerView.accessibilityIdentifier = @"onboarding.loadingContainer";
+  loadingContainerView.backgroundColor = MRROnboardingLoadingPanelColor();
+  loadingContainerView.layer.cornerRadius = 22.0;
+  loadingContainerView.clipsToBounds = YES;
+  [loadingOverlayView.contentView addSubview:loadingContainerView];
+
+  UIActivityIndicatorView *loadingIndicator =
+      [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:MRROnboardingLoadingIndicatorStyle()] autorelease];
+  loadingIndicator.translatesAutoresizingMaskIntoConstraints = NO;
+  loadingIndicator.accessibilityIdentifier = @"onboarding.loadingIndicator";
+  loadingIndicator.color = MRRPrimaryTextColor();
+  loadingIndicator.hidesWhenStopped = YES;
+  [loadingContainerView addSubview:loadingIndicator];
+  self.loadingIndicator = loadingIndicator;
 
   UIView *signinContainerView = [[[UIView alloc] init] autorelease];
   signinContainerView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -593,10 +627,29 @@ static UIColor *MRRSecondaryTextColor(void) {
     [contentView.bottomAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.bottomAnchor],
     [contentView.widthAnchor constraintEqualToAnchor:scrollView.frameLayoutGuide.widthAnchor],
 
-    self.stackTopConstraint, self.stackLeadingConstraint, self.stackTrailingConstraint, self.stackBottomConstraint,
+    self.stackTopConstraint,
+    self.stackLeadingConstraint,
+    self.stackTrailingConstraint,
+    self.stackBottomConstraint,
 
-    self.carouselHeightConstraint, self.emailButtonHeightConstraint, self.googleButtonHeightConstraint, self.appleButtonHeightConstraint,
-    self.dividerHeightConstraint
+    self.carouselHeightConstraint,
+    self.emailButtonHeightConstraint,
+    self.googleButtonHeightConstraint,
+    self.appleButtonHeightConstraint,
+    self.dividerHeightConstraint,
+
+    [loadingOverlayView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+    [loadingOverlayView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [loadingOverlayView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+    [loadingOverlayView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+
+    [loadingContainerView.centerXAnchor constraintEqualToAnchor:loadingOverlayView.contentView.centerXAnchor],
+    [loadingContainerView.centerYAnchor constraintEqualToAnchor:loadingOverlayView.contentView.centerYAnchor],
+    [loadingContainerView.widthAnchor constraintEqualToConstant:88.0],
+    [loadingContainerView.heightAnchor constraintEqualToConstant:88.0],
+
+    [loadingIndicator.centerXAnchor constraintEqualToAnchor:loadingContainerView.centerXAnchor],
+    [loadingIndicator.centerYAnchor constraintEqualToAnchor:loadingContainerView.centerYAnchor]
   ]];
 }
 
@@ -726,27 +779,27 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (void)handlePressableButtonTouchDown:(UIButton *)sender {
-  [UIView animateWithDuration:0.12
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     sender.transform = CGAffineTransformMakeScale(MRROnboardingButtonPressedScale, MRROnboardingButtonPressedScale);
-                     sender.alpha = MRROnboardingButtonPressedAlpha;
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.12
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 sender.transform = CGAffineTransformMakeScale(MRROnboardingButtonPressedScale, MRROnboardingButtonPressedScale);
+                 sender.alpha = MRROnboardingButtonPressedAlpha;
+               }
+               completion:nil];
 }
 
 - (void)handlePressableButtonTouchUp:(UIButton *)sender {
-  [UIView animateWithDuration:0.16
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     sender.transform = CGAffineTransformIdentity;
-                     sender.alpha = 1.0;
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.16
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 sender.transform = CGAffineTransformIdentity;
+                 sender.alpha = 1.0;
+               }
+               completion:nil];
 }
 
 - (UIView *)authDividerView {
@@ -796,7 +849,38 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (void)handleGoogleSignupTapped:(id)sender {
-  [self presentGoogleSignInStubAlert];
+  [self beginLoadingForGoogleSignIn];
+
+  [self.authenticationController
+      signInWithGoogleFromPresentingViewController:self
+                                        completion:^(__unused MRRAuthSession *_Nullable session, NSError *_Nullable error) {
+                                          [self endLoadingForGoogleSignIn];
+
+                                          if (error == nil) {
+                                            [self notifyDelegateOfAuthentication];
+                                            return;
+                                          }
+
+                                          if ([error.domain isEqualToString:MRRAuthenticationErrorDomain] &&
+                                              error.code == MRRAuthenticationErrorCodeCancelled) {
+                                            return;
+                                          }
+
+                                          if ([error.domain isEqualToString:MRRAuthenticationErrorDomain] &&
+                                              error.code == MRRAuthenticationErrorCodeRequiresAccountLinking) {
+                                            NSString *prefilledEmail = [self.authenticationController pendingLinkEmail];
+                                            if (prefilledEmail.length == 0) {
+                                              prefilledEmail = error.userInfo[MRRAuthPendingLinkEmailUserInfoKey];
+                                            }
+
+                                            [self pushEmailAuthenticationViewControllerWithMode:MRREmailAuthenticationModeSignIn
+                                                                                 prefilledEmail:prefilledEmail
+                                                                                pendingLinkFlow:YES];
+                                            return;
+                                          }
+
+                                          [self presentAuthenticationAlertForError:error];
+                                        }];
 }
 
 - (void)handleAppleContinueTapped:(id)sender {
@@ -808,13 +892,13 @@ static UIColor *MRRSecondaryTextColor(void) {
 }
 
 - (void)pushEmailAuthenticationViewControllerWithMode:(MRREmailAuthenticationMode)mode
-                                        prefilledEmail:(NSString *)prefilledEmail
-                                       pendingLinkFlow:(BOOL)pendingLinkFlow {
+                                       prefilledEmail:(NSString *)prefilledEmail
+                                      pendingLinkFlow:(BOOL)pendingLinkFlow {
   MRREmailAuthenticationViewController *viewController =
       [[[MRREmailAuthenticationViewController alloc] initWithAuthenticationController:self.authenticationController
                                                                                  mode:mode
-                                                                        prefilledEmail:prefilledEmail
-                                                                       pendingLinkFlow:pendingLinkFlow] autorelease];
+                                                                       prefilledEmail:prefilledEmail
+                                                                      pendingLinkFlow:pendingLinkFlow] autorelease];
   viewController.delegate = self;
 
   if (self.navigationController != nil) {
@@ -835,14 +919,13 @@ static UIColor *MRRSecondaryTextColor(void) {
 
   [self presentAuthenticationAlertWithTitle:[MRRAuthErrorMapper titleForError:error]
                                     message:message
-                      accessibilityIdentifier:@"onboarding.authErrorAlert"];
+                    accessibilityIdentifier:@"onboarding.authErrorAlert"];
 }
 
 - (void)presentAuthenticationAlertWithTitle:(NSString *)title
                                     message:(NSString *)message
-                        accessibilityIdentifier:(NSString *)accessibilityIdentifier {
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+                    accessibilityIdentifier:(NSString *)accessibilityIdentifier {
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = accessibilityIdentifier;
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
   [self presentViewController:alertController animated:[self shouldAnimateModalTransitions] completion:nil];
@@ -851,18 +934,11 @@ static UIColor *MRRSecondaryTextColor(void) {
 - (void)presentAppleSignInStubAlert {
   BOOL appleAPIAvailable = NSClassFromString(@"ASAuthorizationAppleIDProvider") != nil;
   NSString *message = appleAPIAvailable
-                          ? @"Struktur Sign in with Apple sudah disiapkan, tetapi aktivasi live masih membutuhkan Apple Developer Program dan konfigurasi capability resmi."
+                          ? @"Struktur Sign in with Apple sudah disiapkan, tetapi aktivasi live masih membutuhkan Apple Developer Program dan "
+                            @"konfigurasi capability resmi."
                           : @"AuthenticationServices belum tersedia di environment ini, jadi Sign in with Apple tetap ditahan sebagai stub.";
 
-  [self presentAuthenticationAlertWithTitle:@"Apple Sign-In Planned"
-                                    message:message
-                      accessibilityIdentifier:@"onboarding.appleStubAlert"];
-}
-
-- (void)presentGoogleSignInStubAlert {
-  [self presentAuthenticationAlertWithTitle:@"Google Sign-In Planned"
-                                    message:@"Continue with Google tetap ditampilkan di onboarding, tetapi untuk milestone ini autentikasi live difokuskan ke email sign up dan sign in terlebih dahulu."
-                      accessibilityIdentifier:@"onboarding.googleStubAlert"];
+  [self presentAuthenticationAlertWithTitle:@"Apple Sign-In Planned" message:message accessibilityIdentifier:@"onboarding.appleStubAlert"];
 }
 
 - (void)notifyDelegateOfAuthentication {
@@ -876,37 +952,19 @@ static UIColor *MRRSecondaryTextColor(void) {
   self.signinLabel.enabled = enabled;
 }
 
-- (void)beginLoadingForAuthButton:(UIButton *)button {
-  [self endLoadingForAuthButton];
+- (void)beginLoadingForGoogleSignIn {
+  [self endLoadingForGoogleSignIn];
   [self setAuthButtonsEnabled:NO];
-
-  self.activeLoadingButton = button;
-  UIView *contentWrapper = [button viewWithTag:MRROnboardingAuthButtonContentWrapperTag];
-  contentWrapper.alpha = 0.0;
-
-  UIActivityIndicatorView *indicator =
-      [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:MRROnboardingLoadingIndicatorStyle()] autorelease];
-  indicator.translatesAutoresizingMaskIntoConstraints = NO;
-  indicator.accessibilityIdentifier = @"onboarding.authLoadingIndicator";
-  indicator.color = MRRPrimaryTextColor();
-  [button addSubview:indicator];
-  [NSLayoutConstraint activateConstraints:@[
-    [indicator.centerXAnchor constraintEqualToAnchor:button.centerXAnchor],
-    [indicator.centerYAnchor constraintEqualToAnchor:button.centerYAnchor]
-  ]];
-  [indicator startAnimating];
-  self.authLoadingIndicator = indicator;
+  self.loadingOverlayView.hidden = NO;
+  self.loadingOverlayView.alpha = 1.0;
+  [self.loadingIndicator startAnimating];
 }
 
-- (void)endLoadingForAuthButton {
+- (void)endLoadingForGoogleSignIn {
   [self setAuthButtonsEnabled:YES];
-
-  UIView *contentWrapper = [self.activeLoadingButton viewWithTag:MRROnboardingAuthButtonContentWrapperTag];
-  contentWrapper.alpha = 1.0;
-  [self.authLoadingIndicator stopAnimating];
-  [self.authLoadingIndicator removeFromSuperview];
-  self.authLoadingIndicator = nil;
-  self.activeLoadingButton = nil;
+  [self.loadingIndicator stopAnimating];
+  self.loadingOverlayView.alpha = 0.0;
+  self.loadingOverlayView.hidden = YES;
 }
 
 #pragma mark - MRREmailAuthenticationViewControllerDelegate
@@ -1035,11 +1093,10 @@ static UIColor *MRRSecondaryTextColor(void) {
 
   CGSize initialCarouselItemSize = [self carouselItemSizeForAvailableWidth:contentWidth
                                                            availableHeight:carouselHeight
-                                                                lineSpacing:desiredLineSpacing];
+                                                               lineSpacing:desiredLineSpacing];
   CGFloat desiredInteritemSpacing = MAX(carouselHeight + MRRCarouselSingleRowSpacingPadding, 1000.0);
   if (initialCarouselItemSize.width > 0.0 && initialCarouselItemSize.height > 0.0 &&
-      (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 ||
-       fabs(layout.itemSize.height - initialCarouselItemSize.height) >= 0.5 ||
+      (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 || fabs(layout.itemSize.height - initialCarouselItemSize.height) >= 0.5 ||
        fabs(layout.minimumInteritemSpacing - desiredInteritemSpacing) >= 0.5)) {
     layout.itemSize = initialCarouselItemSize;
     layout.minimumInteritemSpacing = desiredInteritemSpacing;
@@ -1223,7 +1280,7 @@ static UIColor *MRRSecondaryTextColor(void) {
 
   CGSize desiredItemSize = [self carouselItemSizeForAvailableWidth:availableWidth
                                                    availableHeight:availableHeight
-                                                        lineSpacing:layout.minimumLineSpacing];
+                                                       lineSpacing:layout.minimumLineSpacing];
   CGFloat desiredWidth = desiredItemSize.width;
   CGFloat desiredHeight = desiredItemSize.height;
   CGFloat desiredInteritemSpacing = MAX(availableHeight + MRRCarouselSingleRowSpacingPadding, 1000.0);
@@ -1240,9 +1297,7 @@ static UIColor *MRRSecondaryTextColor(void) {
   [self scrollToRecipeAtIndex:self.currentRecipeIndex animated:NO];
 }
 
-- (CGSize)carouselItemSizeForAvailableWidth:(CGFloat)availableWidth
-                          availableHeight:(CGFloat)availableHeight
-                               lineSpacing:(CGFloat)lineSpacing {
+- (CGSize)carouselItemSizeForAvailableWidth:(CGFloat)availableWidth availableHeight:(CGFloat)availableHeight lineSpacing:(CGFloat)lineSpacing {
   if (availableWidth <= 0.0 || availableHeight <= 0.0) {
     return CGSizeZero;
   }
@@ -1274,9 +1329,8 @@ static UIColor *MRRSecondaryTextColor(void) {
     return;
   }
 
-  BOOL boundsChangedSinceLastPositioning =
-      fabs(self.lastPositionedCarouselBoundsSize.width - carouselBoundsSize.width) >= 0.5 ||
-      fabs(self.lastPositionedCarouselBoundsSize.height - carouselBoundsSize.height) >= 0.5;
+  BOOL boundsChangedSinceLastPositioning = fabs(self.lastPositionedCarouselBoundsSize.width - carouselBoundsSize.width) >= 0.5 ||
+                                           fabs(self.lastPositionedCarouselBoundsSize.height - carouselBoundsSize.height) >= 0.5;
   if (self.hasAppliedInitialCarouselPosition && !boundsChangedSinceLastPositioning) {
     return;
   }
@@ -1301,9 +1355,9 @@ static UIColor *MRRSecondaryTextColor(void) {
     return;
   }
 
-  [self.carouselCollectionView setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:itemIndex],
-                                                            self.carouselCollectionView.contentOffset.y)
-                               animated:animated];
+  [self.carouselCollectionView
+      setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:itemIndex], self.carouselCollectionView.contentOffset.y)
+              animated:animated];
   self.currentCarouselItemIndex = itemIndex;
   self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:itemIndex];
   [self updatePageControl];

@@ -8,7 +8,7 @@ An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polis
 - Onboarding displays the `Culina` brand header, app icon, looping recipe carousel, and auth entry points
 - `Sign up with email` pushes a dedicated full-screen sign-up screen with separate fields for first name, last name, email, and password
 - `Sign in` pushes a dedicated full-screen sign-in screen with email/password plus a live `Forgot Password?` flow that sends a Firebase reset email and returns to onboarding after confirmation
-- `Continue with Google` and `Continue with Apple` remain visible as planned stub actions for the current email-first milestone
+- `Continue with Google` now starts live Google Sign-In from onboarding, while `Continue with Apple` remains a structured stub
 - Auth success routes into `HomeViewController`, which shows the active account summary, auth provider, email verification status, and a destructive `Log Out` button inside the screen body
 - Logging out clears the auth session and returns the app to onboarding
 
@@ -39,7 +39,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 | `UIKit` programmatic UI | All screens, navigation, layout, and interactions | `OnboardingViewController`, `MRREmailAuthenticationViewController`, `HomeViewController`, `OnboardingRecipeDetailViewController` | No storyboards or xibs are used anywhere in the app. |
 | `UINavigationController` | Logged-out navigation shell | Built in `AppDelegate.m` for the onboarding flow | Keeps sign-up and sign-in as pushed onboarding-owned screens. |
 | `Firebase Authentication` | Live email/password authentication and session state | `MRRFirebaseAuthenticationController` and `MRRAuthSession` | This is the live auth provider for the current milestone. It also drives the root flow by checking `currentUser`. |
-| `GoogleSignIn` | Prepared provider integration for future Google auth rollout | `AppDelegate.m` URL handling and Firebase auth wiring | The package is already wired into the project, but the onboarding button is intentionally stubbed in the current email-first milestone. |
+| `GoogleSignIn` | Live Google authentication from onboarding | `AppDelegate.m` URL handling and Firebase auth wiring | The onboarding flow now uses the package directly, including Firebase account-linking fallback when a Google email collides with an existing email/password account. |
 | `AuthenticationServices` | Planned Apple sign-in integration path | Referenced from onboarding stub behavior | Apple sign-in is intentionally shipped as a structured stub until capability and developer-account setup are ready. |
 | `NSUserDefaults` | Small local persistence for recipe-onboarding completion | `OnboardingStateController` | This flag is kept for the recipe detail flow, but it no longer decides the app root. |
 | `Assets.xcassets` named colors and images | Shared theming and onboarding visuals | `MRR Project/Resources/Assets.xcassets` | The onboarding UI and auth screens reuse the same asset-backed color system for light and dark appearance. |
@@ -66,6 +66,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 - Programmatic onboarding layout with dynamic sizing across common iPhone viewports
 - Looping carousel with guarded initial centering to prevent launch-time jump behavior
 - Dedicated pushed `Sign Up` and `Sign In` screens that stay under the onboarding feature instead of a shared modal card
+- Live `Continue with Google` onboarding auth with a centered blur loading overlay and account-link fallback into the email sign-in screen
 - Keyboard-aware auth screens with tap-to-dismiss behavior, scroll insets, and focused-field visibility handling
 - Shared backdrop styling with a fade mask so carousel text areas blend into recipe imagery
 - Light and dark appearance support through named colors in `Assets.xcassets`

@@ -303,7 +303,7 @@ flowchart LR
 - The app target uses Manual Retain-Release. Application code must continue balancing retained objects explicitly.
 - Root navigation is state-based, not coordinator-based. This keeps the app small and direct.
 - The onboarding feature now owns the dedicated sign-up and sign-in screens, so auth entry remains visually and structurally close to the onboarding surface.
-- Email/password is the only live onboarding auth path in the current milestone. Google and Apple stay visible as structured stubs.
+- Email/password and Google Sign-In are now live onboarding auth paths. Apple stays visible as a structured stub.
 - The onboarding carousel uses virtual looping plus guarded initial positioning so auto-scroll does not jump on launch.
 - The auth screens are keyboard-aware: they use scroll insets, tap-to-dismiss, and focused-field visibility handling.
 - Light and dark appearance rely on named colors from the shared asset catalog.

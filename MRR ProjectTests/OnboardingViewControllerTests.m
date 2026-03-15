@@ -121,8 +121,7 @@
 
   UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.viewController.carouselCollectionView.collectionViewLayout;
   NSInteger targetIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:1];
-  UICollectionViewLayoutAttributes *attributes =
-      [layout layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:targetIndex inSection:0]];
+  UICollectionViewLayoutAttributes *attributes = [layout layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:targetIndex inSection:0]];
   XCTAssertNotNil(attributes);
   CGFloat expectedOffset = MAX(attributes.center.x - (CGRectGetWidth(self.viewController.carouselCollectionView.bounds) / 2.0), 0.0);
 
@@ -155,8 +154,9 @@
 
   self.viewController.currentRecipeIndex = recipeIndex;
   self.viewController.currentCarouselItemIndex = boundaryIndex;
-  [self.viewController.carouselCollectionView setContentOffset:CGPointMake([self.viewController contentOffsetXForCarouselItemIndex:boundaryIndex], 0.0)
-                                                 animated:NO];
+  [self.viewController.carouselCollectionView
+      setContentOffset:CGPointMake([self.viewController contentOffsetXForCarouselItemIndex:boundaryIndex], 0.0)
+              animated:NO];
 
   [self.viewController recenterCarouselIfNeeded];
 
@@ -196,7 +196,7 @@
 
   [self.viewController scrollViewWillEndDragging:self.viewController.carouselCollectionView
                                     withVelocity:CGPointZero
-                              targetContentOffset:&targetOffset];
+                             targetContentOffset:&targetOffset];
 
   XCTAssertEqualWithAccuracy(targetOffset.x, [self.viewController contentOffsetXForCarouselItemIndex:targetIndex], 0.5);
   XCTAssertEqual(self.viewController.currentCarouselItemIndex, targetIndex);
@@ -207,7 +207,8 @@
   NSArray<NSString *> *identifiers = @[
     @"onboarding.logoImageView", @"onboarding.titleLabel", @"onboarding.subtitleLabel", @"onboarding.carouselCaptionLabel",
     @"onboarding.carouselHelperLabel", @"onboarding.carouselCollectionView", @"onboarding.pageControl", @"onboarding.footerLabel",
-    @"onboarding.benefitTitleLabel", @"onboarding.benefitBodyLabel", @"onboarding.signinPromptLabel", @"onboarding.signinLabel"
+    @"onboarding.benefitTitleLabel", @"onboarding.benefitBodyLabel", @"onboarding.signinPromptLabel", @"onboarding.signinLabel",
+    @"onboarding.loadingOverlay", @"onboarding.loadingContainer", @"onboarding.loadingIndicator"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -241,7 +242,10 @@
     @"onboarding.authDividerView",
     @"onboarding.authDividerView.leftLine",
     @"onboarding.authDividerView.rightLine",
-    @"onboarding.authDividerView.label"
+    @"onboarding.authDividerView.label",
+    @"onboarding.loadingOverlay",
+    @"onboarding.loadingContainer",
+    @"onboarding.loadingIndicator"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -262,14 +266,21 @@
   }
 }
 
+- (void)testGoogleButtonUsesContinueCopy {
+  UILabel *googleTitleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton.titleLabel"
+                                                                            inView:self.viewController.view];
+
+  XCTAssertNotNil(googleTitleLabel);
+  XCTAssertEqualObjects(googleTitleLabel.text, @"Continue with Google");
+}
+
 - (void)testCarouselBackdropExpandsToContainWrappedBeefBourguignonText {
   [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
 
   NSArray<OnboardingRecipe *> *recipes = [self.stateController onboardingRecipes];
-  NSUInteger beefRecipeIndex =
-      [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipe *recipe, NSUInteger idx, BOOL *stop) {
-        return [recipe.assetName isEqualToString:@"beef-bourguignon"];
-      }];
+  NSUInteger beefRecipeIndex = [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipe *recipe, NSUInteger idx, BOOL *stop) {
+    return [recipe.assetName isEqualToString:@"beef-bourguignon"];
+  }];
   XCTAssertNotEqual(beefRecipeIndex, NSNotFound);
 
   [self.viewController scrollToRecipeAtIndex:(NSInteger)beefRecipeIndex animated:NO];
@@ -278,14 +289,12 @@
   [self spinMainRunLoop];
 
   NSString *identifierPrefix = [NSString stringWithFormat:@"onboarding.carouselCell.%@", recipes[beefRecipeIndex].assetName];
-  UIView *backdropView =
-      [self findViewWithAccessibilityIdentifier:[identifierPrefix stringByAppendingString:@".textBackdropView"] inView:self.viewController.view];
-  UILabel *titleLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:[identifierPrefix stringByAppendingString:@".titleLabel"]
-                                                    inView:self.viewController.view];
-  UILabel *metadataLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:[identifierPrefix stringByAppendingString:@".metadataLabel"]
-                                                    inView:self.viewController.view];
+  UIView *backdropView = [self findViewWithAccessibilityIdentifier:[identifierPrefix stringByAppendingString:@".textBackdropView"]
+                                                            inView:self.viewController.view];
+  UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:[identifierPrefix stringByAppendingString:@".titleLabel"]
+                                                                      inView:self.viewController.view];
+  UILabel *metadataLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:[identifierPrefix stringByAppendingString:@".metadataLabel"]
+                                                                         inView:self.viewController.view];
 
   XCTAssertNotNil(backdropView);
   XCTAssertNotNil(titleLabel);
@@ -304,15 +313,13 @@
 
   NSArray<OnboardingRecipe *> *recipes = [self.stateController onboardingRecipes];
   OnboardingRecipe *defaultRecipe = recipes.firstObject;
-  NSUInteger beefRecipeIndex =
-      [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipe *recipe, NSUInteger idx, BOOL *stop) {
-        return [recipe.assetName isEqualToString:@"beef-bourguignon"];
-      }];
+  NSUInteger beefRecipeIndex = [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipe *recipe, NSUInteger idx, BOOL *stop) {
+    return [recipe.assetName isEqualToString:@"beef-bourguignon"];
+  }];
   XCTAssertNotNil(defaultRecipe);
   XCTAssertNotEqual(beefRecipeIndex, NSNotFound);
 
-  NSString *defaultIdentifier =
-      [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", defaultRecipe.assetName];
+  NSString *defaultIdentifier = [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", defaultRecipe.assetName];
   UIView *defaultBackdropView = [self findViewWithAccessibilityIdentifier:defaultIdentifier inView:self.viewController.view];
   XCTAssertNotNil(defaultBackdropView);
 
@@ -326,8 +333,7 @@
   [self.viewController.view layoutIfNeeded];
   [self spinMainRunLoop];
 
-  NSString *beefIdentifier =
-      [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", recipes[beefRecipeIndex].assetName];
+  NSString *beefIdentifier = [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", recipes[beefRecipeIndex].assetName];
   UIView *beefBackdropView = [self findViewWithAccessibilityIdentifier:beefIdentifier inView:self.viewController.view];
   XCTAssertNotNil(beefBackdropView);
 
@@ -359,8 +365,7 @@
   [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
 
   OnboardingRecipe *firstRecipe = [self.stateController onboardingRecipes].firstObject;
-  NSString *backdropIdentifier =
-      [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", firstRecipe.assetName];
+  NSString *backdropIdentifier = [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", firstRecipe.assetName];
   UIView *backdropView = [self findViewWithAccessibilityIdentifier:backdropIdentifier inView:self.viewController.view];
 
   XCTAssertNotNil(backdropView);
@@ -508,8 +513,7 @@
   BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
   [UIView setAnimationsEnabled:NO];
 
-  OnboardingRecipeDetailViewController *detailViewController =
-      (OnboardingRecipeDetailViewController *)self.viewController.presentedViewController;
+  OnboardingRecipeDetailViewController *detailViewController = (OnboardingRecipeDetailViewController *)self.viewController.presentedViewController;
   [detailViewController handlePressableButtonTouchDown:startButton];
   XCTAssertEqualWithAccuracy(startButton.transform.a, 0.97, 0.001);
   XCTAssertEqualWithAccuracy(startButton.transform.d, 0.97, 0.001);
@@ -552,12 +556,9 @@
 
 - (void)testOnboardingFitsAcrossCommonIPhoneViewportSizes {
   NSArray<NSValue *> *viewportSizes = @[
-    [NSValue valueWithCGSize:CGSizeMake(320.0, 568.0)],
-    [NSValue valueWithCGSize:CGSizeMake(375.0, 667.0)],
-    [NSValue valueWithCGSize:CGSizeMake(375.0, 812.0)],
-    [NSValue valueWithCGSize:CGSizeMake(390.0, 844.0)],
-    [NSValue valueWithCGSize:CGSizeMake(393.0, 852.0)],
-    [NSValue valueWithCGSize:CGSizeMake(414.0, 896.0)],
+    [NSValue valueWithCGSize:CGSizeMake(320.0, 568.0)], [NSValue valueWithCGSize:CGSizeMake(375.0, 667.0)],
+    [NSValue valueWithCGSize:CGSizeMake(375.0, 812.0)], [NSValue valueWithCGSize:CGSizeMake(390.0, 844.0)],
+    [NSValue valueWithCGSize:CGSizeMake(393.0, 852.0)], [NSValue valueWithCGSize:CGSizeMake(414.0, 896.0)],
     [NSValue valueWithCGSize:CGSizeMake(430.0, 932.0)]
   ];
 
@@ -570,12 +571,9 @@
 
 - (void)testCarouselSizingIsWidthDrivenAndBoundedAcrossCommonIPhoneViewportSizes {
   NSArray<NSValue *> *viewportSizes = @[
-    [NSValue valueWithCGSize:CGSizeMake(320.0, 568.0)],
-    [NSValue valueWithCGSize:CGSizeMake(375.0, 812.0)],
-    [NSValue valueWithCGSize:CGSizeMake(390.0, 844.0)],
-    [NSValue valueWithCGSize:CGSizeMake(393.0, 852.0)],
-    [NSValue valueWithCGSize:CGSizeMake(414.0, 896.0)],
-    [NSValue valueWithCGSize:CGSizeMake(430.0, 932.0)]
+    [NSValue valueWithCGSize:CGSizeMake(320.0, 568.0)], [NSValue valueWithCGSize:CGSizeMake(375.0, 812.0)],
+    [NSValue valueWithCGSize:CGSizeMake(390.0, 844.0)], [NSValue valueWithCGSize:CGSizeMake(393.0, 852.0)],
+    [NSValue valueWithCGSize:CGSizeMake(414.0, 896.0)], [NSValue valueWithCGSize:CGSizeMake(430.0, 932.0)]
   ];
   CGFloat previousItemWidth = 0.0;
 
@@ -596,8 +594,7 @@
                              viewportSize.width, viewportSize.height);
 
     if (previousItemWidth > 0.0) {
-      XCTAssertGreaterThanOrEqual(layout.itemSize.width, previousItemWidth - 0.5,
-                                  @"Wider common viewports should not shrink carousel cards");
+      XCTAssertGreaterThanOrEqual(layout.itemSize.width, previousItemWidth - 0.5, @"Wider common viewports should not shrink carousel cards");
     }
     previousItemWidth = layout.itemSize.width;
   }
@@ -610,8 +607,7 @@
   [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
   NSDictionary<NSString *, NSNumber *> *expandedMetrics = [self currentAdaptiveOnboardingMetrics];
 
-  XCTAssertGreaterThanOrEqual(expandedMetrics[@"carouselCellTitleFontSize"].doubleValue,
-                              compactMetrics[@"carouselCellTitleFontSize"].doubleValue);
+  XCTAssertGreaterThanOrEqual(expandedMetrics[@"carouselCellTitleFontSize"].doubleValue, compactMetrics[@"carouselCellTitleFontSize"].doubleValue);
   XCTAssertGreaterThanOrEqual(expandedMetrics[@"carouselCellMetadataFontSize"].doubleValue,
                               compactMetrics[@"carouselCellMetadataFontSize"].doubleValue);
   XCTAssertGreaterThanOrEqual(expandedMetrics[@"carouselCellTitleFontSize"].doubleValue,
@@ -622,20 +618,16 @@
   NSDictionary<NSString *, NSNumber *> *baseMetrics = [self adaptiveMetricsForWindowSize:CGSizeMake(390.0, 844.0)];
   NSDictionary<NSString *, NSNumber *> *compactMetrics = [self adaptiveMetricsForWindowSize:CGSizeMake(320.0, 568.0)];
 
-  XCTAssertEqualWithAccuracy(compactMetrics[@"titleFontSize"].doubleValue / baseMetrics[@"titleFontSize"].doubleValue, 320.0 / 390.0,
-                             0.03);
-  XCTAssertEqualWithAccuracy(compactMetrics[@"horizontalInset"].doubleValue / baseMetrics[@"horizontalInset"].doubleValue,
-                             320.0 / 390.0, 0.03);
-  XCTAssertEqualWithAccuracy(compactMetrics[@"buttonHeight"].doubleValue / baseMetrics[@"buttonHeight"].doubleValue, 568.0 / 844.0,
-                             0.03);
+  XCTAssertEqualWithAccuracy(compactMetrics[@"titleFontSize"].doubleValue / baseMetrics[@"titleFontSize"].doubleValue, 320.0 / 390.0, 0.03);
+  XCTAssertEqualWithAccuracy(compactMetrics[@"horizontalInset"].doubleValue / baseMetrics[@"horizontalInset"].doubleValue, 320.0 / 390.0, 0.03);
+  XCTAssertEqualWithAccuracy(compactMetrics[@"buttonHeight"].doubleValue / baseMetrics[@"buttonHeight"].doubleValue, 568.0 / 844.0, 0.03);
 }
 
 - (void)testScalingOnlyExpandsMetricsProportionallyOnLargeViewport {
   NSDictionary<NSString *, NSNumber *> *baseMetrics = [self adaptiveMetricsForWindowSize:CGSizeMake(390.0, 844.0)];
   NSDictionary<NSString *, NSNumber *> *expandedMetrics = [self adaptiveMetricsForWindowSize:CGSizeMake(430.0, 932.0)];
 
-  XCTAssertEqualWithAccuracy(expandedMetrics[@"titleFontSize"].doubleValue / baseMetrics[@"titleFontSize"].doubleValue, 430.0 / 390.0,
-                             0.03);
+  XCTAssertEqualWithAccuracy(expandedMetrics[@"titleFontSize"].doubleValue / baseMetrics[@"titleFontSize"].doubleValue, 430.0 / 390.0, 0.03);
   XCTAssertGreaterThan(expandedMetrics[@"buttonHeight"].doubleValue, baseMetrics[@"buttonHeight"].doubleValue);
   XCTAssertGreaterThan(expandedMetrics[@"carouselItemWidth"].doubleValue, baseMetrics[@"carouselItemWidth"].doubleValue);
 }
@@ -733,12 +725,9 @@
 
 - (NSDictionary<NSString *, NSNumber *> *)currentRecipeDetailMetrics {
   UIView *detailRootView = self.viewController.presentedViewController.view;
-  UILabel *titleLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailRootView];
-  UIButton *startButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton" inView:detailRootView];
-  UIButton *closeButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
+  UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailRootView];
+  UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton" inView:detailRootView];
+  UIButton *closeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
 
   XCTAssertNotNil(titleLabel);
   XCTAssertNotNil(startButton);
@@ -763,8 +752,8 @@
 
 - (void)assertPrimaryOnboardingContentFitsCurrentViewport {
   NSArray<NSString *> *identifiers = @[
-    @"onboarding.benefitTitleLabel", @"onboarding.benefitBodyLabel", @"onboarding.emailButton", @"onboarding.googleButton",
-    @"onboarding.appleButton", @"onboarding.signinPromptLabel", @"onboarding.signinLabel"
+    @"onboarding.benefitTitleLabel", @"onboarding.benefitBodyLabel", @"onboarding.emailButton", @"onboarding.googleButton", @"onboarding.appleButton",
+    @"onboarding.signinPromptLabel", @"onboarding.signinLabel"
   ];
   CGFloat viewportBottom = CGRectGetHeight(self.viewController.view.bounds) + 1.0;
 
