@@ -109,6 +109,8 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 - (void)showValidationErrorMessage:(NSString *)message;
 - (NSString *)trimmedEmailValue;
 - (void)presentSuccessAlert;
+- (void)returnToPostResetDestination;
+- (BOOL)shouldAnimateNavigationTransitions;
 - (void)handleSuccessAlertAcknowledged;
 
 @end
@@ -541,18 +543,45 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
                                                       style:UIAlertActionStyleDefault
                                                     handler:^(__unused UIAlertAction *action) {
-                                                      [self handleSuccessAlertAcknowledged];
+                                                      dispatch_async(dispatch_get_main_queue(), ^{
+                                                        [self handleSuccessAlertAcknowledged];
+                                                      });
                                                     }]];
   [self presentViewController:alertController animated:YES completion:nil];
 }
 
 - (void)handleSuccessAlertAcknowledged {
-  if (self.navigationController != nil) {
-    [self.navigationController popToRootViewControllerAnimated:YES];
+  UIViewController *presentedViewController = self.presentedViewController;
+  if (presentedViewController != nil) {
+    if (presentedViewController.isBeingDismissed) {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [self handleSuccessAlertAcknowledged];
+      });
+      return;
+    }
+
+    [self dismissViewControllerAnimated:[self shouldAnimateNavigationTransitions]
+                             completion:^{
+                               [self returnToPostResetDestination];
+                             }];
     return;
   }
 
-  [self dismissViewControllerAnimated:YES completion:nil];
+  [self returnToPostResetDestination];
+}
+
+- (void)returnToPostResetDestination {
+  BOOL shouldAnimate = [self shouldAnimateNavigationTransitions];
+  if (self.navigationController != nil) {
+    [self.navigationController popToRootViewControllerAnimated:shouldAnimate];
+    return;
+  }
+
+  [self dismissViewControllerAnimated:shouldAnimate completion:nil];
+}
+
+- (BOOL)shouldAnimateNavigationTransitions {
+  return NSClassFromString(@"XCTestCase") == nil;
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
