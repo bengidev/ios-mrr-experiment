@@ -4,10 +4,11 @@
 
 This document reflects the current application after the old `MainMenu` screen was removed and the onboarding flow evolved into an email-first authentication entry point.
 
-The user-facing runtime now contains four main screens:
+The user-facing runtime now contains five main screens:
 
 - `OnboardingViewController` as the logged-out root
 - `MRREmailAuthenticationViewController` pushed in either `Sign Up` or `Sign In` mode
+- `MRRForgotPasswordViewController` pushed from the sign-in screen
 - `HomeViewController` as the authenticated root
 - `OnboardingRecipeDetailViewController` as a modal recipe-exploration step
 
@@ -19,7 +20,7 @@ The app shell also owns one shared asset catalog:
 
 The application is a small state-aware iOS app centered on a polished onboarding surface, a Firebase-backed authentication session, and a retained recipe-exploration flow.
 
-`AppDelegate` is the composition root. On launch, it configures Firebase when possible, asks the authentication controller for a current session, and installs either the onboarding navigation stack or the signed-in home screen as the window root. `OnboardingViewController` owns the branded onboarding UI, looping carousel, auth CTA entry points, and recipe-detail presentation. Its email CTAs push `MRREmailAuthenticationViewController`, which handles separate full-screen sign-up and sign-in layouts while keeping that UI under the onboarding feature. `HomeViewController` shows the active session summary, including provider and `emailVerified` state, and delegates sign-out back to the app root.
+`AppDelegate` is the composition root. On launch, it configures Firebase when possible, asks the authentication controller for a current session, and installs either the onboarding navigation stack or the signed-in home screen as the window root. `OnboardingViewController` owns the branded onboarding UI, looping carousel, auth CTA entry points, and recipe-detail presentation. Its email CTAs push `MRREmailAuthenticationViewController`, which handles separate full-screen sign-up and sign-in layouts while keeping that UI under the onboarding feature. The sign-in flow can push `MRRForgotPasswordViewController` for Firebase reset-email handling. `HomeViewController` shows the active session summary, including provider and `emailVerified` state, and delegates sign-out back to the app root.
 
 `OnboardingStateController` still persists whether the recipe flow reached `Start Cooking`, but that flag is now separate from launch routing. The root flow is driven by the auth session instead.
 
@@ -36,6 +37,7 @@ flowchart TB
   onboardingState["Features/Onboarding/Data/OnboardingStateController"]
   onboardingVC["Features/Onboarding/Presentation/OnboardingViewController"]
   emailAuthVC["Features/Onboarding/Presentation/MRREmailAuthenticationViewController"]
+  forgotPasswordVC["Features/Onboarding/Presentation/MRRForgotPasswordViewController"]
   onboardingDetailVC["Features/Onboarding/Presentation/OnboardingRecipeDetailViewController"]
   carouselCell["Features/Onboarding/Presentation/OnboardingRecipeCarouselCell"]
   homeVC["Features/Home/HomeViewController"]
@@ -55,6 +57,7 @@ flowchart TB
   app --> homeVC
   onboardingVC --> onboardingState
   onboardingVC --> emailAuthVC
+  emailAuthVC --> forgotPasswordVC
   onboardingVC --> onboardingDetailVC
   onboardingVC --> carouselCell
   homeVC --> auth
@@ -76,6 +79,7 @@ sequenceDiagram
   participant state as OnboardingStateController
   participant onboarding as OnboardingViewController
   participant email as MRREmailAuthenticationViewController
+  participant reset as MRRForgotPasswordViewController
   participant home as HomeViewController
   participant detail as OnboardingRecipeDetailViewController
 
@@ -91,6 +95,9 @@ sequenceDiagram
     auth-->>app: nil
     app->>onboarding: buildOnboardingViewController()
     onboarding->>email: push Sign Up / Sign In screen
+    email->>reset: push Forgot Password screen
+    reset->>auth: sendPasswordResetForEmail
+    reset-->>onboarding: pop to onboarding after success alert
     email->>auth: signUpWithEmail / signInWithEmail
     auth-->>app: authenticated session available
     app->>home: replace root with HomeViewController
@@ -113,6 +120,7 @@ flowchart TB
   nav["UINavigationController (hidden bar)"]
   onboarding["OnboardingViewController"]
   email["MRREmailAuthenticationViewController"]
+  reset["MRRForgotPasswordViewController"]
   detail["OnboardingRecipeDetailViewController"]
   home["HomeViewController"]
   defaults["NSUserDefaults"]
@@ -128,6 +136,7 @@ flowchart TB
   nav --> onboarding
   onboarding --> state
   onboarding --> email
+  email --> reset
   onboarding --> detail
   app --> home
   home --> auth
@@ -233,6 +242,7 @@ classDiagram
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h` | Declares the onboarding controller initializer | Accepts injected onboarding state |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.m` | Builds branded onboarding layout, looping carousel, auth CTA entry points, and recipe-detail flow | Owns push-based email auth navigation and launch centering safeguards |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/MRREmailAuthenticationViewController.m` | Renders full-screen sign-up and sign-in screens | Handles email/password validation, keyboard-aware scrolling, and auth submission |
+| `MRR Project/Features/Onboarding/Presentation/ViewControllers/MRRForgotPasswordViewController.m` | Renders the dedicated password-reset screen | Validates reset email input, calls the auth controller reset API, and returns to onboarding after success confirmation |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h` | Declares recipe-detail delegate callbacks | Reports close and `Start Cooking` actions |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.m` | Renders modal recipe detail content | Triggers onboarding completion through the onboarding controller |
 | `MRR Project/Features/Onboarding/Presentation/Views/OnboardingRecipeCarouselCell.h` | Declares the onboarding carousel cell | Used by `OnboardingViewController` collection view |
@@ -252,6 +262,8 @@ The runtime dependency chain is intentionally small:
 `AppDelegate -> OnboardingStateController -> NSUserDefaults`
 
 `AppDelegate -> UINavigationController -> OnboardingViewController -> MRREmailAuthenticationViewController`
+
+`MRREmailAuthenticationViewController -> MRRForgotPasswordViewController`
 
 `AppDelegate -> HomeViewController`
 
@@ -303,13 +315,15 @@ flowchart LR
 - The app target uses Manual Retain-Release. Application code must continue balancing retained objects explicitly.
 - Root navigation is state-based, not coordinator-based. This keeps the app small and direct.
 - The onboarding feature now owns the dedicated sign-up and sign-in screens, so auth entry remains visually and structurally close to the onboarding surface.
+- The forgot-password flow is also owned by onboarding and reuses the same authentication abstraction instead of adding a separate coordinator.
 - Email/password and Google Sign-In are now live onboarding auth paths. Apple stays visible as a structured stub.
 - The onboarding carousel uses virtual looping plus guarded initial positioning so auto-scroll does not jump on launch.
 - The auth screens are keyboard-aware: they use scroll insets, tap-to-dismiss, and focused-field visibility handling.
 - Light and dark appearance rely on named colors from the shared asset catalog.
 - Accessibility identifiers are a maintained part of the onboarding, auth, and home debug/test contract.
 - The repository now includes a tracked GitHub Actions coverage workflow and a tracked pre-commit hook for Objective-C formatting and linting.
+- Any local `Packages/CocoaLumberjack/` checkout is outside the tracked runtime graph and ignored by git so CI does not treat it as a submodule.
 
 ## Conclusion
 
-The current architecture is a minimal onboarding-and-auth application. `AppDelegate` remains the composition root, `OnboardingViewController` remains the logged-out entry surface, `MRREmailAuthenticationViewController` handles pushed full-screen email auth, and `HomeViewController` represents the authenticated state. The result is a small runtime surface that still keeps the polished carousel, recipe-detail exploration flow, adaptive theming, and a stronger auth/test/tooling story than the earlier onboarding-only variant.
+The current architecture is a minimal onboarding-and-auth application. `AppDelegate` remains the composition root, `OnboardingViewController` remains the logged-out entry surface, `MRREmailAuthenticationViewController` and `MRRForgotPasswordViewController` keep email auth under the onboarding feature, and `HomeViewController` represents the authenticated state. The result is a small runtime surface that still keeps the polished carousel, recipe-detail exploration flow, adaptive theming, live email and Google auth, and a stronger auth/test/tooling story than the earlier onboarding-only variant.

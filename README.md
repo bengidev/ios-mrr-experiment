@@ -49,7 +49,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 | Stack | Used for | Where it shows up | Notes |
 | --- | --- | --- | --- |
 | `XCTest` | Unit and UI-structure regression coverage | `MRR ProjectTests/` | Covers root routing, onboarding, pushed auth screens, home summary, logout flow, and carousel behavior. |
-| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled and uploads `.xcresult` plus `xccov` artifacts. |
+| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled and uploads `.xcresult` plus `xccov` artifacts. The workflow uses only tracked repo contents; local `Packages/CocoaLumberjack/` checkouts are ignored. |
 | `clang-format` | Objective-C formatting | `.clang-format`, `scripts/format-objc.sh`, `.githooks/pre-commit` | Uses Google-based formatting rules with a `ColumnLimit` of `150`. |
 | `xcodebuild analyze` | Objective-C static analysis lint pass | `scripts/lint-objc.sh` | Used by the pre-commit hook so analyzer findings block a bad commit. |
 | `Git pre-commit hook` | Local guardrail before commits | `.githooks/pre-commit` | Formats staged Objective-C files, re-stages them, then runs the analyzer. |
@@ -91,8 +91,8 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 The current milestone is email-first, but the project is already wired to grow into multi-provider auth later.
 
 1. Add `GoogleService-Info.plist` to the `MRR Project` app target so Firebase can initialize correctly.
-2. Enable `Email/Password` inside Firebase Authentication. This is the only provider that is live in the current onboarding flow.
-3. Enable `Google` and add the `REVERSED_CLIENT_ID` value from `GoogleService-Info.plist` into `CFBundleURLTypes` in [Info.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/Info.plist) if you want the project ready for the later Google rollout.
+2. Enable `Email/Password` and `Google` inside Firebase Authentication. Both providers are live in the current onboarding flow.
+3. Add the `REVERSED_CLIENT_ID` value from `GoogleService-Info.plist` into `CFBundleURLTypes` in [Info.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/Info.plist) so the Google callback can return to the app.
 4. Keep Apple sign-in as stubbed UI until the Apple capability and Developer Program setup are available.
 
 Without Firebase configuration, the app will still build, and the email screens will surface setup-aware auth errors instead of failing silently.
@@ -107,14 +107,15 @@ The active unit-test coverage focuses on root flow, onboarding presentation, aut
 - logging out replaces the root with onboarding
 - pushed sign-up and sign-in presentation flow
 - email auth validation, success flow, and keyboard-aware layout behavior
-- Google stub alert presentation
+- forgot-password reset-email flow, validation, and success alert behavior
+- live Google sign-in success, centered loading overlay, cancellation, and account-link fallback
 - Apple stub alert presentation
 - home email-verification summary and logout confirmation flow
 - carousel centering, recentering, and auto-scroll behavior
 - recipe detail presentation and `Start Cooking` completion flow
 - onboarding accessibility identifiers and carousel backdrop styling
 
-Remote coverage runs automatically through [ios-tests-coverage.yml](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/.github/workflows/ios-tests-coverage.yml). The workflow executes the full `MRR ProjectTests` target on GitHub Actions with code coverage enabled, then uploads the `.xcresult` bundle plus `xccov` text/JSON reports as artifacts.
+Remote coverage runs automatically through [ios-tests-coverage.yml](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/.github/workflows/ios-tests-coverage.yml). The workflow executes the full `MRR ProjectTests` target on GitHub Actions with code coverage enabled, then uploads the `.xcresult` bundle plus `xccov` text/JSON reports as artifacts. The repo intentionally ignores any local `Packages/CocoaLumberjack/` checkout so CI stays aligned with the tracked project graph and does not treat that folder as a submodule.
 
 For a matching local batch run, use:
 
@@ -151,6 +152,7 @@ For a matching local batch run, use:
 - The app target is pinned back to an iOS 12 deployment target.
 - For iOS 12 compatibility, the project should stay on the pre-Firebase-11 line, paired with a GoogleSignIn version that still resolves against `GoogleUtilities 7.x`.
 - Sign-up currently collects first and last name for UI completeness, but the live auth session still persists email/password identity only.
+- `Packages/CocoaLumberjack/` may exist locally as a developer-side checkout, but it is ignored by git and is not part of the tracked app or CI graph.
 - The test target may use ARC-backed XCTest conveniences.
 - UI is programmatic; there are no storyboards or xibs.
 - Repo-specific agent guidance lives in `AGENTS.md`.
