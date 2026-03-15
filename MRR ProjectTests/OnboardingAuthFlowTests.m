@@ -127,6 +127,7 @@
 - (MRREmailAuthenticationViewController *)topAuthenticationViewController;
 - (MRRForgotPasswordViewController *)topForgotPasswordViewController;
 - (void)spinMainRunLoop;
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 
 @end
 
@@ -288,7 +289,11 @@
   XCTAssertEqualObjects(forgotPasswordViewController.presentedViewController.view.accessibilityIdentifier, @"auth.resetPassword.successAlert");
 
   [forgotPasswordViewController handleSuccessAlertAcknowledged];
-  [self spinMainRunLoop];
+  [self
+      waitForCondition:^BOOL {
+        return [self.navigationController.topViewController isKindOfClass:[OnboardingViewController class]];
+      }
+               timeout:1.0];
 
   XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[OnboardingViewController class]]);
 }
@@ -377,11 +382,19 @@
   [submitButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
   [forgotPasswordViewController handleSuccessAlertAcknowledged];
-  [self spinMainRunLoop];
+  [self
+      waitForCondition:^BOOL {
+        return [self.navigationController.topViewController isKindOfClass:[OnboardingViewController class]];
+      }
+               timeout:1.0];
 
   UIButton *reopenedSigninButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.signinLabel" inView:self.viewController.view];
   [reopenedSigninButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self spinMainRunLoop];
+  [self
+      waitForCondition:^BOOL {
+        return [self.navigationController.topViewController isKindOfClass:[MRREmailAuthenticationViewController class]];
+      }
+               timeout:1.0];
 
   MRREmailAuthenticationViewController *freshSignInViewController = [self topAuthenticationViewController];
   UITextField *freshEmailField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.emailField"
@@ -578,6 +591,13 @@
 
 - (void)spinMainRunLoop {
   [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];
+}
+
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
+  NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:timeout];
+  while (condition != nil && !condition() && [deadline timeIntervalSinceNow] > 0.0) {
+    [self spinMainRunLoop];
+  }
 }
 
 @end

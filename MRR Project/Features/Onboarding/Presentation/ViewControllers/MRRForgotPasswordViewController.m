@@ -111,6 +111,7 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 - (void)presentSuccessAlert;
 - (void)returnToPostResetDestination;
 - (BOOL)shouldAnimateNavigationTransitions;
+- (void)scheduleReturnToPostResetDestination;
 - (void)handleSuccessAlertAcknowledged;
 
 @end
@@ -547,7 +548,7 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
                                                         [self handleSuccessAlertAcknowledged];
                                                       });
                                                     }]];
-  [self presentViewController:alertController animated:YES completion:nil];
+  [self presentViewController:alertController animated:[self shouldAnimateNavigationTransitions] completion:nil];
 }
 
 - (void)handleSuccessAlertAcknowledged {
@@ -562,12 +563,27 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 
     [self dismissViewControllerAnimated:[self shouldAnimateNavigationTransitions]
                              completion:^{
-                               [self returnToPostResetDestination];
+                               [self scheduleReturnToPostResetDestination];
                              }];
     return;
   }
 
-  [self returnToPostResetDestination];
+  [self scheduleReturnToPostResetDestination];
+}
+
+- (void)scheduleReturnToPostResetDestination {
+  id<UIViewControllerTransitionCoordinator> transitionCoordinator = self.transitionCoordinator;
+  if (transitionCoordinator != nil) {
+    [transitionCoordinator animateAlongsideTransition:nil
+                                           completion:^(__unused id<UIViewControllerTransitionCoordinatorContext> context) {
+                                             [self returnToPostResetDestination];
+                                           }];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self returnToPostResetDestination];
+  });
 }
 
 - (void)returnToPostResetDestination {
