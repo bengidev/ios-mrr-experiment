@@ -8,6 +8,7 @@
 #import "../../../Authentication/MRRAuthErrorMapper.h"
 #import "MRREmailAuthenticationViewController.h"
 #import "../../../Authentication/MRRFirebaseAuthenticationController.h"
+#import "../../../../Layout/MRRLiquidGlassStyling.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
 #import "../../Data/OnboardingStateController.h"
 #import "../Views/OnboardingRecipeCarouselCell.h"
@@ -16,12 +17,15 @@
 static NSString *const MRRRecipeCarouselCellReuseIdentifier = @"MRRRecipeCarouselCell";
 static NSInteger const MRRCarouselLoopMultiplier = 5;
 static NSString *const MRROnboardingAppIconImageName = @"OnboardingAppIcon";
-static NSInteger const MRROnboardingAuthButtonIconTag = 101;
-static NSInteger const MRROnboardingAuthButtonTitleTag = 102;
-static NSInteger const MRROnboardingAuthButtonContentWrapperTag = 103;
 static CGFloat const MRRCarouselSingleRowSpacingPadding = 32.0;
 static CGFloat const MRROnboardingButtonPressedScale = 0.97;
 static CGFloat const MRROnboardingButtonPressedAlpha = 0.88;
+
+typedef NS_ENUM(NSInteger, MRROnboardingAuthButtonIconStyle) {
+  MRROnboardingAuthButtonIconStyleEmail = 0,
+  MRROnboardingAuthButtonIconStyleGoogle = 1,
+  MRROnboardingAuthButtonIconStyleApple = 2,
+};
 
 static UIColor *MRRDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -61,10 +65,6 @@ static UIColor *MRRBackgroundSurfaceColor(void) {
   return MRRNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 }
 
-static UIColor *MRRCardSurfaceColor(void) {
-  return MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0], [UIColor colorWithWhite:0.16 alpha:1.0]);
-}
-
 static UIColor *MRRPrimaryTextColor(void) {
   return MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0]);
 }
@@ -75,11 +75,10 @@ static UIColor *MRRSecondaryTextColor(void) {
 
 static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor colorWithWhite:0.0 alpha:0.12]; }
 
-static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceColor() colorWithAlphaComponent:0.9]; }
-
 @interface OnboardingViewController () <UICollectionViewDataSource,
                                         UICollectionViewDelegate,
                                         UICollectionViewDelegateFlowLayout,
+                                        UIAdaptivePresentationControllerDelegate,
                                         UIScrollViewDelegate,
                                         OnboardingRecipeDetailViewControllerDelegate,
                                         MRREmailAuthenticationViewControllerDelegate>
@@ -141,10 +140,16 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
               labelIdentifier:(NSString *)labelIdentifier;
 - (UILabel *)labelWithText:(NSString *)text font:(UIFont *)font color:(UIColor *)color;
 - (UIButton *)authButtonWithTitle:(NSString *)title
-                         iconText:(nullable NSString *)iconText
-                      filledStyle:(BOOL)filledStyle
+                        iconStyle:(MRROnboardingAuthButtonIconStyle)iconStyle
           accessibilityIdentifier:(NSString *)accessibilityIdentifier
                            action:(SEL)action;
+- (void)applyAuthButtonIconStyle:(MRROnboardingAuthButtonIconStyle)iconStyle toButton:(UIButton *)button;
+- (UIImage *)authButtonIconForStyle:(MRROnboardingAuthButtonIconStyle)iconStyle;
+- (UIImage *)symbolButtonIconNamed:(NSString *)systemName pointSize:(CGFloat)pointSize tintColor:(nullable UIColor *)tintColor;
+- (UIImage *)monogramButtonIconWithText:(NSString *)text
+                        backgroundColor:(UIColor *)backgroundColor
+                        foregroundColor:(UIColor *)foregroundColor
+                               diameter:(CGFloat)diameter;
 - (UIView *)authDividerView;
 - (void)handleEmailSignupTapped:(id)sender;
 - (void)handleGoogleSignupTapped:(id)sender;
@@ -354,12 +359,9 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
 
   UIView *iconContainerView = [[[UIView alloc] init] autorelease];
   iconContainerView.translatesAutoresizingMaskIntoConstraints = NO;
-  iconContainerView.backgroundColor = [UIColor clearColor];
-  iconContainerView.clipsToBounds = YES;
   iconContainerView.accessibilityIdentifier = @"onboarding.logoContainerView";
-  iconContainerView.layer.cornerRadius = 24.0;
-  iconContainerView.layer.borderWidth = 1.0;
-  iconContainerView.layer.borderColor = [[MRRPrimaryTextColor() colorWithAlphaComponent:0.12] CGColor];
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:iconContainerView];
+  iconContainerView.clipsToBounds = YES;
   [iconWrapperView addSubview:iconContainerView];
   self.iconContainerView = iconContainerView;
 
@@ -497,8 +499,7 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   self.benefitBodyLabel = benefitBodyLabel;
 
   UIButton *emailButton = [self authButtonWithTitle:@"Sign up with email"
-                                           iconText:@"✉"
-                                        filledStyle:NO
+                                          iconStyle:MRROnboardingAuthButtonIconStyleEmail
                             accessibilityIdentifier:@"onboarding.emailButton"
                                              action:@selector(handleEmailSignupTapped:)];
   [stackView addArrangedSubview:emailButton];
@@ -509,16 +510,14 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   [stackView addArrangedSubview:dividerView];
 
   UIButton *googleButton = [self authButtonWithTitle:@"Continue with Google"
-                                            iconText:@"G"
-                                         filledStyle:NO
+                                           iconStyle:MRROnboardingAuthButtonIconStyleGoogle
                              accessibilityIdentifier:@"onboarding.googleButton"
                                               action:@selector(handleGoogleSignupTapped:)];
   [stackView addArrangedSubview:googleButton];
   self.googleButton = googleButton;
 
   UIButton *appleButton = [self authButtonWithTitle:@"Continue with Apple"
-                                           iconText:@""
-                                        filledStyle:YES
+                                          iconStyle:MRROnboardingAuthButtonIconStyleApple
                             accessibilityIdentifier:@"onboarding.appleButton"
                                              action:@selector(handleAppleContinueTapped:)];
   [stackView addArrangedSubview:appleButton];
@@ -537,8 +536,7 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   UIView *loadingContainerView = [[[UIView alloc] init] autorelease];
   loadingContainerView.translatesAutoresizingMaskIntoConstraints = NO;
   loadingContainerView.accessibilityIdentifier = @"onboarding.loadingContainer";
-  loadingContainerView.backgroundColor = MRROnboardingLoadingPanelColor();
-  loadingContainerView.layer.cornerRadius = 22.0;
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:loadingContainerView];
   loadingContainerView.clipsToBounds = YES;
   [loadingOverlayView.contentView addSubview:loadingContainerView];
 
@@ -575,16 +573,12 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
 
   UIButton *signinLabel = [UIButton buttonWithType:UIButtonTypeSystem];
   signinLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  signinLabel.backgroundColor = [UIColor clearColor];
-  signinLabel.contentEdgeInsets = UIEdgeInsetsZero;
   signinLabel.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
   signinLabel.titleLabel.textAlignment = NSTextAlignmentCenter;
   [signinLabel setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
   [signinLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
   [signinLabel setTitle:@"Sign in" forState:UIControlStateNormal];
-  [signinLabel setTitle:@"Sign in" forState:UIControlStateHighlighted];
-  [signinLabel setTitleColor:MRRPrimaryTextColor() forState:UIControlStateNormal];
-  [signinLabel setTitleColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.76] forState:UIControlStateHighlighted];
+  [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRoleInline toButton:signinLabel];
   signinLabel.accessibilityIdentifier = @"onboarding.signinLabel";
   [self configurePressFeedbackForButton:signinLabel];
   [signinLabel addTarget:self action:@selector(handleSigninTapped:) forControlEvents:UIControlEventTouchUpInside];
@@ -664,11 +658,7 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   UIView *pillView = [[[UIView alloc] init] autorelease];
   pillView.translatesAutoresizingMaskIntoConstraints = NO;
   pillView.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".pillView"];
-  pillView.backgroundColor = [MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                                            [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]) colorWithAlphaComponent:0.14];
-  pillView.layer.cornerRadius = 16.0;
-  pillView.layer.borderWidth = 1.0;
-  pillView.layer.borderColor = [[MRRPrimaryTextColor() colorWithAlphaComponent:0.08] CGColor];
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleBadge toView:pillView];
   [containerView addSubview:pillView];
 
   UILabel *label = [self labelWithText:text
@@ -704,67 +694,131 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
 }
 
 - (UIButton *)authButtonWithTitle:(NSString *)title
-                         iconText:(NSString *)iconText
-                      filledStyle:(BOOL)filledStyle
+                        iconStyle:(MRROnboardingAuthButtonIconStyle)iconStyle
           accessibilityIdentifier:(NSString *)accessibilityIdentifier
                            action:(SEL)action {
   UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
   button.translatesAutoresizingMaskIntoConstraints = NO;
   button.accessibilityIdentifier = accessibilityIdentifier;
-  button.layer.cornerRadius = 18.0;
-  button.layer.borderWidth = filledStyle ? 0.0 : 1.0;
-  button.layer.borderColor = [[MRRPrimaryTextColor() colorWithAlphaComponent:0.12] CGColor];
-  button.layer.shadowColor = [UIColor blackColor].CGColor;
-  button.layer.shadowOpacity = filledStyle ? 0.18f : 0.12f;
-  button.layer.shadowRadius = filledStyle ? 18.0f : 12.0f;
-  button.layer.shadowOffset = CGSizeMake(0.0, filledStyle ? 10.0 : 8.0);
-  button.backgroundColor = filledStyle ? MRRPrimaryTextColor() : MRRCardSurfaceColor();
+  [button setTitle:title forState:UIControlStateNormal];
+  [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRoleSecondary toButton:button];
+  [self applyAuthButtonIconStyle:iconStyle toButton:button];
   [self configurePressFeedbackForButton:button];
   [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
 
-  UIView *contentWrapper = [[[UIView alloc] init] autorelease];
-  contentWrapper.translatesAutoresizingMaskIntoConstraints = NO;
-  contentWrapper.userInteractionEnabled = NO;
-  contentWrapper.tag = MRROnboardingAuthButtonContentWrapperTag;
-  contentWrapper.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".contentWrapper"];
-  [button addSubview:contentWrapper];
-
-  UILabel *iconLabel = [[[UILabel alloc] init] autorelease];
-  iconLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  iconLabel.tag = MRROnboardingAuthButtonIconTag;
-  iconLabel.text = iconText;
-  iconLabel.textAlignment = NSTextAlignmentCenter;
-  iconLabel.font = [UIFont systemFontOfSize:22.0 weight:UIFontWeightSemibold];
-  iconLabel.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".iconLabel"];
-  iconLabel.textColor = filledStyle ? MRRBackgroundSurfaceColor() : MRRPrimaryTextColor();
-  [contentWrapper addSubview:iconLabel];
-
-  UILabel *titleLabel = [[[UILabel alloc] init] autorelease];
-  titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  titleLabel.tag = MRROnboardingAuthButtonTitleTag;
-  titleLabel.text = title;
-  titleLabel.font = [UIFont systemFontOfSize:20.0 weight:UIFontWeightSemibold];
-  titleLabel.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".titleLabel"];
-  titleLabel.textColor = filledStyle ? MRRBackgroundSurfaceColor() : MRRPrimaryTextColor();
-  titleLabel.adjustsFontSizeToFitWidth = YES;
-  titleLabel.minimumScaleFactor = 0.82;
-  [contentWrapper addSubview:titleLabel];
-
-  [NSLayoutConstraint activateConstraints:@[
-    [contentWrapper.centerXAnchor constraintEqualToAnchor:button.centerXAnchor],
-    [contentWrapper.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
-
-    [iconLabel.leadingAnchor constraintEqualToAnchor:contentWrapper.leadingAnchor],
-    [iconLabel.centerYAnchor constraintEqualToAnchor:contentWrapper.centerYAnchor],
-    [iconLabel.widthAnchor constraintGreaterThanOrEqualToConstant:24.0],
-
-    [titleLabel.leadingAnchor constraintEqualToAnchor:iconLabel.trailingAnchor constant:12.0],
-    [titleLabel.topAnchor constraintEqualToAnchor:contentWrapper.topAnchor],
-    [titleLabel.trailingAnchor constraintEqualToAnchor:contentWrapper.trailingAnchor],
-    [titleLabel.bottomAnchor constraintEqualToAnchor:contentWrapper.bottomAnchor]
-  ]];
-
   return button;
+}
+
+- (void)applyAuthButtonIconStyle:(MRROnboardingAuthButtonIconStyle)iconStyle toButton:(UIButton *)button {
+  UIImage *iconImage = [self authButtonIconForStyle:iconStyle];
+  if (iconImage == nil) {
+    return;
+  }
+
+  button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+  if (@available(iOS 15.0, *)) {
+    UIButtonConfiguration *configuration = button.configuration;
+    if (configuration == nil) {
+      return;
+    }
+
+    configuration.image = iconImage;
+    configuration.imagePlacement = NSDirectionalRectEdgeLeading;
+    configuration.imagePadding = 10.0;
+    configuration.baseForegroundColor = MRRPrimaryTextColor();
+    button.configuration = configuration;
+    return;
+  }
+
+  button.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+  [button setImage:iconImage forState:UIControlStateNormal];
+  [button setImage:iconImage forState:UIControlStateHighlighted];
+  if (iconStyle != MRROnboardingAuthButtonIconStyleGoogle) {
+    button.tintColor = MRRPrimaryTextColor();
+  }
+  button.imageView.contentMode = UIViewContentModeScaleAspectFit;
+  button.imageEdgeInsets = UIEdgeInsetsMake(0.0, -6.0, 0.0, 6.0);
+  button.titleEdgeInsets = UIEdgeInsetsMake(0.0, 6.0, 0.0, -6.0);
+}
+
+- (UIImage *)authButtonIconForStyle:(MRROnboardingAuthButtonIconStyle)iconStyle {
+  CGFloat symbolPointSize = 18.0;
+  CGFloat fallbackDiameter = 18.0;
+
+  switch (iconStyle) {
+  case MRROnboardingAuthButtonIconStyleEmail:
+    if (@available(iOS 13.0, *)) {
+      return [self symbolButtonIconNamed:@"envelope.fill" pointSize:symbolPointSize tintColor:nil];
+    }
+    return [self monogramButtonIconWithText:@"@"
+                            backgroundColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.10]
+                            foregroundColor:MRRPrimaryTextColor()
+                                   diameter:fallbackDiameter];
+  case MRROnboardingAuthButtonIconStyleGoogle:
+    if (@available(iOS 13.0, *)) {
+      return [self symbolButtonIconNamed:@"g.circle.fill"
+                               pointSize:symbolPointSize
+                               tintColor:[UIColor colorWithRed:0.26 green:0.52 blue:0.96 alpha:1.0]];
+    }
+    return [self monogramButtonIconWithText:@"G"
+                            backgroundColor:[UIColor colorWithRed:0.26 green:0.52 blue:0.96 alpha:1.0]
+                            foregroundColor:[UIColor whiteColor]
+                                   diameter:fallbackDiameter];
+  case MRROnboardingAuthButtonIconStyleApple:
+    if (@available(iOS 13.0, *)) {
+      return [self symbolButtonIconNamed:@"apple.logo" pointSize:symbolPointSize tintColor:nil];
+    }
+    return [self monogramButtonIconWithText:@"A"
+                            backgroundColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.12]
+                            foregroundColor:MRRPrimaryTextColor()
+                                   diameter:fallbackDiameter];
+  }
+
+  return nil;
+}
+
+- (UIImage *)symbolButtonIconNamed:(NSString *)systemName pointSize:(CGFloat)pointSize tintColor:(UIColor *)tintColor {
+  if (@available(iOS 13.0, *)) {
+    UIImageSymbolConfiguration *symbolConfiguration =
+        [UIImageSymbolConfiguration configurationWithPointSize:pointSize weight:UIImageSymbolWeightSemibold];
+    UIImage *symbolImage = [UIImage systemImageNamed:systemName withConfiguration:symbolConfiguration];
+    if (tintColor != nil) {
+      return [symbolImage imageWithTintColor:tintColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    }
+    return [symbolImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+  }
+
+  return nil;
+}
+
+- (UIImage *)monogramButtonIconWithText:(NSString *)text
+                        backgroundColor:(UIColor *)backgroundColor
+                        foregroundColor:(UIColor *)foregroundColor
+                               diameter:(CGFloat)diameter {
+  CGSize imageSize = CGSizeMake(diameter, diameter);
+  UIGraphicsBeginImageContextWithOptions(imageSize, NO, 0.0);
+  CGContextRef context = UIGraphicsGetCurrentContext();
+  CGRect imageRect = CGRectMake(0.0, 0.0, diameter, diameter);
+
+  if (context != NULL) {
+    CGContextSetFillColorWithColor(context, backgroundColor.CGColor);
+    CGContextFillEllipseInRect(context, imageRect);
+  }
+
+  UIFont *font = [UIFont systemFontOfSize:diameter * 0.72 weight:UIFontWeightBold];
+  CGSize textSize = [text sizeWithAttributes:@{
+    NSFontAttributeName : font
+  }];
+  CGRect textRect = CGRectMake((diameter - textSize.width) / 2.0, (diameter - textSize.height) / 2.0, textSize.width, textSize.height);
+  [text drawInRect:textRect
+    withAttributes:@{
+      NSFontAttributeName : font,
+      NSForegroundColorAttributeName : foregroundColor
+    }];
+
+  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+  return image;
 }
 
 - (void)configurePressFeedbackForButton:(UIButton *)button {
@@ -779,12 +833,15 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
 }
 
 - (void)handlePressableButtonTouchDown:(UIButton *)sender {
+  CGAffineTransform targetTransform = UIAccessibilityIsReduceMotionEnabled()
+                                          ? CGAffineTransformIdentity
+                                          : CGAffineTransformMakeScale(MRROnboardingButtonPressedScale, MRROnboardingButtonPressedScale);
   [UIView
       animateWithDuration:0.12
                     delay:0.0
                   options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
                animations:^{
-                 sender.transform = CGAffineTransformMakeScale(MRROnboardingButtonPressedScale, MRROnboardingButtonPressedScale);
+                 sender.transform = targetTransform;
                  sender.alpha = MRROnboardingButtonPressedAlpha;
                }
                completion:nil];
@@ -907,7 +964,7 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   }
 
   UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
-  navigationController.navigationBarHidden = YES;
+  navigationController.navigationBarHidden = NO;
   [self presentViewController:navigationController animated:[self shouldAnimateModalTransitions] completion:nil];
 }
 
@@ -1010,7 +1067,6 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   CGFloat signinFontSize = 0.0;
   CGFloat authDividerFontSize = 0.0;
   CGFloat buttonCornerRadius = 0.0;
-  CGFloat buttonIconFontSize = 0.0;
   CGFloat buttonTitleFontSize = 0.0;
   CGFloat desiredLineSpacing = 0.0;
 
@@ -1039,7 +1095,6 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   signinFontSize = MRRLayoutScaledValue(14.5, viewportSize, MRRLayoutScaleAxisWidth);
   authDividerFontSize = MRRLayoutScaledValue(13.5, viewportSize, MRRLayoutScaleAxisWidth);
   buttonCornerRadius = MRRLayoutScaledValue(16.5, viewportSize, MRRLayoutScaleAxisHeight);
-  buttonIconFontSize = MRRLayoutScaledValue(17.0, viewportSize, MRRLayoutScaleAxisHeight);
   buttonTitleFontSize = MRRLayoutScaledValue(15.5, viewportSize, MRRLayoutScaleAxisWidth);
   desiredLineSpacing = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisWidth);
 
@@ -1072,17 +1127,40 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   self.appleButtonHeightConstraint.constant = buttonHeight;
   self.dividerHeightConstraint.constant = dividerHeight;
   self.signinPromptLabel.font = [UIFont systemFontOfSize:signinFontSize weight:UIFontWeightMedium];
-  self.signinLabel.titleLabel.font = [UIFont boldSystemFontOfSize:signinFontSize];
+  if (@available(iOS 15.0, *)) {
+    UIButtonConfiguration *signinConfiguration = self.signinLabel.configuration;
+    if (signinConfiguration != nil) {
+      signinConfiguration.attributedTitle =
+          [[[NSAttributedString alloc] initWithString:@"Sign in"
+                                           attributes:@{
+                                             NSFontAttributeName : [UIFont boldSystemFontOfSize:signinFontSize],
+                                             NSForegroundColorAttributeName : self.view.tintColor
+                                           }] autorelease];
+      self.signinLabel.configuration = signinConfiguration;
+    }
+  } else {
+    self.signinLabel.titleLabel.font = [UIFont boldSystemFontOfSize:signinFontSize];
+  }
   self.authDividerLabel.font = [UIFont systemFontOfSize:authDividerFontSize weight:UIFontWeightMedium];
 
   NSArray<UIButton *> *authButtons = @[ self.emailButton, self.googleButton, self.appleButton ];
+  UIFont *buttonTitleFont = [UIFont systemFontOfSize:buttonTitleFontSize weight:UIFontWeightSemibold];
   for (UIButton *button in authButtons) {
-    button.layer.cornerRadius = buttonCornerRadius;
-
-    UILabel *iconLabel = (UILabel *)[button viewWithTag:MRROnboardingAuthButtonIconTag];
-    UILabel *titleLabel = (UILabel *)[button viewWithTag:MRROnboardingAuthButtonTitleTag];
-    iconLabel.font = [UIFont systemFontOfSize:buttonIconFontSize weight:UIFontWeightSemibold];
-    titleLabel.font = [UIFont systemFontOfSize:buttonTitleFontSize weight:UIFontWeightSemibold];
+    if (@available(iOS 15.0, *)) {
+      UIButtonConfiguration *configuration = button.configuration;
+      if (configuration != nil) {
+        NSString *currentTitle = configuration.title ?: @"";
+        configuration.attributedTitle = [[[NSAttributedString alloc] initWithString:currentTitle
+                                                                         attributes:@{
+                                                                           NSFontAttributeName : buttonTitleFont,
+                                                                           NSForegroundColorAttributeName : MRRPrimaryTextColor()
+                                                                         }] autorelease];
+        button.configuration = configuration;
+      }
+    } else {
+      button.layer.cornerRadius = buttonCornerRadius;
+      button.titleLabel.font = buttonTitleFont;
+    }
   }
 
   UICollectionViewFlowLayout *layout = [self carouselLayout];
@@ -1415,6 +1493,18 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
   OnboardingRecipeDetailViewController *detailViewController =
       [[[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.recipes[index]] autorelease];
   detailViewController.delegate = self;
+
+  if (@available(iOS 15.0, *)) {
+    UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
+    navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
+    navigationController.presentationController.delegate = self;
+    if (navigationController.sheetPresentationController != nil) {
+      navigationController.sheetPresentationController.prefersGrabberVisible = YES;
+    }
+    [self presentViewController:navigationController animated:[self shouldAnimateModalTransitions] completion:nil];
+    return;
+  }
+
   [self presentViewController:detailViewController animated:[self shouldAnimateModalTransitions] completion:nil];
 }
 
@@ -1552,6 +1642,18 @@ static UIColor *MRROnboardingLoadingPanelColor(void) { return [MRRCardSurfaceCol
                              self.viewVisible = YES;
                              [self resumeCarouselAutoscrollIfPossible];
                            }];
+}
+
+#pragma mark - UIAdaptivePresentationControllerDelegate
+
+- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController {
+  if (!self.isDetailPresented) {
+    return;
+  }
+
+  self.detailPresented = NO;
+  self.viewVisible = YES;
+  [self resumeCarouselAutoscrollIfPossible];
 }
 
 @end

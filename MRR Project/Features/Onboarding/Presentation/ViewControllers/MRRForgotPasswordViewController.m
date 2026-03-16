@@ -1,6 +1,7 @@
 #import "MRRForgotPasswordViewController.h"
 
 #import "../../../Authentication/MRRAuthErrorMapper.h"
+#import "../../../../Layout/MRRLiquidGlassStyling.h"
 
 static UIColor *MRRResetDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -48,24 +49,7 @@ static UIColor *MRRResetSecondaryTextColor(void) {
   return MRRResetNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.44 alpha:1.0], [UIColor colorWithWhite:0.68 alpha:1.0]);
 }
 
-static UIColor *MRRResetFieldSurfaceColor(void) {
-  return MRRResetNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.14 alpha:1.0]);
-}
-
-static UIColor *MRRResetFieldBorderColor(void) {
-  return MRRResetNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.15 alpha:0.12], [UIColor colorWithWhite:1.0 alpha:0.12]);
-}
-
-static UIColor *MRRResetAccentColor(void) {
-  return MRRResetNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                            [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
-}
-
 static UIColor *MRRResetLoadingOverlayTintColor(void) { return [UIColor colorWithWhite:0.0 alpha:0.12]; }
-
-static UIColor *MRRResetLoadingPanelColor(void) {
-  return MRRResetNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:0.88], [UIColor colorWithWhite:0.16 alpha:0.9]);
-}
 
 static UIColor *MRRResetLoadingIndicatorColor(void) { return MRRResetPrimaryTextColor(); }
 
@@ -77,8 +61,6 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 @property(nonatomic, copy, nullable) NSString *prefilledEmail;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
-@property(nonatomic, retain) UIButton *backButton;
-@property(nonatomic, retain) UILabel *titleLabel;
 @property(nonatomic, retain) UILabel *helperLabel;
 @property(nonatomic, retain) UILabel *emailLabel;
 @property(nonatomic, retain) UITextField *emailField;
@@ -102,7 +84,6 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
                             animationCurve:(UIViewAnimationCurve)animationCurve;
 - (void)ensureRelevantControlVisibleForKeyboard;
 - (void)handleBackgroundTap:(UITapGestureRecognizer *)gestureRecognizer;
-- (void)handleBackTapped:(id)sender;
 - (void)handleSubmitTapped:(id)sender;
 - (void)setLoading:(BOOL)loading;
 - (void)showError:(NSError *)error;
@@ -142,8 +123,6 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
   [_emailField release];
   [_emailLabel release];
   [_helperLabel release];
-  [_titleLabel release];
-  [_backButton release];
   [_contentView release];
   [_scrollView release];
   [_prefilledEmail release];
@@ -156,13 +135,17 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 
   self.view.accessibilityIdentifier = @"auth.resetPassword.view";
   self.view.backgroundColor = MRRResetBackgroundColor();
+  self.title = @"Reset password";
+  if (@available(iOS 11.0, *)) {
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+  }
   [self buildViewHierarchy];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
 
-  [self.navigationController setNavigationBarHidden:YES animated:NO];
+  [self.navigationController setNavigationBarHidden:NO animated:NO];
   [self registerForKeyboardNotifications];
 }
 
@@ -192,25 +175,6 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
                                                                                           action:@selector(handleBackgroundTap:)] autorelease];
   tapGestureRecognizer.cancelsTouchesInView = NO;
   [scrollView addGestureRecognizer:tapGestureRecognizer];
-
-  UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
-  backButton.translatesAutoresizingMaskIntoConstraints = NO;
-  backButton.accessibilityIdentifier = @"auth.resetPassword.backButton";
-  backButton.accessibilityLabel = @"Back";
-  backButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-  backButton.titleLabel.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
-  [backButton setTitle:@"←" forState:UIControlStateNormal];
-  [backButton setTitleColor:MRRResetPrimaryTextColor() forState:UIControlStateNormal];
-  [backButton addTarget:self action:@selector(handleBackTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [contentView addSubview:backButton];
-  self.backButton = backButton;
-
-  UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:38.0 weight:UIFontWeightBold] color:MRRResetPrimaryTextColor()];
-  titleLabel.accessibilityIdentifier = @"auth.resetPassword.titleLabel";
-  titleLabel.numberOfLines = 0;
-  titleLabel.text = @"Reset password";
-  [contentView addSubview:titleLabel];
-  self.titleLabel = titleLabel;
 
   UILabel *helperLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightRegular] color:MRRResetSecondaryTextColor()];
   helperLabel.accessibilityIdentifier = @"auth.resetPassword.helperLabel";
@@ -254,11 +218,8 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
   UIButton *submitButton = [UIButton buttonWithType:UIButtonTypeSystem];
   submitButton.translatesAutoresizingMaskIntoConstraints = NO;
   submitButton.accessibilityIdentifier = @"auth.resetPassword.submitButton";
-  submitButton.backgroundColor = MRRResetAccentColor();
-  submitButton.layer.cornerRadius = 18.0;
-  submitButton.titleLabel.font = [UIFont systemFontOfSize:18.0 weight:UIFontWeightBold];
   [submitButton setTitle:@"Send Reset Email" forState:UIControlStateNormal];
-  [submitButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRolePrimary toButton:submitButton];
   [submitButton addTarget:self action:@selector(handleSubmitTapped:) forControlEvents:UIControlEventTouchUpInside];
   [contentView addSubview:submitButton];
   self.submitButton = submitButton;
@@ -276,8 +237,7 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
   UIView *loadingContainerView = [[[UIView alloc] init] autorelease];
   loadingContainerView.translatesAutoresizingMaskIntoConstraints = NO;
   loadingContainerView.accessibilityIdentifier = @"auth.resetPassword.loadingContainer";
-  loadingContainerView.backgroundColor = MRRResetLoadingPanelColor();
-  loadingContainerView.layer.cornerRadius = 22.0;
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:loadingContainerView];
   loadingContainerView.clipsToBounds = YES;
   [loadingOverlayView.contentView addSubview:loadingContainerView];
 
@@ -303,15 +263,7 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
     [contentView.widthAnchor constraintEqualToAnchor:scrollView.frameLayoutGuide.widthAnchor],
     [contentView.heightAnchor constraintGreaterThanOrEqualToAnchor:scrollView.frameLayoutGuide.heightAnchor],
 
-    [backButton.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:20.0],
-    [backButton.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
-    [backButton.widthAnchor constraintGreaterThanOrEqualToConstant:44.0],
-
-    [titleLabel.topAnchor constraintEqualToAnchor:backButton.bottomAnchor constant:18.0],
-    [titleLabel.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
-    [titleLabel.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
-
-    [helperLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:12.0],
+    [helperLabel.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:24.0],
     [helperLabel.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
     [helperLabel.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
 
@@ -368,14 +320,8 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 - (UITextField *)textFieldWithPlaceholder:(NSString *)placeholder {
   UITextField *textField = [[[UITextField alloc] init] autorelease];
   textField.translatesAutoresizingMaskIntoConstraints = NO;
-  textField.borderStyle = UITextBorderStyleNone;
-  textField.backgroundColor = MRRResetFieldSurfaceColor();
-  textField.textColor = MRRResetPrimaryTextColor();
   textField.font = [UIFont systemFontOfSize:18.0 weight:UIFontWeightMedium];
-  textField.layer.cornerRadius = 16.0;
-  textField.layer.borderWidth = 1.0;
-  textField.layer.borderColor = [MRRResetFieldBorderColor() CGColor];
-  textField.clipsToBounds = YES;
+  [MRRLiquidGlassStyling applyTextFieldStyling:textField];
 
   UIView *paddingView = [[[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, 16.0, 1.0)] autorelease];
   textField.leftView = paddingView;
@@ -468,15 +414,6 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
   [self.view endEditing:YES];
 }
 
-- (void)handleBackTapped:(id)sender {
-  if (self.navigationController != nil && self.navigationController.viewControllers.count > 1) {
-    [self.navigationController popViewControllerAnimated:YES];
-    return;
-  }
-
-  [self dismissViewControllerAnimated:YES completion:nil];
-}
-
 - (void)handleSubmitTapped:(id)sender {
   NSString *email = [self trimmedEmailValue];
   if (email.length == 0 || [email containsString:@"@"] == NO) {
@@ -498,7 +435,6 @@ static CGFloat const MRRResetKeyboardFieldGap = 18.0;
 }
 
 - (void)setLoading:(BOOL)loading {
-  self.backButton.enabled = !loading;
   self.emailField.enabled = !loading;
   self.submitButton.enabled = !loading;
 

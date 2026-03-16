@@ -1,5 +1,6 @@
 #import "OnboardingRecipeDetailViewController.h"
 
+#import "../../../../Layout/MRRLiquidGlassStyling.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
 #import "../../Data/OnboardingStateController.h"
 
@@ -55,6 +56,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 @property(nonatomic, retain) NSLayoutConstraint *startButtonHeightConstraint;
 
 - (void)buildViewHierarchy;
+- (BOOL)usesSheetPresentationChrome;
 - (UILabel *)buildLabelWithText:(NSString *)text font:(UIFont *)font color:(UIColor *)color;
 - (UILabel *)sectionTitleLabelWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UIView *)metadataChipWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier;
@@ -121,7 +123,25 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  self.view.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.58];
+  if ([self usesSheetPresentationChrome]) {
+    self.view.backgroundColor = MRRNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.08 alpha:1.0]);
+    self.title = @"Recipe";
+    if (@available(iOS 11.0, *)) {
+      self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    }
+    if (@available(iOS 13.0, *)) {
+      self.navigationItem.leftBarButtonItem =
+          [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:self action:@selector(didTapCloseButton)]
+              autorelease];
+    } else {
+      self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Close"
+                                                                                 style:UIBarButtonItemStylePlain
+                                                                                target:self
+                                                                                action:@selector(didTapCloseButton)] autorelease];
+    }
+  } else {
+    self.view.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.58];
+  }
   self.view.accessibilityIdentifier = @"onboarding.recipeDetail.view";
 
   [self buildViewHierarchy];
@@ -135,24 +155,30 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 
 #pragma mark - View Setup
 
+- (BOOL)usesSheetPresentationChrome {
+  return self.navigationController != nil && self.navigationController.modalPresentationStyle == UIModalPresentationPageSheet;
+}
+
 - (void)buildViewHierarchy {
-  UIView *cardView = [[[UIView alloc] init] autorelease];
-  cardView.translatesAutoresizingMaskIntoConstraints = NO;
-  cardView.backgroundColor = MRRNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.14 alpha:1.0]);
-  cardView.layer.cornerRadius = 30.0;
-  cardView.layer.masksToBounds = YES;
-  cardView.layer.borderWidth = 1.0;
-  cardView.layer.borderColor = [[MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.45 alpha:1.0],
-                                               [UIColor colorWithWhite:0.62 alpha:1.0]) colorWithAlphaComponent:0.18] CGColor];
-  [self.view addSubview:cardView];
-  self.cardView = cardView;
+  BOOL usesSheetChrome = [self usesSheetPresentationChrome];
+  UIView *surfaceView = self.view;
+
+  if (!usesSheetChrome) {
+    UIView *cardView = [[[UIView alloc] init] autorelease];
+    cardView.translatesAutoresizingMaskIntoConstraints = NO;
+    [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:cardView];
+    cardView.layer.masksToBounds = YES;
+    [self.view addSubview:cardView];
+    self.cardView = cardView;
+    surfaceView = cardView;
+  }
 
   UIScrollView *scrollView = [[[UIScrollView alloc] init] autorelease];
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
   scrollView.delegate = self;
   scrollView.alwaysBounceVertical = YES;
   scrollView.showsVerticalScrollIndicator = NO;
-  [cardView addSubview:scrollView];
+  [surfaceView addSubview:scrollView];
   self.scrollView = scrollView;
 
   UIView *contentView = [[[UIView alloc] init] autorelease];
@@ -172,18 +198,20 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   [heroContainerView addSubview:heroImageView];
   self.heroImageView = heroImageView;
 
-  UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-  closeButton.translatesAutoresizingMaskIntoConstraints = NO;
-  closeButton.accessibilityIdentifier = @"onboarding.recipeDetail.closeButton";
-  closeButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.28];
-  closeButton.layer.cornerRadius = 19.0;
-  closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:20.0];
-  [closeButton setTitle:@"X" forState:UIControlStateNormal];
-  [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-  [self configurePressFeedbackForButton:closeButton];
-  [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
-  [heroContainerView addSubview:closeButton];
-  self.closeButton = closeButton;
+  if (!usesSheetChrome) {
+    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    closeButton.accessibilityIdentifier = @"onboarding.recipeDetail.closeButton";
+    closeButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.28];
+    closeButton.layer.cornerRadius = 19.0;
+    closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:20.0];
+    [closeButton setTitle:@"X" forState:UIControlStateNormal];
+    [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [self configurePressFeedbackForButton:closeButton];
+    [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
+    [heroContainerView addSubview:closeButton];
+    self.closeButton = closeButton;
+  }
 
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
   contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -246,44 +274,54 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   UIButton *startButton = [UIButton buttonWithType:UIButtonTypeSystem];
   startButton.translatesAutoresizingMaskIntoConstraints = NO;
   startButton.accessibilityIdentifier = @"onboarding.recipeDetail.startCookingButton";
-  startButton.backgroundColor = MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                                              [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
-  startButton.layer.cornerRadius = 18.0;
-  startButton.contentEdgeInsets = UIEdgeInsetsMake(17.0, 20.0, 17.0, 20.0);
-  startButton.titleLabel.font = [UIFont boldSystemFontOfSize:18.0];
   [startButton setTitle:@"Start Cooking" forState:UIControlStateNormal];
-  [startButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRolePrimary toButton:startButton];
   [self configurePressFeedbackForButton:startButton];
   [startButton addTarget:self action:@selector(didTapStartCookingButton) forControlEvents:UIControlEventTouchUpInside];
   [contentStackView addArrangedSubview:startButton];
   self.startButton = startButton;
 
-  self.cardTopConstraint = [cardView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0];
-  self.cardLeadingConstraint = [cardView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:18.0];
-  self.cardTrailingConstraint = [cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0];
-  self.cardBottomConstraint = [cardView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12.0];
   self.heroContainerHeightConstraint = [heroContainerView.heightAnchor constraintEqualToConstant:MRRRecipeDetailHeaderHeight];
-  self.closeButtonTopConstraint = [closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
-  self.closeButtonTrailingConstraint = [closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
-  self.closeButtonWidthConstraint = [closeButton.widthAnchor constraintEqualToConstant:38.0];
-  self.closeButtonHeightConstraint = [closeButton.heightAnchor constraintEqualToConstant:38.0];
   self.contentStackTopConstraint = [contentStackView.topAnchor constraintEqualToAnchor:heroContainerView.bottomAnchor constant:24.0];
   self.contentStackLeadingConstraint = [contentStackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0];
   self.contentStackTrailingConstraint = [contentStackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0];
   self.contentStackBottomConstraint = [contentStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-28.0];
   self.startButtonHeightConstraint = [startButton.heightAnchor constraintGreaterThanOrEqualToConstant:60.0];
 
-  [NSLayoutConstraint activateConstraints:@[
-    self.cardTopConstraint,
-    self.cardLeadingConstraint,
-    self.cardTrailingConstraint,
-    self.cardBottomConstraint,
+  NSMutableArray<NSLayoutConstraint *> *constraints = [NSMutableArray array];
+  if (usesSheetChrome) {
+    [constraints addObjectsFromArray:@[
+      [scrollView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
+      [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+      [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+      [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
+    ]];
+  } else {
+    self.cardTopConstraint = [self.cardView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0];
+    self.cardLeadingConstraint = [self.cardView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:18.0];
+    self.cardTrailingConstraint = [self.cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0];
+    self.cardBottomConstraint = [self.cardView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12.0];
+    self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
+    self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
+    self.closeButtonWidthConstraint = [self.closeButton.widthAnchor constraintEqualToConstant:38.0];
+    self.closeButtonHeightConstraint = [self.closeButton.heightAnchor constraintEqualToConstant:38.0];
+    [constraints addObjectsFromArray:@[
+      self.cardTopConstraint,
+      self.cardLeadingConstraint,
+      self.cardTrailingConstraint,
+      self.cardBottomConstraint,
+      [scrollView.topAnchor constraintEqualToAnchor:self.cardView.topAnchor],
+      [scrollView.leadingAnchor constraintEqualToAnchor:self.cardView.leadingAnchor],
+      [scrollView.trailingAnchor constraintEqualToAnchor:self.cardView.trailingAnchor],
+      [scrollView.bottomAnchor constraintEqualToAnchor:self.cardView.bottomAnchor],
+      self.closeButtonTopConstraint,
+      self.closeButtonTrailingConstraint,
+      self.closeButtonWidthConstraint,
+      self.closeButtonHeightConstraint
+    ]];
+  }
 
-    [scrollView.topAnchor constraintEqualToAnchor:cardView.topAnchor],
-    [scrollView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
-    [scrollView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
-    [scrollView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
-
+  [constraints addObjectsFromArray:@[
     [contentView.topAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.topAnchor],
     [contentView.leadingAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.leadingAnchor],
     [contentView.trailingAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.trailingAnchor],
@@ -295,18 +333,13 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
     [heroContainerView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor],
     self.heroContainerHeightConstraint,
 
-    self.closeButtonTopConstraint,
-    self.closeButtonTrailingConstraint,
-    self.closeButtonWidthConstraint,
-    self.closeButtonHeightConstraint,
-
     self.contentStackTopConstraint,
     self.contentStackLeadingConstraint,
     self.contentStackTrailingConstraint,
     self.contentStackBottomConstraint,
-
     self.startButtonHeightConstraint
   ]];
+  [NSLayoutConstraint activateConstraints:constraints];
 
   self.heroImageTopConstraint = [heroImageView.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor];
   self.heroImageHeightConstraint = [heroImageView.heightAnchor constraintEqualToConstant:MRRRecipeDetailHeaderHeight];
@@ -330,12 +363,15 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 }
 
 - (void)handlePressableButtonTouchDown:(UIButton *)sender {
+  CGAffineTransform targetTransform = UIAccessibilityIsReduceMotionEnabled()
+                                          ? CGAffineTransformIdentity
+                                          : CGAffineTransformMakeScale(MRRRecipeDetailButtonPressedScale, MRRRecipeDetailButtonPressedScale);
   [UIView animateWithDuration:0.12
                         delay:0.0
                       options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
                               UIViewAnimationOptionCurveEaseOut
                    animations:^{
-                     sender.transform = CGAffineTransformMakeScale(MRRRecipeDetailButtonPressedScale, MRRRecipeDetailButtonPressedScale);
+                     sender.transform = targetTransform;
                      sender.alpha = MRRRecipeDetailButtonPressedAlpha;
                    }
                    completion:nil];
@@ -375,9 +411,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   UIView *chipView = [[[UIView alloc] init] autorelease];
   chipView.translatesAutoresizingMaskIntoConstraints = NO;
   chipView.accessibilityIdentifier = accessibilityIdentifier;
-  chipView.backgroundColor = [MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                                            [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]) colorWithAlphaComponent:0.12];
-  chipView.layer.cornerRadius = 14.0;
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleBadge toView:chipView];
 
   UILabel *label = [self buildLabelWithText:text
                                        font:[UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold]
@@ -480,9 +514,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 
   UIView *badgeView = [[[UIView alloc] init] autorelease];
   badgeView.translatesAutoresizingMaskIntoConstraints = NO;
-  badgeView.backgroundColor = [MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                                             [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]) colorWithAlphaComponent:0.14];
-  badgeView.layer.cornerRadius = 18.0;
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleBadge toView:badgeView];
   [NSLayoutConstraint activateConstraints:@[
     [badgeView.widthAnchor constraintEqualToConstant:36.0],
     [badgeView.heightAnchor constraintEqualToConstant:36.0]
@@ -543,6 +575,7 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 }
 
 - (void)updateLayoutMetricsIfNeeded {
+  BOOL usesSheetChrome = [self usesSheetPresentationChrome];
   CGSize viewportSize = [self layoutViewportSize];
   if (viewportSize.width <= 0.0 || viewportSize.height <= 0.0) {
     return;
@@ -563,23 +596,23 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   CGFloat titleFontSize = MRRLayoutScaledValue(32.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat summaryFontSize = MRRLayoutScaledValue(16.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat startButtonHeight = MRRLayoutScaledValue(60.0, viewportSize, MRRLayoutScaleAxisHeight);
-  CGFloat startButtonCornerRadius = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisMinDimension);
   CGFloat startButtonVerticalInset = MRRLayoutScaledValue(17.0, viewportSize, MRRLayoutScaleAxisHeight);
   CGFloat startButtonHorizontalInset = MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat startButtonFontSize = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
-
-  self.cardTopConstraint.constant = cardTopInset;
-  self.cardLeadingConstraint.constant = cardSideInset;
-  self.cardTrailingConstraint.constant = -cardSideInset;
-  self.cardBottomConstraint.constant = -cardBottomInset;
-  self.cardView.layer.cornerRadius = cardCornerRadius;
+  if (!usesSheetChrome) {
+    self.cardTopConstraint.constant = cardTopInset;
+    self.cardLeadingConstraint.constant = cardSideInset;
+    self.cardTrailingConstraint.constant = -cardSideInset;
+    self.cardBottomConstraint.constant = -cardBottomInset;
+    self.cardView.layer.cornerRadius = cardCornerRadius;
+    self.closeButtonTopConstraint.constant = closeButtonInset;
+    self.closeButtonTrailingConstraint.constant = -closeButtonInset;
+    self.closeButtonWidthConstraint.constant = closeButtonSize;
+    self.closeButtonHeightConstraint.constant = closeButtonSize;
+    self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
+    self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
+  }
   self.heroContainerHeightConstraint.constant = headerHeight;
-  self.closeButtonTopConstraint.constant = closeButtonInset;
-  self.closeButtonTrailingConstraint.constant = -closeButtonInset;
-  self.closeButtonWidthConstraint.constant = closeButtonSize;
-  self.closeButtonHeightConstraint.constant = closeButtonSize;
-  self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
-  self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
   self.contentStackTopConstraint.constant = contentTopInset;
   self.contentStackLeadingConstraint.constant = contentSideInset;
   self.contentStackTrailingConstraint.constant = -contentSideInset;
@@ -589,10 +622,25 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
   self.titleLabel.font = [UIFont boldSystemFontOfSize:titleFontSize];
   self.summaryLabel.font = [UIFont systemFontOfSize:summaryFontSize];
   self.startButtonHeightConstraint.constant = startButtonHeight;
-  self.startButton.layer.cornerRadius = startButtonCornerRadius;
-  self.startButton.contentEdgeInsets = UIEdgeInsetsMake(startButtonVerticalInset, startButtonHorizontalInset, startButtonVerticalInset,
-                                                        startButtonHorizontalInset);
-  self.startButton.titleLabel.font = [UIFont boldSystemFontOfSize:startButtonFontSize];
+  if (@available(iOS 15.0, *)) {
+    UIButtonConfiguration *configuration = self.startButton.configuration;
+    if (configuration != nil) {
+      UIColor *startButtonTitleColor = [MRRLiquidGlassStyling supportsNativeLiquidGlass]
+                                           ? MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
+                                                           [UIColor colorWithWhite:0.96 alpha:1.0])
+                                           : [UIColor whiteColor];
+      configuration.contentInsets = NSDirectionalEdgeInsetsMake(startButtonVerticalInset, startButtonHorizontalInset, startButtonVerticalInset,
+                                                                startButtonHorizontalInset);
+      configuration.attributedTitle = [[[NSAttributedString alloc] initWithString:@"Start Cooking"
+                                                                       attributes:@{
+                                                                         NSFontAttributeName : [UIFont boldSystemFontOfSize:startButtonFontSize],
+                                                                         NSForegroundColorAttributeName : startButtonTitleColor
+                                                                       }] autorelease];
+      self.startButton.configuration = configuration;
+    }
+  } else {
+    self.startButton.titleLabel.font = [UIFont boldSystemFontOfSize:startButtonFontSize];
+  }
 
   CGFloat offsetY = self.scrollView.contentOffset.y;
   if (offsetY < 0.0) {

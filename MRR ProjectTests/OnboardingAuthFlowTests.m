@@ -407,7 +407,7 @@
   XCTAssertEqualObjects(freshPasswordField.text ?: @"", @"");
 }
 
-- (void)testAuthenticationScreenUsesArrowBackButtonAndDoesNotAutofocusFields {
+- (void)testAuthenticationScreenUsesSystemNavigationBackAndDoesNotAutofocusFields {
   UIButton *emailButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.emailButton" inView:self.viewController.view];
   [emailButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
@@ -419,7 +419,11 @@
   UITextField *passwordField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.passwordField" inView:authView];
   UIScrollView *scrollView = (UIScrollView *)[self findViewWithAccessibilityIdentifier:@"auth.emailScreen.scrollView" inView:authView];
 
-  XCTAssertEqualObjects([backButton titleForState:UIControlStateNormal], @"←");
+  XCTAssertFalse(self.navigationController.navigationBarHidden);
+  XCTAssertEqual(self.navigationController.viewControllers.count, (NSUInteger)2);
+  XCTAssertNil(backButton);
+  XCTAssertNil(authenticationViewController.navigationItem.leftBarButtonItem);
+  XCTAssertEqualObjects(authenticationViewController.title, @"Sign up");
   XCTAssertFalse(emailField.isFirstResponder);
   XCTAssertFalse(passwordField.isFirstResponder);
   XCTAssertEqual(scrollView.keyboardDismissMode, UIScrollViewKeyboardDismissModeOnDrag);

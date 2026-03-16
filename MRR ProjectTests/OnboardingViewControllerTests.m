@@ -25,6 +25,7 @@
 
 @interface OnboardingRecipeDetailViewController (Testing)
 
+- (void)didTapCloseButton;
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
 
@@ -46,9 +47,15 @@
 - (NSDictionary<NSString *, NSNumber *> *)currentAdaptiveOnboardingMetrics;
 - (NSDictionary<NSString *, NSNumber *> *)currentRecipeDetailMetrics;
 - (CGFloat)visibleCarouselLabelFontSizeWithSuffix:(NSString *)suffix;
+- (NSString *)displayedTitleForButton:(UIButton *)button;
+- (UIImage *)displayedImageForButton:(UIButton *)button;
+- (UIViewController *)presentedRecipeContainerViewController;
+- (OnboardingRecipeDetailViewController *)presentedRecipeDetailViewController;
+- (UIView *)presentedRecipeDetailRootView;
 - (void)assertPrimaryOnboardingContentFitsCurrentViewport;
 - (NSDictionary<NSString *, NSNumber *> *)adaptiveMetricsForWindowSize:(CGSize)size;
 - (NSDictionary<NSString *, NSNumber *> *)recipeDetailMetricsForWindowSize:(CGSize)size;
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 - (void)spinMainRunLoop;
 
 @end
@@ -99,8 +106,8 @@
   [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
   [self spinMainRunLoop];
 
-  XCTAssertNotNil(self.viewController.presentedViewController);
-  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"onboarding.recipeDetail.view");
+  XCTAssertNotNil([self presentedRecipeContainerViewController]);
+  XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
 }
 
 - (void)testSelectingLoopedRecipeCopyPresentsDetailModal {
@@ -110,8 +117,8 @@
   [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
   [self spinMainRunLoop];
 
-  XCTAssertNotNil(self.viewController.presentedViewController);
-  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"onboarding.recipeDetail.view");
+  XCTAssertNotNil([self presentedRecipeContainerViewController]);
+  XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
 }
 
 - (void)testCarouselUsesCenteredOffsetModelForPaging {
@@ -208,7 +215,8 @@
     @"onboarding.logoImageView", @"onboarding.titleLabel", @"onboarding.subtitleLabel", @"onboarding.carouselCaptionLabel",
     @"onboarding.carouselHelperLabel", @"onboarding.carouselCollectionView", @"onboarding.pageControl", @"onboarding.footerLabel",
     @"onboarding.benefitTitleLabel", @"onboarding.benefitBodyLabel", @"onboarding.signinPromptLabel", @"onboarding.signinLabel",
-    @"onboarding.loadingOverlay", @"onboarding.loadingContainer", @"onboarding.loadingIndicator"
+    @"onboarding.emailButton", @"onboarding.googleButton", @"onboarding.appleButton", @"onboarding.loadingOverlay",
+    @"onboarding.loadingContainer", @"onboarding.loadingIndicator"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -230,15 +238,6 @@
     @"onboarding.spacerView",
     @"onboarding.signinContainerView",
     @"onboarding.signinRowView",
-    @"onboarding.emailButton.contentWrapper",
-    @"onboarding.emailButton.iconLabel",
-    @"onboarding.emailButton.titleLabel",
-    @"onboarding.googleButton.contentWrapper",
-    @"onboarding.googleButton.iconLabel",
-    @"onboarding.googleButton.titleLabel",
-    @"onboarding.appleButton.contentWrapper",
-    @"onboarding.appleButton.iconLabel",
-    @"onboarding.appleButton.titleLabel",
     @"onboarding.authDividerView",
     @"onboarding.authDividerView.leftLine",
     @"onboarding.authDividerView.rightLine",
@@ -267,11 +266,20 @@
 }
 
 - (void)testGoogleButtonUsesContinueCopy {
-  UILabel *googleTitleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton.titleLabel"
-                                                                            inView:self.viewController.view];
+  UIButton *googleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.googleButton" inView:self.viewController.view];
 
-  XCTAssertNotNil(googleTitleLabel);
-  XCTAssertEqualObjects(googleTitleLabel.text, @"Continue with Google");
+  XCTAssertNotNil(googleButton);
+  XCTAssertEqualObjects([self displayedTitleForButton:googleButton], @"Continue with Google");
+}
+
+- (void)testAuthButtonsExposeLeadingIcons {
+  NSArray<NSString *> *identifiers = @[ @"onboarding.emailButton", @"onboarding.googleButton", @"onboarding.appleButton" ];
+
+  for (NSString *identifier in identifiers) {
+    UIButton *button = (UIButton *)[self findViewWithAccessibilityIdentifier:identifier inView:self.viewController.view];
+    XCTAssertNotNil(button);
+    XCTAssertNotNil([self displayedImageForButton:button], @"Missing icon for %@", identifier);
+  }
 }
 
 - (void)testCarouselBackdropExpandsToContainWrappedBeefBourguignonText {
@@ -393,10 +401,11 @@
 
   BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
   [UIView setAnimationsEnabled:NO];
+  CGFloat expectedScale = UIAccessibilityIsReduceMotionEnabled() ? 1.0 : 0.97;
 
   [self.viewController handlePressableButtonTouchDown:emailButton];
-  XCTAssertEqualWithAccuracy(emailButton.transform.a, 0.97, 0.001);
-  XCTAssertEqualWithAccuracy(emailButton.transform.d, 0.97, 0.001);
+  XCTAssertEqualWithAccuracy(emailButton.transform.a, expectedScale, 0.001);
+  XCTAssertEqualWithAccuracy(emailButton.transform.d, expectedScale, 0.001);
   XCTAssertEqualWithAccuracy(emailButton.alpha, 0.88, 0.001);
 
   [self.viewController handlePressableButtonTouchUp:emailButton];
@@ -413,10 +422,11 @@
 
   BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
   [UIView setAnimationsEnabled:NO];
+  CGFloat expectedScale = UIAccessibilityIsReduceMotionEnabled() ? 1.0 : 0.97;
 
   [self.viewController handlePressableButtonTouchDown:signinButton];
-  XCTAssertEqualWithAccuracy(signinButton.transform.a, 0.97, 0.001);
-  XCTAssertEqualWithAccuracy(signinButton.transform.d, 0.97, 0.001);
+  XCTAssertEqualWithAccuracy(signinButton.transform.a, expectedScale, 0.001);
+  XCTAssertEqualWithAccuracy(signinButton.transform.d, expectedScale, 0.001);
   XCTAssertEqualWithAccuracy(signinButton.alpha, 0.88, 0.001);
 
   [self.viewController handlePressableButtonTouchUp:signinButton];
@@ -461,29 +471,43 @@
   [self presentFirstRecipe];
 
   NSArray<NSString *> *identifiers = @[
-    @"onboarding.recipeDetail.heroImageView", @"onboarding.recipeDetail.closeButton", @"onboarding.recipeDetail.subtitleLabel",
-    @"onboarding.recipeDetail.titleLabel", @"onboarding.recipeDetail.durationChip", @"onboarding.recipeDetail.calorieChip",
-    @"onboarding.recipeDetail.servingsChip", @"onboarding.recipeDetail.summaryLabel", @"onboarding.recipeDetail.ingredientsTitleLabel",
-    @"onboarding.recipeDetail.ingredientChip.1", @"onboarding.recipeDetail.instructionsTitleLabel",
-    @"onboarding.recipeDetail.instructionRow.1.indexLabel", @"onboarding.recipeDetail.instructionRow.1.titleLabel",
-    @"onboarding.recipeDetail.instructionRow.1.bodyLabel", @"onboarding.recipeDetail.startCookingButton"
+    @"onboarding.recipeDetail.heroImageView", @"onboarding.recipeDetail.subtitleLabel", @"onboarding.recipeDetail.titleLabel",
+    @"onboarding.recipeDetail.durationChip", @"onboarding.recipeDetail.calorieChip", @"onboarding.recipeDetail.servingsChip",
+    @"onboarding.recipeDetail.summaryLabel", @"onboarding.recipeDetail.ingredientsTitleLabel", @"onboarding.recipeDetail.ingredientChip.1",
+    @"onboarding.recipeDetail.instructionsTitleLabel", @"onboarding.recipeDetail.instructionRow.1.indexLabel",
+    @"onboarding.recipeDetail.instructionRow.1.titleLabel", @"onboarding.recipeDetail.instructionRow.1.bodyLabel",
+    @"onboarding.recipeDetail.startCookingButton"
   ];
 
   for (NSString *identifier in identifiers) {
-    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:self.viewController.presentedViewController.view], @"Missing %@",
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:[self presentedRecipeDetailRootView]], @"Missing %@",
                     identifier);
   }
+
+  UIViewController *containerViewController = [self presentedRecipeContainerViewController];
+  if (@available(iOS 15.0, *)) {
+    if ([containerViewController isKindOfClass:[UINavigationController class]]) {
+      XCTAssertNotNil([self presentedRecipeDetailViewController].navigationItem.leftBarButtonItem);
+      XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:[self presentedRecipeDetailRootView]]);
+      return;
+    }
+  }
+
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:[self presentedRecipeDetailRootView]]);
 }
 
 - (void)testStartCookingMarksOnboardingCompletedAndDismissesDetail {
   [self presentFirstRecipe];
 
   UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton"
-                                                                         inView:self.viewController.presentedViewController.view];
+                                                                         inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(startButton);
 
   [startButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return self.viewController.presentedViewController == nil;
+  }
+               timeout:1.0];
 
   XCTAssertTrue([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
   XCTAssertNil(self.viewController.presentedViewController);
@@ -491,13 +515,11 @@
 
 - (void)testClosingDetailDoesNotMarkOnboardingCompleted {
   [self presentFirstRecipe];
-
-  UIButton *closeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton"
-                                                                         inView:self.viewController.presentedViewController.view];
-  XCTAssertNotNil(closeButton);
-
-  [closeButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self spinMainRunLoop];
+  [[self presentedRecipeDetailViewController] didTapCloseButton];
+  [self waitForCondition:^BOOL {
+    return self.viewController.presentedViewController == nil;
+  }
+               timeout:1.0];
 
   XCTAssertFalse([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
   XCTAssertNil(self.viewController.presentedViewController);
@@ -507,16 +529,17 @@
   [self presentFirstRecipe];
 
   UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton"
-                                                                         inView:self.viewController.presentedViewController.view];
+                                                                         inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(startButton);
 
   BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
   [UIView setAnimationsEnabled:NO];
+  CGFloat expectedScale = UIAccessibilityIsReduceMotionEnabled() ? 1.0 : 0.97;
 
-  OnboardingRecipeDetailViewController *detailViewController = (OnboardingRecipeDetailViewController *)self.viewController.presentedViewController;
+  OnboardingRecipeDetailViewController *detailViewController = [self presentedRecipeDetailViewController];
   [detailViewController handlePressableButtonTouchDown:startButton];
-  XCTAssertEqualWithAccuracy(startButton.transform.a, 0.97, 0.001);
-  XCTAssertEqualWithAccuracy(startButton.transform.d, 0.97, 0.001);
+  XCTAssertEqualWithAccuracy(startButton.transform.a, expectedScale, 0.001);
+  XCTAssertEqualWithAccuracy(startButton.transform.d, expectedScale, 0.001);
   XCTAssertEqualWithAccuracy(startButton.alpha, 0.88, 0.001);
 
   [detailViewController handlePressableButtonTouchUp:startButton];
@@ -525,6 +548,55 @@
   XCTAssertEqualWithAccuracy(startButton.alpha, 1.0, 0.001);
 
   [UIView setAnimationsEnabled:animationsWereEnabled];
+}
+
+- (void)testRecipeDetailPresentationUsesSheetWrapperOnModernOS {
+  if (@available(iOS 15.0, *)) {
+    [self presentFirstRecipe];
+
+    UIViewController *containerViewController = [self presentedRecipeContainerViewController];
+    XCTAssertTrue([containerViewController isKindOfClass:[UINavigationController class]]);
+
+    UINavigationController *navigationController = (UINavigationController *)containerViewController;
+    XCTAssertEqual(navigationController.modalPresentationStyle, UIModalPresentationPageSheet);
+    if (navigationController.sheetPresentationController != nil) {
+      XCTAssertTrue(navigationController.sheetPresentationController.prefersGrabberVisible);
+    }
+    XCTAssertNotNil([self presentedRecipeDetailViewController].navigationItem.leftBarButtonItem);
+  } else {
+    return;
+  }
+}
+
+- (void)testRecipeDetailLegacyControllerBuildsCustomCloseChromeWhenNotWrapped {
+  OnboardingRecipeDetailViewController *detailViewController =
+      [[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.stateController.onboardingRecipes.firstObject];
+  [detailViewController loadViewIfNeeded];
+
+  XCTAssertNil(detailViewController.navigationItem.leftBarButtonItem);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailViewController.view]);
+}
+
+- (void)testRecipeDetailSheetControllerBuildsNavigationChromeWhenWrapped {
+  if (@available(iOS 15.0, *)) {
+    OnboardingRecipeDetailViewController *detailViewController =
+        [[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.stateController.onboardingRecipes.firstObject];
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:detailViewController];
+    navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
+
+    UIWindow *window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    window.rootViewController = navigationController;
+    [window makeKeyAndVisible];
+    [detailViewController loadViewIfNeeded];
+
+    XCTAssertEqualObjects(detailViewController.title, @"Recipe");
+    XCTAssertNotNil(detailViewController.navigationItem.leftBarButtonItem);
+    XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailViewController.view]);
+
+    window.hidden = YES;
+  } else {
+    return;
+  }
 }
 
 - (void)presentFirstRecipe {
@@ -638,7 +710,7 @@
 
   XCTAssertGreaterThan(expandedMetrics[@"startButtonHeight"].doubleValue, compactMetrics[@"startButtonHeight"].doubleValue);
   XCTAssertGreaterThan(expandedMetrics[@"titleFontSize"].doubleValue, compactMetrics[@"titleFontSize"].doubleValue);
-  XCTAssertGreaterThan(expandedMetrics[@"closeButtonSize"].doubleValue, compactMetrics[@"closeButtonSize"].doubleValue);
+  XCTAssertGreaterThan(expandedMetrics[@"heroHeight"].doubleValue, compactMetrics[@"heroHeight"].doubleValue);
 }
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
@@ -724,19 +796,20 @@
 }
 
 - (NSDictionary<NSString *, NSNumber *> *)currentRecipeDetailMetrics {
-  UIView *detailRootView = self.viewController.presentedViewController.view;
+  UIView *detailRootView = [self presentedRecipeDetailRootView];
   UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailRootView];
+  UIImageView *heroImageView =
+      (UIImageView *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.heroImageView" inView:detailRootView];
   UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton" inView:detailRootView];
-  UIButton *closeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
 
   XCTAssertNotNil(titleLabel);
+  XCTAssertNotNil(heroImageView);
   XCTAssertNotNil(startButton);
-  XCTAssertNotNil(closeButton);
 
   return @{
     @"titleFontSize" : @(titleLabel.font.pointSize),
+    @"heroHeight" : @(CGRectGetHeight([heroImageView convertRect:heroImageView.bounds toView:detailRootView])),
     @"startButtonHeight" : @(CGRectGetHeight([startButton convertRect:startButton.bounds toView:detailRootView])),
-    @"closeButtonSize" : @(CGRectGetWidth([closeButton convertRect:closeButton.bounds toView:detailRootView])),
   };
 }
 
@@ -765,6 +838,56 @@
     XCTAssertGreaterThanOrEqual(CGRectGetMinY(frame), 0.0, @"%@ should start on screen", identifier);
     XCTAssertLessThanOrEqual(CGRectGetMaxY(frame), viewportBottom, @"%@ should stay above the fold", identifier);
   }
+}
+
+- (NSString *)displayedTitleForButton:(UIButton *)button {
+  if (@available(iOS 15.0, *)) {
+    if (button.configuration.attributedTitle.length > 0) {
+      return button.configuration.attributedTitle.string;
+    }
+    if (button.configuration.title.length > 0) {
+      return button.configuration.title;
+    }
+  }
+
+  return [button titleForState:UIControlStateNormal];
+}
+
+- (UIImage *)displayedImageForButton:(UIButton *)button {
+  if (@available(iOS 15.0, *)) {
+    if (button.configuration.image != nil) {
+      return button.configuration.image;
+    }
+  }
+
+  return [button imageForState:UIControlStateNormal];
+}
+
+- (UIViewController *)presentedRecipeContainerViewController {
+  return self.viewController.presentedViewController;
+}
+
+- (OnboardingRecipeDetailViewController *)presentedRecipeDetailViewController {
+  UIViewController *presentedViewController = [self presentedRecipeContainerViewController];
+  XCTAssertNotNil(presentedViewController);
+
+  if ([presentedViewController isKindOfClass:[UINavigationController class]]) {
+    UINavigationController *navigationController = (UINavigationController *)presentedViewController;
+    XCTAssertTrue([navigationController.topViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
+    OnboardingRecipeDetailViewController *detailViewController =
+        (OnboardingRecipeDetailViewController *)navigationController.topViewController;
+    [detailViewController loadViewIfNeeded];
+    return detailViewController;
+  }
+
+  XCTAssertTrue([presentedViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
+  OnboardingRecipeDetailViewController *detailViewController = (OnboardingRecipeDetailViewController *)presentedViewController;
+  [detailViewController loadViewIfNeeded];
+  return detailViewController;
+}
+
+- (UIView *)presentedRecipeDetailRootView {
+  return [self presentedRecipeDetailViewController].view;
 }
 
 - (NSDictionary<NSString *, NSNumber *> *)adaptiveMetricsForWindowSize:(CGSize)size {
@@ -804,8 +927,10 @@
   [self.viewController loadViewIfNeeded];
   [self layoutOnboardingForWindowSize:size];
   [self presentFirstRecipe];
-  [self.viewController.presentedViewController.view setNeedsLayout];
-  [self.viewController.presentedViewController.view layoutIfNeeded];
+  [[self presentedRecipeContainerViewController].view setNeedsLayout];
+  [[self presentedRecipeContainerViewController].view layoutIfNeeded];
+  [[self presentedRecipeDetailRootView] setNeedsLayout];
+  [[self presentedRecipeDetailRootView] layoutIfNeeded];
   [self spinMainRunLoop];
 
   NSDictionary<NSString *, NSNumber *> *metrics = [[self currentRecipeDetailMetrics] copy];
@@ -821,6 +946,13 @@
 
 - (void)spinMainRunLoop {
   [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];
+}
+
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
+  NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:timeout];
+  while (condition != nil && !condition() && [deadline timeIntervalSinceNow] > 0.0) {
+    [self spinMainRunLoop];
+  }
 }
 
 @end

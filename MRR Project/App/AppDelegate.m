@@ -139,7 +139,9 @@
   HomeViewController *viewController =
       [[[HomeViewController alloc] initWithAuthenticationController:self.authenticationController session:session] autorelease];
   viewController.delegate = self;
-  return viewController;
+
+  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
+  return navigationController;
 }
 
 - (void)setRootViewController:(UIViewController *)rootViewController animated:(BOOL)animated {

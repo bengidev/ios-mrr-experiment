@@ -4,6 +4,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import "../../../../Layout/MRRLiquidGlassStyling.h"
 #import "../../Data/OnboardingStateController.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
 
@@ -141,6 +142,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.metadataLabel.text = [NSString stringWithFormat:@"◷ %@   🔥 %@", recipe.durationText, compactCalorieText];
   self.hintLabel.text = nil;
   self.hintLabel.hidden = YES;
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:self.textBackdropView];
   self.textBackdropView.backgroundColor = MRRHighlightedTextBackdropColor();
   [self applyAccessibilityIdentifiersForRecipe:recipe];
 }
@@ -171,6 +173,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
 
   UIView *textBackdropView = [[[UIView alloc] init] autorelease];
   textBackdropView.translatesAutoresizingMaskIntoConstraints = NO;
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:textBackdropView];
   textBackdropView.backgroundColor = MRRHighlightedTextBackdropColor();
   textBackdropView.userInteractionEnabled = NO;
   CAGradientLayer *textBackdropMaskLayer = [CAGradientLayer layer];

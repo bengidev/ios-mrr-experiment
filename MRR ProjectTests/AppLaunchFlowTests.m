@@ -68,6 +68,7 @@
 @property(nonatomic, strong) NSUserDefaults *userDefaults;
 
 - (OnboardingViewController *)onboardingViewControllerFromRootViewController:(UIViewController *)rootViewController;
+- (HomeViewController *)homeViewControllerFromRootViewController:(UIViewController *)rootViewController;
 
 @end
 
@@ -108,7 +109,7 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[HomeViewController class]]);
+  XCTAssertNotNil([self homeViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
 - (void)testLoggedInLaunchDoesNotShowTabBarController {
@@ -153,7 +154,7 @@
                                                                   emailVerified:YES];
   [appDelegate onboardingViewControllerDidAuthenticate:onboardingViewController];
 
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[HomeViewController class]]);
+  XCTAssertNotNil([self homeViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
 - (void)testSigningOutFromHomeReplacesRootWithOnboarding {
@@ -166,10 +167,11 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[HomeViewController class]]);
+  HomeViewController *homeViewController = [self homeViewControllerFromRootViewController:appDelegate.window.rootViewController];
+  XCTAssertNotNil(homeViewController);
 
   authenticationController.stubSession = nil;
-  [appDelegate homeViewControllerDidSignOut:(HomeViewController *)appDelegate.window.rootViewController];
+  [appDelegate homeViewControllerDidSignOut:homeViewController];
 
   XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
@@ -186,6 +188,13 @@
   UINavigationController *navigationController = (UINavigationController *)rootViewController;
   XCTAssertTrue([navigationController.topViewController isKindOfClass:[OnboardingViewController class]]);
   return (OnboardingViewController *)navigationController.topViewController;
+}
+
+- (HomeViewController *)homeViewControllerFromRootViewController:(UIViewController *)rootViewController {
+  XCTAssertTrue([rootViewController isKindOfClass:[UINavigationController class]]);
+  UINavigationController *navigationController = (UINavigationController *)rootViewController;
+  XCTAssertTrue([navigationController.topViewController isKindOfClass:[HomeViewController class]]);
+  return (HomeViewController *)navigationController.topViewController;
 }
 
 @end

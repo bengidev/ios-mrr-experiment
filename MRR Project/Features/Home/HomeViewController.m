@@ -2,6 +2,7 @@
 
 #import "../Authentication/MRRAuthErrorMapper.h"
 #import "../Authentication/MRRAuthSession.h"
+#import "../../Layout/MRRLiquidGlassStyling.h"
 
 static UIColor *MRRHomeDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -75,7 +76,10 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  self.title = @"Home";
+  self.title = @"Account";
+  if (@available(iOS 11.0, *)) {
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+  }
   self.view.accessibilityIdentifier = @"home.view";
   self.view.backgroundColor = MRRHomeNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 
@@ -93,11 +97,7 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   UIView *summaryCardView = [[[UIView alloc] init] autorelease];
   summaryCardView.translatesAutoresizingMaskIntoConstraints = NO;
   summaryCardView.accessibilityIdentifier = @"home.summaryCard";
-  summaryCardView.backgroundColor = MRRHomeNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.14 alpha:1.0]);
-  summaryCardView.layer.cornerRadius = 28.0;
-  summaryCardView.layer.borderWidth = 1.0;
-  summaryCardView.layer.borderColor =
-      [[MRRHomeNamedColor(@"TextPrimaryColor", [UIColor blackColor], [UIColor whiteColor]) colorWithAlphaComponent:0.08] CGColor];
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:summaryCardView];
   [stackView addArrangedSubview:summaryCardView];
   self.summaryCardView = summaryCardView;
 
@@ -162,11 +162,8 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   UIButton *logoutButton = [UIButton buttonWithType:UIButtonTypeSystem];
   logoutButton.translatesAutoresizingMaskIntoConstraints = NO;
   logoutButton.accessibilityIdentifier = @"home.logoutButton";
-  logoutButton.backgroundColor = [UIColor colorWithRed:0.76 green:0.18 blue:0.21 alpha:1.0];
-  logoutButton.layer.cornerRadius = 18.0;
-  logoutButton.titleLabel.font = [UIFont boldSystemFontOfSize:17.0];
   [logoutButton setTitle:@"Log Out" forState:UIControlStateNormal];
-  [logoutButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRolePrimary toButton:logoutButton];
   [logoutButton addTarget:self action:@selector(handleLogoutTapped:) forControlEvents:UIControlEventTouchUpInside];
   [stackView addArrangedSubview:logoutButton];
   self.logoutButton = logoutButton;
