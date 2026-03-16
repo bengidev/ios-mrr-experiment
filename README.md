@@ -9,8 +9,10 @@ An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polis
 - `Sign up with email` pushes a dedicated full-screen sign-up screen with separate fields for first name, last name, email, and password
 - `Sign in` pushes a dedicated full-screen sign-in screen with email/password plus a live `Forgot Password?` flow that sends a Firebase reset email and returns to onboarding after confirmation
 - `Continue with Google` now starts live Google Sign-In from onboarding, while `Continue with Apple` remains a structured stub
-- Auth success routes into `HomeViewController`, which shows the active account summary, auth provider, email verification status, and a destructive `Log Out` button inside the screen body
-- Logging out clears the auth session and returns the app to onboarding
+- Auth success routes into `MainMenuCoordinator`, which builds a `MainMenuTabBarController` with `Home`, `Saved`, and `Profile`
+- `Home` and `Saved` are plug-and-run placeholder sub-features that can mount inside the tab bar or stand alone as full screens through their coordinators
+- `Profile` is the current real authenticated sub-feature. It owns the signed-in account summary, auth provider details, email-verification status, and the destructive `Log Out` action
+- A live auth-state observer now drives root switching in both directions, so logging out or losing the Firebase session returns the app to onboarding without view-controller-specific root wiring
 
 The recipe detail flow still exists for onboarding exploration and still writes the legacy onboarding-complete flag, but the app root is now determined by the authentication session instead of that flag.
 
@@ -19,15 +21,21 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 - `MRR Project/App`
   Root app wiring, `AppDelegate`, and `main.m`
 - `MRR Project/Features/Authentication`
-  Firebase-backed auth abstraction, auth session model, and error mapping
+  Firebase-backed auth abstraction, auth session model, auth-state observation, and error mapping
+- `MRR Project/Features/MainMenu`
+  Authenticated shell coordinator plus the `UITabBarController` that mounts authenticated sub-features
 - `MRR Project/Features/Home`
-  Minimal signed-in home screen, email verification summary, and logout flow
+  Plug-and-run `Home` sub-feature with its own coordinator and standalone placeholder screen
+- `MRR Project/Features/Saved`
+  Plug-and-run `Saved` sub-feature with its own coordinator and standalone placeholder screen
+- `MRR Project/Features/Profile`
+  Plug-and-run `Profile` sub-feature, migrated account summary UI, and logout flow
 - `MRR Project/Resources`
   Shared application resources, including `Info.plist`, `Assets.xcassets`, and the safe `GoogleService-Info.example.plist` template
 - `MRR Project/Features/Onboarding`
   Onboarding layout, pushed email auth screens, carousel cells, recipe detail presentation, and auth CTA integration
 - `MRR ProjectTests`
-  Launch-flow tests plus onboarding, auth, and home interaction regressions
+  Launch-flow tests plus onboarding, auth, main-menu, and profile interaction regressions
 
 ## Tech Stack
 
@@ -36,9 +44,10 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 | Stack | Used for | Where it shows up | Notes |
 | --- | --- | --- | --- |
 | `Objective-C` with Manual Retain-Release | Core application language and explicit memory-management practice | Entire app target under `MRR Project/` | The app intentionally keeps `CLANG_ENABLE_OBJC_ARC = NO` so retain/release behavior stays visible and educational. |
-| `UIKit` programmatic UI | All screens, navigation, layout, and interactions | `OnboardingViewController`, `MRREmailAuthenticationViewController`, `HomeViewController`, `OnboardingRecipeDetailViewController` | No storyboards or xibs are used anywhere in the app. |
-| `UINavigationController` | Logged-out navigation shell | Built in `AppDelegate.m` for the onboarding flow | Keeps sign-up and sign-in as pushed onboarding-owned screens. |
-| `Firebase Authentication` | Live email/password authentication and session state | `MRRFirebaseAuthenticationController` and `MRRAuthSession` | This is the live auth provider for the current milestone. It also drives the root flow by checking `currentUser`. Firebase bootstraps only when a local `GoogleService-Info` file has been copied into the app bundle. |
+| `UIKit` programmatic UI | All screens, navigation, layout, and interactions | `OnboardingViewController`, `MRREmailAuthenticationViewController`, `MainMenuTabBarController`, `ProfileViewController`, `OnboardingRecipeDetailViewController` | No storyboards or xibs are used anywhere in the app. |
+| `UINavigationController` | Logged-out auth flow plus per-tab navigation shells | Built in `AppDelegate.m` and `MainMenuCoordinator.m` | Keeps sign-up and sign-in as pushed onboarding-owned screens while also giving each authenticated tab its own navigation stack. |
+| `UITabBarController` | Authenticated application shell | `MainMenuTabBarController` | The authenticated area is now assembled as a shell feature that hosts plug-and-run child features. |
+| `Firebase Authentication` | Live email/password authentication and session state | `MRRFirebaseAuthenticationController`, `MRRAuthSession`, and the auth-state observation API | This is the live auth provider for the current milestone. It now drives the root flow through both direct session lookup and a runtime auth-state observer. Firebase bootstraps only when a local `GoogleService-Info` file has been copied into the app bundle. |
 | `GoogleSignIn` | Live Google authentication from onboarding | `AppDelegate.m` URL handling and Firebase auth wiring | The onboarding flow now uses the package directly, including Firebase account-linking fallback when a Google email collides with an existing email/password account. The real Firebase plist stays local and untracked. |
 | `AuthenticationServices` | Planned Apple sign-in integration path | Referenced from onboarding stub behavior | Apple sign-in is intentionally shipped as a structured stub until capability and developer-account setup are ready. |
 | `NSUserDefaults` | Small local persistence for recipe-onboarding completion | `OnboardingStateController` | This flag is kept for the recipe detail flow, but it no longer decides the app root. |
@@ -59,7 +68,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 - `Objective-C MRR` keeps the educational goal of the repo intact instead of hiding memory management behind ARC.
 - `UIKit` programmatic UI matches the repo's learning focus and keeps onboarding/auth layouts fully inspectable in code.
 - `FirebaseAuth` gives a realistic portfolio-grade auth flow without requiring a custom backend from day one.
-- The project is structured so later additions like live Google auth, Apple auth, or subscription wiring can plug into the existing auth/session layer instead of forcing a rewrite.
+- The project is structured so later authenticated tabs can ship as standalone coordinator-driven features, then plug into `Main Menu` without rewriting their root controller contract.
 
 ## Onboarding Highlights
 
@@ -107,18 +116,20 @@ Without Firebase configuration, the app will still build, and the email screens 
 
 ## Tests
 
-The active unit-test coverage focuses on root flow, onboarding presentation, auth entry, and logout behavior:
+The active unit-test coverage focuses on root flow, onboarding presentation, authenticated shell assembly, and logout behavior:
 
 - logged-out launch shows onboarding
-- logged-in launch shows home
-- authenticating from onboarding replaces the root with home
-- logging out replaces the root with onboarding
+- logged-in launch shows main menu
+- authenticating from onboarding replaces the root with main menu
+- auth-state observation swaps the root back to onboarding when the session disappears
+- duplicate auth-state emissions do not rebuild the same authenticated root
 - pushed sign-up and sign-in presentation flow
 - email auth validation, success flow, and keyboard-aware layout behavior
 - forgot-password reset-email flow, validation, and success alert behavior
 - live Google sign-in success, centered loading overlay, cancellation, and account-link fallback
 - Apple stub alert presentation
-- home email-verification summary and logout confirmation flow
+- main menu tab assembly and coordinator mountability
+- profile email-verification summary and logout confirmation flow
 - carousel centering, recentering, and auto-scroll behavior
 - recipe detail presentation and `Start Cooking` completion flow
 - onboarding accessibility identifiers and carousel backdrop styling
