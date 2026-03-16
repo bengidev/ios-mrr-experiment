@@ -2,25 +2,42 @@
 
 #import "../MRR Project/Features/Authentication/MRRAuthenticationController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthSession.h"
-#import "../MRR Project/Features/Home/HomeViewController.h"
+#import "../MRR Project/Features/Profile/ProfileViewController.h"
 
-@interface HomeViewController (Testing)
+@interface ProfileViewController (Testing)
 
 - (void)performConfirmedLogout;
 
 @end
 
-@interface HomeAuthenticationControllerSpy : NSObject <MRRAuthenticationController>
+@interface ProfileAuthStateObservationSpy : NSObject <MRRAuthStateObservation>
+@end
 
-@property(nonatomic, strong, nullable) MRRAuthSession *stubSession;
-@property(nonatomic, assign) NSInteger signOutCallCount;
+@implementation ProfileAuthStateObservationSpy
+
+- (void)invalidate {
+}
 
 @end
 
-@implementation HomeAuthenticationControllerSpy
+@interface ProfileAuthenticationControllerSpy : NSObject <MRRAuthenticationController>
+
+@property(nonatomic, strong, nullable) MRRAuthSession *stubSession;
+@property(nonatomic, strong, nullable) NSError *nextSignOutError;
+@property(nonatomic, assign) NSInteger signOutCallCount;
+@property(nonatomic, copy, nullable) MRRAuthStateChangeHandler authStateHandler;
+
+@end
+
+@implementation ProfileAuthenticationControllerSpy
 
 - (MRRAuthSession *)currentSession {
   return self.stubSession;
+}
+
+- (id<MRRAuthStateObservation>)observeAuthStateWithHandler:(MRRAuthStateChangeHandler)handler {
+  self.authStateHandler = handler;
+  return [[ProfileAuthStateObservationSpy alloc] init];
 }
 
 - (BOOL)hasPendingCredentialLink {
@@ -53,31 +70,26 @@
 
 - (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   self.signOutCallCount += 1;
+  if (self.nextSignOutError != nil) {
+    if (error != NULL) {
+      *error = self.nextSignOutError;
+    }
+    return NO;
+  }
+
   self.stubSession = nil;
+  if (self.authStateHandler != nil) {
+    self.authStateHandler(nil);
+  }
   return YES;
 }
 
 @end
 
-@interface HomeDelegateSpy : NSObject <HomeViewControllerDelegate>
+@interface ProfileViewControllerTests : XCTestCase
 
-@property(nonatomic, assign) BOOL didSignOut;
-
-@end
-
-@implementation HomeDelegateSpy
-
-- (void)homeViewControllerDidSignOut:(HomeViewController *)viewController {
-  self.didSignOut = YES;
-}
-
-@end
-
-@interface HomeViewControllerTests : XCTestCase
-
-@property(nonatomic, strong) HomeAuthenticationControllerSpy *authenticationController;
-@property(nonatomic, strong) HomeViewController *viewController;
-@property(nonatomic, strong) HomeDelegateSpy *delegateSpy;
+@property(nonatomic, strong) ProfileAuthenticationControllerSpy *authenticationController;
+@property(nonatomic, strong) ProfileViewController *viewController;
 @property(nonatomic, strong) UIWindow *window;
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
@@ -85,21 +97,19 @@
 
 @end
 
-@implementation HomeViewControllerTests
+@implementation ProfileViewControllerTests
 
 - (void)setUp {
   [super setUp];
 
-  self.authenticationController = [[HomeAuthenticationControllerSpy alloc] init];
+  self.authenticationController = [[ProfileAuthenticationControllerSpy alloc] init];
   self.authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                                                               email:@"cook@example.com"
-                                                                         displayName:@"Home Cook"
-                                                                        providerType:MRRAuthProviderTypeGoogle
-                                                                       emailVerified:YES];
-  self.viewController = [[HomeViewController alloc] initWithAuthenticationController:self.authenticationController
-                                                                             session:self.authenticationController.stubSession];
-  self.delegateSpy = [[HomeDelegateSpy alloc] init];
-  self.viewController.delegate = self.delegateSpy;
+                                                                                email:@"cook@example.com"
+                                                                          displayName:@"Home Cook"
+                                                                         providerType:MRRAuthProviderTypeGoogle
+                                                                        emailVerified:YES];
+  self.viewController = [[ProfileViewController alloc] initWithAuthenticationController:self.authenticationController
+                                                                                session:self.authenticationController.stubSession];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.viewController;
   [self.window makeKeyAndVisible];
@@ -113,17 +123,16 @@
   [self spinMainRunLoop];
   self.window.hidden = YES;
   self.window = nil;
-  self.delegateSpy = nil;
   self.viewController = nil;
   self.authenticationController = nil;
 
   [super tearDown];
 }
 
-- (void)testHomeExposesCoreAccessibilityIdentifiers {
+- (void)testProfileExposesCoreAccessibilityIdentifiers {
   NSArray<NSString *> *identifiers = @[
-    @"home.summaryCard", @"home.displayNameLabel", @"home.emailLabel", @"home.providerLabel", @"home.emailVerificationLabel", @"home.statusLabel",
-    @"home.logoutButton"
+    @"profile.summaryCard", @"profile.displayNameLabel", @"profile.emailLabel", @"profile.providerLabel",
+    @"profile.emailVerificationLabel", @"profile.statusLabel", @"profile.logoutButton"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -131,34 +140,46 @@
   }
 }
 
-- (void)testHomeShowsEmailVerificationStatus {
-  UILabel *verificationLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.emailVerificationLabel" inView:self.viewController.view];
+- (void)testProfileShowsEmailVerificationStatus {
+  UILabel *verificationLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"profile.emailVerificationLabel" inView:self.viewController.view];
 
   XCTAssertNotNil(verificationLabel);
   XCTAssertEqualObjects(verificationLabel.text, @"Email verified: Yes");
 }
 
 - (void)testLogoutButtonPresentsConfirmationAlert {
-  UIButton *logoutButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"home.logoutButton" inView:self.viewController.view];
+  UIButton *logoutButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"profile.logoutButton" inView:self.viewController.view];
   XCTAssertNotNil(logoutButton);
 
   [logoutButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
   XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
-  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"home.logoutAlert");
+  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"profile.logoutAlert");
   XCTAssertEqual(self.authenticationController.signOutCallCount, 0);
 }
 
-- (void)testConfirmedLogoutSignsOutAndNotifiesDelegate {
-  UIButton *logoutButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"home.logoutButton" inView:self.viewController.view];
+- (void)testConfirmedLogoutSignsOut {
+  UIButton *logoutButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"profile.logoutButton" inView:self.viewController.view];
   [logoutButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
   [self.viewController performConfirmedLogout];
 
   XCTAssertEqual(self.authenticationController.signOutCallCount, 1);
-  XCTAssertTrue(self.delegateSpy.didSignOut);
+}
+
+- (void)testLogoutFailurePresentsErrorAlert {
+  self.authenticationController.nextSignOutError = [NSError errorWithDomain:@"ProfileTests"
+                                                                       code:1
+                                                                   userInfo:@{NSLocalizedDescriptionKey : @"Nope"}];
+
+  [self.viewController performConfirmedLogout];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
+  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"profile.logoutErrorAlert");
 }
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {

@@ -2,14 +2,27 @@
 #import "../MRR Project/App/AppDelegate.h"
 #import "../MRR Project/Features/Authentication/MRRAuthenticationController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthSession.h"
-#import "../MRR Project/Features/Home/HomeViewController.h"
+#import "../MRR Project/Features/MainMenu/MainMenuTabBarController.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
+
+@interface AppLaunchFlowAuthStateObservationSpy : NSObject <MRRAuthStateObservation>
+
+@property(nonatomic, assign) BOOL invalidated;
+
+@end
+
+@implementation AppLaunchFlowAuthStateObservationSpy
+
+- (void)invalidate {
+  self.invalidated = YES;
+}
+
+@end
 
 @interface AppDelegate (Testing)
 
 - (void)onboardingViewControllerDidAuthenticate:(OnboardingViewController *)viewController;
-- (void)homeViewControllerDidSignOut:(HomeViewController *)viewController;
 
 @end
 
@@ -17,6 +30,10 @@
 
 @property(nonatomic, strong, nullable) MRRAuthSession *stubSession;
 @property(nonatomic, assign) NSInteger signOutCallCount;
+@property(nonatomic, copy, nullable) MRRAuthStateChangeHandler authStateHandler;
+@property(nonatomic, strong, nullable) AppLaunchFlowAuthStateObservationSpy *observation;
+
+- (void)emitObservedSession:(nullable MRRAuthSession *)session;
 
 @end
 
@@ -24,6 +41,12 @@
 
 - (MRRAuthSession *)currentSession {
   return self.stubSession;
+}
+
+- (id<MRRAuthStateObservation>)observeAuthStateWithHandler:(MRRAuthStateChangeHandler)handler {
+  self.authStateHandler = handler;
+  self.observation = [[AppLaunchFlowAuthStateObservationSpy alloc] init];
+  return self.observation;
 }
 
 - (BOOL)hasPendingCredentialLink {
@@ -57,7 +80,17 @@
 - (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   self.signOutCallCount += 1;
   self.stubSession = nil;
+  if (self.authStateHandler != nil) {
+    self.authStateHandler(nil);
+  }
   return YES;
+}
+
+- (void)emitObservedSession:(MRRAuthSession *)session {
+  self.stubSession = session;
+  if (self.authStateHandler != nil) {
+    self.authStateHandler(session);
+  }
 }
 
 @end
@@ -68,7 +101,7 @@
 @property(nonatomic, strong) NSUserDefaults *userDefaults;
 
 - (OnboardingViewController *)onboardingViewControllerFromRootViewController:(UIViewController *)rootViewController;
-- (HomeViewController *)homeViewControllerFromRootViewController:(UIViewController *)rootViewController;
+- (MainMenuTabBarController *)mainMenuTabBarControllerFromRootViewController:(UIViewController *)rootViewController;
 
 @end
 
@@ -98,7 +131,7 @@
   XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
-- (void)testLoggedInLaunchShowsHome {
+- (void)testLoggedInLaunchShowsMainMenu {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
   authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                                                           email:@"cook@example.com"
@@ -109,10 +142,10 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
-  XCTAssertNotNil([self homeViewControllerFromRootViewController:appDelegate.window.rootViewController]);
+  XCTAssertNotNil([self mainMenuTabBarControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
-- (void)testLoggedInLaunchDoesNotShowTabBarController {
+- (void)testLoggedInLaunchShowsTabBarController {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
   authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                                                           email:@"cook@example.com"
@@ -123,7 +156,7 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
-  XCTAssertFalse([appDelegate.window.rootViewController isKindOfClass:[UITabBarController class]]);
+  XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[MainMenuTabBarController class]]);
 }
 
 - (void)testLegacyStoredLayoutScalingPreferenceDoesNotAffectLaunchFlow {
@@ -139,7 +172,7 @@
   XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
-- (void)testAuthenticatingFromOnboardingReplacesRootWithHome {
+- (void)testAuthenticatingFromOnboardingReplacesRootWithMainMenu {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
@@ -154,10 +187,10 @@
                                                                   emailVerified:YES];
   [appDelegate onboardingViewControllerDidAuthenticate:onboardingViewController];
 
-  XCTAssertNotNil([self homeViewControllerFromRootViewController:appDelegate.window.rootViewController]);
+  XCTAssertNotNil([self mainMenuTabBarControllerFromRootViewController:appDelegate.window.rootViewController]);
 }
 
-- (void)testSigningOutFromHomeReplacesRootWithOnboarding {
+- (void)testObservedSessionLossReplacesMainMenuWithOnboarding {
   AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
   authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                                                           email:@"cook@example.com"
@@ -167,13 +200,47 @@
   AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
 
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
-  HomeViewController *homeViewController = [self homeViewControllerFromRootViewController:appDelegate.window.rootViewController];
-  XCTAssertNotNil(homeViewController);
+  XCTAssertNotNil([self mainMenuTabBarControllerFromRootViewController:appDelegate.window.rootViewController]);
 
-  authenticationController.stubSession = nil;
-  [appDelegate homeViewControllerDidSignOut:homeViewController];
+  [authenticationController emitObservedSession:nil];
 
   XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
+}
+
+- (void)testObservedActiveSessionReplacesOnboardingWithMainMenu {
+  AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
+  AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
+
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+  XCTAssertNotNil([self onboardingViewControllerFromRootViewController:appDelegate.window.rootViewController]);
+
+  MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                             email:@"cook@example.com"
+                                                       displayName:@"Test Cook"
+                                                      providerType:MRRAuthProviderTypeEmail
+                                                     emailVerified:NO];
+  [authenticationController emitObservedSession:session];
+
+  XCTAssertNotNil([self mainMenuTabBarControllerFromRootViewController:appDelegate.window.rootViewController]);
+}
+
+- (void)testDuplicateObservedActiveSessionDoesNotRebuildMainMenuRoot {
+  AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
+  MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                             email:@"cook@example.com"
+                                                       displayName:@"Test Cook"
+                                                      providerType:MRRAuthProviderTypeGoogle
+                                                     emailVerified:YES];
+  authenticationController.stubSession = session;
+  AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
+
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+  UIViewController *initialRootViewController = appDelegate.window.rootViewController;
+  XCTAssertNotNil([self mainMenuTabBarControllerFromRootViewController:initialRootViewController]);
+
+  [authenticationController emitObservedSession:session];
+
+  XCTAssertEqual(appDelegate.window.rootViewController, initialRootViewController);
 }
 
 - (AppDelegate *)makeAppDelegateWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController {
@@ -190,11 +257,9 @@
   return (OnboardingViewController *)navigationController.topViewController;
 }
 
-- (HomeViewController *)homeViewControllerFromRootViewController:(UIViewController *)rootViewController {
-  XCTAssertTrue([rootViewController isKindOfClass:[UINavigationController class]]);
-  UINavigationController *navigationController = (UINavigationController *)rootViewController;
-  XCTAssertTrue([navigationController.topViewController isKindOfClass:[HomeViewController class]]);
-  return (HomeViewController *)navigationController.topViewController;
+- (MainMenuTabBarController *)mainMenuTabBarControllerFromRootViewController:(UIViewController *)rootViewController {
+  XCTAssertTrue([rootViewController isKindOfClass:[MainMenuTabBarController class]]);
+  return (MainMenuTabBarController *)rootViewController;
 }
 
 @end

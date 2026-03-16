@@ -13,6 +13,16 @@
 
 @end
 
+@interface OnboardingAuthStateObservationSpy : NSObject <MRRAuthStateObservation>
+@end
+
+@implementation OnboardingAuthStateObservationSpy
+
+- (void)invalidate {
+}
+
+@end
+
 @interface OnboardingAuthenticationControllerSpy : NSObject <MRRAuthenticationController>
 
 @property(nonatomic, strong, nullable) MRRAuthSession *sessionToReturn;
@@ -35,6 +45,10 @@
 
 - (MRRAuthSession *)currentSession {
   return self.sessionToReturn;
+}
+
+- (id<MRRAuthStateObservation>)observeAuthStateWithHandler:(MRRAuthStateChangeHandler)handler {
+  return [[OnboardingAuthStateObservationSpy alloc] init];
 }
 
 - (BOOL)hasPendingCredentialLink {

@@ -26,7 +26,7 @@
 		A00000000000000000000739 /* MRREmailAuthenticationViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066B /* MRREmailAuthenticationViewController.m */; };
 		A0000000000000000000073A /* HomeViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066D /* HomeViewController.m */; };
 		A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066E /* OnboardingAuthFlowTests.m */; };
-		A0000000000000000000073C /* HomeViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066F /* HomeViewControllerTests.m */; };
+		A0000000000000000000073C /* ProfileViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000066F /* ProfileViewControllerTests.m */; };
 		A0000000000000000000073D /* MRRForgotPasswordViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000671 /* MRRForgotPasswordViewController.m */; };
 		A0000000000000000000073E /* MRRLiquidGlassStyling.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000673 /* MRRLiquidGlassStyling.m */; };
 		A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */; };
@@ -39,6 +39,7 @@
 		D10000000000000000000005 /* SavedCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010B /* SavedCoordinator.m */; };
 		D10000000000000000000006 /* ProfileViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010D /* ProfileViewController.m */; };
 		D10000000000000000000007 /* ProfileCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010F /* ProfileCoordinator.m */; };
+		D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000110 /* MainMenuTabBarControllerTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,7 +87,7 @@
 		A0000000000000000000066C /* HomeViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeViewController.h; sourceTree = "<group>"; };
 		A0000000000000000000066D /* HomeViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewController.m; sourceTree = "<group>"; };
 		A0000000000000000000066E /* OnboardingAuthFlowTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingAuthFlowTests.m; sourceTree = "<group>"; };
-		A0000000000000000000066F /* HomeViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewControllerTests.m; sourceTree = "<group>"; };
+		A0000000000000000000066F /* ProfileViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProfileViewControllerTests.m; sourceTree = "<group>"; };
 		A00000000000000000000670 /* MRRForgotPasswordViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRForgotPasswordViewController.h; sourceTree = "<group>"; };
 		A00000000000000000000671 /* MRRForgotPasswordViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRForgotPasswordViewController.m; sourceTree = "<group>"; };
 		A00000000000000000000672 /* MRRLiquidGlassStyling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRLiquidGlassStyling.h; sourceTree = "<group>"; };
@@ -109,6 +110,7 @@
 		D1000000000000000000010D /* ProfileViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProfileViewController.m; sourceTree = "<group>"; };
 		D1000000000000000000010E /* ProfileCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProfileCoordinator.h; sourceTree = "<group>"; };
 		D1000000000000000000010F /* ProfileCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProfileCoordinator.m; sourceTree = "<group>"; };
+		D10000000000000000000110 /* MainMenuTabBarControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainMenuTabBarControllerTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,12 +168,13 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000654 /* AppLaunchFlowTests.m */,
-				A0000000000000000000066F /* HomeViewControllerTests.m */,
+				D10000000000000000000110 /* MainMenuTabBarControllerTests.m */,
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */,
 				A0000000000000000000066E /* OnboardingAuthFlowTests.m */,
 				A0000000000000000000065A /* OnboardingStateControllerTests.m */,
 				A0000000000000000000065B /* OnboardingViewControllerTests.m */,
+				A0000000000000000000066F /* ProfileViewControllerTests.m */,
 			);
 			path = "MRR ProjectTests";
 			sourceTree = "<group>";
@@ -499,12 +502,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000728 /* AppLaunchFlowTests.m in Sources */,
-				A0000000000000000000073C /* HomeViewControllerTests.m in Sources */,
+				D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */,
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */,
 				A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */,
 				A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */,
 				A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */,
+				A0000000000000000000073C /* ProfileViewControllerTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
