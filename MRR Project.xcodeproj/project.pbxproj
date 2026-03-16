@@ -32,6 +32,13 @@
 		A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */; };
 		B62132B22F6531980061670E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B12F6531980061670E /* FirebaseAuth */; };
 		B62132B52F6533030061670E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B42F6533030061670E /* GoogleSignIn */; };
+		D10000000000000000000001 /* MainMenuTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000103 /* MainMenuTabBarController.m */; };
+		D10000000000000000000002 /* MainMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000105 /* MainMenuCoordinator.m */; };
+		D10000000000000000000003 /* HomeCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000107 /* HomeCoordinator.m */; };
+		D10000000000000000000004 /* SavedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000109 /* SavedViewController.m */; };
+		D10000000000000000000005 /* SavedCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010B /* SavedCoordinator.m */; };
+		D10000000000000000000006 /* ProfileViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010D /* ProfileViewController.m */; };
+		D10000000000000000000007 /* ProfileCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010F /* ProfileCoordinator.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,7 +92,23 @@
 		A00000000000000000000672 /* MRRLiquidGlassStyling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRLiquidGlassStyling.h; sourceTree = "<group>"; };
 		A00000000000000000000673 /* MRRLiquidGlassStyling.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLiquidGlassStyling.m; sourceTree = "<group>"; };
 		A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLiquidGlassStylingTests.m; sourceTree = "<group>"; };
+		B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C0FFEE000000000000000101 /* GoogleService-Info.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.example.plist"; sourceTree = "<group>"; };
+		D10000000000000000000101 /* MRRFeatureCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRFeatureCoordinator.h; sourceTree = "<group>"; };
+		D10000000000000000000102 /* MainMenuTabBarController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainMenuTabBarController.h; sourceTree = "<group>"; };
+		D10000000000000000000103 /* MainMenuTabBarController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainMenuTabBarController.m; sourceTree = "<group>"; };
+		D10000000000000000000104 /* MainMenuCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainMenuCoordinator.h; sourceTree = "<group>"; };
+		D10000000000000000000105 /* MainMenuCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainMenuCoordinator.m; sourceTree = "<group>"; };
+		D10000000000000000000106 /* HomeCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeCoordinator.h; sourceTree = "<group>"; };
+		D10000000000000000000107 /* HomeCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeCoordinator.m; sourceTree = "<group>"; };
+		D10000000000000000000108 /* SavedViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SavedViewController.h; sourceTree = "<group>"; };
+		D10000000000000000000109 /* SavedViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SavedViewController.m; sourceTree = "<group>"; };
+		D1000000000000000000010A /* SavedCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SavedCoordinator.h; sourceTree = "<group>"; };
+		D1000000000000000000010B /* SavedCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SavedCoordinator.m; sourceTree = "<group>"; };
+		D1000000000000000000010C /* ProfileViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProfileViewController.h; sourceTree = "<group>"; };
+		D1000000000000000000010D /* ProfileViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProfileViewController.m; sourceTree = "<group>"; };
+		D1000000000000000000010E /* ProfileCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProfileCoordinator.h; sourceTree = "<group>"; };
+		D1000000000000000000010F /* ProfileCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProfileCoordinator.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,7 +180,10 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000034 /* Authentication */,
+				D10000000000000000000201 /* MainMenu */,
 				A00000000000000000000035 /* Home */,
+				D10000000000000000000202 /* Saved */,
+				D10000000000000000000203 /* Profile */,
 				A0000000000000000000002E /* Onboarding */,
 			);
 			path = Features;
@@ -252,10 +278,46 @@
 		A00000000000000000000035 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				D10000000000000000000106 /* HomeCoordinator.h */,
+				D10000000000000000000107 /* HomeCoordinator.m */,
 				A0000000000000000000066C /* HomeViewController.h */,
 				A0000000000000000000066D /* HomeViewController.m */,
 			);
 			path = Home;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000201 /* MainMenu */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000101 /* MRRFeatureCoordinator.h */,
+				D10000000000000000000102 /* MainMenuTabBarController.h */,
+				D10000000000000000000103 /* MainMenuTabBarController.m */,
+				D10000000000000000000104 /* MainMenuCoordinator.h */,
+				D10000000000000000000105 /* MainMenuCoordinator.m */,
+			);
+			path = MainMenu;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000202 /* Saved */ = {
+			isa = PBXGroup;
+			children = (
+				D1000000000000000000010A /* SavedCoordinator.h */,
+				D1000000000000000000010B /* SavedCoordinator.m */,
+				D10000000000000000000108 /* SavedViewController.h */,
+				D10000000000000000000109 /* SavedViewController.m */,
+			);
+			path = Saved;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000203 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				D1000000000000000000010E /* ProfileCoordinator.h */,
+				D1000000000000000000010F /* ProfileCoordinator.m */,
+				D1000000000000000000010C /* ProfileViewController.h */,
+				D1000000000000000000010D /* ProfileViewController.m */,
+			);
+			path = Profile;
 			sourceTree = "<group>";
 		};
 		B6B2BF072F61276B00BF945D /* Recovered References */ = {
@@ -269,6 +331,7 @@
 		B6B2BF092F61293700BF945D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */,
 				A00000000000000000000655 /* Assets.xcassets */,
 				A00000000000000000000606 /* Info.plist */,
 				C0FFEE000000000000000101 /* GoogleService-Info.example.plist */,
@@ -409,7 +472,10 @@
 			files = (
 				A00000000000000000000700 /* main.m in Sources */,
 				A00000000000000000000701 /* AppDelegate.m in Sources */,
+				D10000000000000000000003 /* HomeCoordinator.m in Sources */,
 				A0000000000000000000073A /* HomeViewController.m in Sources */,
+				D10000000000000000000002 /* MainMenuCoordinator.m in Sources */,
+				D10000000000000000000001 /* MainMenuTabBarController.m in Sources */,
 				A00000000000000000000734 /* MRRLayoutScaling.m in Sources */,
 				A00000000000000000000737 /* MRRAuthErrorMapper.m in Sources */,
 				A00000000000000000000736 /* MRRAuthSession.m in Sources */,
@@ -421,6 +487,10 @@
 				A00000000000000000000726 /* OnboardingViewController.m in Sources */,
 				A00000000000000000000730 /* OnboardingRecipeDetailViewController.m in Sources */,
 				A00000000000000000000731 /* OnboardingRecipeCarouselCell.m in Sources */,
+				D10000000000000000000007 /* ProfileCoordinator.m in Sources */,
+				D10000000000000000000006 /* ProfileViewController.m in Sources */,
+				D10000000000000000000005 /* SavedCoordinator.m in Sources */,
+				D10000000000000000000004 /* SavedViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

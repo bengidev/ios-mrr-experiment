@@ -30,6 +30,55 @@ static void MRRAuthDebugLog(NSString *format, ...) {
 static void MRRAuthDebugLog(__unused NSString *format, ...) {}
 #endif
 
+@interface MRRNoopAuthStateObservation : NSObject <MRRAuthStateObservation>
+@end
+
+@implementation MRRNoopAuthStateObservation
+
+- (void)invalidate {
+}
+
+@end
+
+@interface MRRFirebaseAuthStateObservation : NSObject <MRRAuthStateObservation>
+
+@property(nonatomic, retain, nullable) FIRAuth *auth;
+@property(nonatomic, assign) FIRAuthStateDidChangeListenerHandle handle;
+@property(nonatomic, assign) BOOL hasHandle;
+
+- (instancetype)initWithAuth:(FIRAuth *)auth;
+
+@end
+
+@implementation MRRFirebaseAuthStateObservation
+
+- (instancetype)initWithAuth:(FIRAuth *)auth {
+  self = [super init];
+  if (self) {
+    _auth = [auth retain];
+  }
+
+  return self;
+}
+
+- (void)dealloc {
+  [self invalidate];
+  [_auth release];
+  [super dealloc];
+}
+
+- (void)invalidate {
+  if (!self.hasHandle || self.auth == nil) {
+    return;
+  }
+
+  [self.auth removeAuthStateDidChangeListener:self.handle];
+  self.hasHandle = NO;
+  self.auth = nil;
+}
+
+@end
+
 @interface MRRFirebaseAuthenticationController ()
 
 @property(nonatomic, retain, nullable) FIRAuthCredential *pendingCredential;
@@ -83,6 +132,24 @@ static void MRRAuthDebugLog(__unused NSString *format, ...) {}
 
 - (nullable MRRAuthSession *)currentSession {
   return [self sessionForCurrentUser];
+}
+
+- (id<MRRAuthStateObservation>)observeAuthStateWithHandler:(MRRAuthStateChangeHandler)handler {
+  NSParameterAssert(handler != nil);
+
+  if (![self isFirebaseConfigured]) {
+    handler(nil);
+    return [[[MRRNoopAuthStateObservation alloc] init] autorelease];
+  }
+
+  FIRAuth *auth = [FIRAuth auth];
+  MRRFirebaseAuthStateObservation *observation = [[[MRRFirebaseAuthStateObservation alloc] initWithAuth:auth] autorelease];
+  FIRAuthStateDidChangeListenerHandle handle = [auth addAuthStateDidChangeListener:^(__unused FIRAuth *auth, FIRUser *_Nullable user) {
+    handler([self sessionForUser:user]);
+  }];
+  observation.handle = handle;
+  observation.hasHandle = YES;
+  return observation;
 }
 
 - (BOOL)hasPendingCredentialLink {

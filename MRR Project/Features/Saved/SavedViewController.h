@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface HomeViewController : UIViewController
+@interface SavedViewController : UIViewController
 
 - (instancetype)init;
 

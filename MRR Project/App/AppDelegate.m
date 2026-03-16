@@ -9,15 +9,27 @@
 #import "../Features/Onboarding/Data/OnboardingStateController.h"
 #import "../Features/Authentication/MRRFirebaseAuthenticationController.h"
 #import "../Features/Authentication/MRRAuthSession.h"
-#import "../Features/Home/HomeViewController.h"
+#import "../Features/MainMenu/MainMenuCoordinator.h"
+#import "../Features/MainMenu/MainMenuTabBarController.h"
 #import "../Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
 
 #import <GoogleSignIn/GoogleSignIn.h>
 
-@interface AppDelegate () <HomeViewControllerDelegate, OnboardingViewControllerDelegate>
+@interface AppDelegate () <OnboardingViewControllerDelegate>
 
 @property(nonatomic, retain) OnboardingStateController *onboardingStateController;
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
+@property(nonatomic, retain, nullable) id<MRRAuthStateObservation> authStateObservation;
+@property(nonatomic, retain, nullable) MainMenuCoordinator *mainMenuCoordinator;
+@property(nonatomic, copy, nullable) NSString *visibleAuthenticatedUserID;
+
+- (void)startObservingAuthenticationState;
+- (void)handleObservedAuthenticationSession:(nullable MRRAuthSession *)session;
+- (void)updateRootForSession:(nullable MRRAuthSession *)session animated:(BOOL)animated;
+- (UIViewController *)buildRootViewControllerForSession:(nullable MRRAuthSession *)session;
+- (UIViewController *)buildMainMenuViewControllerWithSession:(MRRAuthSession *)session;
+- (BOOL)isShowingOnboardingRoot;
+- (BOOL)isShowingMainMenuRoot;
 
 @end
 
@@ -53,6 +65,10 @@
 #pragma mark - Memory Management
 
 - (void)dealloc {
+  [self.authStateObservation invalidate];
+  [_visibleAuthenticatedUserID release];
+  [_mainMenuCoordinator release];
+  [_authStateObservation release];
   [_authenticationController release];
   [_onboardingStateController release];
   [_window release];
@@ -68,6 +84,7 @@
 
   self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
   self.window.rootViewController = [self buildInitialRootViewController];
+  [self startObservingAuthenticationState];
   if ([self shouldMakeWindowKeyAndVisible]) {
     [self.window makeKeyAndVisible];
   }
@@ -106,25 +123,19 @@
     return;
   }
 
-  [self setRootViewController:[self buildHomeViewControllerWithSession:session] animated:[self shouldAnimateRootTransitions]];
-}
-
-- (void)homeViewControllerDidSignOut:(HomeViewController *)viewController {
-  [self setRootViewController:[self buildOnboardingViewController] animated:[self shouldAnimateRootTransitions]];
+  [self updateRootForSession:session animated:[self shouldAnimateRootTransitions]];
 }
 
 #pragma mark - Root View Controller Builders
 
 - (UIViewController *)buildInitialRootViewController {
-  MRRAuthSession *session = [self.authenticationController currentSession];
-  if (session != nil) {
-    return [self buildHomeViewControllerWithSession:session];
-  }
-
-  return [self buildOnboardingViewController];
+  return [self buildRootViewControllerForSession:[self.authenticationController currentSession]];
 }
 
 - (UIViewController *)buildOnboardingViewController {
+  self.mainMenuCoordinator = nil;
+  self.visibleAuthenticatedUserID = nil;
+
   OnboardingViewController *viewController =
       [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController
                                          authenticationController:self.authenticationController] autorelease];
@@ -135,13 +146,18 @@
   return navigationController;
 }
 
-- (UIViewController *)buildHomeViewControllerWithSession:(MRRAuthSession *)session {
-  HomeViewController *viewController =
-      [[[HomeViewController alloc] initWithAuthenticationController:self.authenticationController session:session] autorelease];
-  viewController.delegate = self;
+- (UIViewController *)buildRootViewControllerForSession:(MRRAuthSession *)session {
+  if (session != nil) {
+    self.visibleAuthenticatedUserID = session.userID;
+    return [self buildMainMenuViewControllerWithSession:session];
+  }
 
-  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
-  return navigationController;
+  return [self buildOnboardingViewController];
+}
+
+- (UIViewController *)buildMainMenuViewControllerWithSession:(MRRAuthSession *)session {
+  self.mainMenuCoordinator = [[[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController session:session] autorelease];
+  return [self.mainMenuCoordinator rootViewController];
 }
 
 - (void)setRootViewController:(UIViewController *)rootViewController animated:(BOOL)animated {
@@ -168,6 +184,74 @@
 
 - (BOOL)shouldMakeWindowKeyAndVisible {
   return NSClassFromString(@"XCTestCase") == nil;
+}
+
+#pragma mark - Auth State Observation
+
+- (void)startObservingAuthenticationState {
+  if (self.authStateObservation != nil) {
+    return;
+  }
+
+  __block AppDelegate *blockSelf = self;
+  self.authStateObservation = [[self.authenticationController observeAuthStateWithHandler:^(MRRAuthSession *_Nullable session) {
+    AppDelegate *strongSelf = blockSelf;
+    if (strongSelf == nil) {
+      return;
+    }
+
+    if ([NSThread isMainThread]) {
+      [strongSelf handleObservedAuthenticationSession:session];
+      return;
+    }
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+      AppDelegate *mainThreadSelf = blockSelf;
+      if (mainThreadSelf == nil) {
+        return;
+      }
+
+      [mainThreadSelf handleObservedAuthenticationSession:session];
+    });
+  }] retain];
+}
+
+- (void)handleObservedAuthenticationSession:(MRRAuthSession *)session {
+  if (self.window == nil) {
+    return;
+  }
+
+  [self updateRootForSession:session animated:[self shouldAnimateRootTransitions]];
+}
+
+- (void)updateRootForSession:(MRRAuthSession *)session animated:(BOOL)animated {
+  if (session == nil) {
+    if ([self isShowingOnboardingRoot] && self.visibleAuthenticatedUserID == nil) {
+      return;
+    }
+
+    [self setRootViewController:[self buildOnboardingViewController] animated:animated];
+    return;
+  }
+
+  if ([self isShowingMainMenuRoot] && [self.visibleAuthenticatedUserID isEqualToString:session.userID]) {
+    return;
+  }
+
+  [self setRootViewController:[self buildRootViewControllerForSession:session] animated:animated];
+}
+
+- (BOOL)isShowingOnboardingRoot {
+  if (![self.window.rootViewController isKindOfClass:[UINavigationController class]]) {
+    return NO;
+  }
+
+  UINavigationController *navigationController = (UINavigationController *)self.window.rootViewController;
+  return [navigationController.topViewController isKindOfClass:[OnboardingViewController class]];
+}
+
+- (BOOL)isShowingMainMenuRoot {
+  return [self.window.rootViewController isKindOfClass:[MainMenuTabBarController class]];
 }
 
 @end

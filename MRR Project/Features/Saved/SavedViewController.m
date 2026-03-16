@@ -1,8 +1,8 @@
-#import "HomeViewController.h"
+#import "SavedViewController.h"
 
 #import "../../Layout/MRRLiquidGlassStyling.h"
 
-static UIColor *MRRHomeDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
+static UIColor *MRRSavedDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
       if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
@@ -15,12 +15,12 @@ static UIColor *MRRHomeDynamicFallbackColor(UIColor *lightColor, UIColor *darkCo
   return lightColor;
 }
 
-static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *darkColor) {
+static UIColor *MRRSavedNamedColor(NSString *name, UIColor *lightColor, UIColor *darkColor) {
   UIColor *namedColor = [UIColor colorNamed:name];
-  return namedColor ?: MRRHomeDynamicFallbackColor(lightColor, darkColor);
+  return namedColor ?: MRRSavedDynamicFallbackColor(lightColor, darkColor);
 }
 
-@interface HomeViewController ()
+@interface SavedViewController ()
 
 @property(nonatomic, retain) UIView *messageCardView;
 @property(nonatomic, retain) UILabel *headlineLabel;
@@ -31,7 +31,7 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 
 @end
 
-@implementation HomeViewController
+@implementation SavedViewController
 
 - (instancetype)init {
   return [super initWithNibName:nil bundle:nil];
@@ -47,12 +47,12 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  self.title = @"Home";
+  self.title = @"Saved";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
   }
-  self.view.accessibilityIdentifier = @"home.view";
-  self.view.backgroundColor = MRRHomeNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
+  self.view.accessibilityIdentifier = @"saved.view";
+  self.view.backgroundColor = MRRSavedNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 
   [self buildViewHierarchy];
 }
@@ -65,17 +65,17 @@ static UIColor *MRRHomeNamedColor(NSString *name, UIColor *lightColor, UIColor *
   self.messageCardView = messageCardView;
 
   UILabel *headlineLabel = [self labelWithFont:[UIFont boldSystemFontOfSize:28.0]
-                                         color:MRRHomeNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                                 [UIColor colorWithWhite:0.96 alpha:1.0])];
+                                         color:MRRSavedNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
+                                                                  [UIColor colorWithWhite:0.96 alpha:1.0])];
   headlineLabel.translatesAutoresizingMaskIntoConstraints = NO;
   headlineLabel.numberOfLines = 0;
-  headlineLabel.text = @"Home feature coming soon.";
+  headlineLabel.text = @"Saved feature coming soon.";
   [messageCardView addSubview:headlineLabel];
   self.headlineLabel = headlineLabel;
 
   UILabel *bodyLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0]
-                                     color:MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                                             [UIColor colorWithWhite:0.70 alpha:1.0])];
+                                     color:MRRSavedNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
+                                                              [UIColor colorWithWhite:0.70 alpha:1.0])];
   bodyLabel.translatesAutoresizingMaskIntoConstraints = NO;
   bodyLabel.numberOfLines = 0;
   bodyLabel.text = @"This standalone feature is ready to be mounted inside Main Menu or presented as its own screen.";

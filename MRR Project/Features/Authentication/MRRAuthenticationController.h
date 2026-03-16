@@ -7,6 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef void (^MRRAuthSessionCompletion)(MRRAuthSession *_Nullable session, NSError *_Nullable error);
 typedef void (^MRRAuthCompletion)(NSError *_Nullable error);
+typedef void (^MRRAuthStateChangeHandler)(MRRAuthSession *_Nullable session);
 
 FOUNDATION_EXPORT NSErrorDomain const MRRAuthenticationErrorDomain;
 FOUNDATION_EXPORT NSString *const MRRAuthPendingLinkEmailUserInfoKey;
@@ -21,9 +22,16 @@ typedef NS_ENUM(NSInteger, MRRAuthenticationErrorCode) {
   MRRAuthenticationErrorCodeNoCurrentSession = 7,
 };
 
+@protocol MRRAuthStateObservation <NSObject>
+
+- (void)invalidate;
+
+@end
+
 @protocol MRRAuthenticationController <NSObject>
 
 - (nullable MRRAuthSession *)currentSession;
+- (id<MRRAuthStateObservation>)observeAuthStateWithHandler:(MRRAuthStateChangeHandler)handler;
 - (BOOL)hasPendingCredentialLink;
 - (nullable NSString *)pendingLinkEmail;
 - (void)signUpWithEmail:(NSString *)email password:(NSString *)password completion:(MRRAuthSessionCompletion)completion;
