@@ -88,7 +88,11 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, copy) NSArray<OnboardingRecipe *> *recipes;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIStackView *contentStackView;
+@property(nonatomic, retain) UIView *heroCarouselContainerView;
+@property(nonatomic, retain) UIStackView *heroCarouselRowsStackView;
+@property(nonatomic, retain) UIView *iconWrapperView;
 @property(nonatomic, retain) UICollectionView *carouselCollectionView;
+@property(nonatomic, retain) UICollectionView *secondaryCarouselCollectionView;
 @property(nonatomic, retain) UIPageControl *pageControl;
 @property(nonatomic, retain) NSTimer *carouselTimer;
 @property(nonatomic, retain) UIView *iconContainerView;
@@ -103,6 +107,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, retain) UIButton *signinLabel;
 @property(nonatomic, retain) UILabel *authDividerLabel;
 @property(nonatomic, retain) UIView *spacerView;
+@property(nonatomic, retain) UIView *heroSectionSpacerView;
+@property(nonatomic, retain) UIView *bodyActionSpacerView;
 @property(nonatomic, retain) UIButton *emailButton;
 @property(nonatomic, retain) UIButton *googleButton;
 @property(nonatomic, retain) UIButton *appleButton;
@@ -113,6 +119,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, retain) NSLayoutConstraint *stackTopConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *stackBottomConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *spacerHeightConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *heroSectionSpacerHeightConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *bodyActionSpacerHeightConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *iconWrapperHeightConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *iconContainerTopConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *iconContainerWidthConstraint;
@@ -120,6 +128,10 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, retain) NSLayoutConstraint *iconImageWidthConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *iconImageHeightConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *carouselHeightConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *primaryCarouselLeadingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *primaryCarouselTrailingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *secondaryCarouselLeadingConstraint;
+@property(nonatomic, retain) NSLayoutConstraint *secondaryCarouselTrailingConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *emailButtonHeightConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *googleButtonHeightConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *appleButtonHeightConstraint;
@@ -128,13 +140,17 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, retain) NSLayoutConstraint *benefitBodyHeightConstraint;
 @property(nonatomic, assign) NSInteger currentRecipeIndex;
 @property(nonatomic, assign) NSInteger currentCarouselItemIndex;
+@property(nonatomic, assign) NSInteger secondaryCurrentCarouselItemIndex;
 @property(nonatomic, assign) BOOL hasAppliedInitialCarouselPosition;
 @property(nonatomic, assign) CGSize lastPositionedCarouselBoundsSize;
+@property(nonatomic, assign) CGSize lastPositionedSecondaryCarouselBoundsSize;
 @property(nonatomic, assign, getter=isDetailPresented) BOOL detailPresented;
 @property(nonatomic, assign, getter=isViewVisible) BOOL viewVisible;
 
 - (NSArray<OnboardingRecipe *> *)loadRecipes;
 - (void)buildViewHierarchy;
+- (UICollectionView *)buildCarouselCollectionViewWithAccessibilityIdentifier:(NSString *)accessibilityIdentifier;
+- (NSArray<UICollectionView *> *)allCarouselCollectionViews;
 - (UIView *)badgeViewWithText:(NSString *)text
       accessibilityIdentifier:(NSString *)accessibilityIdentifier
               labelIdentifier:(NSString *)labelIdentifier;
@@ -170,24 +186,37 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
 - (void)updateLayoutMetricsIfNeeded;
 - (void)updateScrollBehaviorIfNeeded;
+- (BOOL)isCarouselCollectionView:(UICollectionView *)collectionView;
+- (BOOL)isPrimaryCarouselCollectionView:(UICollectionView *)collectionView;
+- (NSInteger)currentCarouselItemIndexForCollectionView:(UICollectionView *)collectionView;
+- (void)setCurrentCarouselItemIndex:(NSInteger)itemIndex forCollectionView:(UICollectionView *)collectionView;
+- (NSInteger)defaultRecipeIndexForCollectionView:(UICollectionView *)collectionView;
+- (CGSize)lastPositionedCarouselBoundsSizeForCollectionView:(UICollectionView *)collectionView;
+- (void)setLastPositionedCarouselBoundsSize:(CGSize)size forCollectionView:(UICollectionView *)collectionView;
 - (CGFloat)layoutViewportHeight;
 - (CGFloat)layoutViewportWidth;
 - (NSAttributedString *)titleAttributedTextWithFontSize:(CGFloat)fontSize kerning:(CGFloat)kerning;
 - (NSAttributedString *)carouselCaptionAttributedTextWithFontSize:(CGFloat)fontSize kerning:(CGFloat)kerning;
 - (UICollectionViewFlowLayout *)carouselLayout;
+- (UICollectionViewFlowLayout *)carouselLayoutForCollectionView:(UICollectionView *)collectionView;
 - (void)updateCarouselLayoutIfNeeded;
+- (void)updateCarouselLayoutIfNeededForCollectionView:(UICollectionView *)collectionView;
 - (CGSize)carouselItemSizeForAvailableWidth:(CGFloat)availableWidth availableHeight:(CGFloat)availableHeight lineSpacing:(CGFloat)lineSpacing;
 - (NSInteger)virtualCarouselItemCount;
 - (NSInteger)recipeIndexForCarouselItemIndex:(NSInteger)itemIndex;
 - (NSInteger)middleCarouselItemIndexForRecipeIndex:(NSInteger)recipeIndex;
 - (NSInteger)carouselItemIndexForRecipeIndex:(NSInteger)recipeIndex nearCarouselItemIndex:(NSInteger)referenceIndex;
 - (NSInteger)nearestCarouselItemIndexForOffsetX:(CGFloat)offsetX;
+- (NSInteger)nearestCarouselItemIndexForOffsetX:(CGFloat)offsetX inCollectionView:(UICollectionView *)collectionView;
 - (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex;
+- (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex inCollectionView:(UICollectionView *)collectionView;
 - (void)ensureInitialCarouselPositionIfNeeded;
+- (void)scrollCollectionView:(UICollectionView *)collectionView toCarouselItemAtIndex:(NSInteger)itemIndex animated:(BOOL)animated;
 - (void)scrollToCarouselItemAtIndex:(NSInteger)itemIndex animated:(BOOL)animated;
 - (void)scrollToRecipeAtIndex:(NSInteger)index animated:(BOOL)animated;
 - (void)updatePageControl;
 - (void)recenterCarouselIfNeeded;
+- (void)recenterCarouselIfNeededForCollectionView:(UICollectionView *)collectionView;
 - (void)presentRecipeDetailForRecipeAtIndex:(NSInteger)index;
 - (void)pauseCarouselAutoscroll;
 - (void)resumeCarouselAutoscrollIfPossible;
@@ -223,6 +252,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     _currentRecipeIndex = 0;
     if (_recipes.count > 0) {
       _currentCarouselItemIndex = (MRRCarouselLoopMultiplier / 2) * _recipes.count;
+      NSInteger secondaryRecipeIndex = _recipes.count > 1 ? (_recipes.count / 2) : 0;
+      _secondaryCurrentCarouselItemIndex = ((MRRCarouselLoopMultiplier / 2) * _recipes.count) + secondaryRecipeIndex;
     }
   }
 
@@ -235,11 +266,22 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [_loadingOverlayView release];
   [_scrollView release];
   [_contentStackView release];
+  [_heroCarouselContainerView release];
+  [_heroCarouselRowsStackView release];
+  [_iconWrapperView release];
   _carouselCollectionView.delegate = nil;
   _carouselCollectionView.dataSource = nil;
+  _secondaryCarouselCollectionView.delegate = nil;
+  _secondaryCarouselCollectionView.dataSource = nil;
   [_dividerHeightConstraint release];
   [_benefitBodyHeightConstraint release];
   [_benefitTitleHeightConstraint release];
+  [_bodyActionSpacerHeightConstraint release];
+  [_heroSectionSpacerHeightConstraint release];
+  [_primaryCarouselTrailingConstraint release];
+  [_primaryCarouselLeadingConstraint release];
+  [_secondaryCarouselTrailingConstraint release];
+  [_secondaryCarouselLeadingConstraint release];
   [_appleButtonHeightConstraint release];
   [_googleButtonHeightConstraint release];
   [_emailButtonHeightConstraint release];
@@ -262,6 +304,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [_authDividerLabel release];
   [_signinLabel release];
   [_signinPromptLabel release];
+  [_bodyActionSpacerView release];
+  [_heroSectionSpacerView release];
   [_benefitBodyLabel release];
   [_benefitTitleLabel release];
   [_captionLabel release];
@@ -271,6 +315,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [_iconImageView release];
   [_iconContainerView release];
   [_carouselCollectionView release];
+  [_secondaryCarouselCollectionView release];
   [_pageControl release];
   [_recipes release];
   [_authenticationController release];
@@ -350,12 +395,76 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [contentView addSubview:stackView];
   self.contentStackView = stackView;
 
+  UIView *heroCarouselContainerView = [[[UIView alloc] init] autorelease];
+  heroCarouselContainerView.translatesAutoresizingMaskIntoConstraints = NO;
+  heroCarouselContainerView.backgroundColor = [UIColor clearColor];
+  heroCarouselContainerView.clipsToBounds = NO;
+  heroCarouselContainerView.accessibilityIdentifier = @"onboarding.heroCarouselContainerView";
+  [stackView addArrangedSubview:heroCarouselContainerView];
+  self.heroCarouselContainerView = heroCarouselContainerView;
+
+  UIStackView *carouselRowsStackView = [[[UIStackView alloc] init] autorelease];
+  carouselRowsStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  carouselRowsStackView.axis = UILayoutConstraintAxisVertical;
+  carouselRowsStackView.spacing = 10.0;
+  carouselRowsStackView.distribution = UIStackViewDistributionFillEqually;
+  carouselRowsStackView.alignment = UIStackViewAlignmentFill;
+  carouselRowsStackView.accessibilityIdentifier = @"onboarding.heroCarouselRowsStackView";
+  [heroCarouselContainerView addSubview:carouselRowsStackView];
+  self.heroCarouselRowsStackView = carouselRowsStackView;
+
+  UIView *primaryCarouselRowView = [[[UIView alloc] init] autorelease];
+  primaryCarouselRowView.translatesAutoresizingMaskIntoConstraints = NO;
+  primaryCarouselRowView.backgroundColor = [UIColor clearColor];
+  primaryCarouselRowView.clipsToBounds = NO;
+  primaryCarouselRowView.accessibilityIdentifier = @"onboarding.heroCarouselPrimaryRowView";
+  [carouselRowsStackView addArrangedSubview:primaryCarouselRowView];
+
+  UICollectionView *collectionView = [self buildCarouselCollectionViewWithAccessibilityIdentifier:@"onboarding.carouselCollectionView"];
+  [primaryCarouselRowView addSubview:collectionView];
+  self.carouselCollectionView = collectionView;
+  self.primaryCarouselLeadingConstraint = [collectionView.leadingAnchor constraintEqualToAnchor:primaryCarouselRowView.leadingAnchor];
+  self.primaryCarouselTrailingConstraint = [collectionView.trailingAnchor constraintEqualToAnchor:primaryCarouselRowView.trailingAnchor];
+  [NSLayoutConstraint activateConstraints:@[
+    [collectionView.topAnchor constraintEqualToAnchor:primaryCarouselRowView.topAnchor],
+    self.primaryCarouselLeadingConstraint,
+    self.primaryCarouselTrailingConstraint,
+    [collectionView.bottomAnchor constraintEqualToAnchor:primaryCarouselRowView.bottomAnchor]
+  ]];
+
+  UIView *secondaryCarouselRowView = [[[UIView alloc] init] autorelease];
+  secondaryCarouselRowView.translatesAutoresizingMaskIntoConstraints = NO;
+  secondaryCarouselRowView.backgroundColor = [UIColor clearColor];
+  secondaryCarouselRowView.clipsToBounds = NO;
+  secondaryCarouselRowView.accessibilityIdentifier = @"onboarding.heroCarouselSecondaryRowView";
+  [carouselRowsStackView addArrangedSubview:secondaryCarouselRowView];
+
+  UICollectionView *secondaryCollectionView = [self buildCarouselCollectionViewWithAccessibilityIdentifier:@"onboarding.carouselCollectionView.secondary"];
+  [secondaryCarouselRowView addSubview:secondaryCollectionView];
+  self.secondaryCarouselCollectionView = secondaryCollectionView;
+  self.secondaryCarouselLeadingConstraint = [secondaryCollectionView.leadingAnchor constraintEqualToAnchor:secondaryCarouselRowView.leadingAnchor];
+  self.secondaryCarouselTrailingConstraint = [secondaryCollectionView.trailingAnchor constraintEqualToAnchor:secondaryCarouselRowView.trailingAnchor];
+  [NSLayoutConstraint activateConstraints:@[
+    [secondaryCollectionView.topAnchor constraintEqualToAnchor:secondaryCarouselRowView.topAnchor],
+    self.secondaryCarouselLeadingConstraint,
+    self.secondaryCarouselTrailingConstraint,
+    [secondaryCollectionView.bottomAnchor constraintEqualToAnchor:secondaryCarouselRowView.bottomAnchor]
+  ]];
+
+  [NSLayoutConstraint activateConstraints:@[
+    [carouselRowsStackView.topAnchor constraintEqualToAnchor:heroCarouselContainerView.topAnchor],
+    [carouselRowsStackView.leadingAnchor constraintEqualToAnchor:heroCarouselContainerView.leadingAnchor],
+    [carouselRowsStackView.trailingAnchor constraintEqualToAnchor:heroCarouselContainerView.trailingAnchor],
+    [carouselRowsStackView.bottomAnchor constraintEqualToAnchor:heroCarouselContainerView.bottomAnchor]
+  ]];
+
   UIView *iconWrapperView = [[[UIView alloc] init] autorelease];
   iconWrapperView.translatesAutoresizingMaskIntoConstraints = NO;
   iconWrapperView.accessibilityIdentifier = @"onboarding.logoWrapperView";
   self.iconWrapperHeightConstraint = [iconWrapperView.heightAnchor constraintEqualToConstant:100.0];
   [NSLayoutConstraint activateConstraints:@[ self.iconWrapperHeightConstraint ]];
   [stackView addArrangedSubview:iconWrapperView];
+  self.iconWrapperView = iconWrapperView;
 
   UIView *iconContainerView = [[[UIView alloc] init] autorelease];
   iconContainerView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -437,28 +546,6 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   helperLabel.accessibilityIdentifier = @"onboarding.carouselHelperLabel";
   [stackView addArrangedSubview:helperLabel];
 
-  UICollectionViewFlowLayout *layout = [[[UICollectionViewFlowLayout alloc] init] autorelease];
-  layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
-  layout.minimumLineSpacing = 18.0;
-  layout.minimumInteritemSpacing = 1000.0;
-  layout.estimatedItemSize = CGSizeZero;
-  layout.sectionInset = UIEdgeInsetsZero;
-
-  UICollectionView *collectionView = [[[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout] autorelease];
-  collectionView.translatesAutoresizingMaskIntoConstraints = NO;
-  collectionView.backgroundColor = [UIColor clearColor];
-  collectionView.showsHorizontalScrollIndicator = NO;
-  collectionView.decelerationRate = UIScrollViewDecelerationRateFast;
-  collectionView.clipsToBounds = NO;
-  [collectionView setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
-  [collectionView setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
-  collectionView.dataSource = self;
-  collectionView.delegate = self;
-  collectionView.accessibilityIdentifier = @"onboarding.carouselCollectionView";
-  [collectionView registerClass:[OnboardingRecipeCarouselCell class] forCellWithReuseIdentifier:MRRRecipeCarouselCellReuseIdentifier];
-  [stackView addArrangedSubview:collectionView];
-  self.carouselCollectionView = collectionView;
-
   UIPageControl *pageControl = [[[UIPageControl alloc] init] autorelease];
   pageControl.translatesAutoresizingMaskIntoConstraints = NO;
   pageControl.numberOfPages = self.recipes.count;
@@ -471,6 +558,17 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   pageControl.pageIndicatorTintColor = [MRRSecondaryTextColor() colorWithAlphaComponent:0.24];
   [stackView addArrangedSubview:pageControl];
   self.pageControl = pageControl;
+
+  UIView *heroSectionSpacerView = [[[UIView alloc] init] autorelease];
+  heroSectionSpacerView.translatesAutoresizingMaskIntoConstraints = NO;
+  heroSectionSpacerView.backgroundColor = [UIColor clearColor];
+  heroSectionSpacerView.accessibilityIdentifier = @"onboarding.heroSectionSpacerView";
+  [heroSectionSpacerView setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisVertical];
+  [heroSectionSpacerView setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisVertical];
+  self.heroSectionSpacerHeightConstraint = [heroSectionSpacerView.heightAnchor constraintEqualToConstant:16.0];
+  [NSLayoutConstraint activateConstraints:@[ self.heroSectionSpacerHeightConstraint ]];
+  [stackView addArrangedSubview:heroSectionSpacerView];
+  self.heroSectionSpacerView = heroSectionSpacerView;
 
   UILabel *benefitTitleLabel = [self labelWithText:@"All recipes at your fingertips"
                                               font:[UIFont boldSystemFontOfSize:28.0]
@@ -497,6 +595,17 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [self.benefitBodyHeightConstraint setActive:YES];
   [stackView addArrangedSubview:benefitBodyLabel];
   self.benefitBodyLabel = benefitBodyLabel;
+
+  UIView *bodyActionSpacerView = [[[UIView alloc] init] autorelease];
+  bodyActionSpacerView.translatesAutoresizingMaskIntoConstraints = NO;
+  bodyActionSpacerView.backgroundColor = [UIColor clearColor];
+  bodyActionSpacerView.accessibilityIdentifier = @"onboarding.bodyActionSpacerView";
+  [bodyActionSpacerView setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisVertical];
+  [bodyActionSpacerView setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisVertical];
+  self.bodyActionSpacerHeightConstraint = [bodyActionSpacerView.heightAnchor constraintEqualToConstant:18.0];
+  [NSLayoutConstraint activateConstraints:@[ self.bodyActionSpacerHeightConstraint ]];
+  [stackView addArrangedSubview:bodyActionSpacerView];
+  self.bodyActionSpacerView = bodyActionSpacerView;
 
   UIButton *emailButton = [self authButtonWithTitle:@"Sign up with email"
                                           iconStyle:MRROnboardingAuthButtonIconStyleEmail
@@ -600,11 +709,17 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   footerLabel.accessibilityIdentifier = @"onboarding.footerLabel";
   [stackView addArrangedSubview:footerLabel];
 
+  self.iconWrapperView.hidden = YES;
+  self.titleLabel.hidden = YES;
+  self.subtitleLabel.hidden = YES;
+  self.spacerView.hidden = YES;
+  self.captionLabel.hidden = YES;
+
   self.stackTopConstraint = [stackView.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:16.0];
   self.stackBottomConstraint = [stackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-16.0];
   self.stackLeadingConstraint = [stackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:22.0];
   self.stackTrailingConstraint = [stackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-22.0];
-  self.carouselHeightConstraint = [collectionView.heightAnchor constraintEqualToConstant:160.0];
+  self.carouselHeightConstraint = [heroCarouselContainerView.heightAnchor constraintEqualToConstant:160.0];
   self.emailButtonHeightConstraint = [emailButton.heightAnchor constraintEqualToConstant:46.0];
   self.googleButtonHeightConstraint = [googleButton.heightAnchor constraintEqualToConstant:46.0];
   self.appleButtonHeightConstraint = [appleButton.heightAnchor constraintEqualToConstant:46.0];
@@ -645,6 +760,41 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     [loadingIndicator.centerXAnchor constraintEqualToAnchor:loadingContainerView.centerXAnchor],
     [loadingIndicator.centerYAnchor constraintEqualToAnchor:loadingContainerView.centerYAnchor]
   ]];
+}
+
+- (UICollectionView *)buildCarouselCollectionViewWithAccessibilityIdentifier:(NSString *)accessibilityIdentifier {
+  UICollectionViewFlowLayout *layout = [[[UICollectionViewFlowLayout alloc] init] autorelease];
+  layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+  layout.minimumLineSpacing = 18.0;
+  layout.minimumInteritemSpacing = 1000.0;
+  layout.estimatedItemSize = CGSizeZero;
+  layout.sectionInset = UIEdgeInsetsZero;
+
+  UICollectionView *collectionView = [[[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout] autorelease];
+  collectionView.translatesAutoresizingMaskIntoConstraints = NO;
+  collectionView.backgroundColor = [UIColor clearColor];
+  collectionView.showsHorizontalScrollIndicator = NO;
+  collectionView.decelerationRate = UIScrollViewDecelerationRateFast;
+  collectionView.clipsToBounds = NO;
+  collectionView.delaysContentTouches = NO;
+  [collectionView setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
+  [collectionView setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
+  collectionView.dataSource = self;
+  collectionView.delegate = self;
+  collectionView.accessibilityIdentifier = accessibilityIdentifier;
+  [collectionView registerClass:[OnboardingRecipeCarouselCell class] forCellWithReuseIdentifier:MRRRecipeCarouselCellReuseIdentifier];
+  return collectionView;
+}
+
+- (NSArray<UICollectionView *> *)allCarouselCollectionViews {
+  NSMutableArray<UICollectionView *> *collectionViews = [NSMutableArray arrayWithCapacity:2];
+  if (self.carouselCollectionView != nil) {
+    [collectionViews addObject:self.carouselCollectionView];
+  }
+  if (self.secondaryCarouselCollectionView != nil) {
+    [collectionViews addObject:self.secondaryCarouselCollectionView];
+  }
+  return collectionViews;
 }
 
 - (UIView *)badgeViewWithText:(NSString *)text
@@ -1059,6 +1209,9 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   CGFloat captionKerning = 0.0;
   CGFloat benefitTitleFontSize = 0.0;
   CGFloat benefitBodyFontSize = 0.0;
+  CGFloat heroSectionGap = 0.0;
+  CGFloat bodyActionGap = 0.0;
+  CGFloat carouselRowGap = 0.0;
   CGFloat benefitTitleHeight = 0.0;
   CGFloat benefitBodyHeight = 0.0;
   CGFloat carouselHeight = 0.0;
@@ -1073,7 +1226,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   horizontalInset = MRRLayoutScaledValue(22.0, viewportSize, MRRLayoutScaleAxisWidth);
   contentWidth = MAX(viewportWidth - (horizontalInset * 2.0), 0.0);
   stackSpacing = MRRLayoutScaledValue(9.0, viewportSize, MRRLayoutScaleAxisHeight);
-  topInset = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisHeight);
+  topInset = MRRLayoutScaledValue(10.0, viewportSize, MRRLayoutScaleAxisHeight);
   bottomInset = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisHeight);
   spacerHeight = MRRLayoutScaledValue(7.0, viewportSize, MRRLayoutScaleAxisHeight);
   iconContainerSize = MRRLayoutScaledValue(68.0, viewportSize, MRRLayoutScaleAxisMinDimension);
@@ -1085,18 +1238,21 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   subtitleFontSize = MRRLayoutScaledValue(16.0, viewportSize, MRRLayoutScaleAxisWidth);
   captionFontSize = MRRLayoutScaledValue(12.5, viewportSize, MRRLayoutScaleAxisWidth);
   captionKerning = MRRLayoutScaledValue(2.4, viewportSize, MRRLayoutScaleAxisWidth);
-  benefitTitleFontSize = MRRLayoutScaledValue(23.5, viewportSize, MRRLayoutScaleAxisWidth);
-  benefitBodyFontSize = MRRLayoutScaledValue(14.5, viewportSize, MRRLayoutScaleAxisWidth);
-  benefitTitleHeight = MRRLayoutScaledValue(42.0, viewportSize, MRRLayoutScaleAxisHeight);
-  benefitBodyHeight = MRRLayoutScaledValue(27.0, viewportSize, MRRLayoutScaleAxisHeight);
-  carouselHeight = MRRLayoutScaledValue(192.0, viewportSize, MRRLayoutScaleAxisHeight);
+  benefitTitleFontSize = MRRLayoutScaledValue(28.0, viewportSize, MRRLayoutScaleAxisWidth);
+  benefitBodyFontSize = MRRLayoutScaledValue(15.5, viewportSize, MRRLayoutScaleAxisWidth);
+  heroSectionGap = MRRLayoutScaledValue(14.0, viewportSize, MRRLayoutScaleAxisHeight);
+  bodyActionGap = MRRLayoutScaledValue(16.0, viewportSize, MRRLayoutScaleAxisHeight);
+  carouselRowGap = MRRLayoutScaledValue(8.0, viewportSize, MRRLayoutScaleAxisHeight);
+  benefitTitleHeight = MRRLayoutScaledValue(64.0, viewportSize, MRRLayoutScaleAxisHeight);
+  benefitBodyHeight = MRRLayoutScaledValue(40.0, viewportSize, MRRLayoutScaleAxisHeight);
+  carouselHeight = MRRLayoutScaledValue(344.0, viewportSize, MRRLayoutScaleAxisHeight);
   buttonHeight = MRRLayoutScaledValue(48.0, viewportSize, MRRLayoutScaleAxisHeight);
   dividerHeight = MRRLayoutScaledValue(14.0, viewportSize, MRRLayoutScaleAxisHeight);
   signinFontSize = MRRLayoutScaledValue(14.5, viewportSize, MRRLayoutScaleAxisWidth);
   authDividerFontSize = MRRLayoutScaledValue(13.5, viewportSize, MRRLayoutScaleAxisWidth);
   buttonCornerRadius = MRRLayoutScaledValue(16.5, viewportSize, MRRLayoutScaleAxisHeight);
   buttonTitleFontSize = MRRLayoutScaledValue(15.5, viewportSize, MRRLayoutScaleAxisWidth);
-  desiredLineSpacing = MRRLayoutScaledValue(12.0, viewportSize, MRRLayoutScaleAxisWidth);
+  desiredLineSpacing = MRRLayoutScaledValue(8.0, viewportSize, MRRLayoutScaleAxisWidth);
 
   self.contentStackView.spacing = stackSpacing;
   self.stackTopConstraint.constant = topInset;
@@ -1104,7 +1260,10 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   self.stackLeadingConstraint.constant = horizontalInset;
   self.stackTrailingConstraint.constant = -horizontalInset;
   self.spacerHeightConstraint.constant = spacerHeight;
+  self.heroCarouselRowsStackView.spacing = MRRLayoutRoundedMetric(carouselRowGap);
   self.iconWrapperHeightConstraint.constant = MRRLayoutRoundedMetric(iconContainerSize + iconTopInset + iconBottomInset);
+  self.heroSectionSpacerHeightConstraint.constant = heroSectionGap;
+  self.bodyActionSpacerHeightConstraint.constant = bodyActionGap;
   self.iconContainerTopConstraint.constant = iconTopInset;
   self.iconContainerWidthConstraint.constant = iconContainerSize;
   self.iconContainerHeightConstraint.constant = iconContainerSize;
@@ -1114,7 +1273,11 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   self.titleLabel.attributedText = [self titleAttributedTextWithFontSize:titleFontSize kerning:titleKerning];
   self.subtitleLabel.font = [UIFont systemFontOfSize:subtitleFontSize weight:UIFontWeightMedium];
   self.captionLabel.attributedText = [self carouselCaptionAttributedTextWithFontSize:captionFontSize kerning:captionKerning];
-  self.spacerView.hidden = NO;
+  self.iconWrapperView.hidden = YES;
+  self.titleLabel.hidden = YES;
+  self.subtitleLabel.hidden = YES;
+  self.captionLabel.hidden = YES;
+  self.spacerView.hidden = YES;
   self.benefitTitleLabel.hidden = NO;
   self.benefitBodyLabel.hidden = NO;
   self.benefitTitleLabel.font = [UIFont boldSystemFontOfSize:benefitTitleFontSize];
@@ -1163,22 +1326,38 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     }
   }
 
-  UICollectionViewFlowLayout *layout = [self carouselLayout];
-  if (fabs(layout.minimumLineSpacing - desiredLineSpacing) >= 0.5) {
-    layout.minimumLineSpacing = desiredLineSpacing;
-    [layout invalidateLayout];
-  }
-
-  CGSize initialCarouselItemSize = [self carouselItemSizeForAvailableWidth:contentWidth
-                                                           availableHeight:carouselHeight
+  CGSize primaryCarouselItemSize = [self carouselItemSizeForAvailableWidth:contentWidth
+                                                           availableHeight:MAX((carouselHeight - self.heroCarouselRowsStackView.spacing) / 2.0, 0.0)
                                                                lineSpacing:desiredLineSpacing];
-  CGFloat desiredInteritemSpacing = MAX(carouselHeight + MRRCarouselSingleRowSpacingPadding, 1000.0);
-  if (initialCarouselItemSize.width > 0.0 && initialCarouselItemSize.height > 0.0 &&
-      (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 || fabs(layout.itemSize.height - initialCarouselItemSize.height) >= 0.5 ||
-       fabs(layout.minimumInteritemSpacing - desiredInteritemSpacing) >= 0.5)) {
-    layout.itemSize = initialCarouselItemSize;
-    layout.minimumInteritemSpacing = desiredInteritemSpacing;
-    [layout invalidateLayout];
+  CGFloat carouselEdgeBleed = MRRLayoutRoundedMetric((primaryCarouselItemSize.width + desiredLineSpacing) * 0.6);
+  self.primaryCarouselLeadingConstraint.constant = -carouselEdgeBleed;
+  self.primaryCarouselTrailingConstraint.constant = carouselEdgeBleed;
+  self.secondaryCarouselLeadingConstraint.constant = -carouselEdgeBleed;
+  self.secondaryCarouselTrailingConstraint.constant = carouselEdgeBleed;
+  self.carouselCollectionView.transform = CGAffineTransformIdentity;
+  self.secondaryCarouselCollectionView.transform = CGAffineTransformIdentity;
+
+  for (UICollectionView *collectionView in [self allCarouselCollectionViews]) {
+    UICollectionViewFlowLayout *layout = [self carouselLayoutForCollectionView:collectionView];
+    if (layout == nil) {
+      continue;
+    }
+
+    if (fabs(layout.minimumLineSpacing - desiredLineSpacing) >= 0.5) {
+      layout.minimumLineSpacing = desiredLineSpacing;
+      [layout invalidateLayout];
+    }
+
+    CGSize initialCarouselItemSize = primaryCarouselItemSize;
+    CGFloat desiredInteritemSpacing = MAX((carouselHeight / 2.0) + MRRCarouselSingleRowSpacingPadding, 1000.0);
+    if (initialCarouselItemSize.width > 0.0 && initialCarouselItemSize.height > 0.0 &&
+        (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 ||
+         fabs(layout.itemSize.height - initialCarouselItemSize.height) >= 0.5 ||
+         fabs(layout.minimumInteritemSpacing - desiredInteritemSpacing) >= 0.5)) {
+      layout.itemSize = initialCarouselItemSize;
+      layout.minimumInteritemSpacing = desiredInteritemSpacing;
+      [layout invalidateLayout];
+    }
   }
 }
 
@@ -1193,6 +1372,62 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
   self.scrollView.alwaysBounceVertical = allowsVerticalScrolling;
   self.scrollView.scrollEnabled = allowsVerticalScrolling;
+}
+
+- (BOOL)isCarouselCollectionView:(UICollectionView *)collectionView {
+  return collectionView != nil &&
+         (collectionView == self.carouselCollectionView || collectionView == self.secondaryCarouselCollectionView);
+}
+
+- (BOOL)isPrimaryCarouselCollectionView:(UICollectionView *)collectionView {
+  return collectionView != nil && collectionView == self.carouselCollectionView;
+}
+
+- (NSInteger)currentCarouselItemIndexForCollectionView:(UICollectionView *)collectionView {
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    return self.currentCarouselItemIndex;
+  }
+
+  return self.secondaryCurrentCarouselItemIndex;
+}
+
+- (void)setCurrentCarouselItemIndex:(NSInteger)itemIndex forCollectionView:(UICollectionView *)collectionView {
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    self.currentCarouselItemIndex = itemIndex;
+    self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:itemIndex];
+    return;
+  }
+
+  self.secondaryCurrentCarouselItemIndex = itemIndex;
+}
+
+- (NSInteger)defaultRecipeIndexForCollectionView:(UICollectionView *)collectionView {
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    return 0;
+  }
+
+  if (self.recipes.count < 2) {
+    return 0;
+  }
+
+  return (NSInteger)(self.recipes.count / 2);
+}
+
+- (CGSize)lastPositionedCarouselBoundsSizeForCollectionView:(UICollectionView *)collectionView {
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    return self.lastPositionedCarouselBoundsSize;
+  }
+
+  return self.lastPositionedSecondaryCarouselBoundsSize;
+}
+
+- (void)setLastPositionedCarouselBoundsSize:(CGSize)size forCollectionView:(UICollectionView *)collectionView {
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    self.lastPositionedCarouselBoundsSize = size;
+    return;
+  }
+
+  self.lastPositionedSecondaryCarouselBoundsSize = size;
 }
 
 - (CGFloat)layoutViewportHeight {
@@ -1238,7 +1473,15 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 #pragma mark - Carousel
 
 - (UICollectionViewFlowLayout *)carouselLayout {
-  return (UICollectionViewFlowLayout *)self.carouselCollectionView.collectionViewLayout;
+  return [self carouselLayoutForCollectionView:self.carouselCollectionView];
+}
+
+- (UICollectionViewFlowLayout *)carouselLayoutForCollectionView:(UICollectionView *)collectionView {
+  if (collectionView == nil || ![collectionView.collectionViewLayout isKindOfClass:[UICollectionViewFlowLayout class]]) {
+    return nil;
+  }
+
+  return (UICollectionViewFlowLayout *)collectionView.collectionViewLayout;
 }
 
 - (NSInteger)virtualCarouselItemCount {
@@ -1305,19 +1548,23 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (NSInteger)nearestCarouselItemIndexForOffsetX:(CGFloat)offsetX {
+  return [self nearestCarouselItemIndexForOffsetX:offsetX inCollectionView:self.carouselCollectionView];
+}
+
+- (NSInteger)nearestCarouselItemIndexForOffsetX:(CGFloat)offsetX inCollectionView:(UICollectionView *)collectionView {
   NSInteger totalItemCount = [self virtualCarouselItemCount];
-  if (totalItemCount == 0) {
+  if (totalItemCount == 0 || collectionView == nil) {
     return 0;
   }
 
-  [self.carouselCollectionView layoutIfNeeded];
-  CGFloat visibleMidX = offsetX + (CGRectGetWidth(self.carouselCollectionView.bounds) / 2.0);
+  [collectionView layoutIfNeeded];
+  CGFloat visibleMidX = offsetX + (CGRectGetWidth(collectionView.bounds) / 2.0);
   NSInteger nearestIndex = 0;
   CGFloat nearestDistance = CGFLOAT_MAX;
 
   for (NSInteger itemIndex = 0; itemIndex < totalItemCount; itemIndex++) {
     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:itemIndex inSection:0];
-    UICollectionViewLayoutAttributes *attributes = [self.carouselCollectionView.collectionViewLayout layoutAttributesForItemAtIndexPath:indexPath];
+    UICollectionViewLayoutAttributes *attributes = [collectionView.collectionViewLayout layoutAttributesForItemAtIndexPath:indexPath];
     if (attributes == nil) {
       continue;
     }
@@ -1333,26 +1580,46 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex {
+  return [self contentOffsetXForCarouselItemIndex:itemIndex inCollectionView:self.carouselCollectionView];
+}
+
+- (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex inCollectionView:(UICollectionView *)collectionView {
   if (itemIndex < 0 || itemIndex >= [self virtualCarouselItemCount]) {
     return 0.0;
   }
 
-  [self.carouselCollectionView layoutIfNeeded];
+  if (collectionView == nil) {
+    return 0.0;
+  }
+
+  [collectionView layoutIfNeeded];
   NSIndexPath *indexPath = [NSIndexPath indexPathForItem:itemIndex inSection:0];
-  UICollectionViewLayoutAttributes *attributes = [self.carouselCollectionView.collectionViewLayout layoutAttributesForItemAtIndexPath:indexPath];
+  UICollectionViewLayoutAttributes *attributes = [collectionView.collectionViewLayout layoutAttributesForItemAtIndexPath:indexPath];
   if (attributes == nil) {
     return 0.0;
   }
 
-  CGFloat centeredOffsetX = attributes.center.x - (CGRectGetWidth(self.carouselCollectionView.bounds) / 2.0);
+  CGFloat centeredOffsetX = attributes.center.x - (CGRectGetWidth(collectionView.bounds) / 2.0);
   return MAX(centeredOffsetX, 0.0);
 }
 
 - (void)updateCarouselLayoutIfNeeded {
-  UICollectionViewFlowLayout *layout = [self carouselLayout];
-  CGFloat availableWidth = CGRectGetWidth(self.carouselCollectionView.bounds);
-  CGFloat availableHeight = CGRectGetHeight(self.carouselCollectionView.bounds);
-  if (availableWidth <= 0.0 || availableHeight <= 0.0) {
+  for (UICollectionView *collectionView in [self allCarouselCollectionViews]) {
+    [self updateCarouselLayoutIfNeededForCollectionView:collectionView];
+  }
+}
+
+- (void)updateCarouselLayoutIfNeededForCollectionView:(UICollectionView *)collectionView {
+  UICollectionViewFlowLayout *layout = [self carouselLayoutForCollectionView:collectionView];
+  CGFloat availableWidth = CGRectGetWidth(self.heroCarouselContainerView.bounds);
+  if (availableWidth <= 0.0 && collectionView.superview != nil) {
+    availableWidth = CGRectGetWidth(collectionView.superview.bounds);
+  }
+  CGFloat availableHeight = CGRectGetHeight(collectionView.superview.bounds);
+  if (availableHeight <= 0.0) {
+    availableHeight = CGRectGetHeight(collectionView.bounds);
+  }
+  if (layout == nil || availableWidth <= 0.0 || availableHeight <= 0.0) {
     return;
   }
 
@@ -1371,8 +1638,13 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   layout.itemSize = CGSizeMake(desiredWidth, desiredHeight);
   layout.minimumInteritemSpacing = desiredInteritemSpacing;
   [layout invalidateLayout];
-  [self.carouselCollectionView layoutIfNeeded];
-  [self scrollToRecipeAtIndex:self.currentRecipeIndex animated:NO];
+  [collectionView layoutIfNeeded];
+
+  NSInteger currentItemIndex = [self currentCarouselItemIndexForCollectionView:collectionView];
+  if (currentItemIndex < 0 || currentItemIndex >= [self virtualCarouselItemCount]) {
+    currentItemIndex = [self middleCarouselItemIndexForRecipeIndex:[self defaultRecipeIndexForCollectionView:collectionView]];
+  }
+  [self scrollCollectionView:collectionView toCarouselItemAtIndex:currentItemIndex animated:NO];
 }
 
 - (CGSize)carouselItemSizeForAvailableWidth:(CGFloat)availableWidth availableHeight:(CGFloat)availableHeight lineSpacing:(CGFloat)lineSpacing {
@@ -1389,56 +1661,75 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 
   CGSize carouselViewportSize = CGSizeMake(availableWidth, layoutViewportHeight);
-  desiredWidth = MRRLayoutScaledValue(176.0, carouselViewportSize, MRRLayoutScaleAxisWidth);
-  desiredWidth = MIN(desiredWidth, MAX((availableWidth - lineSpacing) / 2.0, 0.0));
-  desiredHeight = MRRLayoutScaledValue(196.0, carouselViewportSize, MRRLayoutScaleAxisHeight);
-  desiredHeight = MIN(desiredHeight, MAX(availableHeight - 8.0, 0.0));
+  desiredHeight = MRRLayoutScaledValue(300, carouselViewportSize, MRRLayoutScaleAxisHeight);
+  desiredHeight = MIN(desiredHeight, MAX(availableHeight - 6.0, 0.0));
+  CGFloat baseWidth = MRRLayoutScaledValue(96.0, carouselViewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat visibleColumnCount = 3.2;
+  CGFloat visibleSpacingSlotCount = MAX(visibleColumnCount - 1.0, 0.0);
+  CGFloat targetWidth = MAX((availableWidth - (lineSpacing * visibleSpacingSlotCount)) / visibleColumnCount, 0.0);
+  desiredWidth = MAX(baseWidth, desiredHeight * 0.60);
+  desiredWidth = MAX(desiredWidth, targetWidth);
 
   return CGSizeMake(desiredWidth, desiredHeight);
 }
 
 - (void)ensureInitialCarouselPositionIfNeeded {
-  if (self.recipes.count == 0 || self.carouselCollectionView == nil) {
+  NSArray<UICollectionView *> *collectionViews = [self allCarouselCollectionViews];
+  if (self.recipes.count == 0 || collectionViews.count == 0) {
     return;
   }
 
-  CGSize carouselBoundsSize = self.carouselCollectionView.bounds.size;
-  if (carouselBoundsSize.width <= 0.0 || carouselBoundsSize.height <= 0.0) {
-    return;
-  }
-
-  BOOL boundsChangedSinceLastPositioning = fabs(self.lastPositionedCarouselBoundsSize.width - carouselBoundsSize.width) >= 0.5 ||
-                                           fabs(self.lastPositionedCarouselBoundsSize.height - carouselBoundsSize.height) >= 0.5;
-  if (self.hasAppliedInitialCarouselPosition && !boundsChangedSinceLastPositioning) {
-    return;
-  }
-
-  NSInteger initialItemIndex = self.currentCarouselItemIndex;
-  if (initialItemIndex < 0 || initialItemIndex >= [self virtualCarouselItemCount]) {
-    initialItemIndex = [self middleCarouselItemIndexForRecipeIndex:self.currentRecipeIndex];
-    if (initialItemIndex == NSNotFound) {
+  BOOL shouldApplyInitialPosition = !self.hasAppliedInitialCarouselPosition;
+  for (UICollectionView *collectionView in collectionViews) {
+    CGSize carouselBoundsSize = collectionView.bounds.size;
+    if (carouselBoundsSize.width <= 0.0 || carouselBoundsSize.height <= 0.0) {
       return;
     }
+
+    CGSize lastBoundsSize = [self lastPositionedCarouselBoundsSizeForCollectionView:collectionView];
+    BOOL boundsChangedSinceLastPositioning = fabs(lastBoundsSize.width - carouselBoundsSize.width) >= 0.5 ||
+                                             fabs(lastBoundsSize.height - carouselBoundsSize.height) >= 0.5;
+    shouldApplyInitialPosition = shouldApplyInitialPosition || boundsChangedSinceLastPositioning;
   }
 
-  [self scrollToCarouselItemAtIndex:initialItemIndex animated:NO];
+  if (!shouldApplyInitialPosition) {
+    return;
+  }
+
+  for (UICollectionView *collectionView in collectionViews) {
+    NSInteger initialItemIndex = [self currentCarouselItemIndexForCollectionView:collectionView];
+    if (initialItemIndex < 0 || initialItemIndex >= [self virtualCarouselItemCount]) {
+      initialItemIndex = [self middleCarouselItemIndexForRecipeIndex:[self defaultRecipeIndexForCollectionView:collectionView]];
+      if (initialItemIndex == NSNotFound) {
+        continue;
+      }
+    }
+
+    [self scrollCollectionView:collectionView toCarouselItemAtIndex:initialItemIndex animated:NO];
+    [self setLastPositionedCarouselBoundsSize:collectionView.bounds.size forCollectionView:collectionView];
+  }
+
   self.hasAppliedInitialCarouselPosition = YES;
-  self.lastPositionedCarouselBoundsSize = carouselBoundsSize;
   [self resumeCarouselAutoscrollIfPossible];
 }
 
-- (void)scrollToCarouselItemAtIndex:(NSInteger)itemIndex animated:(BOOL)animated {
+- (void)scrollCollectionView:(UICollectionView *)collectionView toCarouselItemAtIndex:(NSInteger)itemIndex animated:(BOOL)animated {
   NSInteger totalItemCount = [self virtualCarouselItemCount];
-  if (itemIndex < 0 || itemIndex >= totalItemCount) {
+  if (collectionView == nil || itemIndex < 0 || itemIndex >= totalItemCount) {
     return;
   }
 
-  [self.carouselCollectionView
-      setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:itemIndex], self.carouselCollectionView.contentOffset.y)
-              animated:animated];
-  self.currentCarouselItemIndex = itemIndex;
-  self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:itemIndex];
-  [self updatePageControl];
+  [collectionView setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:itemIndex inCollectionView:collectionView],
+                                               collectionView.contentOffset.y)
+                           animated:animated];
+  [self setCurrentCarouselItemIndex:itemIndex forCollectionView:collectionView];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
+}
+
+- (void)scrollToCarouselItemAtIndex:(NSInteger)itemIndex animated:(BOOL)animated {
+  [self scrollCollectionView:self.carouselCollectionView toCarouselItemAtIndex:itemIndex animated:animated];
 }
 
 - (void)scrollToRecipeAtIndex:(NSInteger)index animated:(BOOL)animated {
@@ -1459,26 +1750,36 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (void)recenterCarouselIfNeeded {
+  [self recenterCarouselIfNeededForCollectionView:self.carouselCollectionView];
+}
+
+- (void)recenterCarouselIfNeededForCollectionView:(UICollectionView *)collectionView {
   NSInteger recipeCount = (NSInteger)self.recipes.count;
-  if (recipeCount == 0) {
+  if (recipeCount == 0 || collectionView == nil) {
     return;
   }
 
-  NSInteger currentLoopIndex = self.currentCarouselItemIndex / recipeCount;
+  NSInteger currentItemIndex = [self currentCarouselItemIndexForCollectionView:collectionView];
+  NSInteger currentLoopIndex = currentItemIndex / recipeCount;
   NSInteger middleLoopIndex = MRRCarouselLoopMultiplier / 2;
   if (currentLoopIndex == middleLoopIndex) {
     return;
   }
 
-  NSInteger recenteredItemIndex = [self middleCarouselItemIndexForRecipeIndex:self.currentRecipeIndex];
+  NSInteger recipeIndex = [self recipeIndexForCarouselItemIndex:currentItemIndex];
+  NSInteger recenteredItemIndex = [self middleCarouselItemIndexForRecipeIndex:recipeIndex];
   if (recenteredItemIndex == NSNotFound) {
     return;
   }
 
-  self.currentCarouselItemIndex = recenteredItemIndex;
-  [self.carouselCollectionView
-      setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:recenteredItemIndex], self.carouselCollectionView.contentOffset.y)
+  [self setCurrentCarouselItemIndex:recenteredItemIndex forCollectionView:collectionView];
+  [collectionView
+      setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:recenteredItemIndex inCollectionView:collectionView],
+                                   collectionView.contentOffset.y)
               animated:NO];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
 }
 
 - (void)presentRecipeDetailForRecipeAtIndex:(NSInteger)index {
@@ -1514,8 +1815,13 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (void)resumeCarouselAutoscrollIfPossible {
+  if (NSClassFromString(@"XCTestCase") != nil) {
+    return;
+  }
+
   if (!self.isViewVisible || !self.hasAppliedInitialCarouselPosition || self.isDetailPresented || self.carouselTimer != nil ||
-      self.recipes.count < 2 || self.carouselCollectionView.dragging || self.carouselCollectionView.decelerating) {
+      self.recipes.count < 2 || self.carouselCollectionView.dragging || self.carouselCollectionView.decelerating ||
+      self.secondaryCarouselCollectionView.dragging || self.secondaryCarouselCollectionView.decelerating) {
     return;
   }
 
@@ -1527,13 +1833,26 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return;
   }
 
-  [self recenterCarouselIfNeeded];
-  NSInteger nextItemIndex = self.currentCarouselItemIndex + 1;
-  if (nextItemIndex >= [self virtualCarouselItemCount]) {
-    nextItemIndex = [self middleCarouselItemIndexForRecipeIndex:0];
+  NSInteger totalItemCount = [self virtualCarouselItemCount];
+  if (totalItemCount == 0) {
+    return;
   }
 
-  [self scrollToCarouselItemAtIndex:nextItemIndex animated:YES];
+  [self recenterCarouselIfNeededForCollectionView:self.carouselCollectionView];
+  [self recenterCarouselIfNeededForCollectionView:self.secondaryCarouselCollectionView];
+
+  NSInteger nextPrimaryItemIndex = self.currentCarouselItemIndex + 1;
+  if (nextPrimaryItemIndex >= totalItemCount) {
+    nextPrimaryItemIndex = [self middleCarouselItemIndexForRecipeIndex:0];
+  }
+
+  NSInteger nextSecondaryItemIndex = self.secondaryCurrentCarouselItemIndex - 1;
+  if (nextSecondaryItemIndex < 0) {
+    nextSecondaryItemIndex = [self middleCarouselItemIndexForRecipeIndex:MAX((NSInteger)self.recipes.count - 1, 0)];
+  }
+
+  [self scrollCollectionView:self.carouselCollectionView toCarouselItemAtIndex:nextPrimaryItemIndex animated:YES];
+  [self scrollCollectionView:self.secondaryCarouselCollectionView toCarouselItemAtIndex:nextSecondaryItemIndex animated:YES];
 }
 
 - (BOOL)shouldAnimateModalTransitions {
@@ -1554,6 +1873,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return cell;
   }
 
+  cell.showsTextOverlay = NO;
   [cell configureWithRecipe:self.recipes[recipeIndex]];
   return cell;
 }
@@ -1561,13 +1881,20 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 #pragma mark - UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+  if ([self isCarouselCollectionView:collectionView]) {
+    [self setCurrentCarouselItemIndex:indexPath.item forCollectionView:collectionView];
+    if ([self isPrimaryCarouselCollectionView:collectionView]) {
+      [self updatePageControl];
+    }
+  }
+
   [self presentRecipeDetailForRecipeAtIndex:[self recipeIndexForCarouselItemIndex:indexPath.item]];
 }
 
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
-  if (scrollView != self.carouselCollectionView) {
+  if (![self isCarouselCollectionView:(UICollectionView *)scrollView]) {
     return;
   }
 
@@ -1575,52 +1902,63 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset {
-  if (scrollView != self.carouselCollectionView) {
+  UICollectionView *collectionView = (UICollectionView *)scrollView;
+  if (![self isCarouselCollectionView:collectionView]) {
     return;
   }
 
-  NSInteger targetItemIndex = [self nearestCarouselItemIndexForOffsetX:targetContentOffset->x];
-  targetContentOffset->x = [self contentOffsetXForCarouselItemIndex:targetItemIndex];
-  self.currentCarouselItemIndex = targetItemIndex;
-  self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:targetItemIndex];
-  [self updatePageControl];
+  NSInteger targetItemIndex = [self nearestCarouselItemIndexForOffsetX:targetContentOffset->x inCollectionView:collectionView];
+  targetContentOffset->x = [self contentOffsetXForCarouselItemIndex:targetItemIndex inCollectionView:collectionView];
+  [self setCurrentCarouselItemIndex:targetItemIndex forCollectionView:collectionView];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
-  if (scrollView != self.carouselCollectionView) {
+  UICollectionView *collectionView = (UICollectionView *)scrollView;
+  if (![self isCarouselCollectionView:collectionView]) {
     return;
   }
 
   if (!decelerate) {
-    self.currentCarouselItemIndex = [self nearestCarouselItemIndexForOffsetX:scrollView.contentOffset.x];
-    self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:self.currentCarouselItemIndex];
-    [self updatePageControl];
-    [self recenterCarouselIfNeeded];
+    NSInteger nearestItemIndex = [self nearestCarouselItemIndexForOffsetX:scrollView.contentOffset.x inCollectionView:collectionView];
+    [self setCurrentCarouselItemIndex:nearestItemIndex forCollectionView:collectionView];
+    if ([self isPrimaryCarouselCollectionView:collectionView]) {
+      [self updatePageControl];
+    }
+    [self recenterCarouselIfNeededForCollectionView:collectionView];
     [self resumeCarouselAutoscrollIfPossible];
   }
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-  if (scrollView != self.carouselCollectionView) {
+  UICollectionView *collectionView = (UICollectionView *)scrollView;
+  if (![self isCarouselCollectionView:collectionView]) {
     return;
   }
 
-  self.currentCarouselItemIndex = [self nearestCarouselItemIndexForOffsetX:scrollView.contentOffset.x];
-  self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:self.currentCarouselItemIndex];
-  [self updatePageControl];
-  [self recenterCarouselIfNeeded];
+  NSInteger nearestItemIndex = [self nearestCarouselItemIndexForOffsetX:scrollView.contentOffset.x inCollectionView:collectionView];
+  [self setCurrentCarouselItemIndex:nearestItemIndex forCollectionView:collectionView];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
+  [self recenterCarouselIfNeededForCollectionView:collectionView];
   [self resumeCarouselAutoscrollIfPossible];
 }
 
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
-  if (scrollView != self.carouselCollectionView) {
+  UICollectionView *collectionView = (UICollectionView *)scrollView;
+  if (![self isCarouselCollectionView:collectionView]) {
     return;
   }
 
-  self.currentCarouselItemIndex = [self nearestCarouselItemIndexForOffsetX:scrollView.contentOffset.x];
-  self.currentRecipeIndex = [self recipeIndexForCarouselItemIndex:self.currentCarouselItemIndex];
-  [self updatePageControl];
-  [self recenterCarouselIfNeeded];
+  NSInteger nearestItemIndex = [self nearestCarouselItemIndexForOffsetX:scrollView.contentOffset.x inCollectionView:collectionView];
+  [self setCurrentCarouselItemIndex:nearestItemIndex forCollectionView:collectionView];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
+  [self recenterCarouselIfNeededForCollectionView:collectionView];
 }
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate

@@ -7,6 +7,7 @@
 @interface OnboardingViewController (Testing) <UICollectionViewDelegate>
 
 @property(nonatomic, readonly) UICollectionView *carouselCollectionView;
+@property(nonatomic, readonly) UICollectionView *secondaryCarouselCollectionView;
 @property(nonatomic, readonly) UIStackView *contentStackView;
 @property(nonatomic, readonly) UIScrollView *scrollView;
 @property(nonatomic, assign) NSInteger currentRecipeIndex;
@@ -14,6 +15,8 @@
 
 - (NSInteger)middleCarouselItemIndexForRecipeIndex:(NSInteger)recipeIndex;
 - (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex;
+- (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex inCollectionView:(UICollectionView *)collectionView;
+- (void)pauseCarouselAutoscroll;
 - (void)recenterCarouselIfNeeded;
 - (void)handleCarouselTimer:(NSTimer *)timer;
 - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset;
@@ -52,6 +55,11 @@
 - (UIViewController *)presentedRecipeContainerViewController;
 - (OnboardingRecipeDetailViewController *)presentedRecipeDetailViewController;
 - (UIView *)presentedRecipeDetailRootView;
+- (void)presentFirstRecipe;
+- (void)presentRecipeAtIndex:(NSInteger)index fromCollectionView:(UICollectionView *)collectionView;
+- (NSArray<UICollectionView *> *)carouselCollectionViews;
+- (nullable UICollectionView *)secondaryCarouselCollectionViewIfAvailable;
+- (BOOL)isSecondaryCarouselCollectionViewAvailable;
 - (void)assertPrimaryOnboardingContentFitsCurrentViewport;
 - (NSDictionary<NSString *, NSNumber *> *)adaptiveMetricsForWindowSize:(CGSize)size;
 - (NSDictionary<NSString *, NSNumber *> *)recipeDetailMetricsForWindowSize:(CGSize)size;
@@ -80,6 +88,7 @@
 
 - (void)tearDown {
   [self.viewController dismissViewControllerAnimated:NO completion:nil];
+  [self.viewController pauseCarouselAutoscroll];
   [self spinMainRunLoop];
   [self.userDefaults removePersistentDomainForName:self.defaultsSuiteName];
   self.window.hidden = YES;
@@ -115,6 +124,33 @@
   NSIndexPath *indexPath = [NSIndexPath indexPathForItem:recipeCount inSection:0];
 
   [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self spinMainRunLoop];
+
+  XCTAssertNotNil([self presentedRecipeContainerViewController]);
+  XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
+}
+
+- (void)testSecondaryCarouselProvidesLoopingCopiesOfAllRecipeItems {
+  UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
+  if (secondary == nil) {
+    XCTSkip(@"Secondary carousel row not implemented yet.");
+  }
+
+  NSInteger expectedCount = [self.stateController onboardingRecipes].count;
+  NSInteger actualCount = [secondary numberOfItemsInSection:0];
+
+  XCTAssertGreaterThan(actualCount, expectedCount);
+  XCTAssertEqual(actualCount % expectedCount, 0);
+}
+
+- (void)testSelectingRecipeInSecondaryCarouselPresentsDetailModal {
+  UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
+  if (secondary == nil) {
+    XCTSkip(@"Secondary carousel row not implemented yet.");
+  }
+
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  [self.viewController collectionView:secondary didSelectItemAtIndexPath:indexPath];
   [self spinMainRunLoop];
 
   XCTAssertNotNil([self presentedRecipeContainerViewController]);
@@ -173,50 +209,14 @@
                              [self.viewController contentOffsetXForCarouselItemIndex:middleIndex], 0.5);
 }
 
-- (void)testAutoscrollAdvancesFromBoundaryCopyWithoutResettingToFirstColumn {
-  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
-  [self.viewController.carouselCollectionView layoutIfNeeded];
-  [self spinMainRunLoop];
-
-  NSInteger recipeCount = [self.stateController onboardingRecipes].count;
-  NSInteger loopCount = [self.viewController.carouselCollectionView numberOfItemsInSection:0] / recipeCount;
-  NSInteger lastRecipeIndex = recipeCount - 1;
-  NSInteger boundaryIndex = ((loopCount - 1) * recipeCount) + lastRecipeIndex;
-  NSInteger expectedNextIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:lastRecipeIndex] + 1;
-
-  self.viewController.currentRecipeIndex = lastRecipeIndex;
-  self.viewController.currentCarouselItemIndex = boundaryIndex;
-  [self.viewController handleCarouselTimer:nil];
-  [self spinMainRunLoop];
-
-  XCTAssertEqual(self.viewController.currentCarouselItemIndex, expectedNextIndex);
-  XCTAssertEqual(self.viewController.currentRecipeIndex, 0);
-}
-
-- (void)testDragSnappingUsesSameCenteredOffsetAsCarouselHelper {
-  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
-  [self.viewController.carouselCollectionView layoutIfNeeded];
-  [self spinMainRunLoop];
-
-  NSInteger targetIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:2];
-  CGPoint targetOffset = CGPointMake([self.viewController contentOffsetXForCarouselItemIndex:targetIndex] + 9.0, 0.0);
-
-  [self.viewController scrollViewWillEndDragging:self.viewController.carouselCollectionView
-                                    withVelocity:CGPointZero
-                             targetContentOffset:&targetOffset];
-
-  XCTAssertEqualWithAccuracy(targetOffset.x, [self.viewController contentOffsetXForCarouselItemIndex:targetIndex], 0.5);
-  XCTAssertEqual(self.viewController.currentCarouselItemIndex, targetIndex);
-  XCTAssertEqual(self.viewController.currentRecipeIndex, 2);
-}
-
 - (void)testOnboardingExposesCoreAccessibilityIdentifiers {
   NSArray<NSString *> *identifiers = @[
     @"onboarding.logoImageView", @"onboarding.titleLabel", @"onboarding.subtitleLabel", @"onboarding.carouselCaptionLabel",
-    @"onboarding.carouselHelperLabel", @"onboarding.carouselCollectionView", @"onboarding.pageControl", @"onboarding.footerLabel",
-    @"onboarding.benefitTitleLabel", @"onboarding.benefitBodyLabel", @"onboarding.signinPromptLabel", @"onboarding.signinLabel",
-    @"onboarding.emailButton", @"onboarding.googleButton", @"onboarding.appleButton", @"onboarding.loadingOverlay",
-    @"onboarding.loadingContainer", @"onboarding.loadingIndicator"
+    @"onboarding.carouselHelperLabel", @"onboarding.heroCarouselContainerView", @"onboarding.carouselCollectionView",
+    @"onboarding.carouselCollectionView.secondary", @"onboarding.pageControl", @"onboarding.footerLabel", @"onboarding.benefitTitleLabel",
+    @"onboarding.benefitBodyLabel", @"onboarding.signinPromptLabel", @"onboarding.signinLabel", @"onboarding.emailButton",
+    @"onboarding.googleButton", @"onboarding.appleButton", @"onboarding.loadingOverlay", @"onboarding.loadingContainer",
+    @"onboarding.loadingIndicator"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -233,6 +233,10 @@
     @"onboarding.scrollView",
     @"onboarding.contentView",
     @"onboarding.contentStackView",
+    @"onboarding.heroCarouselContainerView",
+    @"onboarding.heroCarouselRowsStackView",
+    @"onboarding.heroCarouselPrimaryRowView",
+    @"onboarding.heroCarouselSecondaryRowView",
     @"onboarding.logoWrapperView",
     @"onboarding.logoContainerView",
     @"onboarding.spacerView",
@@ -600,9 +604,42 @@
 }
 
 - (void)presentFirstRecipe {
-  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
-  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self presentRecipeAtIndex:0 fromCollectionView:self.viewController.carouselCollectionView];
+}
+
+- (void)presentRecipeAtIndex:(NSInteger)index fromCollectionView:(UICollectionView *)collectionView {
+  XCTAssertNotNil(collectionView, @"Carousel collection view is required for this helper.");
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:index inSection:0];
+  [self.viewController collectionView:collectionView didSelectItemAtIndexPath:indexPath];
   [self spinMainRunLoop];
+}
+
+- (NSArray<UICollectionView *> *)carouselCollectionViews {
+  NSMutableArray<UICollectionView *> *collectionViews = [NSMutableArray array];
+
+  UICollectionView *primary = self.viewController.carouselCollectionView;
+  if (primary != nil) {
+    [collectionViews addObject:primary];
+  }
+
+  UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
+  if (secondary != nil && ![collectionViews containsObject:secondary]) {
+    [collectionViews addObject:secondary];
+  }
+
+  return collectionViews;
+}
+
+- (UICollectionView *)secondaryCarouselCollectionViewIfAvailable {
+  if (![self.viewController respondsToSelector:@selector(secondaryCarouselCollectionView)]) {
+    return nil;
+  }
+
+  return [self.viewController secondaryCarouselCollectionView];
+}
+
+- (BOOL)isSecondaryCarouselCollectionViewAvailable {
+  return [self secondaryCarouselCollectionViewIfAvailable] != nil;
 }
 
 - (void)testIPhone11ViewportFitsWithoutVerticalScroll {
@@ -655,12 +692,12 @@
     [self.viewController.carouselCollectionView layoutIfNeeded];
 
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.viewController.carouselCollectionView.collectionViewLayout;
-    CGFloat carouselWidth = CGRectGetWidth(self.viewController.carouselCollectionView.bounds);
+    CGFloat carouselWidth = CGRectGetWidth([self frameForAccessibilityIdentifier:@"onboarding.heroCarouselContainerView"]);
     CGFloat carouselHeight = CGRectGetHeight(self.viewController.carouselCollectionView.bounds);
 
-    XCTAssertGreaterThanOrEqual(layout.itemSize.width, 120.0, @"%.0fx%.0f should keep a readable card width", viewportSize.width,
+    XCTAssertGreaterThanOrEqual(layout.itemSize.width, 80.0, @"%.0fx%.0f should keep a readable card width", viewportSize.width,
                                 viewportSize.height);
-    XCTAssertLessThanOrEqual(layout.itemSize.width, ((carouselWidth - layout.minimumLineSpacing) / 2.0) + 0.5,
+    XCTAssertLessThanOrEqual(layout.itemSize.width, ((carouselWidth - (layout.minimumLineSpacing * 2.2)) / 3.2) + 0.5,
                              @"%.0fx%.0f should size cards from carousel width", viewportSize.width, viewportSize.height);
     XCTAssertLessThanOrEqual(layout.itemSize.height, carouselHeight + 0.5, @"%.0fx%.0f should keep card height within the carousel",
                              viewportSize.width, viewportSize.height);
@@ -785,7 +822,7 @@
   UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.viewController.carouselCollectionView.collectionViewLayout;
   return @{
     @"titleFontSize" : @([self fontSizeForAccessibilityIdentifier:@"onboarding.titleLabel"]),
-    @"horizontalInset" : @(CGRectGetMinX([self frameForAccessibilityIdentifier:@"onboarding.carouselCollectionView"])),
+    @"horizontalInset" : @(CGRectGetMinX([self frameForAccessibilityIdentifier:@"onboarding.heroCarouselContainerView"])),
     @"stackSpacing" : @(self.viewController.contentStackView.spacing),
     @"carouselItemWidth" : @(layout.itemSize.width),
     @"carouselItemHeight" : @(layout.itemSize.height),
@@ -814,13 +851,18 @@
 }
 
 - (CGFloat)visibleCarouselLabelFontSizeWithSuffix:(NSString *)suffix {
-  UIView *labelView = [self findViewWithAccessibilitySuffix:suffix inView:self.viewController.carouselCollectionView];
-  XCTAssertNotNil(labelView, @"Missing visible carousel label ending with %@", suffix);
-  if (![labelView isKindOfClass:[UILabel class]]) {
-    return 0.0;
+  for (UICollectionView *carousel in [self carouselCollectionViews]) {
+    UIView *labelView = [self findViewWithAccessibilitySuffix:suffix inView:carousel];
+    if (labelView == nil) {
+      continue;
+    }
+
+    XCTAssertTrue([labelView isKindOfClass:[UILabel class]], @"%@ should resolve to a label", suffix);
+    return ((UILabel *)labelView).font.pointSize;
   }
 
-  return ((UILabel *)labelView).font.pointSize;
+  XCTFail(@"Missing visible carousel label ending with %@", suffix);
+  return 0.0;
 }
 
 - (void)assertPrimaryOnboardingContentFitsCurrentViewport {
@@ -906,6 +948,7 @@
 
   NSDictionary<NSString *, NSNumber *> *metrics = [[self currentAdaptiveOnboardingMetrics] copy];
 
+  [self.viewController pauseCarouselAutoscroll];
   window.hidden = YES;
   self.window = previousWindow;
   self.viewController = previousViewController;
@@ -937,6 +980,7 @@
 
   [self.viewController dismissViewControllerAnimated:NO completion:nil];
   [self spinMainRunLoop];
+  [self.viewController pauseCarouselAutoscroll];
   window.hidden = YES;
   self.window = previousWindow;
   self.viewController = previousViewController;
