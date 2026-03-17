@@ -6,6 +6,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OnboardingRecipeCarouselCell : UICollectionViewCell
 
+@property(nonatomic, assign) BOOL showsTextOverlay;
+
 - (void)configureWithRecipe:(OnboardingRecipe *)recipe;
 
 @end

@@ -60,6 +60,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
 
 - (void)buildViewHierarchy;
 - (void)applyAccessibilityIdentifiersForRecipe:(OnboardingRecipe *)recipe;
+- (void)updateTextOverlayVisibility;
 - (void)updateAdaptiveMetricsForCardSize:(CGSize)cardSize;
 
 @end
@@ -69,6 +70,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
 - (instancetype)initWithFrame:(CGRect)frame {
   self = [super initWithFrame:frame];
   if (self) {
+    _showsTextOverlay = YES;
     self.backgroundColor = [UIColor clearColor];
     self.contentView.backgroundColor = [UIColor clearColor];
     self.layer.shadowColor = [UIColor blackColor].CGColor;
@@ -125,6 +127,9 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.metadataLabel.text = nil;
   self.hintLabel.hidden = YES;
   self.accessibilityIdentifier = nil;
+  self.accessibilityLabel = nil;
+  self.accessibilityHint = nil;
+  self.accessibilityTraits = UIAccessibilityTraitNone;
   self.contentView.accessibilityIdentifier = nil;
   self.cardView.accessibilityIdentifier = nil;
   self.imageView.accessibilityIdentifier = nil;
@@ -132,6 +137,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.titleLabel.accessibilityIdentifier = nil;
   self.metadataLabel.accessibilityIdentifier = nil;
   self.hintLabel.accessibilityIdentifier = nil;
+  self.showsTextOverlay = YES;
 }
 
 - (void)configureWithRecipe:(OnboardingRecipe *)recipe {
@@ -144,7 +150,12 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.hintLabel.hidden = YES;
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:self.textBackdropView];
   self.textBackdropView.backgroundColor = MRRHighlightedTextBackdropColor();
+  self.isAccessibilityElement = YES;
+  self.accessibilityTraits = UIAccessibilityTraitButton;
+  self.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe.title, recipe.durationText, recipe.calorieText];
+  self.accessibilityHint = @"Opens recipe details.";
   [self applyAccessibilityIdentifiersForRecipe:recipe];
+  [self updateTextOverlayVisibility];
 }
 
 #pragma mark - View Setup
@@ -262,6 +273,22 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.titleLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".titleLabel"];
   self.metadataLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".metadataLabel"];
   self.hintLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".hintLabel"];
+}
+
+- (void)setShowsTextOverlay:(BOOL)showsTextOverlay {
+  if (_showsTextOverlay == showsTextOverlay) {
+    return;
+  }
+
+  _showsTextOverlay = showsTextOverlay;
+  [self updateTextOverlayVisibility];
+}
+
+- (void)updateTextOverlayVisibility {
+  BOOL shouldShowOverlay = self.showsTextOverlay;
+  self.textBackdropView.hidden = !shouldShowOverlay;
+  self.titleLabel.hidden = !shouldShowOverlay;
+  self.metadataLabel.hidden = !shouldShowOverlay;
 }
 
 - (void)updateAdaptiveMetricsForCardSize:(CGSize)cardSize {
