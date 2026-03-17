@@ -351,6 +351,28 @@
   }
 }
 
+- (void)testSecondaryCarouselUsesHalfCardPhaseOffset {
+  [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
+
+  UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
+  if (secondary == nil) {
+    XCTSkip(@"Secondary carousel row not implemented yet.");
+  }
+
+  [self.viewController.carouselCollectionView layoutIfNeeded];
+  [secondary layoutIfNeeded];
+
+  NSInteger referenceIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:0];
+  CGFloat primaryOffset =
+      [self.viewController contentOffsetXForCarouselItemIndex:referenceIndex
+                                             inCollectionView:self.viewController.carouselCollectionView];
+  CGFloat secondaryOffset = [self.viewController contentOffsetXForCarouselItemIndex:referenceIndex inCollectionView:secondary];
+  UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.viewController.carouselCollectionView.collectionViewLayout;
+  CGFloat expectedPhaseOffset = (layout.itemSize.width + layout.minimumLineSpacing) * 0.5;
+
+  XCTAssertEqualWithAccuracy(secondaryOffset - primaryOffset, expectedPhaseOffset, 1.0);
+}
+
 - (void)testCarouselRowsBleedPastHeroContainerEdgesForInfiniteMotion {
   [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
 
