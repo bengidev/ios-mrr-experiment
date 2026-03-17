@@ -94,7 +94,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, retain) UICollectionView *carouselCollectionView;
 @property(nonatomic, retain) UICollectionView *secondaryCarouselCollectionView;
 @property(nonatomic, retain) UIPageControl *pageControl;
-@property(nonatomic, retain) NSTimer *carouselTimer;
+@property(nonatomic, retain) CADisplayLink *carouselDisplayLink;
 @property(nonatomic, retain) UIView *iconContainerView;
 @property(nonatomic, retain) UIImageView *iconImageView;
 @property(nonatomic, retain) UIView *badgeView;
@@ -141,6 +141,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, assign) NSInteger currentRecipeIndex;
 @property(nonatomic, assign) NSInteger currentCarouselItemIndex;
 @property(nonatomic, assign) NSInteger secondaryCurrentCarouselItemIndex;
+@property(nonatomic, assign) CFTimeInterval lastCarouselDisplayTimestamp;
 @property(nonatomic, assign) BOOL hasAppliedInitialCarouselPosition;
 @property(nonatomic, assign) CGSize lastPositionedCarouselBoundsSize;
 @property(nonatomic, assign) CGSize lastPositionedSecondaryCarouselBoundsSize;
@@ -193,6 +194,18 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (NSInteger)defaultRecipeIndexForCollectionView:(UICollectionView *)collectionView;
 - (CGSize)lastPositionedCarouselBoundsSizeForCollectionView:(UICollectionView *)collectionView;
 - (void)setLastPositionedCarouselBoundsSize:(CGSize)size forCollectionView:(UICollectionView *)collectionView;
+- (void)synchronizeCarouselStateForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)carouselPhaseOffsetForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)visibleCarouselViewportWidthForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)visibleCarouselViewportMidXForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)middleLoopStartOffsetForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)middleLoopEndOffsetForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)loopSpanWidthForCollectionView:(UICollectionView *)collectionView;
+- (void)recenterContinuousCarouselOffsetIfNeededForCollectionView:(UICollectionView *)collectionView;
+- (CGFloat)carouselAutoscrollPointsPerSecondForCollectionView:(UICollectionView *)collectionView;
+- (void)advanceCarouselCollectionView:(UICollectionView *)collectionView
+                            direction:(CGFloat)direction
+                            deltaTime:(CFTimeInterval)deltaTime;
 - (CGFloat)layoutViewportHeight;
 - (CGFloat)layoutViewportWidth;
 - (NSAttributedString *)titleAttributedTextWithFontSize:(CGFloat)fontSize kerning:(CGFloat)kerning;
@@ -220,6 +233,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (void)presentRecipeDetailForRecipeAtIndex:(NSInteger)index;
 - (void)pauseCarouselAutoscroll;
 - (void)resumeCarouselAutoscrollIfPossible;
+- (void)handleCarouselDisplayLink:(CADisplayLink *)displayLink;
 - (void)handleCarouselTimer:(NSTimer *)timer;
 - (BOOL)shouldAnimateModalTransitions;
 
@@ -1348,7 +1362,9 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
       [layout invalidateLayout];
     }
 
-    CGSize initialCarouselItemSize = primaryCarouselItemSize;
+    CGSize initialCarouselItemSize = [self carouselItemSizeForAvailableWidth:contentWidth
+                                                             availableHeight:MAX((carouselHeight - self.heroCarouselRowsStackView.spacing) / 2.0, 0.0)
+                                                                 lineSpacing:desiredLineSpacing];
     CGFloat desiredInteritemSpacing = MAX((carouselHeight / 2.0) + MRRCarouselSingleRowSpacingPadding, 1000.0);
     if (initialCarouselItemSize.width > 0.0 && initialCarouselItemSize.height > 0.0 &&
         (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 ||
@@ -1428,6 +1444,171 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 
   self.lastPositionedSecondaryCarouselBoundsSize = size;
+}
+
+- (void)synchronizeCarouselStateForCollectionView:(UICollectionView *)collectionView {
+  if (![self isCarouselCollectionView:collectionView]) {
+    return;
+  }
+
+  NSInteger nearestItemIndex = [self nearestCarouselItemIndexForOffsetX:collectionView.contentOffset.x inCollectionView:collectionView];
+  [self setCurrentCarouselItemIndex:nearestItemIndex forCollectionView:collectionView];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
+}
+
+- (CGFloat)carouselPhaseOffsetForCollectionView:(UICollectionView *)collectionView {
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    return 0.0;
+  }
+
+  UICollectionViewFlowLayout *layout = [self carouselLayoutForCollectionView:collectionView];
+  if (layout == nil) {
+    return 0.0;
+  }
+
+  return (layout.itemSize.width + layout.minimumLineSpacing) * 0.5;
+}
+
+- (CGFloat)visibleCarouselViewportWidthForCollectionView:(UICollectionView *)collectionView {
+  if (collectionView == nil) {
+    return 0.0;
+  }
+
+  CGRect collectionFrameInView = [collectionView convertRect:collectionView.bounds toView:self.view];
+  CGRect viewportFrameInView = [self.scrollView convertRect:self.scrollView.bounds toView:self.view];
+  CGRect visibleFrameInView = CGRectIntersection(collectionFrameInView, viewportFrameInView);
+  if (CGRectIsNull(visibleFrameInView) || CGRectGetWidth(visibleFrameInView) <= 0.0) {
+    return CGRectGetWidth(collectionView.bounds);
+  }
+
+  return CGRectGetWidth(visibleFrameInView);
+}
+
+- (CGFloat)visibleCarouselViewportMidXForCollectionView:(UICollectionView *)collectionView {
+  if (collectionView == nil) {
+    return 0.0;
+  }
+
+  CGRect collectionFrameInView = [collectionView convertRect:collectionView.bounds toView:self.view];
+  CGRect viewportFrameInView = [self.scrollView convertRect:self.scrollView.bounds toView:self.view];
+  CGRect visibleFrameInView = CGRectIntersection(collectionFrameInView, viewportFrameInView);
+  if (CGRectIsNull(visibleFrameInView) || CGRectGetWidth(visibleFrameInView) <= 0.0) {
+    return CGRectGetWidth(collectionView.bounds) / 2.0;
+  }
+
+  return CGRectGetMidX(visibleFrameInView) - CGRectGetMinX(collectionFrameInView);
+}
+
+- (CGFloat)loopSpanWidthForCollectionView:(UICollectionView *)collectionView {
+  NSInteger recipeCount = (NSInteger)self.recipes.count;
+  if (recipeCount <= 0 || collectionView == nil) {
+    return 0.0;
+  }
+
+  NSInteger firstMiddleIndex = [self middleCarouselItemIndexForRecipeIndex:0];
+  NSInteger nextLoopIndex = firstMiddleIndex + recipeCount;
+  if (firstMiddleIndex == NSNotFound || nextLoopIndex >= [self virtualCarouselItemCount]) {
+    return 0.0;
+  }
+
+  CGFloat firstOffset = [self contentOffsetXForCarouselItemIndex:firstMiddleIndex inCollectionView:collectionView];
+  CGFloat nextOffset = [self contentOffsetXForCarouselItemIndex:nextLoopIndex inCollectionView:collectionView];
+  return MAX(nextOffset - firstOffset, 0.0);
+}
+
+- (CGFloat)middleLoopStartOffsetForCollectionView:(UICollectionView *)collectionView {
+  NSInteger firstMiddleIndex = [self middleCarouselItemIndexForRecipeIndex:0];
+  if (firstMiddleIndex == NSNotFound) {
+    return 0.0;
+  }
+
+  return [self contentOffsetXForCarouselItemIndex:firstMiddleIndex inCollectionView:collectionView];
+}
+
+- (CGFloat)middleLoopEndOffsetForCollectionView:(UICollectionView *)collectionView {
+  CGFloat middleLoopStartOffset = [self middleLoopStartOffsetForCollectionView:collectionView];
+  CGFloat loopSpanWidth = [self loopSpanWidthForCollectionView:collectionView];
+  if (loopSpanWidth <= 0.0) {
+    return middleLoopStartOffset;
+  }
+
+  return middleLoopStartOffset + loopSpanWidth;
+}
+
+- (void)recenterContinuousCarouselOffsetIfNeededForCollectionView:(UICollectionView *)collectionView {
+  NSInteger recipeCount = (NSInteger)self.recipes.count;
+  if (recipeCount == 0 || collectionView == nil) {
+    return;
+  }
+
+  NSInteger nearestItemIndex = [self nearestCarouselItemIndexForOffsetX:collectionView.contentOffset.x inCollectionView:collectionView];
+  NSInteger currentLoopIndex = nearestItemIndex / recipeCount;
+  NSInteger middleLoopIndex = MRRCarouselLoopMultiplier / 2;
+  NSInteger loopDelta = currentLoopIndex - middleLoopIndex;
+  if (loopDelta == 0) {
+    [self setCurrentCarouselItemIndex:nearestItemIndex forCollectionView:collectionView];
+    if ([self isPrimaryCarouselCollectionView:collectionView]) {
+      [self updatePageControl];
+    }
+    return;
+  }
+
+  CGFloat loopSpanWidth = [self loopSpanWidthForCollectionView:collectionView];
+  if (loopSpanWidth <= 0.0) {
+    return;
+  }
+
+  CGPoint adjustedOffset = collectionView.contentOffset;
+  adjustedOffset.x -= (CGFloat)loopDelta * loopSpanWidth;
+  [collectionView setContentOffset:adjustedOffset animated:NO];
+
+  NSInteger recenteredItemIndex = nearestItemIndex - (loopDelta * recipeCount);
+  [self setCurrentCarouselItemIndex:recenteredItemIndex forCollectionView:collectionView];
+  if ([self isPrimaryCarouselCollectionView:collectionView]) {
+    [self updatePageControl];
+  }
+}
+
+- (CGFloat)carouselAutoscrollPointsPerSecondForCollectionView:(UICollectionView *)collectionView {
+  CGFloat width = [self layoutViewportWidth];
+  if (width <= 0.0) {
+    width = [self visibleCarouselViewportWidthForCollectionView:collectionView];
+  }
+
+  return MAX(width * 0.11, 18.0);
+}
+
+- (void)advanceCarouselCollectionView:(UICollectionView *)collectionView
+                            direction:(CGFloat)direction
+                            deltaTime:(CFTimeInterval)deltaTime {
+  if (![self isCarouselCollectionView:collectionView] || deltaTime <= 0.0) {
+    return;
+  }
+
+  CGFloat horizontalStep = [self carouselAutoscrollPointsPerSecondForCollectionView:collectionView] * deltaTime * direction;
+  CGPoint nextOffset = collectionView.contentOffset;
+  nextOffset.x += horizontalStep;
+
+  CGFloat middleLoopStartOffset = [self middleLoopStartOffsetForCollectionView:collectionView];
+  CGFloat middleLoopEndOffset = [self middleLoopEndOffsetForCollectionView:collectionView];
+  CGFloat loopSpanWidth = middleLoopEndOffset - middleLoopStartOffset;
+
+  if (loopSpanWidth > 0.0 && middleLoopEndOffset > middleLoopStartOffset) {
+    while (nextOffset.x < middleLoopStartOffset) {
+      nextOffset.x += loopSpanWidth;
+    }
+
+    while (nextOffset.x >= middleLoopEndOffset) {
+      nextOffset.x -= loopSpanWidth;
+    }
+  }
+
+  CGFloat maximumOffsetX = MAX(collectionView.contentSize.width - CGRectGetWidth(collectionView.bounds), 0.0);
+  nextOffset.x = MIN(MAX(nextOffset.x, 0.0), maximumOffsetX);
+  [collectionView setContentOffset:nextOffset animated:NO];
+  [self synchronizeCarouselStateForCollectionView:collectionView];
 }
 
 - (CGFloat)layoutViewportHeight {
@@ -1558,7 +1739,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 
   [collectionView layoutIfNeeded];
-  CGFloat visibleMidX = offsetX + (CGRectGetWidth(collectionView.bounds) / 2.0);
+  CGFloat visibleMidX = offsetX + [self visibleCarouselViewportMidXForCollectionView:collectionView] -
+                        [self carouselPhaseOffsetForCollectionView:collectionView];
   NSInteger nearestIndex = 0;
   CGFloat nearestDistance = CGFLOAT_MAX;
 
@@ -1599,7 +1781,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return 0.0;
   }
 
-  CGFloat centeredOffsetX = attributes.center.x - (CGRectGetWidth(collectionView.bounds) / 2.0);
+  CGFloat centeredOffsetX = attributes.center.x - [self visibleCarouselViewportMidXForCollectionView:collectionView] +
+                            [self carouselPhaseOffsetForCollectionView:collectionView];
   return MAX(centeredOffsetX, 0.0);
 }
 
@@ -1810,8 +1993,9 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (void)pauseCarouselAutoscroll {
-  [self.carouselTimer invalidate];
-  self.carouselTimer = nil;
+  [self.carouselDisplayLink invalidate];
+  self.carouselDisplayLink = nil;
+  self.lastCarouselDisplayTimestamp = 0.0;
 }
 
 - (void)resumeCarouselAutoscrollIfPossible {
@@ -1819,13 +2003,36 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return;
   }
 
-  if (!self.isViewVisible || !self.hasAppliedInitialCarouselPosition || self.isDetailPresented || self.carouselTimer != nil ||
-      self.recipes.count < 2 || self.carouselCollectionView.dragging || self.carouselCollectionView.decelerating ||
-      self.secondaryCarouselCollectionView.dragging || self.secondaryCarouselCollectionView.decelerating) {
+  if (!self.isViewVisible || !self.hasAppliedInitialCarouselPosition || self.carouselDisplayLink != nil || self.recipes.count < 2) {
     return;
   }
 
-  self.carouselTimer = [NSTimer scheduledTimerWithTimeInterval:3.6 target:self selector:@selector(handleCarouselTimer:) userInfo:nil repeats:YES];
+  CADisplayLink *displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(handleCarouselDisplayLink:)];
+  if (@available(iOS 15.0, *)) {
+    displayLink.preferredFrameRateRange = CAFrameRateRangeMake(50.0, 120.0, 60.0);
+  } else {
+    displayLink.preferredFramesPerSecond = 60;
+  }
+  [displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
+  self.carouselDisplayLink = displayLink;
+  self.lastCarouselDisplayTimestamp = 0.0;
+}
+
+- (void)handleCarouselDisplayLink:(CADisplayLink *)displayLink {
+  if (self.recipes.count < 2) {
+    self.lastCarouselDisplayTimestamp = displayLink.timestamp;
+    return;
+  }
+
+  if (self.lastCarouselDisplayTimestamp <= 0.0) {
+    self.lastCarouselDisplayTimestamp = displayLink.timestamp;
+    return;
+  }
+
+  CFTimeInterval deltaTime = MIN(displayLink.timestamp - self.lastCarouselDisplayTimestamp, 1.0 / 24.0);
+  self.lastCarouselDisplayTimestamp = displayLink.timestamp;
+  [self advanceCarouselCollectionView:self.carouselCollectionView direction:1.0 deltaTime:deltaTime];
+  [self advanceCarouselCollectionView:self.secondaryCarouselCollectionView direction:-1.0 deltaTime:deltaTime];
 }
 
 - (void)handleCarouselTimer:(NSTimer *)timer {
@@ -1833,26 +2040,9 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return;
   }
 
-  NSInteger totalItemCount = [self virtualCarouselItemCount];
-  if (totalItemCount == 0) {
-    return;
-  }
-
-  [self recenterCarouselIfNeededForCollectionView:self.carouselCollectionView];
-  [self recenterCarouselIfNeededForCollectionView:self.secondaryCarouselCollectionView];
-
-  NSInteger nextPrimaryItemIndex = self.currentCarouselItemIndex + 1;
-  if (nextPrimaryItemIndex >= totalItemCount) {
-    nextPrimaryItemIndex = [self middleCarouselItemIndexForRecipeIndex:0];
-  }
-
-  NSInteger nextSecondaryItemIndex = self.secondaryCurrentCarouselItemIndex - 1;
-  if (nextSecondaryItemIndex < 0) {
-    nextSecondaryItemIndex = [self middleCarouselItemIndexForRecipeIndex:MAX((NSInteger)self.recipes.count - 1, 0)];
-  }
-
-  [self scrollCollectionView:self.carouselCollectionView toCarouselItemAtIndex:nextPrimaryItemIndex animated:YES];
-  [self scrollCollectionView:self.secondaryCarouselCollectionView toCarouselItemAtIndex:nextSecondaryItemIndex animated:YES];
+  CFTimeInterval syntheticFrameDuration = 1.0 / 60.0;
+  [self advanceCarouselCollectionView:self.carouselCollectionView direction:1.0 deltaTime:syntheticFrameDuration];
+  [self advanceCarouselCollectionView:self.secondaryCarouselCollectionView direction:-1.0 deltaTime:syntheticFrameDuration];
 }
 
 - (BOOL)shouldAnimateModalTransitions {
@@ -1881,13 +2071,6 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 #pragma mark - UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-  if ([self isCarouselCollectionView:collectionView]) {
-    [self setCurrentCarouselItemIndex:indexPath.item forCollectionView:collectionView];
-    if ([self isPrimaryCarouselCollectionView:collectionView]) {
-      [self updatePageControl];
-    }
-  }
-
   [self presentRecipeDetailForRecipeAtIndex:[self recipeIndexForCarouselItemIndex:indexPath.item]];
 }
 
@@ -1927,7 +2110,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     if ([self isPrimaryCarouselCollectionView:collectionView]) {
       [self updatePageControl];
     }
-    [self recenterCarouselIfNeededForCollectionView:collectionView];
+    [self recenterContinuousCarouselOffsetIfNeededForCollectionView:collectionView];
     [self resumeCarouselAutoscrollIfPossible];
   }
 }
@@ -1943,7 +2126,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   if ([self isPrimaryCarouselCollectionView:collectionView]) {
     [self updatePageControl];
   }
-  [self recenterCarouselIfNeededForCollectionView:collectionView];
+  [self recenterContinuousCarouselOffsetIfNeededForCollectionView:collectionView];
   [self resumeCarouselAutoscrollIfPossible];
 }
 
@@ -1958,7 +2141,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   if ([self isPrimaryCarouselCollectionView:collectionView]) {
     [self updatePageControl];
   }
-  [self recenterCarouselIfNeededForCollectionView:collectionView];
+  [self recenterContinuousCarouselOffsetIfNeededForCollectionView:collectionView];
 }
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate

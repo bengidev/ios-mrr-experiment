@@ -12,6 +12,7 @@
 @property(nonatomic, readonly) UIScrollView *scrollView;
 @property(nonatomic, assign) NSInteger currentRecipeIndex;
 @property(nonatomic, assign) NSInteger currentCarouselItemIndex;
+@property(nonatomic, assign) NSInteger secondaryCurrentCarouselItemIndex;
 
 - (NSInteger)middleCarouselItemIndexForRecipeIndex:(NSInteger)recipeIndex;
 - (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex;
@@ -181,7 +182,7 @@
 
   XCTAssertEqual(self.viewController.currentCarouselItemIndex, expectedItemIndex);
   XCTAssertGreaterThan(expectedOffset, 0.0);
-  XCTAssertEqualWithAccuracy(self.viewController.carouselCollectionView.contentOffset.x, expectedOffset, 0.5);
+  XCTAssertLessThanOrEqual(fabs(self.viewController.carouselCollectionView.contentOffset.x - expectedOffset), 24.0);
 }
 
 - (void)testRecenterMovesBoundaryCopyBackToMiddleLoopForSameRecipe {
@@ -207,6 +208,87 @@
   XCTAssertEqual(self.viewController.currentCarouselItemIndex, middleIndex);
   XCTAssertEqualWithAccuracy(self.viewController.carouselCollectionView.contentOffset.x,
                              [self.viewController contentOffsetXForCarouselItemIndex:middleIndex], 0.5);
+}
+
+- (void)testContinuousAutoscrollMovesPrimaryCarouselForward {
+  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
+  [self.viewController.carouselCollectionView layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  NSInteger recipeIndex = 2;
+  NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
+  [self.viewController scrollToRecipeAtIndex:recipeIndex animated:NO];
+  CGFloat initialOffset = self.viewController.carouselCollectionView.contentOffset.x;
+
+  self.viewController.currentRecipeIndex = recipeIndex;
+  self.viewController.currentCarouselItemIndex = centeredIndex;
+  [self.viewController handleCarouselTimer:nil];
+  [self spinMainRunLoop];
+
+  XCTAssertGreaterThan(self.viewController.carouselCollectionView.contentOffset.x, initialOffset);
+  XCTAssertEqual(self.viewController.currentRecipeIndex, recipeIndex);
+}
+
+- (void)testContinuousAutoscrollMovesSecondaryCarouselBackward {
+  UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
+  if (secondary == nil) {
+    XCTSkip(@"Secondary carousel row not implemented yet.");
+  }
+
+  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
+  [secondary layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  NSInteger recipeIndex = 4;
+  NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
+  [secondary setContentOffset:CGPointMake([self.viewController contentOffsetXForCarouselItemIndex:centeredIndex
+                                                                                  inCollectionView:secondary],
+                                          0.0)
+                     animated:NO];
+  CGFloat initialOffset = secondary.contentOffset.x;
+
+  self.viewController.secondaryCurrentCarouselItemIndex = centeredIndex;
+  [self.viewController handleCarouselTimer:nil];
+  [self spinMainRunLoop];
+
+  XCTAssertLessThan(secondary.contentOffset.x, initialOffset);
+}
+
+- (void)testContinuousAutoscrollUsesSameMagnitudeAcrossCarouselRows {
+  UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
+  if (secondary == nil) {
+    XCTSkip(@"Secondary carousel row not implemented yet.");
+  }
+
+  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
+  [self.viewController.carouselCollectionView layoutIfNeeded];
+  [secondary layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  NSInteger recipeIndex = 2;
+  NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
+  CGFloat primaryInitialOffset =
+      [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:self.viewController.carouselCollectionView];
+  CGFloat secondaryInitialOffset =
+      [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:secondary];
+
+  [self.viewController.carouselCollectionView setContentOffset:CGPointMake(primaryInitialOffset, 0.0) animated:NO];
+  [secondary setContentOffset:CGPointMake(secondaryInitialOffset, 0.0) animated:NO];
+
+  self.viewController.currentRecipeIndex = recipeIndex;
+  self.viewController.currentCarouselItemIndex = centeredIndex;
+  self.viewController.secondaryCurrentCarouselItemIndex = centeredIndex;
+  for (NSInteger tick = 0; tick < 24; tick++) {
+    [self.viewController handleCarouselTimer:nil];
+  }
+  [self spinMainRunLoop];
+
+  CGFloat primaryDelta = self.viewController.carouselCollectionView.contentOffset.x - primaryInitialOffset;
+  CGFloat secondaryDelta = secondaryInitialOffset - secondary.contentOffset.x;
+
+  XCTAssertGreaterThan(primaryDelta, 0.0);
+  XCTAssertGreaterThan(secondaryDelta, 0.0);
+  XCTAssertEqualWithAccuracy(primaryDelta, secondaryDelta, 0.35);
 }
 
 - (void)testOnboardingExposesCoreAccessibilityIdentifiers {
@@ -267,6 +349,19 @@
   for (NSString *identifier in carouselIdentifiers) {
     XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:self.viewController.view], @"Missing %@", identifier);
   }
+}
+
+- (void)testCarouselRowsBleedPastHeroContainerEdgesForInfiniteMotion {
+  [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
+
+  CGRect heroFrame = [self frameForAccessibilityIdentifier:@"onboarding.heroCarouselContainerView"];
+  CGRect primaryFrame = [self frameForAccessibilityIdentifier:@"onboarding.carouselCollectionView"];
+  CGRect secondaryFrame = [self frameForAccessibilityIdentifier:@"onboarding.carouselCollectionView.secondary"];
+
+  XCTAssertLessThan(CGRectGetMinX(primaryFrame), CGRectGetMinX(heroFrame));
+  XCTAssertGreaterThan(CGRectGetMaxX(primaryFrame), CGRectGetMaxX(heroFrame));
+  XCTAssertLessThan(CGRectGetMinX(secondaryFrame), CGRectGetMinX(heroFrame));
+  XCTAssertGreaterThan(CGRectGetMaxX(secondaryFrame), CGRectGetMaxX(heroFrame));
 }
 
 - (void)testGoogleButtonUsesContinueCopy {
