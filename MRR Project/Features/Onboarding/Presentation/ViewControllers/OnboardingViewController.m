@@ -194,6 +194,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (NSInteger)defaultRecipeIndexForCollectionView:(UICollectionView *)collectionView;
 - (CGSize)lastPositionedCarouselBoundsSizeForCollectionView:(UICollectionView *)collectionView;
 - (void)setLastPositionedCarouselBoundsSize:(CGSize)size forCollectionView:(UICollectionView *)collectionView;
+- (BOOL)isCarouselCollectionViewInteracting:(UICollectionView *)collectionView;
+- (BOOL)areAnyCarouselRowsInteracting;
 - (void)synchronizeCarouselStateForCollectionView:(UICollectionView *)collectionView;
 - (CGFloat)carouselPhaseOffsetForCollectionView:(UICollectionView *)collectionView;
 - (CGFloat)visibleCarouselViewportWidthForCollectionView:(UICollectionView *)collectionView;
@@ -365,6 +367,10 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 - (void)viewWillDisappear:(BOOL)animated {
   [super viewWillDisappear:animated];
+
+  if (self.isDetailPresented) {
+    return;
+  }
 
   self.viewVisible = NO;
   [self pauseCarouselAutoscroll];
@@ -1446,6 +1452,20 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   self.lastPositionedSecondaryCarouselBoundsSize = size;
 }
 
+- (BOOL)areAnyCarouselRowsInteracting {
+  for (UICollectionView *collectionView in [self allCarouselCollectionViews]) {
+    if ([self isCarouselCollectionViewInteracting:collectionView]) {
+      return YES;
+    }
+  }
+
+  return NO;
+}
+
+- (BOOL)isCarouselCollectionViewInteracting:(UICollectionView *)collectionView {
+  return collectionView != nil && (collectionView.dragging || collectionView.decelerating);
+}
+
 - (void)synchronizeCarouselStateForCollectionView:(UICollectionView *)collectionView {
   if (![self isCarouselCollectionView:collectionView]) {
     return;
@@ -1583,7 +1603,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (void)advanceCarouselCollectionView:(UICollectionView *)collectionView
                             direction:(CGFloat)direction
                             deltaTime:(CFTimeInterval)deltaTime {
-  if (![self isCarouselCollectionView:collectionView] || deltaTime <= 0.0) {
+  if (![self isCarouselCollectionView:collectionView] || deltaTime <= 0.0 || [self isCarouselCollectionViewInteracting:collectionView]) {
     return;
   }
 
@@ -1970,9 +1990,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return;
   }
 
-  [self scrollToRecipeAtIndex:index animated:NO];
   self.detailPresented = YES;
-  [self pauseCarouselAutoscroll];
 
   OnboardingRecipeDetailViewController *detailViewController =
       [[[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.recipes[index]] autorelease];
@@ -2071,6 +2089,13 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 #pragma mark - UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+  if ([self isCarouselCollectionView:collectionView]) {
+    [self setCurrentCarouselItemIndex:indexPath.item forCollectionView:collectionView];
+    if ([self isPrimaryCarouselCollectionView:collectionView]) {
+      [self updatePageControl];
+    }
+  }
+
   [self presentRecipeDetailForRecipeAtIndex:[self recipeIndexForCarouselItemIndex:indexPath.item]];
 }
 
@@ -2080,8 +2105,6 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   if (![self isCarouselCollectionView:(UICollectionView *)scrollView]) {
     return;
   }
-
-  [self pauseCarouselAutoscroll];
 }
 
 - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset {
@@ -2091,7 +2114,6 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 
   NSInteger targetItemIndex = [self nearestCarouselItemIndexForOffsetX:targetContentOffset->x inCollectionView:collectionView];
-  targetContentOffset->x = [self contentOffsetXForCarouselItemIndex:targetItemIndex inCollectionView:collectionView];
   [self setCurrentCarouselItemIndex:targetItemIndex forCollectionView:collectionView];
   if ([self isPrimaryCarouselCollectionView:collectionView]) {
     [self updatePageControl];

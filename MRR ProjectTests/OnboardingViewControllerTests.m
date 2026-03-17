@@ -17,6 +17,7 @@
 - (NSInteger)middleCarouselItemIndexForRecipeIndex:(NSInteger)recipeIndex;
 - (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex;
 - (CGFloat)contentOffsetXForCarouselItemIndex:(NSInteger)itemIndex inCollectionView:(UICollectionView *)collectionView;
+- (BOOL)isCarouselCollectionViewInteracting:(UICollectionView *)collectionView;
 - (void)pauseCarouselAutoscroll;
 - (void)recenterCarouselIfNeeded;
 - (void)handleCarouselTimer:(NSTimer *)timer;
@@ -24,6 +25,24 @@
 - (void)scrollToRecipeAtIndex:(NSInteger)index animated:(BOOL)animated;
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
+
+@end
+
+@interface InteractionAwareOnboardingViewController : OnboardingViewController
+
+@property(nonatomic, assign) UICollectionView *forcedInteractingCollectionView;
+
+@end
+
+@implementation InteractionAwareOnboardingViewController
+
+- (BOOL)isCarouselCollectionViewInteracting:(UICollectionView *)collectionView {
+  if (collectionView == self.forcedInteractingCollectionView) {
+    return YES;
+  }
+
+  return [super isCarouselCollectionViewInteracting:collectionView];
+}
 
 @end
 
@@ -289,6 +308,66 @@
   XCTAssertGreaterThan(primaryDelta, 0.0);
   XCTAssertGreaterThan(secondaryDelta, 0.0);
   XCTAssertEqualWithAccuracy(primaryDelta, secondaryDelta, 0.35);
+}
+
+- (void)testInteractingPrimaryCarouselDoesNotStopSecondaryAutoscroll {
+  UIWindow *previousWindow = self.window;
+  OnboardingViewController *previousViewController = self.viewController;
+
+  InteractionAwareOnboardingViewController *viewController =
+      [[InteractionAwareOnboardingViewController alloc] initWithStateController:self.stateController];
+  UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, 430.0, 932.0)];
+  window.rootViewController = viewController;
+  [window makeKeyAndVisible];
+
+  self.window = window;
+  self.viewController = viewController;
+  [self.viewController loadViewIfNeeded];
+  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
+
+  UICollectionView *secondary = [viewController secondaryCarouselCollectionView];
+  XCTAssertNotNil(secondary);
+
+  NSInteger recipeIndex = 2;
+  NSInteger centeredIndex = [viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
+  CGFloat primaryInitialOffset =
+      [viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:viewController.carouselCollectionView];
+  CGFloat secondaryInitialOffset = [viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:secondary];
+
+  [viewController.carouselCollectionView setContentOffset:CGPointMake(primaryInitialOffset, 0.0) animated:NO];
+  [secondary setContentOffset:CGPointMake(secondaryInitialOffset, 0.0) animated:NO];
+  viewController.currentCarouselItemIndex = centeredIndex;
+  viewController.secondaryCurrentCarouselItemIndex = centeredIndex;
+  viewController.forcedInteractingCollectionView = viewController.carouselCollectionView;
+
+  [viewController handleCarouselTimer:nil];
+  [self spinMainRunLoop];
+
+  XCTAssertLessThanOrEqual(fabs(viewController.carouselCollectionView.contentOffset.x - primaryInitialOffset), 0.15);
+  XCTAssertLessThan(secondary.contentOffset.x, secondaryInitialOffset);
+
+  [viewController pauseCarouselAutoscroll];
+  window.hidden = YES;
+  self.window = previousWindow;
+  self.viewController = previousViewController;
+}
+
+- (void)testDragDoesNotSnapCarouselToCenteredOffset {
+  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
+  [self.viewController.carouselCollectionView layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  NSInteger targetIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:2];
+  CGFloat unsnappedOffset = [self.viewController contentOffsetXForCarouselItemIndex:targetIndex] + 9.0;
+  CGPoint targetOffset = CGPointMake(unsnappedOffset, 0.0);
+
+  [self.viewController scrollViewWillEndDragging:self.viewController.carouselCollectionView
+                                    withVelocity:CGPointZero
+                             targetContentOffset:&targetOffset];
+
+  XCTAssertEqualWithAccuracy(targetOffset.x, unsnappedOffset, 0.001);
+  XCTAssertEqual(self.viewController.currentCarouselItemIndex, targetIndex);
+  XCTAssertEqual(self.viewController.currentRecipeIndex, 2);
 }
 
 - (void)testOnboardingExposesCoreAccessibilityIdentifiers {
@@ -718,6 +797,25 @@
   } else {
     return;
   }
+}
+
+- (void)testSelectingRecipeDoesNotRepositionPrimaryCarouselBeforePresentingDetail {
+  [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
+  [self.viewController.carouselCollectionView layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  NSInteger visibleIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:4];
+  CGFloat initialOffset = [self.viewController contentOffsetXForCarouselItemIndex:visibleIndex];
+  [self.viewController.carouselCollectionView setContentOffset:CGPointMake(initialOffset, 0.0) animated:NO];
+  self.viewController.currentCarouselItemIndex = visibleIndex;
+  self.viewController.currentRecipeIndex = 4;
+
+  NSIndexPath *selectedIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:selectedIndexPath];
+  [self spinMainRunLoop];
+
+  XCTAssertEqualWithAccuracy(self.viewController.carouselCollectionView.contentOffset.x, initialOffset, 0.5);
+  XCTAssertNotNil([self presentedRecipeContainerViewController]);
 }
 
 - (void)presentFirstRecipe {
