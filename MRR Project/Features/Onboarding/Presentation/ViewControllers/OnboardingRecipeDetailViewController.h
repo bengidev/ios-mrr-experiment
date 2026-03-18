@@ -1,9 +1,16 @@
 #import <UIKit/UIKit.h>
 
+#import "../../Data/OnboardingRecipeModels.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class OnboardingRecipe;
 @class OnboardingRecipeDetailViewController;
+
+typedef NS_ENUM(NSInteger, OnboardingRecipeDetailDebugOrigin) {
+  OnboardingRecipeDetailDebugOriginUnknown = 0,
+  OnboardingRecipeDetailDebugOriginLive = 1,
+  OnboardingRecipeDetailDebugOriginFallback = 2,
+};
 
 @protocol OnboardingRecipeDetailViewControllerDelegate <NSObject>
 
@@ -15,9 +22,15 @@ NS_ASSUME_NONNULL_BEGIN
 @interface OnboardingRecipeDetailViewController : UIViewController
 
 @property(nonatomic, assign, nullable) id<OnboardingRecipeDetailViewControllerDelegate> delegate;
-@property(nonatomic, retain, readonly) OnboardingRecipe *recipe;
+@property(nonatomic, retain, readonly) OnboardingRecipePreview *recipePreview;
+@property(nonatomic, retain, readonly, nullable) OnboardingRecipeDetail *recipeDetail;
+@property(nonatomic, assign, readonly, getter=isLoading) BOOL loading;
+@property(nonatomic, assign) OnboardingRecipeDetailDebugOrigin debugOrigin;
 
-- (instancetype)initWithRecipe:(OnboardingRecipe *)recipe;
+- (instancetype)initWithRecipePreview:(OnboardingRecipePreview *)recipePreview loading:(BOOL)loading;
+- (instancetype)initWithRecipePreview:(OnboardingRecipePreview *)recipePreview recipeDetail:(OnboardingRecipeDetail *)recipeDetail;
+- (void)updateWithRecipeDetail:(OnboardingRecipeDetail *)recipeDetail;
+- (void)updateWithRecipeDetail:(OnboardingRecipeDetail *)recipeDetail debugOrigin:(OnboardingRecipeDetailDebugOrigin)debugOrigin;
 
 @end
 
