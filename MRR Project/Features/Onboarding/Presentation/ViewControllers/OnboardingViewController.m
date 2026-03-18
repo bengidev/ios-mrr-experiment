@@ -1,6 +1,7 @@
 #import "OnboardingViewController.h"
 
 #include <math.h>
+#import <stdarg.h>
 
 #import <AuthenticationServices/AuthenticationServices.h>
 
@@ -10,6 +11,9 @@
 #import "../../../Authentication/MRRFirebaseAuthenticationController.h"
 #import "../../../../Layout/MRRLiquidGlassStyling.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
+#import "../../Data/OnboardingRecipeCatalog.h"
+#import "../../Data/OnboardingRecipeModels.h"
+#import "../../Data/OnboardingRecipeService.h"
 #import "../../Data/OnboardingStateController.h"
 #import "../Views/OnboardingRecipeCarouselCell.h"
 #import "OnboardingRecipeDetailViewController.h"
@@ -20,6 +24,21 @@ static NSString *const MRROnboardingAppIconImageName = @"OnboardingAppIcon";
 static CGFloat const MRRCarouselSingleRowSpacingPadding = 32.0;
 static CGFloat const MRROnboardingButtonPressedScale = 0.97;
 static CGFloat const MRROnboardingButtonPressedAlpha = 0.88;
+static NSTimeInterval const MRRRecipeDetailPresentationDelayInterval = 0.18;
+
+#if DEBUG
+static void MRROnboardingRecipeFlowLog(NSString *format, ...) NS_FORMAT_FUNCTION(1, 2);
+
+static void MRROnboardingRecipeFlowLog(NSString *format, ...) {
+  va_list arguments;
+  va_start(arguments, format);
+  NSString *message = [[[NSString alloc] initWithFormat:format arguments:arguments] autorelease];
+  va_end(arguments);
+  NSLog(@"[OnboardingRecipeFlow] %@", message);
+}
+#else
+static void MRROnboardingRecipeFlowLog(__unused NSString *format, ...) {}
+#endif
 
 typedef NS_ENUM(NSInteger, MRROnboardingAuthButtonIconStyle) {
   MRROnboardingAuthButtonIconStyleEmail = 0,
@@ -85,7 +104,9 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 @property(nonatomic, retain) OnboardingStateController *stateController;
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
-@property(nonatomic, copy) NSArray<OnboardingRecipe *> *recipes;
+@property(nonatomic, retain) id<MRROnboardingRecipeCataloging> recipeCatalog;
+@property(nonatomic, retain) id<MRROnboardingRecipeSearching> recipeSearcher;
+@property(nonatomic, copy) NSArray<OnboardingRecipePreview *> *recipes;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIStackView *contentStackView;
 @property(nonatomic, retain) UIView *heroCarouselContainerView;
@@ -147,8 +168,12 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 @property(nonatomic, assign) CGSize lastPositionedSecondaryCarouselBoundsSize;
 @property(nonatomic, assign, getter=isDetailPresented) BOOL detailPresented;
 @property(nonatomic, assign, getter=isViewVisible) BOOL viewVisible;
+@property(nonatomic, copy, nullable) NSString *loadingRecipeTitle;
+@property(nonatomic, assign) NSUInteger activeRecipeRequestToken;
+@property(nonatomic, retain, nullable) NSTimer *recipeDetailPresentationDelayTimer;
+@property(nonatomic, retain, nullable) OnboardingRecipePreview *pendingRecipePreview;
 
-- (NSArray<OnboardingRecipe *> *)loadRecipes;
+- (NSArray<OnboardingRecipePreview *> *)loadRecipes;
 - (void)buildViewHierarchy;
 - (UICollectionView *)buildCarouselCollectionViewWithAccessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (NSArray<UICollectionView *> *)allCarouselCollectionViews;
@@ -232,7 +257,19 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (void)updatePageControl;
 - (void)recenterCarouselIfNeeded;
 - (void)recenterCarouselIfNeededForCollectionView:(UICollectionView *)collectionView;
-- (void)presentRecipeDetailForRecipeAtIndex:(NSInteger)index;
+- (void)beginLoadingRecipeDetailForRecipeAtIndex:(NSInteger)index;
+- (void)beginLoadingRecipeDetailForRecipePreview:(OnboardingRecipePreview *)recipePreview;
+- (void)handleRecipeDetailPresentationDelayTimer:(NSTimer *)timer;
+- (void)handleRecipeSearchCompletionWithDetail:(nullable OnboardingRecipeDetail *)detail
+                                         error:(nullable NSError *)error
+                                  recipePreview:(OnboardingRecipePreview *)recipePreview
+                                   requestToken:(NSUInteger)requestToken;
+- (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
+- (void)presentLoadedRecipeDetail:(OnboardingRecipeDetail *)detail
+                    recipePreview:(OnboardingRecipePreview *)recipePreview
+                      debugOrigin:(OnboardingRecipeDetailDebugOrigin)debugOrigin;
+- (void)reloadVisibleCarouselCellsForRecipeTitle:(nullable NSString *)recipeTitle;
+- (void)endRecipeLoadingAndResumeIfNeeded;
 - (void)pauseCarouselAutoscroll;
 - (void)resumeCarouselAutoscrollIfPossible;
 - (void)handleCarouselDisplayLink:(CADisplayLink *)displayLink;
@@ -247,23 +284,55 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   OnboardingStateController *stateController =
       [[[OnboardingStateController alloc] initWithUserDefaults:[NSUserDefaults standardUserDefaults]] autorelease];
   id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
-  return [self initWithStateController:stateController authenticationController:authenticationController];
+  id<MRROnboardingRecipeCataloging> recipeCatalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
+  id<MRROnboardingRecipeSearching> recipeSearcher =
+      [[[MRRRemoteOnboardingRecipeSearcher alloc] initWithSession:[NSURLSession sharedSession]
+                                                    configuration:[MRRRecipeAPIConfiguration configurationFromMainBundle]] autorelease];
+  return [self initWithStateController:stateController
+              authenticationController:authenticationController
+                          recipeCatalog:recipeCatalog
+                         recipeSearcher:recipeSearcher];
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController {
   id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
-  return [self initWithStateController:stateController authenticationController:authenticationController];
+  id<MRROnboardingRecipeCataloging> recipeCatalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
+  id<MRROnboardingRecipeSearching> recipeSearcher =
+      [[[MRRRemoteOnboardingRecipeSearcher alloc] initWithSession:[NSURLSession sharedSession]
+                                                    configuration:[MRRRecipeAPIConfiguration configurationFromMainBundle]] autorelease];
+  return [self initWithStateController:stateController
+              authenticationController:authenticationController
+                          recipeCatalog:recipeCatalog
+                         recipeSearcher:recipeSearcher];
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
                authenticationController:(id<MRRAuthenticationController>)authenticationController {
+  id<MRROnboardingRecipeCataloging> recipeCatalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
+  id<MRROnboardingRecipeSearching> recipeSearcher =
+      [[[MRRRemoteOnboardingRecipeSearcher alloc] initWithSession:[NSURLSession sharedSession]
+                                                    configuration:[MRRRecipeAPIConfiguration configurationFromMainBundle]] autorelease];
+  return [self initWithStateController:stateController
+              authenticationController:authenticationController
+                          recipeCatalog:recipeCatalog
+                         recipeSearcher:recipeSearcher];
+}
+
+- (instancetype)initWithStateController:(OnboardingStateController *)stateController
+               authenticationController:(id<MRRAuthenticationController>)authenticationController
+                           recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog
+                          recipeSearcher:(id<MRROnboardingRecipeSearching>)recipeSearcher {
   NSParameterAssert(stateController != nil);
   NSParameterAssert(authenticationController != nil);
+  NSParameterAssert(recipeCatalog != nil);
+  NSParameterAssert(recipeSearcher != nil);
 
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
     _stateController = [stateController retain];
     _authenticationController = [authenticationController retain];
+    _recipeCatalog = [recipeCatalog retain];
+    _recipeSearcher = [recipeSearcher retain];
     _recipes = [[self loadRecipes] copy];
     _currentRecipeIndex = 0;
     if (_recipes.count > 0) {
@@ -278,6 +347,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 - (void)dealloc {
   [self pauseCarouselAutoscroll];
+  [self.recipeDetailPresentationDelayTimer invalidate];
   [_loadingIndicator release];
   [_loadingOverlayView release];
   [_scrollView release];
@@ -333,7 +403,12 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [_carouselCollectionView release];
   [_secondaryCarouselCollectionView release];
   [_pageControl release];
+  [_pendingRecipePreview release];
+  [_recipeDetailPresentationDelayTimer release];
+  [_loadingRecipeTitle release];
   [_recipes release];
+  [_recipeSearcher release];
+  [_recipeCatalog release];
   [_authenticationController release];
   [_stateController release];
   [super dealloc];
@@ -387,8 +462,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 #pragma mark - View Setup
 
-- (NSArray<OnboardingRecipe *> *)loadRecipes {
-  return [self.stateController onboardingRecipes];
+- (NSArray<OnboardingRecipePreview *> *)loadRecipes {
+  return [self.recipeCatalog allRecipePreviews];
 }
 
 - (void)buildViewHierarchy {
@@ -1985,16 +2060,114 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 }
 
-- (void)presentRecipeDetailForRecipeAtIndex:(NSInteger)index {
+- (void)beginLoadingRecipeDetailForRecipeAtIndex:(NSInteger)index {
   if (index < 0 || index >= (NSInteger)self.recipes.count) {
     return;
   }
 
-  self.detailPresented = YES;
+  [self beginLoadingRecipeDetailForRecipePreview:self.recipes[index]];
+}
 
+- (void)beginLoadingRecipeDetailForRecipePreview:(OnboardingRecipePreview *)recipePreview {
+  if (recipePreview == nil || self.loadingRecipeTitle.length > 0 || self.isDetailPresented) {
+    return;
+  }
+
+  MRROnboardingRecipeFlowLog(@"Recipe selection started for \"%@\".", recipePreview.title);
+  self.loadingRecipeTitle = recipePreview.title;
+  self.pendingRecipePreview = recipePreview;
+  self.activeRecipeRequestToken += 1;
+  NSUInteger requestToken = self.activeRecipeRequestToken;
+  [self.recipeDetailPresentationDelayTimer invalidate];
+  self.recipeDetailPresentationDelayTimer =
+      [NSTimer scheduledTimerWithTimeInterval:MRRRecipeDetailPresentationDelayInterval
+                                       target:self
+                                     selector:@selector(handleRecipeDetailPresentationDelayTimer:)
+                                     userInfo:@{@"requestToken" : @(requestToken)}
+                                      repeats:NO];
+
+  [self pauseCarouselAutoscroll];
+  [self reloadVisibleCarouselCellsForRecipeTitle:self.loadingRecipeTitle];
+
+  __block OnboardingViewController *blockSelf = self;
+  [self.recipeSearcher fetchRecipeDetailForPreview:recipePreview
+                                        completion:^(OnboardingRecipeDetail *detail, NSError *error) {
+                                          OnboardingViewController *strongSelf = blockSelf;
+                                          if (strongSelf == nil) {
+                                            return;
+                                          }
+
+                                          [strongSelf handleRecipeSearchCompletionWithDetail:detail
+                                                                                     error:error
+                                                                              recipePreview:recipePreview
+                                                                               requestToken:requestToken];
+                                        }];
+}
+
+- (void)handleRecipeDetailPresentationDelayTimer:(NSTimer *)timer {
+  NSNumber *requestTokenNumber = timer.userInfo[@"requestToken"];
+  if (requestTokenNumber == nil || requestTokenNumber.unsignedIntegerValue != self.activeRecipeRequestToken) {
+    return;
+  }
+
+  if (self.pendingRecipePreview == nil || self.isDetailPresented) {
+    return;
+  }
+
+  MRROnboardingRecipeFlowLog(@"Presenting loading skeleton for \"%@\".", self.pendingRecipePreview.title);
   OnboardingRecipeDetailViewController *detailViewController =
-      [[[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.recipes[index]] autorelease];
+      [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:self.pendingRecipePreview loading:YES] autorelease];
   detailViewController.delegate = self;
+  [self presentRecipeDetailViewController:detailViewController];
+}
+
+- (void)handleRecipeSearchCompletionWithDetail:(OnboardingRecipeDetail *)detail
+                                         error:(NSError *)error
+                                  recipePreview:(OnboardingRecipePreview *)recipePreview
+                                   requestToken:(NSUInteger)requestToken {
+  if (requestToken != self.activeRecipeRequestToken) {
+    MRROnboardingRecipeFlowLog(@"Ignoring stale recipe response for \"%@\" (token=%lu current=%lu).", recipePreview.title,
+                               (unsigned long)requestToken, (unsigned long)self.activeRecipeRequestToken);
+    return;
+  }
+
+  [self.recipeDetailPresentationDelayTimer invalidate];
+  self.recipeDetailPresentationDelayTimer = nil;
+
+  OnboardingRecipeDetail *resolvedDetail = detail ?: recipePreview.fallbackDetail;
+  OnboardingRecipeDetailDebugOrigin debugOrigin =
+      detail != nil && error == nil ? OnboardingRecipeDetailDebugOriginLive : OnboardingRecipeDetailDebugOriginFallback;
+  if (detail != nil && error == nil) {
+    MRROnboardingRecipeFlowLog(@"Live recipe detail resolved for \"%@\".", recipePreview.title);
+  } else {
+    MRROnboardingRecipeFlowLog(@"Falling back to curated detail for \"%@\". Reason=%@.", recipePreview.title,
+                               error.localizedDescription ?: @"No live detail returned.");
+  }
+  if (self.isDetailPresented) {
+    UIViewController *presentedViewController = self.presentedViewController;
+    if ([presentedViewController isKindOfClass:[UINavigationController class]]) {
+      presentedViewController = [(UINavigationController *)presentedViewController topViewController];
+    }
+
+    if ([presentedViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]) {
+      [(OnboardingRecipeDetailViewController *)presentedViewController updateWithRecipeDetail:resolvedDetail debugOrigin:debugOrigin];
+    }
+  } else {
+    [self presentLoadedRecipeDetail:resolvedDetail recipePreview:recipePreview debugOrigin:debugOrigin];
+  }
+
+  self.loadingRecipeTitle = nil;
+  self.pendingRecipePreview = nil;
+  [self reloadVisibleCarouselCellsForRecipeTitle:nil];
+}
+
+- (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
+  if (detailViewController == nil) {
+    return;
+  }
+
+  MRROnboardingRecipeFlowLog(@"Presenting recipe detail view controller. loading=%@.", detailViewController.isLoading ? @"YES" : @"NO");
+  self.detailPresented = YES;
 
   if (@available(iOS 15.0, *)) {
     UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
@@ -2010,6 +2183,59 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   [self presentViewController:detailViewController animated:[self shouldAnimateModalTransitions] completion:nil];
 }
 
+- (void)presentLoadedRecipeDetail:(OnboardingRecipeDetail *)detail
+                    recipePreview:(OnboardingRecipePreview *)recipePreview
+                      debugOrigin:(OnboardingRecipeDetailDebugOrigin)debugOrigin {
+  if (detail == nil || recipePreview == nil) {
+    return;
+  }
+
+  OnboardingRecipeDetailViewController *detailViewController =
+      [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:recipePreview recipeDetail:detail] autorelease];
+  detailViewController.debugOrigin = debugOrigin;
+  detailViewController.delegate = self;
+  [self presentRecipeDetailViewController:detailViewController];
+}
+
+- (void)reloadVisibleCarouselCellsForRecipeTitle:(NSString *)recipeTitle {
+  for (UICollectionView *collectionView in [self allCarouselCollectionViews]) {
+    NSArray<NSIndexPath *> *visibleIndexPaths = [collectionView indexPathsForVisibleItems];
+    if (visibleIndexPaths.count == 0) {
+      continue;
+    }
+
+    NSMutableArray<NSIndexPath *> *matchingIndexPaths = [NSMutableArray array];
+    for (NSIndexPath *indexPath in visibleIndexPaths) {
+      NSInteger recipeIndex = [self recipeIndexForCarouselItemIndex:indexPath.item];
+      if (recipeIndex == NSNotFound || recipeIndex >= (NSInteger)self.recipes.count) {
+        continue;
+      }
+
+      OnboardingRecipePreview *recipePreview = self.recipes[recipeIndex];
+      BOOL matches = recipeTitle.length == 0 || [recipePreview.title isEqualToString:recipeTitle];
+      if (matches) {
+        [matchingIndexPaths addObject:indexPath];
+      }
+    }
+
+    if (matchingIndexPaths.count > 0) {
+      [collectionView reloadItemsAtIndexPaths:matchingIndexPaths];
+    }
+  }
+}
+
+- (void)endRecipeLoadingAndResumeIfNeeded {
+  MRROnboardingRecipeFlowLog(@"Cancelling current recipe loading flow and resuming carousel if possible.");
+  [self.recipeDetailPresentationDelayTimer invalidate];
+  self.recipeDetailPresentationDelayTimer = nil;
+  self.activeRecipeRequestToken += 1;
+  self.loadingRecipeTitle = nil;
+  self.pendingRecipePreview = nil;
+  [self reloadVisibleCarouselCellsForRecipeTitle:nil];
+  self.viewVisible = YES;
+  [self resumeCarouselAutoscrollIfPossible];
+}
+
 - (void)pauseCarouselAutoscroll {
   [self.carouselDisplayLink invalidate];
   self.carouselDisplayLink = nil;
@@ -2021,7 +2247,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     return;
   }
 
-  if (!self.isViewVisible || !self.hasAppliedInitialCarouselPosition || self.carouselDisplayLink != nil || self.recipes.count < 2) {
+  if (!self.isViewVisible || !self.hasAppliedInitialCarouselPosition || self.carouselDisplayLink != nil || self.recipes.count < 2 ||
+      self.loadingRecipeTitle.length > 0) {
     return;
   }
 
@@ -2037,7 +2264,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (void)handleCarouselDisplayLink:(CADisplayLink *)displayLink {
-  if (self.recipes.count < 2) {
+  if (self.recipes.count < 2 || self.isDetailPresented || self.loadingRecipeTitle.length > 0) {
     self.lastCarouselDisplayTimestamp = displayLink.timestamp;
     return;
   }
@@ -2054,7 +2281,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 }
 
 - (void)handleCarouselTimer:(NSTimer *)timer {
-  if (self.recipes.count < 2 || self.isDetailPresented) {
+  if (self.recipes.count < 2 || self.isDetailPresented || self.loadingRecipeTitle.length > 0) {
     return;
   }
 
@@ -2082,13 +2309,19 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 
   cell.showsTextOverlay = NO;
-  [cell configureWithRecipe:self.recipes[recipeIndex]];
+  OnboardingRecipePreview *recipePreview = self.recipes[recipeIndex];
+  [cell configureWithRecipePreview:recipePreview];
+  cell.showsShimmerLoading = (self.loadingRecipeTitle.length > 0 && [self.loadingRecipeTitle isEqualToString:recipePreview.title]);
   return cell;
 }
 
 #pragma mark - UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+  if (self.loadingRecipeTitle.length > 0) {
+    return;
+  }
+
   if ([self isCarouselCollectionView:collectionView]) {
     [self setCurrentCarouselItemIndex:indexPath.item forCollectionView:collectionView];
     if ([self isPrimaryCarouselCollectionView:collectionView]) {
@@ -2096,7 +2329,7 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
     }
   }
 
-  [self presentRecipeDetailForRecipeAtIndex:[self recipeIndexForCarouselItemIndex:indexPath.item]];
+  [self beginLoadingRecipeDetailForRecipeAtIndex:[self recipeIndexForCarouselItemIndex:indexPath.item]];
 }
 
 #pragma mark - UIScrollViewDelegate
@@ -2170,8 +2403,14 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController {
   self.detailPresented = NO;
+  BOOL shouldCancelPendingRecipeLoading = self.loadingRecipeTitle.length > 0;
   [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
                            completion:^{
+                             if (shouldCancelPendingRecipeLoading) {
+                               [self endRecipeLoadingAndResumeIfNeeded];
+                               return;
+                             }
+
                              self.viewVisible = YES;
                              [self resumeCarouselAutoscrollIfPossible];
                            }];
@@ -2179,10 +2418,13 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
   self.detailPresented = NO;
+  self.loadingRecipeTitle = nil;
+  self.pendingRecipePreview = nil;
   [self.stateController markOnboardingCompleted];
   [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
                            completion:^{
                              self.viewVisible = YES;
+                             [self reloadVisibleCarouselCellsForRecipeTitle:nil];
                              [self resumeCarouselAutoscrollIfPossible];
                            }];
 }
@@ -2195,6 +2437,11 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
   }
 
   self.detailPresented = NO;
+  if (self.loadingRecipeTitle.length > 0) {
+    [self endRecipeLoadingAndResumeIfNeeded];
+    return;
+  }
+
   self.viewVisible = YES;
   [self resumeCarouselAutoscrollIfPossible];
 }

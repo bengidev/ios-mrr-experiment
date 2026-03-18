@@ -5,7 +5,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 #import "../../../../Layout/MRRLiquidGlassStyling.h"
-#import "../../Data/OnboardingStateController.h"
+#import "../../Data/OnboardingRecipeModels.h"
 #import "../../../../Layout/MRRLayoutScaling.h"
 
 static UIColor *MRRDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
@@ -46,6 +46,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
 
 @property(nonatomic, retain) UIView *cardView;
 @property(nonatomic, retain) UIImageView *imageView;
+@property(nonatomic, retain) UIView *shimmerOverlayView;
 @property(nonatomic, retain) UIView *textBackdropView;
 @property(nonatomic, retain) UILabel *titleLabel;
 @property(nonatomic, retain) UILabel *metadataLabel;
@@ -59,8 +60,9 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
 @property(nonatomic, retain) NSLayoutConstraint *metadataBottomConstraint;
 
 - (void)buildViewHierarchy;
-- (void)applyAccessibilityIdentifiersForRecipe:(OnboardingRecipe *)recipe;
+- (void)applyAccessibilityIdentifiersForRecipePreview:(OnboardingRecipePreview *)recipePreview;
 - (void)updateTextOverlayVisibility;
+- (void)updateShimmerLoadingState;
 - (void)updateAdaptiveMetricsForCardSize:(CGSize)cardSize;
 
 @end
@@ -97,6 +99,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   [_metadataLabel release];
   [_titleLabel release];
   [_textBackdropView release];
+  [_shimmerOverlayView release];
   [_imageView release];
   [_cardView release];
   [super dealloc];
@@ -116,6 +119,13 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
     [CATransaction commit];
   }
 
+  for (CALayer *sublayer in self.shimmerOverlayView.layer.sublayers) {
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    sublayer.frame = self.shimmerOverlayView.bounds;
+    [CATransaction commit];
+  }
+
   [self updateAdaptiveMetricsForCardSize:self.contentView.bounds.size];
 }
 
@@ -125,6 +135,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.imageView.image = nil;
   self.titleLabel.text = nil;
   self.metadataLabel.text = nil;
+  self.showsShimmerLoading = NO;
   self.hintLabel.hidden = YES;
   self.accessibilityIdentifier = nil;
   self.accessibilityLabel = nil;
@@ -140,22 +151,24 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.showsTextOverlay = YES;
 }
 
-- (void)configureWithRecipe:(OnboardingRecipe *)recipe {
-  NSString *compactCalorieText = [recipe.calorieText stringByReplacingOccurrencesOfString:@" kcal" withString:@""];
+- (void)configureWithRecipePreview:(OnboardingRecipePreview *)recipePreview {
+  NSString *compactCalorieText = [recipePreview.fallbackDetail.calorieText stringByReplacingOccurrencesOfString:@" kcal" withString:@""];
 
-  self.imageView.image = [UIImage imageNamed:recipe.assetName];
-  self.titleLabel.text = recipe.title;
-  self.metadataLabel.text = [NSString stringWithFormat:@"◷ %@   🔥 %@", recipe.durationText, compactCalorieText];
+  self.imageView.image = [UIImage imageNamed:recipePreview.assetName];
+  self.titleLabel.text = recipePreview.title;
+  self.metadataLabel.text = [NSString stringWithFormat:@"◷ %@   🔥 %@", recipePreview.fallbackDetail.durationText, compactCalorieText];
   self.hintLabel.text = nil;
   self.hintLabel.hidden = YES;
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:self.textBackdropView];
   self.textBackdropView.backgroundColor = MRRHighlightedTextBackdropColor();
   self.isAccessibilityElement = YES;
   self.accessibilityTraits = UIAccessibilityTraitButton;
-  self.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe.title, recipe.durationText, recipe.calorieText];
+  self.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipePreview.title, recipePreview.fallbackDetail.durationText,
+                                                       recipePreview.fallbackDetail.calorieText];
   self.accessibilityHint = @"Opens recipe details.";
-  [self applyAccessibilityIdentifiersForRecipe:recipe];
+  [self applyAccessibilityIdentifiersForRecipePreview:recipePreview];
   [self updateTextOverlayVisibility];
+  [self updateShimmerLoadingState];
 }
 
 #pragma mark - View Setup
@@ -181,6 +194,14 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   imageView.clipsToBounds = YES;
   [cardView addSubview:imageView];
   self.imageView = imageView;
+
+  UIView *shimmerOverlayView = [[[UIView alloc] init] autorelease];
+  shimmerOverlayView.translatesAutoresizingMaskIntoConstraints = NO;
+  shimmerOverlayView.hidden = YES;
+  shimmerOverlayView.userInteractionEnabled = NO;
+  shimmerOverlayView.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.16];
+  [cardView addSubview:shimmerOverlayView];
+  self.shimmerOverlayView = shimmerOverlayView;
 
   UIView *textBackdropView = [[[UIView alloc] init] autorelease];
   textBackdropView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -248,6 +269,11 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
     [imageView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
     [imageView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
 
+    [shimmerOverlayView.topAnchor constraintEqualToAnchor:cardView.topAnchor],
+    [shimmerOverlayView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
+    [shimmerOverlayView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
+    [shimmerOverlayView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
+
     [textBackdropView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
     [textBackdropView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
     [textBackdropView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
@@ -263,12 +289,13 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   ]];
 }
 
-- (void)applyAccessibilityIdentifiersForRecipe:(OnboardingRecipe *)recipe {
-  NSString *identifierPrefix = [NSString stringWithFormat:@"onboarding.carouselCell.%@", recipe.assetName];
+- (void)applyAccessibilityIdentifiersForRecipePreview:(OnboardingRecipePreview *)recipePreview {
+  NSString *identifierPrefix = [NSString stringWithFormat:@"onboarding.carouselCell.%@", recipePreview.assetName];
   self.accessibilityIdentifier = identifierPrefix;
   self.contentView.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".contentView"];
   self.cardView.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".cardView"];
   self.imageView.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".imageView"];
+  self.shimmerOverlayView.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".shimmerOverlayView"];
   self.textBackdropView.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".textBackdropView"];
   self.titleLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".titleLabel"];
   self.metadataLabel.accessibilityIdentifier = [identifierPrefix stringByAppendingString:@".metadataLabel"];
@@ -289,6 +316,48 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.textBackdropView.hidden = !shouldShowOverlay;
   self.titleLabel.hidden = !shouldShowOverlay;
   self.metadataLabel.hidden = !shouldShowOverlay;
+}
+
+- (void)setShowsShimmerLoading:(BOOL)showsShimmerLoading {
+  if (_showsShimmerLoading == showsShimmerLoading) {
+    return;
+  }
+
+  _showsShimmerLoading = showsShimmerLoading;
+  [self updateShimmerLoadingState];
+}
+
+- (void)updateShimmerLoadingState {
+  [self.shimmerOverlayView.layer removeAllAnimations];
+  if (!self.showsShimmerLoading) {
+    self.shimmerOverlayView.hidden = YES;
+    self.accessibilityHint = @"Opens recipe details.";
+    return;
+  }
+
+  self.shimmerOverlayView.hidden = NO;
+  self.accessibilityHint = @"Loading recipe details.";
+
+  CAGradientLayer *gradientLayer = [CAGradientLayer layer];
+  gradientLayer.frame = self.shimmerOverlayView.bounds;
+  gradientLayer.startPoint = CGPointMake(0.0, 0.5);
+  gradientLayer.endPoint = CGPointMake(1.0, 0.5);
+  gradientLayer.colors = @[
+    (id)[[UIColor whiteColor] colorWithAlphaComponent:0.04].CGColor,
+    (id)[[UIColor whiteColor] colorWithAlphaComponent:0.34].CGColor,
+    (id)[[UIColor whiteColor] colorWithAlphaComponent:0.08].CGColor
+  ];
+  gradientLayer.locations = @[ @0.0, @0.48, @1.0 ];
+  [self.shimmerOverlayView.layer.sublayers makeObjectsPerformSelector:@selector(removeFromSuperlayer)];
+  [self.shimmerOverlayView.layer addSublayer:gradientLayer];
+
+  CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"transform.translation.x"];
+  animation.fromValue = @(-CGRectGetWidth(self.shimmerOverlayView.bounds));
+  animation.toValue = @(CGRectGetWidth(self.shimmerOverlayView.bounds));
+  animation.duration = 1.15;
+  animation.repeatCount = HUGE_VALF;
+  animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+  [gradientLayer addAnimation:animation forKey:@"mrr.shimmer.translation"];
 }
 
 - (void)updateAdaptiveMetricsForCardSize:(CGSize)cardSize {
