@@ -1,5 +1,8 @@
 #import <XCTest/XCTest.h>
 
+#import "../MRR Project/Features/Authentication/MRRAuthenticationController.h"
+#import "../MRR Project/Features/Onboarding/Data/OnboardingRecipeCatalog.h"
+#import "../MRR Project/Features/Onboarding/Data/OnboardingRecipeService.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
@@ -10,6 +13,9 @@
 @property(nonatomic, readonly) UICollectionView *secondaryCarouselCollectionView;
 @property(nonatomic, readonly) UIStackView *contentStackView;
 @property(nonatomic, readonly) UIScrollView *scrollView;
+@property(nonatomic, readonly) NSArray<OnboardingRecipePreview *> *recipes;
+@property(nonatomic, copy) NSString *loadingRecipeTitle;
+@property(nonatomic, strong) NSTimer *recipeDetailPresentationDelayTimer;
 @property(nonatomic, assign) NSInteger currentRecipeIndex;
 @property(nonatomic, assign) NSInteger currentCarouselItemIndex;
 @property(nonatomic, assign) NSInteger secondaryCurrentCarouselItemIndex;
@@ -46,6 +52,101 @@
 
 @end
 
+@interface OnboardingViewControllerAuthStub : NSObject <MRRAuthenticationController>
+@end
+
+@interface OnboardingViewControllerAuthObservationStub : NSObject <MRRAuthStateObservation>
+@end
+
+@implementation OnboardingViewControllerAuthObservationStub
+
+- (void)invalidate {
+}
+
+@end
+
+@implementation OnboardingViewControllerAuthStub
+
+- (MRRAuthSession *)currentSession {
+  return nil;
+}
+
+- (id<MRRAuthStateObservation>)observeAuthStateWithHandler:(MRRAuthStateChangeHandler)handler {
+  return [[OnboardingViewControllerAuthObservationStub alloc] init];
+}
+
+- (BOOL)hasPendingCredentialLink {
+  return NO;
+}
+
+- (NSString *)pendingLinkEmail {
+  return nil;
+}
+
+- (void)signUpWithEmail:(NSString *)email password:(NSString *)password completion:(MRRAuthSessionCompletion)completion {
+  completion(nil, nil);
+}
+
+- (void)signInWithEmail:(NSString *)email password:(NSString *)password completion:(MRRAuthSessionCompletion)completion {
+  completion(nil, nil);
+}
+
+- (void)sendPasswordResetForEmail:(NSString *)email completion:(MRRAuthCompletion)completion {
+  completion(nil);
+}
+
+- (void)signInWithGoogleFromPresentingViewController:(UIViewController *)viewController completion:(MRRAuthSessionCompletion)completion {
+  completion(nil, nil);
+}
+
+- (void)linkCredentialIfNeededWithCompletion:(MRRAuthCompletion)completion {
+  completion(nil);
+}
+
+- (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
+  return YES;
+}
+
+@end
+
+@interface OnboardingRecipeSearchSpy : NSObject <MRROnboardingRecipeSearching>
+
+@property(nonatomic, assign) NSInteger fetchCallCount;
+@property(nonatomic, assign) BOOL delaysCompletion;
+@property(nonatomic, retain, nullable) NSError *nextError;
+@property(nonatomic, retain, nullable) OnboardingRecipeDetail *nextResolvedDetail;
+@property(nonatomic, retain, nullable) OnboardingRecipePreview *lastPreview;
+@property(nonatomic, copy, nullable) MRROnboardingRecipeDetailCompletion pendingCompletion;
+
+- (void)completePendingFetch;
+
+@end
+
+@implementation OnboardingRecipeSearchSpy
+
+- (void)fetchRecipeDetailForPreview:(OnboardingRecipePreview *)preview completion:(MRROnboardingRecipeDetailCompletion)completion {
+  self.fetchCallCount += 1;
+  self.lastPreview = preview;
+  if (self.delaysCompletion) {
+    self.pendingCompletion = completion;
+    return;
+  }
+
+  completion(self.nextError == nil ? (self.nextResolvedDetail ?: preview.fallbackDetail) : nil, self.nextError);
+}
+
+- (void)completePendingFetch {
+  MRROnboardingRecipeDetailCompletion completion = self.pendingCompletion;
+  self.pendingCompletion = nil;
+  if (completion == nil) {
+    return;
+  }
+
+  completion(self.nextError == nil ? (self.nextResolvedDetail ?: self.lastPreview.fallbackDetail) : nil, self.nextError);
+}
+
+@end
+
 @interface OnboardingRecipeDetailViewController (Testing)
 
 - (void)didTapCloseButton;
@@ -59,6 +160,9 @@
 @property(nonatomic, copy) NSString *defaultsSuiteName;
 @property(nonatomic, strong) NSUserDefaults *userDefaults;
 @property(nonatomic, strong) OnboardingStateController *stateController;
+@property(nonatomic, strong) OnboardingRecipeCatalog *recipeCatalog;
+@property(nonatomic, strong) OnboardingViewControllerAuthStub *authenticationController;
+@property(nonatomic, strong) OnboardingRecipeSearchSpy *recipeSearchSpy;
 @property(nonatomic, strong) OnboardingViewController *viewController;
 @property(nonatomic, strong) UIWindow *window;
 
@@ -85,6 +189,7 @@
 - (NSDictionary<NSString *, NSNumber *> *)recipeDetailMetricsForWindowSize:(CGSize)size;
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 - (void)spinMainRunLoop;
+- (void)spinMainRunLoopForInterval:(NSTimeInterval)interval;
 
 @end
 
@@ -97,7 +202,13 @@
   self.userDefaults = [[NSUserDefaults alloc] initWithSuiteName:self.defaultsSuiteName];
   [self.userDefaults removePersistentDomainForName:self.defaultsSuiteName];
   self.stateController = [[OnboardingStateController alloc] initWithUserDefaults:self.userDefaults];
-  self.viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController];
+  self.recipeCatalog = [[OnboardingRecipeCatalog alloc] init];
+  self.authenticationController = [[OnboardingViewControllerAuthStub alloc] init];
+  self.recipeSearchSpy = [[OnboardingRecipeSearchSpy alloc] init];
+  self.viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
+                                                         authenticationController:self.authenticationController
+                                                                     recipeCatalog:self.recipeCatalog
+                                                                    recipeSearcher:self.recipeSearchSpy];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.viewController;
   [self.window makeKeyAndVisible];
@@ -114,6 +225,9 @@
   self.window.hidden = YES;
   self.window = nil;
   self.viewController = nil;
+  self.recipeSearchSpy = nil;
+  self.authenticationController = nil;
+  self.recipeCatalog = nil;
   self.stateController = nil;
   self.userDefaults = nil;
   self.defaultsSuiteName = nil;
@@ -122,7 +236,7 @@
 }
 
 - (void)testCarouselProvidesLoopingCopiesOfAllRecipeItems {
-  NSInteger expectedCount = [self.stateController onboardingRecipes].count;
+  NSInteger expectedCount = self.viewController.recipes.count;
   NSInteger actualCount = [self.viewController.carouselCollectionView numberOfItemsInSection:0];
 
   XCTAssertGreaterThan(actualCount, expectedCount);
@@ -139,8 +253,26 @@
   XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
 }
 
+- (void)testSelectingRecipeStartsShimmerBeforeDelayedPresentation {
+  self.recipeSearchSpy.delaysCompletion = YES;
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
+
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self spinMainRunLoopForInterval:0.05];
+
+  XCTAssertEqual(self.recipeSearchSpy.fetchCallCount, 1);
+  XCTAssertEqualObjects(self.viewController.loadingRecipeTitle, firstRecipe.title);
+  XCTAssertNil([self presentedRecipeContainerViewController]);
+  UIView *shimmerOverlayView =
+      [self findViewWithAccessibilityIdentifier:[NSString stringWithFormat:@"onboarding.carouselCell.%@.shimmerOverlayView", firstRecipe.assetName]
+                                         inView:self.viewController.view];
+  XCTAssertNotNil(shimmerOverlayView);
+  XCTAssertFalse(shimmerOverlayView.hidden);
+}
+
 - (void)testSelectingLoopedRecipeCopyPresentsDetailModal {
-  NSInteger recipeCount = [self.stateController onboardingRecipes].count;
+  NSInteger recipeCount = self.viewController.recipes.count;
   NSIndexPath *indexPath = [NSIndexPath indexPathForItem:recipeCount inSection:0];
 
   [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
@@ -150,13 +282,355 @@
   XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
 }
 
+- (void)testDelayedRecipeFetchPresentsLoadingDetailThenHydrates {
+  self.recipeSearchSpy.delaysCompletion = YES;
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] != nil;
+  } timeout:1.0];
+
+  OnboardingRecipeDetailViewController *detailViewController = [self presentedRecipeDetailViewController];
+  XCTAssertTrue(detailViewController.isLoading);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.headerCardSkeletonView"
+                                                     inView:detailViewController.view]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleSkeletonView"
+                                                     inView:detailViewController.view]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardSkeletonView"
+                                                     inView:detailViewController.view]);
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardView.accentBar"
+                                                  inView:detailViewController.view]);
+  UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton"
+                                                                         inView:detailViewController.view];
+  XCTAssertFalse(startButton.enabled);
+
+  [self.recipeSearchSpy completePendingFetch];
+  [self waitForCondition:^BOOL {
+    return ![self presentedRecipeDetailViewController].isLoading;
+  } timeout:1.0];
+
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailViewController.view]);
+  XCTAssertTrue(startButton.enabled);
+  XCTAssertNil(self.viewController.loadingRecipeTitle);
+}
+
+- (void)testFailedRecipeFetchFallsBackToCuratedDetailSilently {
+  self.recipeSearchSpy.nextError = [NSError errorWithDomain:@"OnboardingViewControllerTests"
+                                                       code:7
+                                                   userInfo:@{NSLocalizedDescriptionKey : @"Network unavailable"}];
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
+
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self spinMainRunLoop];
+
+  OnboardingRecipeDetailViewController *detailViewController = [self presentedRecipeDetailViewController];
+  XCTAssertFalse(detailViewController.isLoading);
+  UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailViewController.view];
+  UILabel *summaryLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryLabel" inView:detailViewController.view];
+  UILabel *debugBadgeLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.debugSourceBadge.label" inView:detailViewController.view];
+  XCTAssertEqualObjects(titleLabel.text, firstRecipe.fallbackDetail.title);
+  XCTAssertEqualObjects(summaryLabel.text, firstRecipe.fallbackDetail.summaryText);
+  XCTAssertEqualObjects(debugBadgeLabel.text, @"FALLBACK");
+}
+
+- (void)testSuccessfulRecipeFetchShowsSourceAttribution {
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
+  self.recipeSearchSpy.nextResolvedDetail = [[OnboardingRecipeDetail alloc] initWithTitle:firstRecipe.title
+                                                                                 subtitle:firstRecipe.subtitle
+                                                                                assetName:firstRecipe.assetName
+                                                                       heroImageURLString:@"https://example.com/hero.jpg"
+                                                                             durationText:@"9 min"
+                                                                              calorieText:@"245 kcal"
+                                                                             servingsText:@"2 servings"
+                                                                              summaryText:@"Beef Bourguignon is all about deep flavor, slow comfort, and a glossy sauce that rewards patience. Expect tender bites, rich aromatics, and a finish that feels like a weekend dinner worth lingering over."
+                                                                              ingredients:firstRecipe.fallbackDetail.ingredients
+                                                                             instructions:firstRecipe.fallbackDetail.instructions
+                                                                                    tools:@[ @"Chef knife", @"Dutch oven" ]
+                                                                                     tags:@[ @"Dinner", @"Comfort Food", @"Beef" ]
+                                                                               sourceName:@"Culina Source"
+                                                                          sourceURLString:@"https://example.com/recipe"
+                                                                           productContext:nil];
+
+  [self presentFirstRecipe];
+
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.sourceTitleLabel"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.sourceButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.headerCardView"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardView"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryToggleButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  UILabel *instructionsTitleLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsTitleLabel"
+                                                    inView:[self presentedRecipeDetailRootView]];
+  XCTAssertNotNil(instructionsTitleLabel);
+  XCTAssertEqualObjects(instructionsTitleLabel.text, @"Methods");
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsIconView"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsTitleLabel"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsIconView"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsToggleButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolRow.1"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsTitleLabel"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsIconView"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsToggleButton"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagChip.1"
+                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardView.accentBar"
+                                                  inView:[self presentedRecipeDetailRootView]]);
+  UILabel *debugBadgeLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.debugSourceBadge.label"
+                                                    inView:[self presentedRecipeDetailRootView]];
+  XCTAssertEqualObjects(debugBadgeLabel.text, @"LIVE");
+}
+
+- (void)testRecipeDetailSummaryCanExpandAndCollapse {
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
+  self.recipeSearchSpy.nextResolvedDetail = [[OnboardingRecipeDetail alloc] initWithTitle:firstRecipe.title
+                                                                                 subtitle:firstRecipe.subtitle
+                                                                                assetName:firstRecipe.assetName
+                                                                       heroImageURLString:@"https://example.com/hero.jpg"
+                                                                             durationText:@"9 min"
+                                                                              calorieText:@"245 kcal"
+                                                                             servingsText:@"2 servings"
+                                                                              summaryText:@"This dish opens with a rich, savory base that settles in slowly and tastes even better as the sauce reduces. Each spoonful lands with tender texture, deep aromatics, and just enough brightness to keep the finish from feeling heavy. It is the kind of recipe that feels calm, generous, and made for a long table."
+                                                                              ingredients:firstRecipe.fallbackDetail.ingredients
+                                                                             instructions:firstRecipe.fallbackDetail.instructions
+                                                                                    tools:@[ @"Chef knife" ]
+                                                                                     tags:@[ @"Dinner", @"Weekend" ]
+                                                                               sourceName:@"Culina Source"
+                                                                          sourceURLString:@"https://example.com/recipe"
+                                                                           productContext:nil];
+
+  [self presentFirstRecipe];
+
+  UILabel *summaryLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryLabel"
+                                                                        inView:[self presentedRecipeDetailRootView]];
+  UIButton *summaryToggleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryToggleButton"
+                                                                                 inView:[self presentedRecipeDetailRootView]];
+  XCTAssertNotNil(summaryLabel);
+  XCTAssertNotNil(summaryToggleButton);
+  XCTAssertEqual(summaryLabel.numberOfLines, 4);
+  XCTAssertEqualObjects([self displayedTitleForButton:summaryToggleButton], @"Read more");
+
+  [summaryToggleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(summaryLabel.numberOfLines, 0);
+  XCTAssertEqualObjects([self displayedTitleForButton:summaryToggleButton], @"Show less");
+
+  [summaryToggleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(summaryLabel.numberOfLines, 4);
+  XCTAssertEqualObjects([self displayedTitleForButton:summaryToggleButton], @"Read more");
+}
+
+- (void)testRecipeDetailIngredientsSectionCanExpandAndCollapse {
+  [self presentFirstRecipe];
+
+  UIView *ingredientsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.ingredientsSectionBodyView"
+                                                                   inView:[self presentedRecipeDetailRootView]];
+  UIButton *ingredientsHeaderButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.ingredientsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]];
+  XCTAssertNotNil(ingredientsBodyView);
+  XCTAssertNotNil(ingredientsHeaderButton);
+  XCTAssertTrue(ingredientsBodyView.hidden);
+
+  [ingredientsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertFalse(ingredientsBodyView.hidden);
+
+  [ingredientsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue(ingredientsBodyView.hidden);
+}
+
+- (void)testRecipeDetailMethodSectionCanExpandAndCollapse {
+  [self presentFirstRecipe];
+
+  UIView *instructionsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsSectionBodyView"
+                                                                    inView:[self presentedRecipeDetailRootView]];
+  UIButton *instructionsHeaderButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]];
+  XCTAssertNotNil(instructionsBodyView);
+  XCTAssertNotNil(instructionsHeaderButton);
+  XCTAssertTrue(instructionsBodyView.hidden);
+
+  [instructionsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertFalse(instructionsBodyView.hidden);
+
+  [instructionsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue(instructionsBodyView.hidden);
+}
+
+- (void)testRecipeDetailToolsSectionCanExpandAndCollapse {
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
+  self.recipeSearchSpy.nextResolvedDetail = [[OnboardingRecipeDetail alloc] initWithTitle:firstRecipe.title
+                                                                                 subtitle:firstRecipe.subtitle
+                                                                                assetName:firstRecipe.assetName
+                                                                       heroImageURLString:@"https://example.com/hero.jpg"
+                                                                             durationText:@"9 min"
+                                                                              calorieText:@"245 kcal"
+                                                                             servingsText:@"2 servings"
+                                                                              summaryText:@"A calm, savory bowl with balanced aromatics and enough richness to feel comforting."
+                                                                              ingredients:firstRecipe.fallbackDetail.ingredients
+                                                                             instructions:firstRecipe.fallbackDetail.instructions
+                                                                                    tools:@[ @"Chef knife", @"Dutch oven" ]
+                                                                                     tags:@[ @"Dinner", @"Comfort Food" ]
+                                                                               sourceName:@"Culina Source"
+                                                                          sourceURLString:@"https://example.com/recipe"
+                                                                           productContext:nil];
+  [self presentFirstRecipe];
+
+  UIView *toolsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsSectionBodyView"
+                                                             inView:[self presentedRecipeDetailRootView]];
+  UIButton *toolsHeaderButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]];
+  XCTAssertNotNil(toolsBodyView);
+  XCTAssertNotNil(toolsHeaderButton);
+  XCTAssertTrue(toolsBodyView.hidden);
+
+  [toolsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertFalse(toolsBodyView.hidden);
+
+  [toolsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue(toolsBodyView.hidden);
+}
+
+- (void)testRecipeDetailTagsSectionCanExpandAndCollapse {
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
+  self.recipeSearchSpy.nextResolvedDetail = [[OnboardingRecipeDetail alloc] initWithTitle:firstRecipe.title
+                                                                                 subtitle:firstRecipe.subtitle
+                                                                                assetName:firstRecipe.assetName
+                                                                       heroImageURLString:@"https://example.com/hero.jpg"
+                                                                             durationText:@"9 min"
+                                                                              calorieText:@"245 kcal"
+                                                                             servingsText:@"2 servings"
+                                                                              summaryText:@"A bright and layered recipe with a deep finish."
+                                                                              ingredients:firstRecipe.fallbackDetail.ingredients
+                                                                             instructions:firstRecipe.fallbackDetail.instructions
+                                                                                    tools:@[ @"Chef knife" ]
+                                                                                     tags:@[ @"Dinner", @"Comfort Food", @"Weekend" ]
+                                                                               sourceName:@"Culina Source"
+                                                                          sourceURLString:@"https://example.com/recipe"
+                                                                           productContext:nil];
+  [self presentFirstRecipe];
+
+  UIView *tagsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsSectionBodyView"
+                                                            inView:[self presentedRecipeDetailRootView]];
+  UIButton *tagsHeaderButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsHeaderButton"
+                                                     inView:[self presentedRecipeDetailRootView]];
+  XCTAssertNotNil(tagsBodyView);
+  XCTAssertNotNil(tagsHeaderButton);
+  XCTAssertTrue(tagsBodyView.hidden);
+
+  [tagsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertFalse(tagsBodyView.hidden);
+
+  [tagsHeaderButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue(tagsBodyView.hidden);
+}
+
+- (void)testDuplicateTapWhileRecipeIsLoadingDoesNotStartSecondFetch {
+  self.recipeSearchSpy.delaysCompletion = YES;
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+
+  XCTAssertEqual(self.recipeSearchSpy.fetchCallCount, 1);
+}
+
+- (void)testRecipeLoadingPausesSyntheticAutoscroll {
+  self.recipeSearchSpy.delaysCompletion = YES;
+  [self layoutOnboardingForWindowSize:CGSizeMake(430.0, 932.0)];
+  [self.viewController.carouselCollectionView layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  NSInteger recipeIndex = 2;
+  NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
+  CGFloat initialOffset =
+      [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:self.viewController.carouselCollectionView];
+  [self.viewController.carouselCollectionView setContentOffset:CGPointMake(initialOffset, 0.0) animated:NO];
+  self.viewController.currentRecipeIndex = recipeIndex;
+  self.viewController.currentCarouselItemIndex = centeredIndex;
+
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  CGFloat offsetWhileLoading = self.viewController.carouselCollectionView.contentOffset.x;
+  [self.viewController handleCarouselTimer:nil];
+
+  XCTAssertEqualWithAccuracy(initialOffset, offsetWhileLoading, 0.15);
+  XCTAssertEqualWithAccuracy(self.viewController.carouselCollectionView.contentOffset.x, offsetWhileLoading, 0.01);
+}
+
+- (void)testCompletingCancelledRecipeRequestDoesNotReopenDetail {
+  self.recipeSearchSpy.delaysCompletion = YES;
+  NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+
+  [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] != nil;
+  } timeout:1.0];
+
+  OnboardingRecipeDetailViewController *detailViewController = [self presentedRecipeDetailViewController];
+  [detailViewController didTapCloseButton];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] == nil;
+  } timeout:1.0];
+
+  XCTAssertNil([self presentedRecipeContainerViewController]);
+  [self.recipeSearchSpy completePendingFetch];
+  [self spinMainRunLoop];
+  XCTAssertNil([self presentedRecipeContainerViewController]);
+}
+
 - (void)testSecondaryCarouselProvidesLoopingCopiesOfAllRecipeItems {
   UICollectionView *secondary = [self secondaryCarouselCollectionViewIfAvailable];
   if (secondary == nil) {
     XCTSkip(@"Secondary carousel row not implemented yet.");
   }
 
-  NSInteger expectedCount = [self.stateController onboardingRecipes].count;
+  NSInteger expectedCount = self.viewController.recipes.count;
   NSInteger actualCount = [secondary numberOfItemsInSection:0];
 
   XCTAssertGreaterThan(actualCount, expectedCount);
@@ -209,7 +683,7 @@
   [self.viewController.carouselCollectionView layoutIfNeeded];
   [self spinMainRunLoop];
 
-  NSInteger recipeCount = [self.stateController onboardingRecipes].count;
+  NSInteger recipeCount = self.viewController.recipes.count;
   NSInteger loopCount = [self.viewController.carouselCollectionView numberOfItemsInSection:0] / recipeCount;
   NSInteger recipeIndex = recipeCount - 1;
   NSInteger boundaryIndex = ((loopCount - 1) * recipeCount) + recipeIndex;
@@ -315,7 +789,10 @@
   OnboardingViewController *previousViewController = self.viewController;
 
   InteractionAwareOnboardingViewController *viewController =
-      [[InteractionAwareOnboardingViewController alloc] initWithStateController:self.stateController];
+      [[InteractionAwareOnboardingViewController alloc] initWithStateController:self.stateController
+                                                       authenticationController:self.authenticationController
+                                                                   recipeCatalog:self.recipeCatalog
+                                                                  recipeSearcher:self.recipeSearchSpy];
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, 430.0, 932.0)];
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
@@ -384,7 +861,7 @@
     XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:self.viewController.view], @"Missing %@", identifier);
   }
 
-  OnboardingRecipe *firstRecipe = [self.stateController onboardingRecipes].firstObject;
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
   NSString *carouselTitleIdentifier = [NSString stringWithFormat:@"onboarding.carouselCell.%@.titleLabel", firstRecipe.assetName];
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:carouselTitleIdentifier inView:self.viewController.view]);
 }
@@ -416,7 +893,7 @@
     XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:self.viewController.view], @"Missing %@", identifier);
   }
 
-  OnboardingRecipe *firstRecipe = [self.stateController onboardingRecipes].firstObject;
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
   NSArray<NSString *> *carouselIdentifiers = @[
     [NSString stringWithFormat:@"onboarding.carouselCell.%@", firstRecipe.assetName],
     [NSString stringWithFormat:@"onboarding.carouselCell.%@.contentView", firstRecipe.assetName],
@@ -485,8 +962,8 @@
 - (void)testCarouselBackdropExpandsToContainWrappedBeefBourguignonText {
   [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
 
-  NSArray<OnboardingRecipe *> *recipes = [self.stateController onboardingRecipes];
-  NSUInteger beefRecipeIndex = [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipe *recipe, NSUInteger idx, BOOL *stop) {
+  NSArray<OnboardingRecipePreview *> *recipes = self.viewController.recipes;
+  NSUInteger beefRecipeIndex = [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipePreview *recipe, NSUInteger idx, BOOL *stop) {
     return [recipe.assetName isEqualToString:@"beef-bourguignon"];
   }];
   XCTAssertNotEqual(beefRecipeIndex, NSNotFound);
@@ -519,9 +996,9 @@
 - (void)testCarouselCardsShareSameBackdropColor {
   [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
 
-  NSArray<OnboardingRecipe *> *recipes = [self.stateController onboardingRecipes];
-  OnboardingRecipe *defaultRecipe = recipes.firstObject;
-  NSUInteger beefRecipeIndex = [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipe *recipe, NSUInteger idx, BOOL *stop) {
+  NSArray<OnboardingRecipePreview *> *recipes = self.viewController.recipes;
+  OnboardingRecipePreview *defaultRecipe = recipes.firstObject;
+  NSUInteger beefRecipeIndex = [recipes indexOfObjectPassingTest:^BOOL(OnboardingRecipePreview *recipe, NSUInteger idx, BOOL *stop) {
     return [recipe.assetName isEqualToString:@"beef-bourguignon"];
   }];
   XCTAssertNotNil(defaultRecipe);
@@ -572,7 +1049,7 @@
 - (void)testCarouselBackdropUsesFadeMaskToSoftenTopEdge {
   [self layoutOnboardingForWindowSize:CGSizeMake(390.0, 844.0)];
 
-  OnboardingRecipe *firstRecipe = [self.stateController onboardingRecipes].firstObject;
+  OnboardingRecipePreview *firstRecipe = self.viewController.recipes.firstObject;
   NSString *backdropIdentifier = [NSString stringWithFormat:@"onboarding.carouselCell.%@.textBackdropView", firstRecipe.assetName];
   UIView *backdropView = [self findViewWithAccessibilityIdentifier:backdropIdentifier inView:self.viewController.view];
 
@@ -673,8 +1150,10 @@
   NSArray<NSString *> *identifiers = @[
     @"onboarding.recipeDetail.heroImageView", @"onboarding.recipeDetail.subtitleLabel", @"onboarding.recipeDetail.titleLabel",
     @"onboarding.recipeDetail.durationChip", @"onboarding.recipeDetail.calorieChip", @"onboarding.recipeDetail.servingsChip",
-    @"onboarding.recipeDetail.summaryLabel", @"onboarding.recipeDetail.ingredientsTitleLabel", @"onboarding.recipeDetail.ingredientChip.1",
-    @"onboarding.recipeDetail.instructionsTitleLabel", @"onboarding.recipeDetail.instructionRow.1.indexLabel",
+    @"onboarding.recipeDetail.summaryLabel", @"onboarding.recipeDetail.ingredientsTitleLabel", @"onboarding.recipeDetail.ingredientsHeaderButton",
+    @"onboarding.recipeDetail.ingredientChip.1", @"onboarding.recipeDetail.instructionsTitleLabel",
+    @"onboarding.recipeDetail.instructionsIconView", @"onboarding.recipeDetail.instructionsHeaderButton",
+    @"onboarding.recipeDetail.instructionRow.1.indexLabel",
     @"onboarding.recipeDetail.instructionRow.1.titleLabel", @"onboarding.recipeDetail.instructionRow.1.bodyLabel",
     @"onboarding.recipeDetail.startCookingButton"
   ];
@@ -770,7 +1249,8 @@
 
 - (void)testRecipeDetailLegacyControllerBuildsCustomCloseChromeWhenNotWrapped {
   OnboardingRecipeDetailViewController *detailViewController =
-      [[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.stateController.onboardingRecipes.firstObject];
+      [[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:self.viewController.recipes.firstObject
+                                                              recipeDetail:self.viewController.recipes.firstObject.fallbackDetail];
   [detailViewController loadViewIfNeeded];
 
   XCTAssertNil(detailViewController.navigationItem.leftBarButtonItem);
@@ -780,7 +1260,8 @@
 - (void)testRecipeDetailSheetControllerBuildsNavigationChromeWhenWrapped {
   if (@available(iOS 15.0, *)) {
     OnboardingRecipeDetailViewController *detailViewController =
-        [[OnboardingRecipeDetailViewController alloc] initWithRecipe:self.stateController.onboardingRecipes.firstObject];
+        [[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:self.viewController.recipes.firstObject
+                                                                recipeDetail:self.viewController.recipes.firstObject.fallbackDetail];
     UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:detailViewController];
     navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
 
@@ -1152,7 +1633,11 @@
   OnboardingViewController *previousViewController = self.viewController;
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
-  OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController];
+  OnboardingRecipeSearchSpy *searchSpy = [[OnboardingRecipeSearchSpy alloc] init];
+  OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
+                                                                             authenticationController:self.authenticationController
+                                                                                         recipeCatalog:self.recipeCatalog
+                                                                                        recipeSearcher:searchSpy];
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
 
@@ -1176,7 +1661,11 @@
   OnboardingViewController *previousViewController = self.viewController;
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
-  OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController];
+  OnboardingRecipeSearchSpy *searchSpy = [[OnboardingRecipeSearchSpy alloc] init];
+  OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
+                                                                             authenticationController:self.authenticationController
+                                                                                         recipeCatalog:self.recipeCatalog
+                                                                                        recipeSearcher:searchSpy];
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
 
@@ -1204,7 +1693,11 @@
 }
 
 - (void)spinMainRunLoop {
-  [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];
+  [self spinMainRunLoopForInterval:0.15];
+}
+
+- (void)spinMainRunLoopForInterval:(NSTimeInterval)interval {
+  [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:interval]];
 }
 
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
