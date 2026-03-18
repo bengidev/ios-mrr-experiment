@@ -14,7 +14,10 @@ An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polis
 - `Profile` is the current real authenticated sub-feature. It owns the signed-in account summary, auth provider details, email-verification status, and the destructive `Log Out` action
 - A live auth-state observer now drives root switching in both directions, so logging out or losing the Firebase session returns the app to onboarding without view-controller-specific root wiring
 
-The recipe detail flow still exists for onboarding exploration and still writes the legacy onboarding-complete flag, but the app root is now determined by the authentication session instead of that flag.
+The recipe detail flow now stays inside onboarding as a live lookup experience: tapping a carousel card starts a Spoonacular title search, shows shimmer on the tapped card, and opens detail in a skeleton state if the request is still running after a short delay.
+If Spoonacular does not return a usable match, onboarding falls back silently to the curated local recipe detail so the demo stays smooth.
+Open Food Facts is treated as optional enrichment for curated recipes that have a matching barcode context.
+Within recipe detail, `Ingredients`, `Methods`, `Tools & Equipment`, and `Tags` are presented as collapsible cards that can be expanded by tapping the section header, not just the chevron.
 
 ## Project Structure
 
@@ -33,7 +36,7 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 - `MRR Project/Resources`
   Shared application resources, including `Info.plist`, `Assets.xcassets`, and the safe `GoogleService-Info.example.plist` template
 - `MRR Project/Features/Onboarding`
-  Onboarding layout, pushed email auth screens, carousel cells, recipe detail presentation, and auth CTA integration
+  Onboarding layout, pushed email auth screens, carousel cells, live recipe lookup, and auth CTA integration
 - `MRR ProjectTests`
   Launch-flow tests plus onboarding, auth, main-menu, and profile interaction regressions
 
@@ -51,6 +54,8 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 | `GoogleSignIn` | Live Google authentication from onboarding | `AppDelegate.m` URL handling and Firebase auth wiring | The onboarding flow now uses the package directly, including Firebase account-linking fallback when a Google email collides with an existing email/password account. The real Firebase plist stays local and untracked. |
 | `AuthenticationServices` | Planned Apple sign-in integration path | Referenced from onboarding stub behavior | Apple sign-in is intentionally shipped as a structured stub until capability and developer-account setup are ready. |
 | `NSUserDefaults` | Small local persistence for recipe-onboarding completion | `OnboardingStateController` | This flag is kept for the recipe detail flow, but it no longer decides the app root. |
+| `Spoonacular` | Live recipe search and detail lookup from onboarding taps | Onboarding recipe loader layer | Used at tap time with title-based search, live detail hydration, and silent fallback to the curated recipe if no match is returned. |
+| `Open Food Facts` | Optional product context enrichment | Onboarding recipe loader layer | Adds branded food context when a curated recipe has a matching barcode; otherwise it stays out of the way. |
 | `Assets.xcassets` named colors and images | Shared theming and onboarding visuals | `MRR Project/Resources/Assets.xcassets` | The onboarding UI and auth screens reuse the same asset-backed color system for light and dark appearance. |
 
 ### Quality and Tooling Stack
@@ -76,6 +81,10 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 - Looping carousel with guarded initial centering to prevent launch-time jump behavior
 - Dedicated pushed `Sign Up` and `Sign In` screens that stay under the onboarding feature instead of a shared modal card
 - Live `Continue with Google` onboarding auth with a centered blur loading overlay and account-link fallback into the email sign-in screen
+- Tap-driven Spoonacular title search on recipe cards with shimmer on the selected card and a delayed detail skeleton when the request is still in flight
+- Silent fallback to curated local recipe detail when the live lookup cannot find a usable match
+- Optional Open Food Facts product context for recipes with curated barcode metadata
+- Recipe detail sections for `Ingredients`, `Methods`, `Tools & Equipment`, and `Tags` now open and close from the header card itself, while still keeping the chevron affordance visible
 - Keyboard-aware auth screens with tap-to-dismiss behavior, scroll insets, and focused-field visibility handling
 - Shared backdrop styling with a fade mask so carousel text areas blend into recipe imagery
 - Light and dark appearance support through named colors in `Assets.xcassets`
@@ -93,11 +102,11 @@ The recipe detail flow still exists for onboarding exploration and still writes 
 3. If Xcode does not resolve the packages automatically, add these package products manually from Xcode:
    `FirebaseAuth`, `GoogleSignIn`
    with an iOS 12-compatible pairing such as `Firebase 10.29.x` and `GoogleSignIn 7.1.x`.
-4. Run on an iOS Simulator.
+4. Run on an iOS Simulator, with `iPhone 16e` as the primary verification target for onboarding and recipe loading.
 
-## Auth Setup
+## API Setup
 
-The current milestone is email-first, but the project is already wired to grow into multi-provider auth later.
+The current milestone is email-first, but the project is already wired to grow into multi-provider auth later. The recipe flow now also depends on local configuration for Spoonacular, with Open Food Facts treated as optional enrichment.
 
 1. Download your Firebase plist from the Firebase console and keep it out of git.
 2. Copy [GoogleService-Info.example.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/GoogleService-Info.example.plist) to `MRR Project/Resources/GoogleService-Info.local.plist`, then replace the placeholder values with your real Firebase values.
@@ -105,6 +114,9 @@ The current milestone is email-first, but the project is already wired to grow i
 4. Enable `Email/Password` and `Google` inside Firebase Authentication. Both providers are live in the current onboarding flow.
 5. Add the `REVERSED_CLIENT_ID` value from your local Firebase plist into `CFBundleURLTypes` in [Info.plist](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/MRR%20Project/Resources/Info.plist) so the Google callback can return to the app.
 6. Keep Apple sign-in as stubbed UI until the Apple capability and Developer Program setup are available.
+7. Copy [RecipeAPIConfig.example.plist](/Users/beng/Documents/iOS Projects/iOS MRR Experiment/ios-mrr-experiment/MRR Project/Resources/RecipeAPIConfig.example.plist) to `MRR Project/Resources/RecipeAPIConfig.local.plist`, then add your `SpoonacularAPIKey` and an `OpenFoodFactsUserAgent` string in the format expected by Open Food Facts.
+8. Build the app normally. A tracked build phase copies `RecipeAPIConfig.local.plist` into the app bundle as `RecipeAPIConfig.plist` when present, mirroring the local Firebase plist flow.
+9. If you want Open Food Facts enrichment to appear in onboarding detail, attach a curated barcode to the recipe preview and keep the custom `User-Agent` configured.
 
 Without Firebase configuration, the app will still build, and the email screens will surface setup-aware auth errors instead of failing silently.
 
@@ -131,8 +143,9 @@ The active unit-test coverage focuses on root flow, onboarding presentation, aut
 - main menu tab assembly and coordinator mountability
 - profile email-verification summary and logout confirmation flow
 - carousel centering, recentering, and auto-scroll behavior
-- recipe detail presentation and `Start Cooking` completion flow
+- recipe detail presentation, live lookup loading, and `Start Cooking` completion flow
 - onboarding accessibility identifiers and carousel backdrop styling
+- onboarding recipe loading behavior on the `iPhone 16e` simulator
 
 Remote coverage runs automatically through [ios-tests-coverage.yml](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/.github/workflows/ios-tests-coverage.yml). The workflow executes the full `MRR ProjectTests` target on GitHub Actions with code coverage enabled, then uploads the `.xcresult` bundle plus `xccov` text/JSON reports as artifacts. The repo intentionally ignores any local `Packages/CocoaLumberjack/` checkout so CI stays aligned with the tracked project graph and does not treat that folder as a submodule.
 

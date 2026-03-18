@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document reflects the current application after the old `MainMenu` screen was removed and the onboarding flow evolved into an email-first authentication entry point.
+This document reflects the current application after the old `MainMenu` screen was removed and the onboarding flow evolved into an email-first authentication entry point with a live recipe lookup path layered into onboarding.
 
 The user-facing runtime now contains five main screens:
 
@@ -10,20 +10,21 @@ The user-facing runtime now contains five main screens:
 - `MRREmailAuthenticationViewController` pushed in either `Sign Up` or `Sign In` mode
 - `MRRForgotPasswordViewController` pushed from the sign-in screen
 - `HomeViewController` as the authenticated root
-- `OnboardingRecipeDetailViewController` as a modal recipe-exploration step
+- `OnboardingRecipeDetailViewController` as a modal recipe-exploration step that now supports a skeleton loading state before live detail arrives
 
 The app shell also owns one shared asset catalog:
 
 - `Resources/Assets.xcassets` for `AppIcon`, `OnboardingAppIcon`, named colors, and onboarding recipe imagery
 - `Resources/GoogleService-Info.example.plist` as the tracked Firebase template, while the real Firebase plist stays local and is copied into the bundle at build time
+- `Resources/RecipeAPIConfig.example.plist` as the tracked recipe API template, while the real recipe API config stays local and is copied into the bundle at build time
 
 ## Executive Summary
 
-The application is a small state-aware iOS app centered on a polished onboarding surface, a Firebase-backed authentication session, and a retained recipe-exploration flow.
+The application is a small state-aware iOS app centered on a polished onboarding surface, a Firebase-backed authentication session, and a retained recipe-exploration flow that now begins with a Spoonacular title search at tap time.
 
-`AppDelegate` is the composition root. On launch, it configures Firebase when possible, asks the authentication controller for a current session, and installs either the onboarding navigation stack or the signed-in home screen as the window root. Firebase configuration is loaded only if a local ignored `GoogleService-Info` file has been copied into the bundle by the build phase. `OnboardingViewController` owns the branded onboarding UI, looping carousel, auth CTA entry points, and recipe-detail presentation. Its email CTAs push `MRREmailAuthenticationViewController`, which handles separate full-screen sign-up and sign-in layouts while keeping that UI under the onboarding feature. The sign-in flow can push `MRRForgotPasswordViewController` for Firebase reset-email handling. `HomeViewController` shows the active session summary, including provider and `emailVerified` state, and delegates sign-out back to the app root.
+`AppDelegate` is the composition root. On launch, it configures Firebase when possible, asks the authentication controller for a current session, and installs either the onboarding navigation stack or the signed-in home screen as the window root. Firebase configuration is loaded only if a local ignored `GoogleService-Info` file has been copied into the bundle by the build phase. `OnboardingViewController` owns the branded onboarding UI, looping carousel, auth CTA entry points, and recipe-detail presentation. When a carousel card is tapped, onboarding starts a Spoonacular search using the tapped title, applies shimmer to the selected card, and either presents live detail or silently falls back to the curated local detail if the lookup fails to resolve. If the request is still in flight after a short delay, the detail controller opens in a skeleton state. Once loaded, the detail view renders `Ingredients`, `Methods`, `Tools & Equipment`, and `Tags` as collapsible cards that can be toggled from the header row or the chevron control. Its email CTAs push `MRREmailAuthenticationViewController`, which handles separate full-screen sign-up and sign-in layouts while keeping that UI under the onboarding feature. The sign-in flow can push `MRRForgotPasswordViewController` for Firebase reset-email handling. `HomeViewController` shows the active session summary, including provider and `emailVerified` state, and delegates sign-out back to the app root.
 
-`OnboardingStateController` still persists whether the recipe flow reached `Start Cooking`, but that flag is now separate from launch routing. The root flow is driven by the auth session instead.
+`OnboardingStateController` still persists whether the recipe flow reached `Start Cooking`, but that flag is now separate from launch routing. The root flow is driven by the auth session instead. Recipe loading state is owned by the onboarding controller and its detail/cell views rather than by onboarding persistence.
 
 ## Top-Level Module Map
 
@@ -43,6 +44,7 @@ flowchart TB
   forgotPasswordVC["Features/Onboarding/Presentation/MRRForgotPasswordViewController"]
   onboardingDetailVC["Features/Onboarding/Presentation/OnboardingRecipeDetailViewController"]
   carouselCell["Features/Onboarding/Presentation/OnboardingRecipeCarouselCell"]
+  recipeLoader["Features/Onboarding live recipe loader"]
   homeVC["Features/Home/HomeViewController"]
   tests["MRR ProjectTests/AppLaunchFlowTests + OnboardingAuthFlowTests + HomeViewControllerTests + OnboardingViewControllerTests"]
 
@@ -65,6 +67,9 @@ flowchart TB
   emailAuthVC --> forgotPasswordVC
   onboardingVC --> onboardingDetailVC
   onboardingVC --> carouselCell
+  onboardingVC --> recipeLoader
+  recipeLoader --> onboardingDetailVC
+  recipeLoader --> carouselCell
   homeVC --> auth
   homeVC --> session
   tests -.verifies.-> app
@@ -106,10 +111,15 @@ sequenceDiagram
     email->>auth: signUpWithEmail / signInWithEmail
     auth-->>app: authenticated session available
     app->>home: replace root with HomeViewController
-    onboarding->>detail: present recipe detail
+    onboarding->>onboarding: tap carousel card
+    onboarding->>onboarding: shimmer selected card + start Spoonacular search
+    onboarding->>detail: present skeleton detail if request is still pending
+    onboarding->>detail: present hydrated detail when data arrives
+    detail->>detail: expand or collapse section cards from the header row
     detail-->>onboarding: Start Cooking
     onboarding->>state: markOnboardingCompleted()
     onboarding->>detail: dismiss modal
+    onboarding->>detail: silently show curated fallback when search fails
   end
 ```
 
@@ -127,6 +137,7 @@ flowchart TB
   email["MRREmailAuthenticationViewController"]
   reset["MRRForgotPasswordViewController"]
   detail["OnboardingRecipeDetailViewController"]
+  loader["Recipe search/fallback loader"]
   home["HomeViewController"]
   defaults["NSUserDefaults"]
   firebase["FirebaseAuth currentUser"]
@@ -143,6 +154,8 @@ flowchart TB
   onboarding --> email
   email --> reset
   onboarding --> detail
+  onboarding --> loader
+  loader --> detail
   app --> home
   home --> auth
   home --> session
@@ -210,6 +223,7 @@ classDiagram
   }
 
   class OnboardingViewController
+  class RecipeSearchLoader
 
   class MRREmailAuthenticationViewController
 
@@ -225,6 +239,8 @@ classDiagram
   OnboardingViewController --> OnboardingStateController
   OnboardingViewController --> MRREmailAuthenticationViewController
   OnboardingViewController --> OnboardingRecipeDetailViewController
+  OnboardingViewController --> RecipeSearchLoader
+  RecipeSearchLoader --> OnboardingRecipeDetailViewController
   HomeViewController --> MRRFirebaseAuthenticationController
   HomeViewController --> MRRAuthSession
 ```
@@ -243,15 +259,15 @@ classDiagram
 | `MRR Project/Features/Authentication/MRRAuthSession.m` | Immutable auth-session value object | Carries `email`, provider, and `emailVerified` into the UI |
 | `MRR Project/Features/Authentication/MRRAuthErrorMapper.m` | Maps auth errors into user-facing copy | Shared by onboarding auth and home logout errors |
 | `MRR Project/Features/Onboarding/Data/OnboardingStateController.h` | Declares onboarding persistence API | Used by `AppDelegate` |
-| `MRR Project/Features/Onboarding/Data/OnboardingStateController.m` | Stores onboarding recipe completion in `NSUserDefaults` | Legacy onboarding state kept separate from auth-based root flow |
+| `MRR Project/Features/Onboarding/Data/OnboardingStateController.m` | Stores onboarding recipe completion in `NSUserDefaults` | Legacy onboarding state kept separate from auth-based root flow; preview recipe seeding is now conceptually distinct from persistence |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h` | Declares the onboarding controller initializer | Accepts injected onboarding state |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.m` | Builds branded onboarding layout, looping carousel, auth CTA entry points, and recipe-detail flow | Owns push-based email auth navigation and launch centering safeguards |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/MRREmailAuthenticationViewController.m` | Renders full-screen sign-up and sign-in screens | Handles email/password validation, keyboard-aware scrolling, and auth submission |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/MRRForgotPasswordViewController.m` | Renders the dedicated password-reset screen | Validates reset email input, calls the auth controller reset API, and returns to onboarding after success confirmation |
 | `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h` | Declares recipe-detail delegate callbacks | Reports close and `Start Cooking` actions |
-| `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.m` | Renders modal recipe detail content | Triggers onboarding completion through the onboarding controller |
+| `MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.m` | Renders modal recipe detail content | Supports skeleton loading and then hydrates live or curated detail before triggering onboarding completion |
 | `MRR Project/Features/Onboarding/Presentation/Views/OnboardingRecipeCarouselCell.h` | Declares the onboarding carousel cell | Used by `OnboardingViewController` collection view |
-| `MRR Project/Features/Onboarding/Presentation/Views/OnboardingRecipeCarouselCell.m` | Renders adaptive recipe cards, shared backdrop styling, and fade mask blending | Provides stable accessibility identifiers per recipe |
+| `MRR Project/Features/Onboarding/Presentation/Views/OnboardingRecipeCarouselCell.m` | Renders adaptive recipe cards, shared backdrop styling, and fade mask blending | Provides stable accessibility identifiers per recipe and the visual anchor for shimmer loading |
 | `MRR Project/Features/Home/HomeViewController.m` | Renders the authenticated home summary | Shows provider, email, `emailVerified`, and logout confirmation flow |
 | `MRR ProjectTests/AppLaunchFlowTests.m` | Verifies launch-state behavior | Covers onboarding/home root routing and sign-out transitions |
 | `MRR ProjectTests/OnboardingAuthFlowTests.m` | Verifies pushed auth-screen behavior | Covers sign-up/sign-in entry, keyboard-aware layout, and auth success transitions |

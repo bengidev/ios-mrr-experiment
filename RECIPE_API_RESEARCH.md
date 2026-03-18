@@ -1,6 +1,6 @@
 # Recipe API Research
 
-Checked on: 2026-03-11
+Checked on: 2026-03-18
 
 ## Goal
 
@@ -165,6 +165,12 @@ Practical verdict:
 - Suitable for a focused portfolio tool, not a generic Spoonacular-style clone.
 - Safe usage depends heavily on live fetching, attribution, and respecting storage restrictions.
 
+Implementation note for this project:
+
+- The onboarding flow uses Spoonacular at tap time with title-based search, rather than pre-seeded remote IDs, so the live fetch is tied to the selected carousel recipe title.
+- Open Food Facts is used only as optional product context when a curated recipe has matching barcode metadata.
+- If Spoonacular does not return a usable match, the app falls back to the curated local recipe detail without adding a separate fallback UX message.
+
 Official sources:
 
 - https://spoonacular.com/food-api
@@ -253,4 +259,3 @@ A solid portfolio app can combine these without unusual licensing risk:
 - For Open Food Facts, send a custom User-Agent.
 - For Spoonacular and Edamam, be conservative about caching and raw response retention.
 - For TheMealDB, use paid/supporter access before any app store release.
-
