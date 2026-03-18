@@ -43,3 +43,5 @@ AGENTS.md
 Packages/CocoaLumberjack/
 MRR Project/Resources/GoogleService-Info.plist
 MRR Project/Resources/GoogleService-Info.local.plist
+MRR Project/Resources/RecipeAPIConfig.plist
+MRR Project/Resources/RecipeAPIConfig.local.plist

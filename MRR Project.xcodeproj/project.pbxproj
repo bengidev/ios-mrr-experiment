@@ -40,6 +40,10 @@
 		D10000000000000000000006 /* ProfileViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010D /* ProfileViewController.m */; };
 		D10000000000000000000007 /* ProfileCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000010F /* ProfileCoordinator.m */; };
 		D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000110 /* MainMenuTabBarControllerTests.m */; };
+		E10000000000000000000001 /* OnboardingRecipeModels.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000102 /* OnboardingRecipeModels.m */; };
+		E10000000000000000000002 /* OnboardingRecipeCatalog.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000104 /* OnboardingRecipeCatalog.m */; };
+		E10000000000000000000003 /* OnboardingRecipeService.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000106 /* OnboardingRecipeService.m */; };
+		E10000000000000000000004 /* OnboardingRecipeServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000108 /* OnboardingRecipeServiceTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +98,7 @@
 		A00000000000000000000673 /* MRRLiquidGlassStyling.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLiquidGlassStyling.m; sourceTree = "<group>"; };
 		A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLiquidGlassStylingTests.m; sourceTree = "<group>"; };
 		B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B679281C2F6A632C00D8F70A /* RecipeAPIConfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = RecipeAPIConfig.plist; sourceTree = "<group>"; };
 		C0FFEE000000000000000101 /* GoogleService-Info.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.example.plist"; sourceTree = "<group>"; };
 		D10000000000000000000101 /* MRRFeatureCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRFeatureCoordinator.h; sourceTree = "<group>"; };
 		D10000000000000000000102 /* MainMenuTabBarController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainMenuTabBarController.h; sourceTree = "<group>"; };
@@ -111,6 +116,14 @@
 		D1000000000000000000010E /* ProfileCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProfileCoordinator.h; sourceTree = "<group>"; };
 		D1000000000000000000010F /* ProfileCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProfileCoordinator.m; sourceTree = "<group>"; };
 		D10000000000000000000110 /* MainMenuTabBarControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainMenuTabBarControllerTests.m; sourceTree = "<group>"; };
+		E10000000000000000000101 /* OnboardingRecipeModels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OnboardingRecipeModels.h; sourceTree = "<group>"; };
+		E10000000000000000000102 /* OnboardingRecipeModels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeModels.m; sourceTree = "<group>"; };
+		E10000000000000000000103 /* OnboardingRecipeCatalog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OnboardingRecipeCatalog.h; sourceTree = "<group>"; };
+		E10000000000000000000104 /* OnboardingRecipeCatalog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeCatalog.m; sourceTree = "<group>"; };
+		E10000000000000000000105 /* OnboardingRecipeService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OnboardingRecipeService.h; sourceTree = "<group>"; };
+		E10000000000000000000106 /* OnboardingRecipeService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeService.m; sourceTree = "<group>"; };
+		E10000000000000000000107 /* RecipeAPIConfig.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = RecipeAPIConfig.example.plist; sourceTree = "<group>"; };
+		E10000000000000000000108 /* OnboardingRecipeServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeServiceTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -172,6 +185,7 @@
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */,
 				A0000000000000000000066E /* OnboardingAuthFlowTests.m */,
+				E10000000000000000000108 /* OnboardingRecipeServiceTests.m */,
 				A0000000000000000000065A /* OnboardingStateControllerTests.m */,
 				A0000000000000000000065B /* OnboardingViewControllerTests.m */,
 				A0000000000000000000066F /* ProfileViewControllerTests.m */,
@@ -214,6 +228,12 @@
 		A0000000000000000000002F /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				E10000000000000000000103 /* OnboardingRecipeCatalog.h */,
+				E10000000000000000000104 /* OnboardingRecipeCatalog.m */,
+				E10000000000000000000101 /* OnboardingRecipeModels.h */,
+				E10000000000000000000102 /* OnboardingRecipeModels.m */,
+				E10000000000000000000105 /* OnboardingRecipeService.h */,
+				E10000000000000000000106 /* OnboardingRecipeService.m */,
 				A0000000000000000000064E /* OnboardingStateController.h */,
 				A0000000000000000000064F /* OnboardingStateController.m */,
 			);
@@ -289,6 +309,27 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
+		B6B2BF072F61276B00BF945D /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000602 /* XCTest.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		B6B2BF092F61293700BF945D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */,
+				A00000000000000000000655 /* Assets.xcassets */,
+				A00000000000000000000606 /* Info.plist */,
+				C0FFEE000000000000000101 /* GoogleService-Info.example.plist */,
+				E10000000000000000000107 /* RecipeAPIConfig.example.plist */,
+				B679281C2F6A632C00D8F70A /* RecipeAPIConfig.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		D10000000000000000000201 /* MainMenu */ = {
 			isa = PBXGroup;
 			children = (
@@ -323,25 +364,6 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
-		B6B2BF072F61276B00BF945D /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				A00000000000000000000602 /* XCTest.framework */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
-		B6B2BF092F61293700BF945D /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */,
-				A00000000000000000000655 /* Assets.xcassets */,
-				A00000000000000000000606 /* Info.plist */,
-				C0FFEE000000000000000101 /* GoogleService-Info.example.plist */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -352,6 +374,7 @@
 				A00000000000000000000400 /* Sources */,
 				A00000000000000000000401 /* Frameworks */,
 				C0FFEE000000000000000201 /* Copy Local GoogleService-Info */,
+				E10000000000000000000201 /* Copy Local RecipeAPIConfig */,
 				A00000000000000000000402 /* Resources */,
 			);
 			buildRules = (
@@ -466,6 +489,27 @@
 			shellPath = /bin/sh;
 			shellScript = "RESOURCE_DIR=\"$SRCROOT/MRR Project/Resources\"\nLOCAL_PLIST_PATH=\"$RESOURCE_DIR/GoogleService-Info.local.plist\"\nLEGACY_PLIST_PATH=\"$RESOURCE_DIR/GoogleService-Info.plist\"\nDESTINATION_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nDESTINATION_PLIST_PATH=\"$DESTINATION_DIR/GoogleService-Info.plist\"\nSOURCE_PLIST_PATH=\"\"\nif [ -f \"$LOCAL_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LOCAL_PLIST_PATH\"\nelif [ -f \"$LEGACY_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LEGACY_PLIST_PATH\"\nfi\nif [ -z \"$SOURCE_PLIST_PATH\" ]; then\n  echo \"note: GoogleService-Info.local.plist is not present. Firebase will stay unconfigured for this build.\"\n  rm -f \"$DESTINATION_PLIST_PATH\"\n  exit 0\nfi\nmkdir -p \"$DESTINATION_DIR\"\ncp \"$SOURCE_PLIST_PATH\" \"$DESTINATION_PLIST_PATH\"\necho \"Copied $(basename \"$SOURCE_PLIST_PATH\") into the app bundle as GoogleService-Info.plist.\"\n";
 		};
+		E10000000000000000000201 /* Copy Local RecipeAPIConfig */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/MRR Project/Resources/RecipeAPIConfig.local.plist",
+				"$(SRCROOT)/MRR Project/Resources/RecipeAPIConfig.plist",
+			);
+			name = "Copy Local RecipeAPIConfig";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/RecipeAPIConfig.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "RESOURCE_DIR=\"$SRCROOT/MRR Project/Resources\"\nLOCAL_PLIST_PATH=\"$RESOURCE_DIR/RecipeAPIConfig.local.plist\"\nLEGACY_PLIST_PATH=\"$RESOURCE_DIR/RecipeAPIConfig.plist\"\nDESTINATION_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nDESTINATION_PLIST_PATH=\"$DESTINATION_DIR/RecipeAPIConfig.plist\"\nSOURCE_PLIST_PATH=\"\"\nif [ -f \"$LOCAL_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LOCAL_PLIST_PATH\"\nelif [ -f \"$LEGACY_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LEGACY_PLIST_PATH\"\nfi\nif [ -z \"$SOURCE_PLIST_PATH\" ]; then\n  echo \"note: RecipeAPIConfig.local.plist is not present. Live recipe APIs will stay unconfigured for this build.\"\n  rm -f \"$DESTINATION_PLIST_PATH\"\n  exit 0\nfi\nmkdir -p \"$DESTINATION_DIR\"\ncp \"$SOURCE_PLIST_PATH\" \"$DESTINATION_PLIST_PATH\"\necho \"Copied $(basename \"$SOURCE_PLIST_PATH\") into the app bundle as RecipeAPIConfig.plist.\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -486,6 +530,9 @@
 				A00000000000000000000739 /* MRREmailAuthenticationViewController.m in Sources */,
 				A0000000000000000000073D /* MRRForgotPasswordViewController.m in Sources */,
 				A00000000000000000000738 /* MRRFirebaseAuthenticationController.m in Sources */,
+				E10000000000000000000002 /* OnboardingRecipeCatalog.m in Sources */,
+				E10000000000000000000001 /* OnboardingRecipeModels.m in Sources */,
+				E10000000000000000000003 /* OnboardingRecipeService.m in Sources */,
 				A00000000000000000000725 /* OnboardingStateController.m in Sources */,
 				A00000000000000000000726 /* OnboardingViewController.m in Sources */,
 				A00000000000000000000730 /* OnboardingRecipeDetailViewController.m in Sources */,
@@ -506,6 +553,7 @@
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */,
 				A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */,
+				E10000000000000000000004 /* OnboardingRecipeServiceTests.m in Sources */,
 				A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */,
 				A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */,
 				A0000000000000000000073C /* ProfileViewControllerTests.m in Sources */,

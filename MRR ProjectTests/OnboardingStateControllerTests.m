@@ -1,5 +1,6 @@
 #import <XCTest/XCTest.h>
 
+#import "../MRR Project/Features/Onboarding/Data/OnboardingRecipeCatalog.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
 
 @interface OnboardingStateControllerTests : XCTestCase
@@ -28,24 +29,24 @@
 }
 
 - (void)testOnboardingRecipesContainRequiredStructuredFields {
-  OnboardingStateController *stateController = [self makeStateController];
-
-  NSArray<OnboardingRecipe *> *recipes = [stateController onboardingRecipes];
+  OnboardingRecipeCatalog *recipeCatalog = [[OnboardingRecipeCatalog alloc] init];
+  NSArray<OnboardingRecipePreview *> *recipes = [recipeCatalog allRecipePreviews];
 
   XCTAssertGreaterThan(recipes.count, 0);
 
-  for (OnboardingRecipe *recipe in recipes) {
+  for (OnboardingRecipePreview *recipe in recipes) {
     XCTAssertGreaterThan(recipe.title.length, 0);
     XCTAssertGreaterThan(recipe.subtitle.length, 0);
     XCTAssertGreaterThan(recipe.assetName.length, 0);
-    XCTAssertGreaterThan(recipe.durationText.length, 0);
-    XCTAssertGreaterThan(recipe.calorieText.length, 0);
-    XCTAssertGreaterThan(recipe.servingsText.length, 0);
-    XCTAssertGreaterThan(recipe.summaryText.length, 0);
-    XCTAssertGreaterThan(recipe.ingredients.count, 0);
-    XCTAssertGreaterThan(recipe.instructions.count, 0);
+    XCTAssertNotNil(recipe.fallbackDetail);
+    XCTAssertGreaterThan(recipe.fallbackDetail.durationText.length, 0);
+    XCTAssertGreaterThan(recipe.fallbackDetail.calorieText.length, 0);
+    XCTAssertGreaterThan(recipe.fallbackDetail.servingsText.length, 0);
+    XCTAssertGreaterThan(recipe.fallbackDetail.summaryText.length, 0);
+    XCTAssertGreaterThan(recipe.fallbackDetail.ingredients.count, 0);
+    XCTAssertGreaterThan(recipe.fallbackDetail.instructions.count, 0);
 
-    for (OnboardingRecipeInstruction *instruction in recipe.instructions) {
+    for (OnboardingRecipeInstruction *instruction in recipe.fallbackDetail.instructions) {
       XCTAssertGreaterThan(instruction.title.length, 0);
       XCTAssertGreaterThan(instruction.detailText.length, 0);
     }
