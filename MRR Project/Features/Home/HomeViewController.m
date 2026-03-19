@@ -331,7 +331,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
   UILabel *headlineLabel = [[[UILabel alloc] init] autorelease];
   headlineLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  headlineLabel.font = [UIFont systemFontOfSize:34.0 weight:UIFontWeightBold];
+  headlineLabel.font = [UIFont systemFontOfSize:30.0 weight:UIFontWeightBold];
   headlineLabel.adjustsFontForContentSizeCategory = YES;
   headlineLabel.textColor = MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
                                               [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0]);
@@ -379,7 +379,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
     [headlineLabel.topAnchor constraintEqualToAnchor:headerTopRowView.bottomAnchor constant:12.0],
     [headlineLabel.leadingAnchor constraintEqualToAnchor:headerRowView.leadingAnchor],
-    [headlineLabel.trailingAnchor constraintLessThanOrEqualToAnchor:headerRowView.trailingAnchor constant:-64.0],
+    [headlineLabel.trailingAnchor constraintEqualToAnchor:headerRowView.trailingAnchor],
     [headlineLabel.bottomAnchor constraintEqualToAnchor:headerRowView.bottomAnchor]
   ]];
 
@@ -950,7 +950,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   BOOL compactViewport = compactHeight || compactWidth;
 
   self.contentStackView.spacing = compactViewport ? 20.0 : 24.0;
-  self.headlineLabel.font = [UIFont systemFontOfSize:(compactViewport ? 30.0 : 34.0) weight:UIFontWeightBold];
+  self.headlineLabel.font = [UIFont systemFontOfSize:(compactViewport ? 27.0 : 30.0) weight:UIFontWeightBold];
   self.categoryCollectionHeightConstraint.constant = compactViewport ? 72.0 : 80.0;
 
   CGFloat railHeight = compactViewport ? 306.0 : 332.0;
