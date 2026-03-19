@@ -356,7 +356,11 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
   [self configurePressFeedbackForButton:closeButton];
   [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
-  [heroContainerView addSubview:closeButton];
+  if (usesNavigationChrome) {
+    [self.view addSubview:closeButton];
+  } else {
+    [heroContainerView addSubview:closeButton];
+  }
   self.closeButton = closeButton;
 
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
@@ -383,12 +387,12 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   self.startButtonHeightConstraint = [startButton.heightAnchor constraintGreaterThanOrEqualToConstant:60.0];
 
   NSMutableArray<NSLayoutConstraint *> *constraints = [NSMutableArray array];
-  self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
-  self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
   self.closeButtonWidthConstraint = [self.closeButton.widthAnchor constraintEqualToConstant:38.0];
   self.closeButtonHeightConstraint = [self.closeButton.heightAnchor constraintEqualToConstant:38.0];
 
   if (usesNavigationChrome) {
+    self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:12.0];
+    self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-14.0];
     [constraints addObjectsFromArray:@[
       [scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
       [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
@@ -400,6 +404,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
       self.closeButtonHeightConstraint
     ]];
   } else {
+    self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
+    self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
     self.cardTopConstraint = [self.cardView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0];
     self.cardLeadingConstraint = [self.cardView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:18.0];
     self.cardTrailingConstraint = [self.cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0];
@@ -2089,8 +2095,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGFloat cardCornerRadius = MRRLayoutScaledValue(30.0, viewportSize, MRRLayoutScaleAxisMinDimension);
   CGFloat headerHeight = MRRLayoutScaledValue(MRRRecipeDetailHeaderHeight, viewportSize, MRRLayoutScaleAxisHeight);
   CGFloat closeButtonInset = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
-  CGFloat closeButtonSize = MRRLayoutScaledValue(38.0, viewportSize, MRRLayoutScaleAxisMinDimension);
-  CGFloat topSafeInset = CGRectGetMinY(self.view.safeAreaLayoutGuide.layoutFrame);
+  CGFloat floatingCloseButtonInset = MRRLayoutScaledValue(14.0, viewportSize, MRRLayoutScaleAxisWidth);
+  CGFloat closeButtonSize = MRRLayoutScaledValue(40.0, viewportSize, MRRLayoutScaleAxisMinDimension);
   CGFloat contentTopInset = -MRRLayoutScaledValue(56.0, viewportSize, MRRLayoutScaleAxisHeight);
   CGFloat contentSideInset = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat contentBottomInset = MRRLayoutScaledValue(28.0, viewportSize, MRRLayoutScaleAxisHeight);
@@ -2105,8 +2111,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGFloat startButtonHorizontalInset = MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat startButtonFontSize = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
   if (self.closeButton != nil) {
-    self.closeButtonTopConstraint.constant = usesNavigationChrome ? topSafeInset + closeButtonInset : closeButtonInset;
-    self.closeButtonTrailingConstraint.constant = -closeButtonInset;
+    self.closeButtonTopConstraint.constant = usesNavigationChrome ? floatingCloseButtonInset : closeButtonInset;
+    self.closeButtonTrailingConstraint.constant = usesNavigationChrome ? -floatingCloseButtonInset : -closeButtonInset;
     self.closeButtonWidthConstraint.constant = closeButtonSize;
     self.closeButtonHeightConstraint.constant = closeButtonSize;
     self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
