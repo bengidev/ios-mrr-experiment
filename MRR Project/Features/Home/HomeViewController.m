@@ -1252,24 +1252,24 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [transitionContainerView addSubview:snapshotView];
   sourceView.hidden = YES;
 
-  [UIView animateWithDuration:0.14
+  [UIView animateWithDuration:0.08
                         delay:0.0
                       options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
                               UIViewAnimationOptionCurveEaseOut
                    animations:^{
-                     CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.025, 1.025);
-                     CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -6.0);
+                     CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.016, 1.016);
+                     CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -4.0);
                      snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
                    }
                    completion:^(__unused BOOL finished) {
                      completion();
-                     [UIView animateWithDuration:0.18
-                                           delay:0.02
+                     [UIView animateWithDuration:0.12
+                                           delay:0.0
                                          options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
                                                  UIViewAnimationOptionCurveEaseOut
                                       animations:^{
-                                        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.05, 1.05);
-                                        CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -12.0);
+                                        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.03, 1.03);
+                                        CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -8.0);
                                         snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
                                         snapshotView.alpha = 0.0;
                                       }
