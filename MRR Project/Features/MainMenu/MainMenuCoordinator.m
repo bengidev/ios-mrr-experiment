@@ -47,7 +47,7 @@
 
 - (UIViewController *)rootViewController {
   if (self.tabBarController == nil) {
-    self.homeCoordinator = [[[HomeCoordinator alloc] init] autorelease];
+    self.homeCoordinator = [[[HomeCoordinator alloc] initWithSession:self.session] autorelease];
     self.savedCoordinator = [[[SavedCoordinator alloc] init] autorelease];
     self.profileCoordinator =
         [[[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController session:self.session] autorelease];
