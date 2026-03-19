@@ -17,19 +17,19 @@ static UIColor *MRRHomeCellNamedColor(NSString *name, UIColor *lightColor, UICol
 
 static NSString *MRRHomeCategoryGlyphText(NSString *identifier) {
   if ([identifier isEqualToString:HomeCategoryIdentifierBreakfast]) {
-    return @"AM";
+    return @"Bk";
   }
   if ([identifier isEqualToString:HomeCategoryIdentifierLunch]) {
-    return @"LN";
+    return @"Lu";
   }
   if ([identifier isEqualToString:HomeCategoryIdentifierDinner]) {
-    return @"PM";
+    return @"Dn";
   }
   if ([identifier isEqualToString:HomeCategoryIdentifierDessert]) {
-    return @"DS";
+    return @"Sw";
   }
 
-  return @"SN";
+  return @"Sn";
 }
 
 static NSString *MRRHomeCategorySymbolName(NSString *identifier) {
@@ -107,7 +107,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UIView *containerView = [[[UIView alloc] init] autorelease];
     containerView.translatesAutoresizingMaskIntoConstraints = NO;
-    containerView.layer.cornerRadius = 24.0;
+    containerView.layer.cornerRadius = 22.0;
     containerView.layer.borderWidth = 1.0;
     containerView.layer.masksToBounds = NO;
     [self.contentView addSubview:containerView];
@@ -115,7 +115,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UIView *badgeView = [[[UIView alloc] init] autorelease];
     badgeView.translatesAutoresizingMaskIntoConstraints = NO;
-    badgeView.layer.cornerRadius = 16.0;
+    badgeView.layer.cornerRadius = 14.0;
     badgeView.clipsToBounds = YES;
     [containerView addSubview:badgeView];
     self.badgeView = badgeView;
@@ -130,7 +130,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UILabel *badgeLabel = [[[UILabel alloc] init] autorelease];
     badgeLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    badgeLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightSemibold];
+    badgeLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightSemibold];
     badgeLabel.adjustsFontForContentSizeCategory = YES;
     badgeLabel.adjustsFontSizeToFitWidth = YES;
     badgeLabel.minimumScaleFactor = 0.72;
@@ -142,7 +142,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UILabel *titleLabel = [[[UILabel alloc] init] autorelease];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    titleLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
+    titleLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightSemibold];
     titleLabel.adjustsFontForContentSizeCategory = YES;
     titleLabel.numberOfLines = 1;
     titleLabel.isAccessibilityElement = NO;
@@ -157,13 +157,13 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
       [badgeView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:14.0],
       [badgeView.centerYAnchor constraintEqualToAnchor:containerView.centerYAnchor],
-      [badgeView.widthAnchor constraintEqualToConstant:32.0],
-      [badgeView.heightAnchor constraintEqualToConstant:32.0],
+      [badgeView.widthAnchor constraintEqualToConstant:28.0],
+      [badgeView.heightAnchor constraintEqualToConstant:28.0],
 
       [badgeImageView.centerXAnchor constraintEqualToAnchor:badgeView.centerXAnchor],
       [badgeImageView.centerYAnchor constraintEqualToAnchor:badgeView.centerYAnchor],
-      [badgeImageView.widthAnchor constraintEqualToConstant:16.0],
-      [badgeImageView.heightAnchor constraintEqualToConstant:16.0],
+      [badgeImageView.widthAnchor constraintEqualToConstant:14.0],
+      [badgeImageView.heightAnchor constraintEqualToConstant:14.0],
 
       [badgeLabel.centerXAnchor constraintEqualToAnchor:badgeView.centerXAnchor],
       [badgeLabel.centerYAnchor constraintEqualToAnchor:badgeView.centerYAnchor],
@@ -212,32 +212,36 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
   self.accessibilityHint = selected ? @"Double tap to remove this filter." : @"Double tap to filter recipes by this category.";
   self.accessibilityValue = selected ? @"Selected" : nil;
 
-  UIImage *badgeImage = MRRHomeCategoryBadgeImage(category.identifier);
-  self.badgeImageView.image = badgeImage;
-  self.badgeImageView.hidden = badgeImage == nil;
-  self.badgeLabel.hidden = badgeImage != nil;
-  self.badgeLabel.text = category.badgeText.length > 0 ? category.badgeText : MRRHomeCategoryGlyphText(category.identifier);
-  self.badgeView.backgroundColor = selected ? [UIColor colorWithWhite:1.0 alpha:0.16] : MRRHomeCategoryBadgeColor(category.identifier);
-  self.titleLabel.text = category.title;
-  self.titleLabel.numberOfLines = 1;
-  self.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-  self.titleLabel.textColor = selected ? [UIColor whiteColor]
-                                       : MRRHomeCellNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.14 alpha:1.0],
-                                                               [UIColor colorWithWhite:0.95 alpha:1.0]);
-
   UIColor *selectedColor = MRRHomeCellNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                  [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
-  UIColor *surfaceColor = MRRHomeCellNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
+  UIColor *surfaceColor = MRRHomeCellNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0],
                                                 [UIColor colorWithWhite:0.16 alpha:1.0]);
   UIColor *borderColor = MRRHomeCellNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
                                                [UIColor colorWithWhite:0.24 alpha:1.0]);
 
-  self.containerView.backgroundColor = selected ? selectedColor : surfaceColor;
-  self.containerView.layer.borderColor = (selected ? [selectedColor colorWithAlphaComponent:0.82] : borderColor).CGColor;
+  UIImage *badgeImage = MRRHomeCategoryBadgeImage(category.identifier);
+  UIColor *badgeColor = MRRHomeCategoryBadgeColor(category.identifier);
+  self.badgeImageView.image = badgeImage;
+  self.badgeImageView.hidden = badgeImage == nil;
+  self.badgeImageView.tintColor = selected ? selectedColor : badgeColor;
+  self.badgeLabel.hidden = badgeImage != nil;
+  self.badgeLabel.text = category.badgeText.length > 0 ? category.badgeText : MRRHomeCategoryGlyphText(category.identifier);
+  self.badgeLabel.textColor = selected ? selectedColor : badgeColor;
+
+  self.badgeView.backgroundColor = selected ? [selectedColor colorWithAlphaComponent:0.18] : [badgeColor colorWithAlphaComponent:0.14];
+  self.titleLabel.text = category.title;
+  self.titleLabel.numberOfLines = 1;
+  self.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+  self.titleLabel.textColor = selected ? selectedColor
+                                       : MRRHomeCellNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.14 alpha:1.0],
+                                                               [UIColor colorWithWhite:0.95 alpha:1.0]);
+
+  self.containerView.backgroundColor = selected ? [selectedColor colorWithAlphaComponent:0.10] : surfaceColor;
+  self.containerView.layer.borderColor = (selected ? [selectedColor colorWithAlphaComponent:0.24] : borderColor).CGColor;
   self.containerView.layer.shadowColor = [UIColor blackColor].CGColor;
-  self.containerView.layer.shadowOffset = CGSizeMake(0.0, 10.0);
-  self.containerView.layer.shadowRadius = selected ? 18.0 : 12.0;
-  self.containerView.layer.shadowOpacity = selected ? 0.18f : 0.06f;
+  self.containerView.layer.shadowOffset = CGSizeMake(0.0, 8.0);
+  self.containerView.layer.shadowRadius = selected ? 12.0 : 10.0;
+  self.containerView.layer.shadowOpacity = selected ? 0.08f : 0.04f;
 }
 
 - (void)setHighlighted:(BOOL)highlighted {
@@ -280,14 +284,14 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UIView *surfaceView = [[[UIView alloc] init] autorelease];
     surfaceView.translatesAutoresizingMaskIntoConstraints = NO;
-    surfaceView.layer.cornerRadius = 28.0;
+    surfaceView.layer.cornerRadius = 30.0;
     surfaceView.layer.borderWidth = 1.0;
     surfaceView.layer.borderColor = MRRHomeCellNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
                                                           [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
     surfaceView.layer.shadowColor = [UIColor blackColor].CGColor;
-    surfaceView.layer.shadowOpacity = 0.10f;
-    surfaceView.layer.shadowRadius = 20.0f;
-    surfaceView.layer.shadowOffset = CGSizeMake(0.0, 14.0);
+    surfaceView.layer.shadowOpacity = 0.08f;
+    surfaceView.layer.shadowRadius = 18.0f;
+    surfaceView.layer.shadowOffset = CGSizeMake(0.0, 12.0);
     surfaceView.backgroundColor = MRRHomeCellNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
                                                         [UIColor colorWithWhite:0.14 alpha:1.0]);
     [self.contentView addSubview:surfaceView];
@@ -295,7 +299,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UIImageView *heroImageView = [[[UIImageView alloc] init] autorelease];
     heroImageView.translatesAutoresizingMaskIntoConstraints = NO;
-    heroImageView.layer.cornerRadius = 24.0;
+    heroImageView.layer.cornerRadius = 26.0;
     heroImageView.clipsToBounds = YES;
     heroImageView.contentMode = UIViewContentModeScaleAspectFill;
     heroImageView.backgroundColor = MRRHomeCellNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.96 alpha:1.0],
@@ -306,7 +310,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UILabel *eyebrowLabel = [[[UILabel alloc] init] autorelease];
     eyebrowLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    eyebrowLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold];
+    eyebrowLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightMedium];
     eyebrowLabel.adjustsFontForContentSizeCategory = YES;
     eyebrowLabel.textColor = MRRHomeCellNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
                                                    [UIColor colorWithWhite:0.74 alpha:1.0]);
@@ -317,7 +321,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UILabel *titleLabel = [[[UILabel alloc] init] autorelease];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    titleLabel.font = [UIFont systemFontOfSize:27.0 weight:UIFontWeightBold];
+    titleLabel.font = [UIFont systemFontOfSize:23.0 weight:UIFontWeightSemibold];
     titleLabel.adjustsFontForContentSizeCategory = YES;
     titleLabel.textColor = MRRHomeCellNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
                                                  [UIColor colorWithWhite:0.95 alpha:1.0]);
@@ -328,10 +332,10 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UILabel *subtitleLabel = [[[UILabel alloc] init] autorelease];
     subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    subtitleLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium];
+    subtitleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium];
     subtitleLabel.adjustsFontForContentSizeCategory = YES;
-    subtitleLabel.textColor = MRRHomeCellNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
-                                                    [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
+    subtitleLabel.textColor = MRRHomeCellNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.44 alpha:1.0],
+                                                    [UIColor colorWithWhite:0.72 alpha:1.0]);
     subtitleLabel.numberOfLines = 1;
     subtitleLabel.isAccessibilityElement = NO;
     [surfaceView addSubview:subtitleLabel];
@@ -339,7 +343,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
     UILabel *summaryLabel = [[[UILabel alloc] init] autorelease];
     summaryLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    summaryLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightRegular];
+    summaryLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightRegular];
     summaryLabel.adjustsFontForContentSizeCategory = YES;
     summaryLabel.textColor = MRRHomeCellNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
                                                    [UIColor colorWithWhite:0.72 alpha:1.0]);
@@ -419,21 +423,23 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
   self.accessibilityHint = @"Double tap to open the recipe.";
   self.accessibilityValue = [NSString stringWithFormat:@"%@, %@, %@", recipeCard.subtitle, recipeCard.durationText, recipeCard.servingsText];
   self.heroImageView.image = [UIImage imageNamed:recipeCard.assetName];
-  self.eyebrowLabel.text = [NSString stringWithFormat:@"%@  •  %@  •  %@",
-                                                      recipeCard.durationText, recipeCard.calorieText, recipeCard.servingsText];
+  self.eyebrowLabel.text = style == HomeRecipeCardCellStyleRail
+                               ? [NSString stringWithFormat:@"%@  •  %@", recipeCard.durationText, recipeCard.sourceName]
+                               : [NSString stringWithFormat:@"%@  •  %@  •  %@",
+                                                            recipeCard.durationText, recipeCard.calorieText, recipeCard.servingsText];
   self.titleLabel.text = recipeCard.title;
   self.subtitleLabel.text = [NSString stringWithFormat:@"By %@", recipeCard.sourceName];
   self.summaryLabel.text = recipeCard.summaryText;
-  self.summaryLabel.hidden = NO;
+  self.summaryLabel.hidden = style == HomeRecipeCardCellStyleRail;
   self.titleLabel.numberOfLines = style == HomeRecipeCardCellStyleRail ? 2 : 1;
   self.subtitleLabel.numberOfLines = 1;
-  self.summaryLabel.numberOfLines = style == HomeRecipeCardCellStyleRail ? 2 : 1;
+  self.summaryLabel.numberOfLines = 2;
   self.summaryLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-  self.heroHeightConstraint.constant = style == HomeRecipeCardCellStyleRail ? 196.0 : 128.0;
-  self.titleLabel.font = [UIFont systemFontOfSize:style == HomeRecipeCardCellStyleRail ? 28.0 : 22.0 weight:UIFontWeightBold];
-  self.subtitleLabel.font = [UIFont systemFontOfSize:style == HomeRecipeCardCellStyleRail ? 16.0 : 15.0 weight:UIFontWeightMedium];
-  self.summaryLabel.font = [UIFont systemFontOfSize:style == HomeRecipeCardCellStyleRail ? 14.0 : 13.0 weight:UIFontWeightRegular];
-  self.surfaceView.layer.shadowOpacity = style == HomeRecipeCardCellStyleRail ? 0.12f : 0.08f;
+  self.heroHeightConstraint.constant = style == HomeRecipeCardCellStyleRail ? 214.0 : 150.0;
+  self.titleLabel.font = [UIFont systemFontOfSize:style == HomeRecipeCardCellStyleRail ? 23.0 : 21.0 weight:UIFontWeightSemibold];
+  self.subtitleLabel.font = [UIFont systemFontOfSize:style == HomeRecipeCardCellStyleRail ? 12.5 : 12.0 weight:UIFontWeightMedium];
+  self.summaryLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightRegular];
+  self.surfaceView.layer.shadowOpacity = style == HomeRecipeCardCellStyleRail ? 0.08f : 0.06f;
 }
 
 - (void)setHighlighted:(BOOL)highlighted {

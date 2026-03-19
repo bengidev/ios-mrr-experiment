@@ -46,11 +46,13 @@ static UIColor *MRRHomeHeaderNamedColor(NSString *name, UIColor *lightColor, UIC
 
     UILabel *titleLabel = [[[UILabel alloc] init] autorelease];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    titleLabel.font = [UIFont systemFontOfSize:28.0 weight:UIFontWeightBold];
+    titleLabel.font = [UIFont systemFontOfSize:22.0 weight:UIFontWeightSemibold];
     titleLabel.adjustsFontForContentSizeCategory = YES;
-    titleLabel.numberOfLines = 0;
-    titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
-    titleLabel.textColor = MRRHomeHeaderNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
+    titleLabel.numberOfLines = 1;
+    titleLabel.adjustsFontSizeToFitWidth = YES;
+    titleLabel.minimumScaleFactor = 0.82;
+    titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+    titleLabel.textColor = MRRHomeHeaderNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.12 alpha:1.0],
                                                    [UIColor colorWithWhite:0.96 alpha:1.0]);
     [titleLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [titleLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
@@ -59,16 +61,16 @@ static UIColor *MRRHomeHeaderNamedColor(NSString *name, UIColor *lightColor, UIC
 
     UIButton *seeAllButton = [[[MRRHomeSectionHeaderButton alloc] initWithFrame:CGRectZero] autorelease];
     seeAllButton.translatesAutoresizingMaskIntoConstraints = NO;
-    seeAllButton.titleLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
-    seeAllButton.contentEdgeInsets = UIEdgeInsetsMake(10.0, 14.0, 10.0, 14.0);
+    seeAllButton.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightMedium];
+    seeAllButton.contentEdgeInsets = UIEdgeInsetsMake(8.0, 10.0, 8.0, 10.0);
     seeAllButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     seeAllButton.titleLabel.adjustsFontForContentSizeCategory = YES;
     UIColor *accentColor = MRRHomeHeaderNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                    [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
     seeAllButton.tintColor = accentColor;
     [seeAllButton setTitleColor:accentColor forState:UIControlStateNormal];
-    seeAllButton.layer.cornerRadius = 14.0;
-    seeAllButton.backgroundColor = [accentColor colorWithAlphaComponent:0.10];
+    seeAllButton.layer.cornerRadius = 10.0;
+    seeAllButton.backgroundColor = [UIColor clearColor];
     [seeAllButton setTitle:@"See all" forState:UIControlStateNormal];
     [self addSubview:seeAllButton];
     self.seeAllButton = seeAllButton;
