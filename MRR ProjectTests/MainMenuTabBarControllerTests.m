@@ -81,6 +81,7 @@
 @property(nonatomic, strong) UIWindow *window;
 
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index;
+- (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
 
 @end
 
@@ -152,6 +153,16 @@
   XCTAssertEqualObjects(profileNavigationController.topViewController.view.accessibilityIdentifier, @"profile.view");
 }
 
+- (void)testHomeTabReceivesAuthenticatedGreeting {
+  UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
+  [homeNavigationController.topViewController loadViewIfNeeded];
+
+  UILabel *greetingLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.greetingLabel" inView:homeNavigationController.topViewController.view];
+  XCTAssertNotNil(greetingLabel);
+  XCTAssertEqualObjects(greetingLabel.text, @"Hello, Test Cook");
+}
+
 - (void)testFeatureCoordinatorsReturnStandaloneContentControllers {
   HomeCoordinator *homeCoordinator = [[HomeCoordinator alloc] init];
   SavedCoordinator *savedCoordinator = [[SavedCoordinator alloc] init];
@@ -176,6 +187,21 @@
   UIViewController *viewController = self.tabBarController.viewControllers[index];
   XCTAssertTrue([viewController isKindOfClass:[UINavigationController class]]);
   return (UINavigationController *)viewController;
+}
+
+- (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
+  if ([view.accessibilityIdentifier isEqualToString:identifier]) {
+    return view;
+  }
+
+  for (UIView *subview in view.subviews) {
+    UIView *matchingView = [self findViewWithAccessibilityIdentifier:identifier inView:subview];
+    if (matchingView != nil) {
+      return matchingView;
+    }
+  }
+
+  return nil;
 }
 
 @end

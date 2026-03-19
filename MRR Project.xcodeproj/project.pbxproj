@@ -46,6 +46,7 @@
 		F10000000000000000000002 /* HomeSectionHeaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000103 /* HomeSectionHeaderView.m */; };
 		F10000000000000000000003 /* HomeCollectionViewCells.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000105 /* HomeCollectionViewCells.m */; };
 		F10000000000000000000004 /* HomeRecipeListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000107 /* HomeRecipeListViewController.m */; };
+		F10000000000000000000005 /* HomeViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000108 /* HomeViewControllerTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -131,6 +132,7 @@
 		F10000000000000000000105 /* HomeCollectionViewCells.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeCollectionViewCells.m; sourceTree = "<group>"; };
 		F10000000000000000000106 /* HomeRecipeListViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeRecipeListViewController.h; sourceTree = "<group>"; };
 		F10000000000000000000107 /* HomeRecipeListViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeRecipeListViewController.m; sourceTree = "<group>"; };
+		F10000000000000000000108 /* HomeViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewControllerTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,6 +190,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000654 /* AppLaunchFlowTests.m */,
+				F10000000000000000000108 /* HomeViewControllerTests.m */,
 				D10000000000000000000110 /* MainMenuTabBarControllerTests.m */,
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */,
@@ -564,6 +567,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000728 /* AppLaunchFlowTests.m in Sources */,
+				F10000000000000000000005 /* HomeViewControllerTests.m in Sources */,
 				D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */,
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */,
