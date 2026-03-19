@@ -7,6 +7,10 @@ typedef void (^OnboardingRecipeServiceURLHandler)(NSURLRequest *request,
                                                   NSData *__autoreleasing *data,
                                                   NSError *__autoreleasing *error);
 
+// These tests use a stubbed NSURLProtocol, but CI still pays cold-start cost for
+// parsing and main-queue completion delivery in the richer Spoonacular flows.
+static NSTimeInterval const MRRRecipeServiceExpectationTimeout = 5.0;
+
 @interface OnboardingRecipeServiceURLProtocol : NSURLProtocol
 
 + (void)setHandler:(nullable OnboardingRecipeServiceURLHandler)handler;
@@ -119,7 +123,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertNil(resolvedError);
   XCTAssertEqual(spoonacularCallCount, 1);
@@ -154,7 +158,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqualObjects(resolvedDetail.title, @"Avocado-Toast");
   XCTAssertEqualObjects(resolvedDetail.summaryText, @"Normalized exact winner.");
@@ -179,7 +183,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqualObjects(resolvedError.domain, MRROnboardingRecipeSearchErrorDomain);
   XCTAssertEqual(resolvedError.code, MRROnboardingRecipeSearchErrorCodeNoMatch);
@@ -204,7 +208,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqualObjects(resolvedError.domain, MRROnboardingRecipeSearchErrorDomain);
   XCTAssertEqual(resolvedError.code, MRROnboardingRecipeSearchErrorCodeInvalidResponse);
@@ -234,7 +238,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqualObjects(resolvedDetail.summaryText, @"Fallback summary.");
 }
@@ -300,7 +304,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqualObjects(resolvedDetail.tools, (@[ @"Knife", @"Large Stockpot", @"Measuring Spoons" ]));
   XCTAssertEqualObjects(resolvedDetail.tags, (@[ @"Dinner", @"Vegan", @"Japanese" ]));
@@ -347,7 +351,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqual(spoonacularCallCount, 1);
   XCTAssertEqual(openFoodFactsCallCount, 1);
@@ -389,7 +393,7 @@ static OnboardingRecipeServiceURLHandler OnboardingRecipeServiceURLProtocolHandl
                          [expectation fulfill];
                        }];
 
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ] timeout:MRRRecipeServiceExpectationTimeout];
 
   XCTAssertEqual(spoonacularCallCount, 1);
   XCTAssertEqual(openFoodFactsCallCount, 1);
