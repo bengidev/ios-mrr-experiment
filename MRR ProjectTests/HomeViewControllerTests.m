@@ -237,10 +237,19 @@
                                 layout:listViewController.collectionView.collectionViewLayout
                  sizeForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
 
+  NSArray<NSString *> *introIdentifiers = @[
+    @"home.recipeList.introCardView", @"home.recipeList.eyebrowLabel", @"home.recipeList.titleLabel",
+    @"home.recipeList.summaryLabel", @"home.recipeList.countBadgeLabel"
+  ];
+  for (NSString *identifier in introIdentifiers) {
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:listViewController.view], @"Missing %@", identifier);
+  }
+
   XCTAssertEqualObjects(listViewController.collectionView.accessibilityLabel, @"Search Results");
+  XCTAssertEqualWithAccuracy(listViewController.collectionView.contentInset.top, 4.0, 0.001);
   XCTAssertTrue(listViewController.emptyStateLabel.hidden);
   XCTAssertTrue(listViewController.emptyStateLabel.isAccessibilityElement);
-  XCTAssertGreaterThanOrEqual(itemSize.height, 320.0);
+  XCTAssertGreaterThanOrEqual(itemSize.height, 340.0);
   XCTAssertGreaterThan(itemSize.width, 200.0);
 
   window.hidden = YES;
