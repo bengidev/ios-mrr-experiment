@@ -312,6 +312,20 @@
   XCTAssertEqual(presentedViewController.modalTransitionStyle, UIModalTransitionStyleCoverVertical);
 }
 
+- (void)testFullscreenRecipeDetailPinsCloseButtonToRootChrome {
+  [self finishInitialLoadIfNeeded];
+
+  NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
+  [self spinMainRunLoop];
+
+  UIView *detailRootView = [self presentedRecipeDetailRootView];
+  UIButton *closeButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
+  XCTAssertNotNil(closeButton);
+  XCTAssertEqualObjects(closeButton.superview, detailRootView);
+}
+
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
   if ([view.accessibilityIdentifier isEqualToString:identifier]) {
     return view;
