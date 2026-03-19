@@ -8,7 +8,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol HomeRecipeListViewControllerDelegate <NSObject>
 
-- (void)homeRecipeListViewController:(HomeRecipeListViewController *)viewController didSelectRecipeCard:(HomeRecipeCard *)recipeCard;
+- (void)homeRecipeListViewController:(HomeRecipeListViewController *)viewController
+                  didSelectRecipeCard:(HomeRecipeCard *)recipeCard
+                            sourceView:(nullable UIView *)sourceView;
 
 @end
 

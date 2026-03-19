@@ -289,7 +289,9 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
     return;
   }
 
-  [self.delegate homeRecipeListViewController:self didSelectRecipeCard:self.recipes[indexPath.item]];
+  UICollectionViewCell *selectedCell = [collectionView cellForItemAtIndexPath:indexPath];
+  UIView *sourceView = selectedCell.contentView ?: selectedCell;
+  [self.delegate homeRecipeListViewController:self didSelectRecipeCard:self.recipes[indexPath.item] sourceView:sourceView];
 }
 
 - (NSString *)introSummaryText {

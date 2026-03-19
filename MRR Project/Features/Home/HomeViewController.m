@@ -164,6 +164,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 - (void)handleSeeAllButtonTapped:(UIButton *)sender;
 - (void)presentRecipeListWithTitle:(NSString *)title recipes:(NSArray<HomeRecipeCard *> *)recipes emptyMessage:(NSString *)emptyMessage;
 - (void)presentRecipeDetailForCard:(HomeRecipeCard *)recipeCard;
+- (void)animateRecipeSelectionFromSourceView:(nullable UIView *)sourceView completion:(dispatch_block_t)completion;
 - (OnboardingRecipePreview *)previewForRecipeCard:(HomeRecipeCard *)recipeCard detail:(OnboardingRecipeDetail *)detail;
 - (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
 - (UIViewController *)preferredPresenterViewController;
@@ -1224,6 +1225,61 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [presenter presentViewController:navigationController animated:YES completion:nil];
 }
 
+- (void)animateRecipeSelectionFromSourceView:(UIView *)sourceView completion:(dispatch_block_t)completion {
+  if (completion == nil) {
+    return;
+  }
+
+  if (sourceView == nil || sourceView.window == nil || UIAccessibilityIsReduceMotionEnabled()) {
+    completion();
+    return;
+  }
+
+  UIView *transitionContainerView = self.navigationController.view ?: self.view.window ?: self.view;
+  CGRect sourceFrame = [sourceView.superview convertRect:sourceView.frame toView:transitionContainerView];
+  UIView *snapshotView = [sourceView snapshotViewAfterScreenUpdates:NO];
+  if (snapshotView == nil) {
+    completion();
+    return;
+  }
+
+  snapshotView.frame = sourceFrame;
+  snapshotView.layer.masksToBounds = NO;
+  snapshotView.layer.shadowColor = [UIColor blackColor].CGColor;
+  snapshotView.layer.shadowOpacity = 0.12f;
+  snapshotView.layer.shadowRadius = 20.0f;
+  snapshotView.layer.shadowOffset = CGSizeMake(0.0, 14.0);
+  [transitionContainerView addSubview:snapshotView];
+  sourceView.hidden = YES;
+
+  [UIView animateWithDuration:0.14
+                        delay:0.0
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
+                              UIViewAnimationOptionCurveEaseOut
+                   animations:^{
+                     CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.025, 1.025);
+                     CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -6.0);
+                     snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
+                   }
+                   completion:^(__unused BOOL finished) {
+                     completion();
+                     [UIView animateWithDuration:0.18
+                                           delay:0.02
+                                         options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
+                                                 UIViewAnimationOptionCurveEaseOut
+                                      animations:^{
+                                        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.05, 1.05);
+                                        CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -12.0);
+                                        snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
+                                        snapshotView.alpha = 0.0;
+                                      }
+                                      completion:^(__unused BOOL fadeFinished) {
+                                        sourceView.hidden = NO;
+                                        [snapshotView removeFromSuperview];
+                                      }];
+                   }];
+}
+
 - (UIViewController *)preferredPresenterViewController {
   UIViewController *topViewController = self.navigationController.topViewController;
   if (topViewController != nil && topViewController.view.window != nil) {
@@ -1387,7 +1443,11 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     return;
   }
 
-  [self presentRecipeDetailForCard:recipes[indexPath.item]];
+  UICollectionViewCell *selectedCell = [collectionView cellForItemAtIndexPath:indexPath];
+  UIView *sourceView = selectedCell.contentView ?: selectedCell;
+  [self animateRecipeSelectionFromSourceView:sourceView completion:^{
+    [self presentRecipeDetailForCard:recipes[indexPath.item]];
+  }];
 }
 
 #pragma mark - UICollectionViewDelegateFlowLayout
@@ -1431,8 +1491,12 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
 #pragma mark - HomeRecipeListViewControllerDelegate
 
-- (void)homeRecipeListViewController:(HomeRecipeListViewController *)viewController didSelectRecipeCard:(HomeRecipeCard *)recipeCard {
-  [self presentRecipeDetailForCard:recipeCard];
+- (void)homeRecipeListViewController:(HomeRecipeListViewController *)viewController
+                  didSelectRecipeCard:(HomeRecipeCard *)recipeCard
+                            sourceView:(UIView *)sourceView {
+  [self animateRecipeSelectionFromSourceView:sourceView completion:^{
+    [self presentRecipeDetailForCard:recipeCard];
+  }];
 }
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
