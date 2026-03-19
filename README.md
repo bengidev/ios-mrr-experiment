@@ -1,7 +1,6 @@
 # iOS MRR Learning Project
 
 [![iOS Tests and Coverage](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml/badge.svg)](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bengidev/ios-mrr-experiment/coverage-badges/coverage/coverage-badge.json)](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml)
 ![Platform](https://img.shields.io/badge/platform-iOS%2012%2B-0A84FF)
 ![Objective-C MRR](https://img.shields.io/badge/Objective--C-MRR-5C4EE5)
 
