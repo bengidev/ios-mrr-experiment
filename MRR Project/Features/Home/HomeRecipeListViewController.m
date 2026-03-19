@@ -24,6 +24,13 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
 @property(nonatomic, copy) NSString *screenTitle;
 @property(nonatomic, copy) NSArray<HomeRecipeCard *> *recipes;
 @property(nonatomic, copy) NSString *emptyMessage;
+@property(nonatomic, retain) UIStackView *contentStackView;
+@property(nonatomic, retain) UIView *introCardView;
+@property(nonatomic, retain) UILabel *eyebrowLabel;
+@property(nonatomic, retain) UILabel *introTitleLabel;
+@property(nonatomic, retain) UILabel *introSummaryLabel;
+@property(nonatomic, retain) UIView *countBadgeView;
+@property(nonatomic, retain) UILabel *countBadgeLabel;
 @property(nonatomic, retain) UICollectionView *collectionView;
 @property(nonatomic, retain) UILabel *emptyStateLabel;
 @property(nonatomic, retain) HomeRecipeCardCell *sizingCell;
@@ -48,6 +55,13 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
 }
 
 - (void)dealloc {
+  [_countBadgeLabel release];
+  [_countBadgeView release];
+  [_introSummaryLabel release];
+  [_introTitleLabel release];
+  [_eyebrowLabel release];
+  [_introCardView release];
+  [_contentStackView release];
   [_sizingCell release];
   [_emptyStateLabel release];
   [_collectionView release];
@@ -61,25 +75,136 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
   [super viewDidLoad];
 
   self.title = self.screenTitle;
+  if (@available(iOS 11.0, *)) {
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+  }
   self.view.accessibilityIdentifier = @"home.recipeList.view";
   self.view.backgroundColor = MRRHomeListNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0],
                                                     [UIColor colorWithWhite:0.10 alpha:1.0]);
 
+  UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
+  contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  contentStackView.axis = UILayoutConstraintAxisVertical;
+  contentStackView.spacing = 18.0;
+  [self.view addSubview:contentStackView];
+  self.contentStackView = contentStackView;
+
+  UIView *introCardView = [[[UIView alloc] init] autorelease];
+  introCardView.translatesAutoresizingMaskIntoConstraints = NO;
+  introCardView.layer.cornerRadius = 30.0;
+  introCardView.layer.borderWidth = 1.0;
+  introCardView.layer.borderColor = MRRHomeListNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
+                                                          [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
+  introCardView.layer.shadowColor = [UIColor blackColor].CGColor;
+  introCardView.layer.shadowOpacity = 0.08f;
+  introCardView.layer.shadowRadius = 18.0f;
+  introCardView.layer.shadowOffset = CGSizeMake(0.0, 10.0);
+  introCardView.backgroundColor = MRRHomeListNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
+                                                        [UIColor colorWithWhite:0.14 alpha:1.0]);
+  introCardView.accessibilityIdentifier = @"home.recipeList.introCardView";
+  [contentStackView addArrangedSubview:introCardView];
+  self.introCardView = introCardView;
+
+  UIStackView *introStackView = [[[UIStackView alloc] init] autorelease];
+  introStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  introStackView.axis = UILayoutConstraintAxisVertical;
+  introStackView.spacing = 10.0;
+  introStackView.isAccessibilityElement = NO;
+  [introCardView addSubview:introStackView];
+
+  UIStackView *topRowStackView = [[[UIStackView alloc] init] autorelease];
+  topRowStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  topRowStackView.axis = UILayoutConstraintAxisHorizontal;
+  topRowStackView.alignment = UIStackViewAlignmentCenter;
+  topRowStackView.spacing = 12.0;
+  [introStackView addArrangedSubview:topRowStackView];
+
+  UILabel *eyebrowLabel = [[[UILabel alloc] init] autorelease];
+  eyebrowLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  eyebrowLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold];
+  eyebrowLabel.adjustsFontForContentSizeCategory = YES;
+  eyebrowLabel.textColor = MRRHomeListNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                                 [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
+  eyebrowLabel.text = @"Curated list";
+  eyebrowLabel.accessibilityIdentifier = @"home.recipeList.eyebrowLabel";
+  [topRowStackView addArrangedSubview:eyebrowLabel];
+  self.eyebrowLabel = eyebrowLabel;
+
+  UIView *countBadgeView = [[[UIView alloc] init] autorelease];
+  countBadgeView.translatesAutoresizingMaskIntoConstraints = NO;
+  countBadgeView.layer.cornerRadius = 14.0;
+  countBadgeView.backgroundColor = MRRHomeListNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
+                                                         [UIColor colorWithWhite:0.18 alpha:1.0]);
+  countBadgeView.accessibilityIdentifier = @"home.recipeList.countBadgeView";
+  [topRowStackView addArrangedSubview:countBadgeView];
+  self.countBadgeView = countBadgeView;
+
+  UILabel *countBadgeLabel = [[[UILabel alloc] init] autorelease];
+  countBadgeLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  countBadgeLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
+  countBadgeLabel.adjustsFontForContentSizeCategory = YES;
+  countBadgeLabel.textColor = MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0],
+                                                    [UIColor colorWithWhite:0.72 alpha:1.0]);
+  countBadgeLabel.textAlignment = NSTextAlignmentCenter;
+  countBadgeLabel.text = [NSString stringWithFormat:@"%lu items", (unsigned long)self.recipes.count];
+  countBadgeLabel.accessibilityIdentifier = @"home.recipeList.countBadgeLabel";
+  [countBadgeView addSubview:countBadgeLabel];
+  self.countBadgeLabel = countBadgeLabel;
+
+  UILabel *introTitleLabel = [[[UILabel alloc] init] autorelease];
+  introTitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  introTitleLabel.font = [UIFont systemFontOfSize:30.0 weight:UIFontWeightBold];
+  introTitleLabel.adjustsFontForContentSizeCategory = YES;
+  introTitleLabel.textColor = MRRHomeListNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
+                                                    [UIColor colorWithWhite:0.96 alpha:1.0]);
+  introTitleLabel.numberOfLines = 0;
+  introTitleLabel.text = self.screenTitle;
+  introTitleLabel.accessibilityIdentifier = @"home.recipeList.titleLabel";
+  [introStackView addArrangedSubview:introTitleLabel];
+  self.introTitleLabel = introTitleLabel;
+
+  UILabel *introSummaryLabel = [[[UILabel alloc] init] autorelease];
+  introSummaryLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  introSummaryLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium];
+  introSummaryLabel.adjustsFontForContentSizeCategory = YES;
+  introSummaryLabel.textColor = MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
+                                                      [UIColor colorWithWhite:0.74 alpha:1.0]);
+  introSummaryLabel.numberOfLines = 0;
+  introSummaryLabel.text = [self introSummaryText];
+  introSummaryLabel.accessibilityIdentifier = @"home.recipeList.summaryLabel";
+  [introStackView addArrangedSubview:introSummaryLabel];
+  self.introSummaryLabel = introSummaryLabel;
+
+  [countBadgeView.heightAnchor constraintEqualToConstant:28.0].active = YES;
+  [countBadgeView.widthAnchor constraintGreaterThanOrEqualToConstant:72.0].active = YES;
+
+  [NSLayoutConstraint activateConstraints:@[
+    [introStackView.topAnchor constraintEqualToAnchor:introCardView.topAnchor constant:20.0],
+    [introStackView.leadingAnchor constraintEqualToAnchor:introCardView.leadingAnchor constant:20.0],
+    [introStackView.trailingAnchor constraintEqualToAnchor:introCardView.trailingAnchor constant:-20.0],
+    [introStackView.bottomAnchor constraintEqualToAnchor:introCardView.bottomAnchor constant:-20.0],
+
+    [countBadgeLabel.leadingAnchor constraintEqualToAnchor:countBadgeView.leadingAnchor constant:12.0],
+    [countBadgeLabel.trailingAnchor constraintEqualToAnchor:countBadgeView.trailingAnchor constant:-12.0],
+    [countBadgeLabel.topAnchor constraintEqualToAnchor:countBadgeView.topAnchor constant:5.0],
+    [countBadgeLabel.bottomAnchor constraintEqualToAnchor:countBadgeView.bottomAnchor constant:-5.0]
+  ]];
+
   UICollectionViewFlowLayout *layout = [[[UICollectionViewFlowLayout alloc] init] autorelease];
-  layout.minimumLineSpacing = 18.0;
+  layout.minimumLineSpacing = 20.0;
   layout.scrollDirection = UICollectionViewScrollDirectionVertical;
 
   UICollectionView *collectionView = [[[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout] autorelease];
   collectionView.translatesAutoresizingMaskIntoConstraints = NO;
   collectionView.backgroundColor = [UIColor clearColor];
   collectionView.alwaysBounceVertical = YES;
-  collectionView.contentInset = UIEdgeInsetsMake(8.0, 0.0, 24.0, 0.0);
+  collectionView.contentInset = UIEdgeInsetsMake(4.0, 0.0, 28.0, 0.0);
   collectionView.accessibilityIdentifier = @"home.recipeList.collectionView";
   collectionView.accessibilityLabel = self.screenTitle;
   collectionView.dataSource = self;
   collectionView.delegate = self;
   [collectionView registerClass:[HomeRecipeCardCell class] forCellWithReuseIdentifier:MRRHomeRecipeListCellReuseIdentifier];
-  [self.view addSubview:collectionView];
+  [contentStackView addArrangedSubview:collectionView];
   self.collectionView = collectionView;
 
   self.sizingCell = [[[HomeRecipeCardCell alloc] initWithFrame:CGRectZero] autorelease];
@@ -101,10 +226,12 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
   self.emptyStateLabel = emptyStateLabel;
 
   [NSLayoutConstraint activateConstraints:@[
-    [collectionView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:16.0],
-    [collectionView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-    [collectionView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-    [collectionView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+    [contentStackView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0],
+    [contentStackView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20.0],
+    [contentStackView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20.0],
+    [contentStackView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+
+    [collectionView.heightAnchor constraintGreaterThanOrEqualToConstant:340.0],
 
     [emptyStateLabel.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
     [emptyStateLabel.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor],
@@ -127,7 +254,7 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
 }
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - 32.0;
+  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - 4.0;
   CGFloat targetWidth = MAX(availableWidth, 220.0);
 
   if (indexPath.item >= self.recipes.count) {
@@ -149,7 +276,7 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
       systemLayoutSizeFittingSize:CGSizeMake(targetWidth, UILayoutFittingCompressedSize.height)
     withHorizontalFittingPriority:UILayoutPriorityRequired
           verticalFittingPriority:UILayoutPriorityFittingSizeLevel];
-  CGFloat height = ceil(MAX(fittingSize.height, 320.0));
+  CGFloat height = ceil(MAX(fittingSize.height, 340.0));
   return CGSizeMake(targetWidth, height);
 }
 
@@ -163,6 +290,26 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
   }
 
   [self.delegate homeRecipeListViewController:self didSelectRecipeCard:self.recipes[indexPath.item]];
+}
+
+- (NSString *)introSummaryText {
+  if (self.recipes.count == 0) {
+    return self.emptyMessage;
+  }
+
+  if ([self.screenTitle isEqualToString:@"Search Results"]) {
+    return @"Matching recipes, arranged for calmer scanning and quicker decisions.";
+  }
+
+  if ([self.screenTitle isEqualToString:@"Recipes Of The Week"]) {
+    return @"A sharper look at the week's highlights, with more breathing room.";
+  }
+
+  if ([self.screenTitle hasSuffix:@"Picks"]) {
+    return @"Curated picks, presented with a quieter editorial rhythm.";
+  }
+
+  return @"A curated selection with more breathing room and clearer hierarchy.";
 }
 
 @end
