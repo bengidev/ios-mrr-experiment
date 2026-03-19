@@ -117,6 +117,14 @@
   XCTAssertEqualObjects(greetingLabel.text, @"Hello, Anne Cook");
 }
 
+- (void)testHomeHidesNavigationBarWhileVisible {
+  [self.viewController viewWillAppear:NO];
+  XCTAssertTrue(self.navigationController.isNavigationBarHidden);
+
+  [self.viewController viewWillDisappear:NO];
+  XCTAssertFalse(self.navigationController.isNavigationBarHidden);
+}
+
 - (void)testSelectingDinnerCategoryFiltersRecommendations {
   [self finishInitialLoadIfNeeded];
 
