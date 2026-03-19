@@ -12,6 +12,7 @@ DERIVED_DATA_PATH="$ARTIFACTS_DIR/DerivedData"
 RESULT_BUNDLE_PATH="$RESULTS_DIR/MRR-Project-Tests.xcresult"
 COVERAGE_REPORT_PATH="$COVERAGE_DIR/coverage-report.txt"
 COVERAGE_JSON_PATH="$COVERAGE_DIR/coverage-report.json"
+COVERAGE_BADGE_JSON_PATH="$COVERAGE_DIR/coverage-badge.json"
 
 declare -a PREFERRED_SIMULATORS=()
 if [[ -n "${IOS_SIMULATOR_NAME:-}" ]]; then
@@ -70,6 +71,7 @@ xcodebuild \
 
 xcrun xccov view --report "$RESULT_BUNDLE_PATH" > "$COVERAGE_REPORT_PATH"
 xcrun xccov view --report --json "$RESULT_BUNDLE_PATH" > "$COVERAGE_JSON_PATH"
+bash "$ROOT_DIR/scripts/generate-coverage-badge.sh" "$COVERAGE_JSON_PATH" "$COVERAGE_BADGE_JSON_PATH" "${SCHEME}.app"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
@@ -85,3 +87,4 @@ fi
 
 printf 'Coverage report saved to %s\n' "$COVERAGE_REPORT_PATH"
 printf 'Coverage JSON saved to %s\n' "$COVERAGE_JSON_PATH"
+printf 'Coverage badge JSON saved to %s\n' "$COVERAGE_BADGE_JSON_PATH"

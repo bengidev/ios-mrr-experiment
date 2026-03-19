@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-with-coverage:
@@ -39,3 +39,38 @@ jobs:
             ci_artifacts/coverage
             ci_artifacts/test-results
           if-no-files-found: warn
+
+      - name: Publish coverage badge data
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          BADGE_BRANCH: coverage-badges
+          BADGE_FILE: coverage/coverage-badge.json
+        run: |
+          set -euo pipefail
+
+          BADGE_WORKTREE="$RUNNER_TEMP/coverage-badges"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git fetch origin "$BADGE_BRANCH" 2>/dev/null; then
+            git worktree add --detach "$BADGE_WORKTREE" "origin/$BADGE_BRANCH"
+          else
+            git worktree add --detach "$BADGE_WORKTREE"
+            (
+              cd "$BADGE_WORKTREE"
+              git checkout --orphan "$BADGE_BRANCH"
+              git rm -rf . >/dev/null 2>&1 || true
+            )
+          fi
+
+          mkdir -p "$BADGE_WORKTREE/$(dirname "$BADGE_FILE")"
+          cp ci_artifacts/coverage/coverage-badge.json "$BADGE_WORKTREE/$BADGE_FILE"
+          printf 'Coverage badge data for shields.io.\n' > "$BADGE_WORKTREE/README.md"
+
+          (
+            cd "$BADGE_WORKTREE"
+            git add "$BADGE_FILE" README.md
+            git commit -m "Update coverage badge for $GITHUB_SHA" || exit 0
+            git push origin HEAD:"$BADGE_BRANCH"
+          )
