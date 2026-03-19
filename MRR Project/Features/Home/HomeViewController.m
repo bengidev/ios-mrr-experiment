@@ -96,6 +96,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 @property(nonatomic, retain) UIStackView *categoriesSectionView;
 @property(nonatomic, retain) HomeSectionHeaderView *categoriesHeaderView;
 @property(nonatomic, retain) UICollectionView *categoryCollectionView;
+@property(nonatomic, retain) NSLayoutConstraint *categoryCollectionHeightConstraint;
 
 @property(nonatomic, retain) UIStackView *searchResultsSectionView;
 @property(nonatomic, retain) HomeSectionHeaderView *searchResultsHeaderView;
@@ -108,10 +109,12 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 @property(nonatomic, retain) HomeSectionHeaderView *recommendationHeaderView;
 @property(nonatomic, retain) UICollectionView *recommendationCollectionView;
 @property(nonatomic, retain) UILabel *recommendationEmptyStateLabel;
+@property(nonatomic, retain) NSLayoutConstraint *recommendationCollectionHeightConstraint;
 
 @property(nonatomic, retain) UIStackView *weeklySectionView;
 @property(nonatomic, retain) HomeSectionHeaderView *weeklyHeaderView;
 @property(nonatomic, retain) UICollectionView *weeklyCollectionView;
+@property(nonatomic, retain) NSLayoutConstraint *weeklyCollectionHeightConstraint;
 
 @property(nonatomic, copy) NSArray<HomeCategory *> *categories;
 @property(nonatomic, copy) NSArray<HomeRecipeCard *> *recommendationBaseRecipes;
@@ -124,6 +127,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 @property(nonatomic, assign, getter=isLoadingContent) BOOL loadingContent;
 @property(nonatomic, retain, nullable) NSTimer *initialLoadTimer;
 @property(nonatomic, retain, nullable) NSTimer *searchDebounceTimer;
+@property(nonatomic, copy, nullable) NSString *lastCompletedSearchQuery;
 @property(nonatomic, assign) BOOL hasAnimatedEntrance;
 
 - (void)buildViewHierarchy;
@@ -144,12 +148,15 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 - (NSString *)currentSearchQuery;
 - (void)applyCurrentPresentationStateAnimated:(BOOL)animated;
 - (void)reloadCollectionContentAnimated:(BOOL)animated;
+- (void)updateMetricsForCurrentViewport;
 - (void)updateSearchSectionVisibility;
 - (void)updateRecommendationSectionVisibility;
 - (void)updateSearchResultsHeightConstraintIfNeeded;
 - (void)animateEntranceIfNeeded;
 - (void)handleSearchTextChanged:(UITextField *)sender;
 - (void)handleSearchDebounceTimer:(NSTimer *)timer;
+- (NSArray<HomeRecipeCard *> *)searchResultsForQuery:(NSString *)query;
+- (void)executeSearchForQuery:(NSString *)query presentingResultsList:(BOOL)presentResultsList;
 - (void)clearSearchState;
 - (void)handleFilterButtonTapped:(id)sender;
 - (void)applyFilterOption:(HomeFilterOption)filterOption;
@@ -159,6 +166,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 - (void)presentRecipeDetailForCard:(HomeRecipeCard *)recipeCard;
 - (OnboardingRecipePreview *)previewForRecipeCard:(HomeRecipeCard *)recipeCard detail:(OnboardingRecipeDetail *)detail;
 - (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
+- (UIViewController *)preferredPresenterViewController;
+- (void)dismissPresentedRecipeDetailIfNeeded;
 - (void)handleAvatarButtonTapped:(id)sender;
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
@@ -195,14 +204,17 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [_searchDebounceTimer release];
   [_initialLoadTimer release];
   [_selectedCategory release];
+  [_lastCompletedSearchQuery release];
   [_currentSearchResults release];
   [_filteredRecommendationRecipes release];
   [_weeklyRecipes release];
   [_recommendationBaseRecipes release];
   [_categories release];
+  [_weeklyCollectionHeightConstraint release];
   [_weeklyCollectionView release];
   [_weeklyHeaderView release];
   [_weeklySectionView release];
+  [_recommendationCollectionHeightConstraint release];
   [_recommendationEmptyStateLabel release];
   [_recommendationCollectionView release];
   [_recommendationHeaderView release];
@@ -213,6 +225,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [_searchStatusLabel release];
   [_searchResultsHeaderView release];
   [_searchResultsSectionView release];
+  [_categoryCollectionHeightConstraint release];
   [_categoryCollectionView release];
   [_categoriesHeaderView release];
   [_categoriesSectionView release];
@@ -255,6 +268,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
 - (void)viewDidLayoutSubviews {
   [super viewDidLayoutSubviews];
+  [self updateMetricsForCurrentViewport];
   [self.categoryCollectionView.collectionViewLayout invalidateLayout];
   [self.recommendationCollectionView.collectionViewLayout invalidateLayout];
   [self.weeklyCollectionView.collectionViewLayout invalidateLayout];
@@ -269,6 +283,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
   scrollView.alwaysBounceVertical = YES;
   scrollView.showsVerticalScrollIndicator = NO;
+  scrollView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
   [self.view addSubview:scrollView];
   self.scrollView = scrollView;
 
@@ -302,6 +317,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
                                               [UIColor colorWithWhite:0.74 alpha:1.0]);
   greetingLabel.text = [self greetingText];
   greetingLabel.accessibilityIdentifier = @"home.greetingLabel";
+  greetingLabel.accessibilityTraits = UIAccessibilityTraitHeader;
   [greetingStackView addArrangedSubview:greetingLabel];
   self.greetingLabel = greetingLabel;
 
@@ -331,6 +347,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [avatarButton setTitleColor:MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                 [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0])
                     forState:UIControlStateNormal];
+  avatarButton.accessibilityLabel = @"Open profile";
+  avatarButton.accessibilityHint = @"Switches to the Profile tab.";
   [avatarButton addTarget:self action:@selector(handleAvatarButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:avatarButton];
   [headerRowView addSubview:avatarButton];
@@ -386,6 +404,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   searchTextField.clearButtonMode = UITextFieldViewModeWhileEditing;
   searchTextField.returnKeyType = UIReturnKeySearch;
   searchTextField.accessibilityIdentifier = @"home.searchTextField";
+  searchTextField.accessibilityLabel = @"Search recipes";
+  searchTextField.accessibilityHint = @"Type a recipe, ingredient, or meal.";
   [searchTextField addTarget:self action:@selector(handleSearchTextChanged:) forControlEvents:UIControlEventEditingChanged];
   [searchContainerView addSubview:searchTextField];
   self.searchTextField = searchTextField;
@@ -409,6 +429,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     [filterButton setTitle:@"Sort" forState:UIControlStateNormal];
     filterButton.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
   }
+  filterButton.accessibilityLabel = @"Sort recipes";
+  filterButton.accessibilityHint = @"Choose how recipes are ordered.";
   [filterButton addTarget:self action:@selector(handleFilterButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:filterButton];
   [searchContainerView addSubview:filterButton];
@@ -434,8 +456,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     [filterButton.leadingAnchor constraintEqualToAnchor:dividerView.trailingAnchor constant:6.0],
     [filterButton.trailingAnchor constraintEqualToAnchor:searchContainerView.trailingAnchor constant:-8.0],
     [filterButton.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor],
-    [filterButton.widthAnchor constraintEqualToConstant:40.0],
-    [filterButton.heightAnchor constraintEqualToConstant:40.0]
+    [filterButton.widthAnchor constraintEqualToConstant:44.0],
+    [filterButton.heightAnchor constraintEqualToConstant:44.0]
   ]];
 
   UIView *loadingStateView = [[[UIView alloc] init] autorelease];
@@ -508,7 +530,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   categoryCollectionView.showsHorizontalScrollIndicator = NO;
   [categoriesSectionView addArrangedSubview:categoryCollectionView];
   self.categoryCollectionView = categoryCollectionView;
-  [categoryCollectionView.heightAnchor constraintEqualToConstant:84.0].active = YES;
+  self.categoryCollectionHeightConstraint = [categoryCollectionView.heightAnchor constraintEqualToConstant:84.0];
+  self.categoryCollectionHeightConstraint.active = YES;
 
   UIStackView *searchResultsSectionView = [self sectionStackView];
   searchResultsSectionView.hidden = YES;
@@ -565,7 +588,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [recommendationCollectionView registerClass:[HomeRecipeCardCell class] forCellWithReuseIdentifier:MRRHomeRecipeCardCellReuseIdentifier];
   [recommendationSectionView addArrangedSubview:recommendationCollectionView];
   self.recommendationCollectionView = recommendationCollectionView;
-  [recommendationCollectionView.heightAnchor constraintEqualToConstant:344.0].active = YES;
+  self.recommendationCollectionHeightConstraint = [recommendationCollectionView.heightAnchor constraintEqualToConstant:344.0];
+  self.recommendationCollectionHeightConstraint.active = YES;
 
   UILabel *recommendationEmptyStateLabel = [self emptyStateLabelWithAccessibilityIdentifier:@"home.recommendation.emptyStateLabel"];
   recommendationEmptyStateLabel.hidden = YES;
@@ -589,7 +613,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [weeklyCollectionView registerClass:[HomeRecipeCardCell class] forCellWithReuseIdentifier:MRRHomeRecipeCardCellReuseIdentifier];
   [weeklySectionView addArrangedSubview:weeklyCollectionView];
   self.weeklyCollectionView = weeklyCollectionView;
-  [weeklyCollectionView.heightAnchor constraintEqualToConstant:344.0].active = YES;
+  self.weeklyCollectionHeightConstraint = [weeklyCollectionView.heightAnchor constraintEqualToConstant:344.0];
+  self.weeklyCollectionHeightConstraint.active = YES;
 
   [NSLayoutConstraint activateConstraints:@[
     [scrollView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
@@ -612,6 +637,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   UITapGestureRecognizer *tapGestureRecognizer = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)] autorelease];
   tapGestureRecognizer.cancelsTouchesInView = NO;
   [self.view addGestureRecognizer:tapGestureRecognizer];
+
+  [self updateMetricsForCurrentViewport];
 }
 
 - (UIStackView *)sectionStackView {
@@ -829,6 +856,12 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   if (!isSearching) {
     self.searchState = HomeSearchStateIdle;
     self.currentSearchResults = @[];
+    self.lastCompletedSearchQuery = nil;
+  } else if (self.searchState != HomeSearchStateSearching) {
+    NSArray<HomeRecipeCard *> *searchResults = [self searchResultsForQuery:currentQuery];
+    self.currentSearchResults = searchResults;
+    self.lastCompletedSearchQuery = currentQuery;
+    self.searchState = searchResults.count > 0 ? HomeSearchStateResults : HomeSearchStateEmpty;
   }
 
   NSString *recommendationTitle = self.selectedCategory != nil ? [NSString stringWithFormat:@"%@ Picks", self.selectedCategory.title] : @"Recommendation";
@@ -880,6 +913,21 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   reloadWeekly();
   [self.view setNeedsLayout];
   [self.view layoutIfNeeded];
+}
+
+- (void)updateMetricsForCurrentViewport {
+  CGSize viewportSize = self.view.bounds.size;
+  BOOL compactHeight = viewportSize.height < 760.0;
+  BOOL compactWidth = viewportSize.width < 390.0;
+  BOOL compactViewport = compactHeight || compactWidth;
+
+  self.contentStackView.spacing = compactViewport ? 24.0 : 28.0;
+  self.headlineLabel.font = [UIFont systemFontOfSize:(compactViewport ? 38.0 : 44.0) weight:UIFontWeightBold];
+  self.categoryCollectionHeightConstraint.constant = compactViewport ? 76.0 : 84.0;
+
+  CGFloat railHeight = compactViewport ? 320.0 : 344.0;
+  self.recommendationCollectionHeightConstraint.constant = railHeight;
+  self.weeklyCollectionHeightConstraint.constant = railHeight;
 }
 
 - (void)updateSearchSectionVisibility {
@@ -978,6 +1026,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     return;
   }
 
+  self.currentSearchResults = @[];
+  self.lastCompletedSearchQuery = nil;
   self.searchState = HomeSearchStateSearching;
   [self updateSearchSectionVisibility];
   [self updateRecommendationSectionVisibility];
@@ -992,21 +1042,35 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 - (void)handleSearchDebounceTimer:(NSTimer *)timer {
   self.searchDebounceTimer = nil;
 
-  NSString *query = [self currentSearchQuery];
-  if (query.length == 0) {
+  [self executeSearchForQuery:[self currentSearchQuery] presentingResultsList:NO];
+}
+
+- (NSArray<HomeRecipeCard *> *)searchResultsForQuery:(NSString *)query {
+  return [self sortedRecipesFromRecipes:[self.dataProvider searchRecipes:query]];
+}
+
+- (void)executeSearchForQuery:(NSString *)query presentingResultsList:(BOOL)presentResultsList {
+  NSString *trimmedQuery = [query stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (trimmedQuery.length == 0) {
     [self clearSearchState];
     return;
   }
 
-  NSArray<HomeRecipeCard *> *searchResults = [self sortedRecipesFromRecipes:[self.dataProvider searchRecipes:query]];
+  NSArray<HomeRecipeCard *> *searchResults = [self searchResultsForQuery:trimmedQuery];
   self.currentSearchResults = searchResults;
+  self.lastCompletedSearchQuery = trimmedQuery;
   self.searchState = searchResults.count > 0 ? HomeSearchStateResults : HomeSearchStateEmpty;
   [self applyCurrentPresentationStateAnimated:YES];
+
+  if (presentResultsList && searchResults.count > 0) {
+    [self presentRecipeListWithTitle:@"Search Results" recipes:searchResults emptyMessage:@"No recipes match that search yet."];
+  }
 }
 
 - (void)clearSearchState {
   self.searchState = HomeSearchStateIdle;
   self.currentSearchResults = @[];
+  self.lastCompletedSearchQuery = nil;
   [self.searchDebounceTimer invalidate];
   self.searchDebounceTimer = nil;
   [self applyCurrentPresentationStateAnimated:YES];
@@ -1123,17 +1187,43 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     return;
   }
 
+  UIViewController *presenter = [self preferredPresenterViewController];
   if (@available(iOS 15.0, *)) {
     UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
     navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
     if (navigationController.sheetPresentationController != nil) {
       navigationController.sheetPresentationController.prefersGrabberVisible = YES;
     }
-    [self presentViewController:navigationController animated:YES completion:nil];
+    [presenter presentViewController:navigationController animated:YES completion:nil];
     return;
   }
 
-  [self presentViewController:detailViewController animated:YES completion:nil];
+  [presenter presentViewController:detailViewController animated:YES completion:nil];
+}
+
+- (UIViewController *)preferredPresenterViewController {
+  UIViewController *topViewController = self.navigationController.topViewController;
+  if (topViewController != nil && topViewController.view.window != nil) {
+    return topViewController;
+  }
+
+  if (self.view.window != nil) {
+    return self;
+  }
+
+  return self.navigationController ?: self;
+}
+
+- (void)dismissPresentedRecipeDetailIfNeeded {
+  UIViewController *presenter = [self preferredPresenterViewController];
+  if (presenter.presentedViewController != nil) {
+    [presenter dismissViewControllerAnimated:YES completion:nil];
+    return;
+  }
+
+  if (self.presentedViewController != nil) {
+    [self dismissViewControllerAnimated:YES completion:nil];
+  }
 }
 
 - (void)handleAvatarButtonTapped:(id)sender {
@@ -1186,10 +1276,11 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
   [textField resignFirstResponder];
-  if (self.currentSearchResults.count > 0) {
-    [self presentRecipeListWithTitle:@"Search Results"
-                             recipes:self.currentSearchResults
-                        emptyMessage:@"No recipes match that search yet."];
+  NSString *query = [self currentSearchQuery];
+  if (query.length > 0) {
+    [self.searchDebounceTimer invalidate];
+    self.searchDebounceTimer = nil;
+    [self executeSearchForQuery:query presentingResultsList:YES];
   }
   return YES;
 }
@@ -1287,11 +1378,12 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
   if (collectionView == self.searchResultsCollectionView) {
     CGFloat width = CGRectGetWidth(collectionView.bounds);
-    return CGSizeMake(MAX(width, 220.0), 252.0);
+    return CGSizeMake(MAX(width, 220.0), 304.0);
   }
 
   CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(266.0, viewportSize, MRRLayoutScaleAxisWidth), 232.0, 292.0);
-  return CGSizeMake(width, 330.0);
+  CGFloat height = viewportSize.height < 760.0 ? 308.0 : 330.0;
+  return CGSizeMake(width, height);
 }
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
@@ -1323,11 +1415,11 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
 
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController {
-  [self dismissViewControllerAnimated:YES completion:nil];
+  [self dismissPresentedRecipeDetailIfNeeded];
 }
 
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
-  [self dismissViewControllerAnimated:YES completion:nil];
+  [self dismissPresentedRecipeDetailIfNeeded];
 }
 
 @end
