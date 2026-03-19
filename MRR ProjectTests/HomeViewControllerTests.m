@@ -298,7 +298,7 @@
   XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
 }
 
-- (void)testSelectingRecommendationRecipeUsesBottomUpDetailPresentation {
+- (void)testSelectingRecommendationRecipeUsesFullscreenPopupPresentation {
   [self finishInitialLoadIfNeeded];
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
@@ -307,16 +307,9 @@
 
   UIViewController *presentedViewController = [self presentedRecipeContainerViewController];
   XCTAssertNotNil(presentedViewController);
-
-  if (@available(iOS 15.0, *)) {
-    XCTAssertTrue([presentedViewController isKindOfClass:[UINavigationController class]]);
-    XCTAssertEqual(presentedViewController.modalPresentationStyle, UIModalPresentationPageSheet);
-    XCTAssertEqual(presentedViewController.modalTransitionStyle, UIModalTransitionStyleCoverVertical);
-  } else {
-    XCTAssertTrue([presentedViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
-    XCTAssertEqual(presentedViewController.modalPresentationStyle, UIModalPresentationFullScreen);
-    XCTAssertEqual(presentedViewController.modalTransitionStyle, UIModalTransitionStyleCoverVertical);
-  }
+  XCTAssertTrue([presentedViewController isKindOfClass:[UINavigationController class]]);
+  XCTAssertEqual(presentedViewController.modalPresentationStyle, UIModalPresentationFullScreen);
+  XCTAssertEqual(presentedViewController.modalTransitionStyle, UIModalTransitionStyleCoverVertical);
 }
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
