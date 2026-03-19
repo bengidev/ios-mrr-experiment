@@ -304,11 +304,11 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
   }
 
   self.categories = @[
-    MRRHomeCategory(HomeCategoryIdentifierBreakfast, @"Breakfast", @"Br"),
-    MRRHomeCategory(HomeCategoryIdentifierLunch, @"Lunch", @"Lu"),
-    MRRHomeCategory(HomeCategoryIdentifierDinner, @"Dinner", @"Di"),
-    MRRHomeCategory(HomeCategoryIdentifierDessert, @"Dessert", @"De"),
-    MRRHomeCategory(HomeCategoryIdentifierSnack, @"Snack", @"Sn"),
+    MRRHomeCategory(HomeCategoryIdentifierBreakfast, @"Breakfast", @"AM"),
+    MRRHomeCategory(HomeCategoryIdentifierLunch, @"Lunch", @"LN"),
+    MRRHomeCategory(HomeCategoryIdentifierDinner, @"Dinner", @"PM"),
+    MRRHomeCategory(HomeCategoryIdentifierDessert, @"Dessert", @"DS"),
+    MRRHomeCategory(HomeCategoryIdentifierSnack, @"Snack", @"SN"),
   ];
 
   HomeRecipeCard *avocadoToast =
