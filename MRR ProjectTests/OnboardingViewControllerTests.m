@@ -991,16 +991,8 @@
                     identifier);
   }
 
-  UIViewController *containerViewController = [self presentedRecipeContainerViewController];
-  if (@available(iOS 15.0, *)) {
-    if ([containerViewController isKindOfClass:[UINavigationController class]]) {
-      XCTAssertNotNil([self presentedRecipeDetailViewController].navigationItem.leftBarButtonItem);
-      XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:[self presentedRecipeDetailRootView]]);
-      return;
-    }
-  }
-
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNil([self presentedRecipeDetailViewController].navigationItem.leftBarButtonItem);
 }
 
 - (void)testStartCookingMarksOnboardingCompletedAndDismissesDetail {
@@ -1069,7 +1061,10 @@
     if (navigationController.sheetPresentationController != nil) {
       XCTAssertTrue(navigationController.sheetPresentationController.prefersGrabberVisible);
     }
-    XCTAssertNotNil([self presentedRecipeDetailViewController].navigationItem.leftBarButtonItem);
+    XCTAssertTrue(navigationController.isNavigationBarHidden);
+    XCTAssertNil([self presentedRecipeDetailViewController].navigationItem.leftBarButtonItem);
+    XCTAssertNil([self presentedRecipeDetailViewController].title);
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:[self presentedRecipeDetailRootView]]);
   } else {
     return;
   }
@@ -1085,7 +1080,7 @@
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailViewController.view]);
 }
 
-- (void)testRecipeDetailSheetControllerBuildsNavigationChromeWhenWrapped {
+- (void)testRecipeDetailSheetControllerUsesHeroCloseChromeWhenWrapped {
   if (@available(iOS 15.0, *)) {
     OnboardingRecipeDetailViewController *detailViewController =
         [[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:self.viewController.recipes.firstObject
@@ -1097,10 +1092,12 @@
     window.rootViewController = navigationController;
     [window makeKeyAndVisible];
     [detailViewController loadViewIfNeeded];
+    [detailViewController viewWillAppear:NO];
 
-    XCTAssertEqualObjects(detailViewController.title, @"Recipe");
-    XCTAssertNotNil(detailViewController.navigationItem.leftBarButtonItem);
-    XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailViewController.view]);
+    XCTAssertNil(detailViewController.title);
+    XCTAssertNil(detailViewController.navigationItem.leftBarButtonItem);
+    XCTAssertTrue(navigationController.isNavigationBarHidden);
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailViewController.view]);
 
     window.hidden = YES;
   } else {

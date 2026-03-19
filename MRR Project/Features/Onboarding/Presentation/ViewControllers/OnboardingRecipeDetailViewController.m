@@ -250,20 +250,6 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
   if ([self usesSheetPresentationChrome]) {
     self.view.backgroundColor = MRRNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.08 alpha:1.0]);
-    self.title = @"Recipe";
-    if (@available(iOS 11.0, *)) {
-      self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    }
-    if (@available(iOS 13.0, *)) {
-      self.navigationItem.leftBarButtonItem =
-          [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:self action:@selector(didTapCloseButton)]
-              autorelease];
-    } else {
-      self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Close"
-                                                                                 style:UIBarButtonItemStylePlain
-                                                                                target:self
-                                                                                action:@selector(didTapCloseButton)] autorelease];
-    }
   } else {
     self.view.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.58];
   }
@@ -272,6 +258,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [self buildViewHierarchy];
   [self reloadContentStack];
   [self refreshHeroImage];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+  [super viewWillAppear:animated];
+
+  if ([self usesSheetPresentationChrome]) {
+    [self.navigationController setNavigationBarHidden:YES animated:animated];
+  }
 }
 
 - (void)viewDidLayoutSubviews {
@@ -342,20 +336,18 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [heroContainerView addSubview:heroImageView];
   self.heroImageView = heroImageView;
 
-  if (!usesSheetChrome) {
-    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
-    closeButton.accessibilityIdentifier = @"onboarding.recipeDetail.closeButton";
-    closeButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.28];
-    closeButton.layer.cornerRadius = 19.0;
-    closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:20.0];
-    [closeButton setTitle:@"X" forState:UIControlStateNormal];
-    [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [self configurePressFeedbackForButton:closeButton];
-    [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
-    [heroContainerView addSubview:closeButton];
-    self.closeButton = closeButton;
-  }
+  UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+  closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+  closeButton.accessibilityIdentifier = @"onboarding.recipeDetail.closeButton";
+  closeButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.28];
+  closeButton.layer.cornerRadius = 19.0;
+  closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:20.0];
+  [closeButton setTitle:@"X" forState:UIControlStateNormal];
+  [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  [self configurePressFeedbackForButton:closeButton];
+  [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
+  [heroContainerView addSubview:closeButton];
+  self.closeButton = closeButton;
 
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
   contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -381,22 +373,27 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   self.startButtonHeightConstraint = [startButton.heightAnchor constraintGreaterThanOrEqualToConstant:60.0];
 
   NSMutableArray<NSLayoutConstraint *> *constraints = [NSMutableArray array];
+  self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
+  self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
+  self.closeButtonWidthConstraint = [self.closeButton.widthAnchor constraintEqualToConstant:38.0];
+  self.closeButtonHeightConstraint = [self.closeButton.heightAnchor constraintEqualToConstant:38.0];
+
   if (usesSheetChrome) {
     [constraints addObjectsFromArray:@[
-      [scrollView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
+      [scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
       [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
       [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-      [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
+      [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+      self.closeButtonTopConstraint,
+      self.closeButtonTrailingConstraint,
+      self.closeButtonWidthConstraint,
+      self.closeButtonHeightConstraint
     ]];
   } else {
     self.cardTopConstraint = [self.cardView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:14.0];
     self.cardLeadingConstraint = [self.cardView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:18.0];
     self.cardTrailingConstraint = [self.cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0];
     self.cardBottomConstraint = [self.cardView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12.0];
-    self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
-    self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor constant:-18.0];
-    self.closeButtonWidthConstraint = [self.closeButton.widthAnchor constraintEqualToConstant:38.0];
-    self.closeButtonHeightConstraint = [self.closeButton.heightAnchor constraintEqualToConstant:38.0];
     [constraints addObjectsFromArray:@[
       self.cardTopConstraint,
       self.cardLeadingConstraint,
@@ -680,36 +677,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *debugBadgeView = [self debugOriginBadgeViewIfNeeded];
   if (debugBadgeView != nil) {
     [topRow addArrangedSubview:debugBadgeView];
+    UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
+    [topRow addArrangedSubview:flexibleSpacer];
+    [stackView addArrangedSubview:topRow];
   }
-
-  UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
-  [topRow addArrangedSubview:flexibleSpacer];
-
-  UIView *accessoryView = [[[UIView alloc] init] autorelease];
-  accessoryView.translatesAutoresizingMaskIntoConstraints = NO;
-  accessoryView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.08];
-  accessoryView.layer.cornerRadius = 12.0;
-  [NSLayoutConstraint activateConstraints:@[
-    [accessoryView.widthAnchor constraintEqualToConstant:34.0],
-    [accessoryView.heightAnchor constraintEqualToConstant:34.0]
-  ]];
-
-  if (@available(iOS 13.0, *)) {
-    UIImageView *bookmarkImageView = [[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"bookmark.fill"]] autorelease];
-    bookmarkImageView.translatesAutoresizingMaskIntoConstraints = NO;
-    bookmarkImageView.tintColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.58 alpha:1.0],
-                                                 [UIColor colorWithWhite:0.76 alpha:1.0]) colorWithAlphaComponent:0.82];
-    [accessoryView addSubview:bookmarkImageView];
-    [NSLayoutConstraint activateConstraints:@[
-      [bookmarkImageView.centerXAnchor constraintEqualToAnchor:accessoryView.centerXAnchor],
-      [bookmarkImageView.centerYAnchor constraintEqualToAnchor:accessoryView.centerYAnchor]
-    ]];
-  }
-
-  [topRow addArrangedSubview:accessoryView];
-  [stackView addArrangedSubview:topRow];
 
   UILabel *subtitleLabel = [self buildLabelWithText:[self.recipeDetail.subtitle uppercaseString]
                                                font:[UIFont boldSystemFontOfSize:12.0]
@@ -2109,6 +2080,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGFloat headerHeight = MRRLayoutScaledValue(MRRRecipeDetailHeaderHeight, viewportSize, MRRLayoutScaleAxisHeight);
   CGFloat closeButtonInset = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat closeButtonSize = MRRLayoutScaledValue(38.0, viewportSize, MRRLayoutScaleAxisMinDimension);
+  CGFloat topSafeInset = CGRectGetMinY(self.view.safeAreaLayoutGuide.layoutFrame);
   CGFloat contentTopInset = -MRRLayoutScaledValue(56.0, viewportSize, MRRLayoutScaleAxisHeight);
   CGFloat contentSideInset = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat contentBottomInset = MRRLayoutScaledValue(28.0, viewportSize, MRRLayoutScaleAxisHeight);
@@ -2122,18 +2094,21 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGFloat startButtonVerticalInset = MRRLayoutScaledValue(17.0, viewportSize, MRRLayoutScaleAxisHeight);
   CGFloat startButtonHorizontalInset = MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat startButtonFontSize = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
+  if (self.closeButton != nil) {
+    self.closeButtonTopConstraint.constant = usesSheetChrome ? topSafeInset + closeButtonInset : closeButtonInset;
+    self.closeButtonTrailingConstraint.constant = -closeButtonInset;
+    self.closeButtonWidthConstraint.constant = closeButtonSize;
+    self.closeButtonHeightConstraint.constant = closeButtonSize;
+    self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
+    self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
+  }
+
   if (!usesSheetChrome) {
     self.cardTopConstraint.constant = cardTopInset;
     self.cardLeadingConstraint.constant = cardSideInset;
     self.cardTrailingConstraint.constant = -cardSideInset;
     self.cardBottomConstraint.constant = -cardBottomInset;
     self.cardView.layer.cornerRadius = cardCornerRadius;
-    self.closeButtonTopConstraint.constant = closeButtonInset;
-    self.closeButtonTrailingConstraint.constant = -closeButtonInset;
-    self.closeButtonWidthConstraint.constant = closeButtonSize;
-    self.closeButtonHeightConstraint.constant = closeButtonSize;
-    self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
-    self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
   }
   self.heroContainerHeightConstraint.constant = headerHeight;
   self.contentStackTopConstraint.constant = contentTopInset;
