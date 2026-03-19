@@ -8,11 +8,13 @@ cd "$REPO_ROOT"
 declare -a restricted_config_files=(
   "MRR Project/Resources/GoogleService-Info.plist"
   "MRR Project/Resources/GoogleService-Info.local.plist"
+  "MRR Project/Resources/RecipeAPIConfig.plist"
+  "MRR Project/Resources/RecipeAPIConfig.local.plist"
 )
 
 for restricted_path in "${restricted_config_files[@]}"; do
   if git diff --cached --name-only --diff-filter=ACMR | grep -Fxq "$restricted_path"; then
-    echo "pre-commit: refusing to commit $restricted_path. Keep Firebase config local and untracked."
+    echo "pre-commit: refusing to commit $restricted_path. Keep credential config local and untracked."
     exit 1
   fi
 done

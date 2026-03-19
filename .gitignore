@@ -41,7 +41,7 @@ Carthage/Build/
 # Local repo guidance
 AGENTS.md
 Packages/CocoaLumberjack/
+# Credential-bearing local app config
+MRR Project/Resources/*.local.plist
 MRR Project/Resources/GoogleService-Info.plist
-MRR Project/Resources/GoogleService-Info.local.plist
 MRR Project/Resources/RecipeAPIConfig.plist
-MRR Project/Resources/RecipeAPIConfig.local.plist

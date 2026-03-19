@@ -42,8 +42,6 @@
 		D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000110 /* MainMenuTabBarControllerTests.m */; };
 		E10000000000000000000001 /* OnboardingRecipeModels.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000102 /* OnboardingRecipeModels.m */; };
 		E10000000000000000000002 /* OnboardingRecipeCatalog.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000104 /* OnboardingRecipeCatalog.m */; };
-		E10000000000000000000003 /* OnboardingRecipeService.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000106 /* OnboardingRecipeService.m */; };
-		E10000000000000000000004 /* OnboardingRecipeServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000108 /* OnboardingRecipeServiceTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,10 +118,7 @@
 		E10000000000000000000102 /* OnboardingRecipeModels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeModels.m; sourceTree = "<group>"; };
 		E10000000000000000000103 /* OnboardingRecipeCatalog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OnboardingRecipeCatalog.h; sourceTree = "<group>"; };
 		E10000000000000000000104 /* OnboardingRecipeCatalog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeCatalog.m; sourceTree = "<group>"; };
-		E10000000000000000000105 /* OnboardingRecipeService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OnboardingRecipeService.h; sourceTree = "<group>"; };
-		E10000000000000000000106 /* OnboardingRecipeService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeService.m; sourceTree = "<group>"; };
 		E10000000000000000000107 /* RecipeAPIConfig.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = RecipeAPIConfig.example.plist; sourceTree = "<group>"; };
-		E10000000000000000000108 /* OnboardingRecipeServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeServiceTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,7 +180,6 @@
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */,
 				A0000000000000000000066E /* OnboardingAuthFlowTests.m */,
-				E10000000000000000000108 /* OnboardingRecipeServiceTests.m */,
 				A0000000000000000000065A /* OnboardingStateControllerTests.m */,
 				A0000000000000000000065B /* OnboardingViewControllerTests.m */,
 				A0000000000000000000066F /* ProfileViewControllerTests.m */,
@@ -232,8 +226,6 @@
 				E10000000000000000000104 /* OnboardingRecipeCatalog.m */,
 				E10000000000000000000101 /* OnboardingRecipeModels.h */,
 				E10000000000000000000102 /* OnboardingRecipeModels.m */,
-				E10000000000000000000105 /* OnboardingRecipeService.h */,
-				E10000000000000000000106 /* OnboardingRecipeService.m */,
 				A0000000000000000000064E /* OnboardingStateController.h */,
 				A0000000000000000000064F /* OnboardingStateController.m */,
 			);
@@ -508,7 +500,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "RESOURCE_DIR=\"$SRCROOT/MRR Project/Resources\"\nLOCAL_PLIST_PATH=\"$RESOURCE_DIR/RecipeAPIConfig.local.plist\"\nLEGACY_PLIST_PATH=\"$RESOURCE_DIR/RecipeAPIConfig.plist\"\nDESTINATION_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nDESTINATION_PLIST_PATH=\"$DESTINATION_DIR/RecipeAPIConfig.plist\"\nSOURCE_PLIST_PATH=\"\"\nif [ -f \"$LOCAL_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LOCAL_PLIST_PATH\"\nelif [ -f \"$LEGACY_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LEGACY_PLIST_PATH\"\nfi\nif [ -z \"$SOURCE_PLIST_PATH\" ]; then\n  echo \"note: RecipeAPIConfig.local.plist is not present. Live recipe APIs will stay unconfigured for this build.\"\n  rm -f \"$DESTINATION_PLIST_PATH\"\n  exit 0\nfi\nmkdir -p \"$DESTINATION_DIR\"\ncp \"$SOURCE_PLIST_PATH\" \"$DESTINATION_PLIST_PATH\"\necho \"Copied $(basename \"$SOURCE_PLIST_PATH\") into the app bundle as RecipeAPIConfig.plist.\"\n";
+			shellScript = "RESOURCE_DIR=\"$SRCROOT/MRR Project/Resources\"\nLOCAL_PLIST_PATH=\"$RESOURCE_DIR/RecipeAPIConfig.local.plist\"\nLEGACY_PLIST_PATH=\"$RESOURCE_DIR/RecipeAPIConfig.plist\"\nDESTINATION_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nDESTINATION_PLIST_PATH=\"$DESTINATION_DIR/RecipeAPIConfig.plist\"\nSOURCE_PLIST_PATH=\"\"\nif [ -f \"$LOCAL_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LOCAL_PLIST_PATH\"\nelif [ -f \"$LEGACY_PLIST_PATH\" ]; then\n  SOURCE_PLIST_PATH=\"$LEGACY_PLIST_PATH\"\nfi\nif [ -z \"$SOURCE_PLIST_PATH\" ]; then\n  echo \"note: RecipeAPIConfig.local.plist is not present. Shared recipe API features will stay unconfigured for this build.\"\n  rm -f \"$DESTINATION_PLIST_PATH\"\n  exit 0\nfi\nmkdir -p \"$DESTINATION_DIR\"\ncp \"$SOURCE_PLIST_PATH\" \"$DESTINATION_PLIST_PATH\"\necho \"Copied $(basename \"$SOURCE_PLIST_PATH\") into the app bundle as RecipeAPIConfig.plist.\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -532,7 +524,6 @@
 				A00000000000000000000738 /* MRRFirebaseAuthenticationController.m in Sources */,
 				E10000000000000000000002 /* OnboardingRecipeCatalog.m in Sources */,
 				E10000000000000000000001 /* OnboardingRecipeModels.m in Sources */,
-				E10000000000000000000003 /* OnboardingRecipeService.m in Sources */,
 				A00000000000000000000725 /* OnboardingStateController.m in Sources */,
 				A00000000000000000000726 /* OnboardingViewController.m in Sources */,
 				A00000000000000000000730 /* OnboardingRecipeDetailViewController.m in Sources */,
@@ -553,7 +544,6 @@
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */,
 				A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */,
-				E10000000000000000000004 /* OnboardingRecipeServiceTests.m in Sources */,
 				A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */,
 				A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */,
 				A0000000000000000000073C /* ProfileViewControllerTests.m in Sources */,
