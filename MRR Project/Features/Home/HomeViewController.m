@@ -85,7 +85,6 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 @property(nonatomic, retain) UIStackView *contentStackView;
 @property(nonatomic, retain) UILabel *greetingLabel;
 @property(nonatomic, retain) UILabel *headlineLabel;
-@property(nonatomic, retain) UILabel *supportingLabel;
 @property(nonatomic, retain) UIButton *avatarButton;
 @property(nonatomic, retain) UIView *searchContainerView;
 @property(nonatomic, retain) UITextField *searchTextField;
@@ -237,7 +236,6 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [_searchTextField release];
   [_searchContainerView release];
   [_avatarButton release];
-  [_supportingLabel release];
   [_headlineLabel release];
   [_greetingLabel release];
   [_contentStackView release];
@@ -268,6 +266,16 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [self animateEntranceIfNeeded];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+  [super viewWillAppear:animated];
+  [self.navigationController setNavigationBarHidden:YES animated:animated];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+  [super viewWillDisappear:animated];
+  [self.navigationController setNavigationBarHidden:NO animated:animated];
+}
+
 - (void)viewDidLayoutSubviews {
   [super viewDidLayoutSubviews];
   [self updateMetricsForCurrentViewport];
@@ -294,24 +302,6 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [scrollView addSubview:contentView];
   self.contentView = contentView;
 
-  UIView *heroAccentView = [[[UIView alloc] init] autorelease];
-  heroAccentView.translatesAutoresizingMaskIntoConstraints = NO;
-  heroAccentView.userInteractionEnabled = NO;
-  heroAccentView.layer.cornerRadius = 88.0;
-  heroAccentView.backgroundColor = MRRHomeNamedColor(@"HomeAccentWashColor", [UIColor colorWithRed:0.87 green:0.94 blue:0.88 alpha:1.0],
-                                                     [UIColor colorWithRed:0.16 green:0.23 blue:0.20 alpha:1.0]);
-  heroAccentView.alpha = 0.68;
-  [contentView addSubview:heroAccentView];
-
-  UIView *heroAccentOrbView = [[[UIView alloc] init] autorelease];
-  heroAccentOrbView.translatesAutoresizingMaskIntoConstraints = NO;
-  heroAccentOrbView.userInteractionEnabled = NO;
-  heroAccentOrbView.layer.cornerRadius = 36.0;
-  heroAccentOrbView.backgroundColor =
-      [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
-                         [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.18];
-  [contentView addSubview:heroAccentOrbView];
-
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
   contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
   contentStackView.axis = UILayoutConstraintAxisVertical;
@@ -323,11 +313,9 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   headerRowView.translatesAutoresizingMaskIntoConstraints = NO;
   [contentStackView addArrangedSubview:headerRowView];
 
-  UIStackView *greetingStackView = [[[UIStackView alloc] init] autorelease];
-  greetingStackView.translatesAutoresizingMaskIntoConstraints = NO;
-  greetingStackView.axis = UILayoutConstraintAxisVertical;
-  greetingStackView.spacing = 6.0;
-  [headerRowView addSubview:greetingStackView];
+  UIView *headerTopRowView = [[[UIView alloc] init] autorelease];
+  headerTopRowView.translatesAutoresizingMaskIntoConstraints = NO;
+  [headerRowView addSubview:headerTopRowView];
 
   UILabel *greetingLabel = [[[UILabel alloc] init] autorelease];
   greetingLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -338,44 +326,30 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   greetingLabel.text = [self greetingText];
   greetingLabel.accessibilityIdentifier = @"home.greetingLabel";
   greetingLabel.accessibilityTraits = UIAccessibilityTraitHeader;
-  [greetingStackView addArrangedSubview:greetingLabel];
+  [headerTopRowView addSubview:greetingLabel];
   self.greetingLabel = greetingLabel;
 
   UILabel *headlineLabel = [[[UILabel alloc] init] autorelease];
   headlineLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  headlineLabel.font = [UIFont systemFontOfSize:40.0 weight:UIFontWeightBold];
+  headlineLabel.font = [UIFont systemFontOfSize:34.0 weight:UIFontWeightBold];
   headlineLabel.adjustsFontForContentSizeCategory = YES;
   headlineLabel.textColor = MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
                                               [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0]);
   headlineLabel.numberOfLines = 0;
-  headlineLabel.text = @"What should we cook today?";
+  headlineLabel.text = @"What would you like\nto cook today?";
   headlineLabel.accessibilityIdentifier = @"home.headlineLabel";
-  [greetingStackView addArrangedSubview:headlineLabel];
+  [headerRowView addSubview:headlineLabel];
   self.headlineLabel = headlineLabel;
-
-  UILabel *supportingLabel = [[[UILabel alloc] init] autorelease];
-  supportingLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  supportingLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightRegular];
-  supportingLabel.adjustsFontForContentSizeCategory = YES;
-  supportingLabel.textColor = MRRHomeNamedColor(@"HomeHeroSecondaryTextColor", [UIColor colorWithRed:0.46 green:0.43 blue:0.39 alpha:1.0],
-                                                [UIColor colorWithRed:0.72 green:0.72 blue:0.69 alpha:1.0]);
-  supportingLabel.numberOfLines = 2;
-  supportingLabel.text = @"Browse bright breakfasts, quick lunches, and cozy dinner ideas picked for tonight.";
-  supportingLabel.accessibilityIdentifier = @"home.supportingLabel";
-  [greetingStackView addArrangedSubview:supportingLabel];
-  self.supportingLabel = supportingLabel;
 
   UIButton *avatarButton = [UIButton buttonWithType:UIButtonTypeSystem];
   avatarButton.translatesAutoresizingMaskIntoConstraints = NO;
   avatarButton.accessibilityIdentifier = @"home.avatarButton";
   avatarButton.layer.cornerRadius = 28.0;
-  avatarButton.layer.borderWidth = 0.0;
-  avatarButton.layer.shadowColor = [UIColor blackColor].CGColor;
-  avatarButton.layer.shadowOpacity = 0.08f;
-  avatarButton.layer.shadowRadius = 18.0f;
-  avatarButton.layer.shadowOffset = CGSizeMake(0.0, 12.0);
-  avatarButton.backgroundColor = MRRHomeNamedColor(@"HomeAvatarSurfaceColor", [UIColor colorWithRed:0.97 green:0.99 blue:0.97 alpha:1.0],
-                                                   [UIColor colorWithRed:0.15 green:0.18 blue:0.17 alpha:1.0]);
+  avatarButton.layer.borderWidth = 1.0;
+  avatarButton.layer.borderColor = [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                                      [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.08].CGColor;
+  avatarButton.backgroundColor = MRRHomeNamedColor(@"HomeAvatarSurfaceColor", [UIColor colorWithRed:0.91 green:0.97 blue:0.93 alpha:1.0],
+                                                   [UIColor colorWithRed:0.16 green:0.19 blue:0.18 alpha:1.0]);
   avatarButton.titleLabel.font = [UIFont systemFontOfSize:18.0 weight:UIFontWeightBold];
   [avatarButton setTitle:[self avatarInitialsText] forState:UIControlStateNormal];
   [avatarButton setTitleColor:MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
@@ -385,33 +359,42 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   avatarButton.accessibilityHint = @"Switches to the Profile tab.";
   [avatarButton addTarget:self action:@selector(handleAvatarButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:avatarButton];
-  [headerRowView addSubview:avatarButton];
+  [headerTopRowView addSubview:avatarButton];
   self.avatarButton = avatarButton;
 
   [NSLayoutConstraint activateConstraints:@[
-    [greetingStackView.topAnchor constraintEqualToAnchor:headerRowView.topAnchor],
-    [greetingStackView.leadingAnchor constraintEqualToAnchor:headerRowView.leadingAnchor],
-    [greetingStackView.bottomAnchor constraintEqualToAnchor:headerRowView.bottomAnchor],
+    [headerTopRowView.topAnchor constraintEqualToAnchor:headerRowView.topAnchor],
+    [headerTopRowView.leadingAnchor constraintEqualToAnchor:headerRowView.leadingAnchor],
+    [headerTopRowView.trailingAnchor constraintEqualToAnchor:headerRowView.trailingAnchor],
 
-    [avatarButton.leadingAnchor constraintGreaterThanOrEqualToAnchor:greetingStackView.trailingAnchor constant:12.0],
-    [avatarButton.trailingAnchor constraintEqualToAnchor:headerRowView.trailingAnchor],
-    [avatarButton.topAnchor constraintEqualToAnchor:headerRowView.topAnchor constant:8.0],
+    [greetingLabel.leadingAnchor constraintEqualToAnchor:headerTopRowView.leadingAnchor],
+    [greetingLabel.topAnchor constraintEqualToAnchor:headerTopRowView.topAnchor constant:6.0],
+
+    [avatarButton.leadingAnchor constraintGreaterThanOrEqualToAnchor:greetingLabel.trailingAnchor constant:12.0],
+    [avatarButton.trailingAnchor constraintEqualToAnchor:headerTopRowView.trailingAnchor],
+    [avatarButton.topAnchor constraintEqualToAnchor:headerTopRowView.topAnchor],
     [avatarButton.widthAnchor constraintEqualToConstant:56.0],
-    [avatarButton.heightAnchor constraintEqualToConstant:56.0]
+    [avatarButton.heightAnchor constraintEqualToConstant:56.0],
+    [headerTopRowView.bottomAnchor constraintEqualToAnchor:avatarButton.bottomAnchor],
+
+    [headlineLabel.topAnchor constraintEqualToAnchor:headerTopRowView.bottomAnchor constant:12.0],
+    [headlineLabel.leadingAnchor constraintEqualToAnchor:headerRowView.leadingAnchor],
+    [headlineLabel.trailingAnchor constraintLessThanOrEqualToAnchor:headerRowView.trailingAnchor constant:-64.0],
+    [headlineLabel.bottomAnchor constraintEqualToAnchor:headerRowView.bottomAnchor]
   ]];
 
   UIView *searchContainerView = [[[UIView alloc] init] autorelease];
   searchContainerView.translatesAutoresizingMaskIntoConstraints = NO;
   searchContainerView.accessibilityIdentifier = @"home.searchContainerView";
-  searchContainerView.layer.cornerRadius = 23.0;
+  searchContainerView.layer.cornerRadius = 28.0;
   searchContainerView.layer.borderWidth = 1.0;
-  searchContainerView.layer.borderColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.91 green:0.89 blue:0.84 alpha:1.0],
+  searchContainerView.layer.borderColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.92 green:0.91 blue:0.88 alpha:1.0],
                                                             [UIColor colorWithRed:0.24 green:0.24 blue:0.22 alpha:1.0]).CGColor;
   searchContainerView.layer.shadowColor = [UIColor blackColor].CGColor;
-  searchContainerView.layer.shadowOpacity = 0.05f;
-  searchContainerView.layer.shadowRadius = 14.0f;
-  searchContainerView.layer.shadowOffset = CGSizeMake(0.0, 8.0);
-  searchContainerView.backgroundColor = MRRHomeNamedColor(@"HomeSearchSurfaceColor", [UIColor colorWithRed:0.99 green:0.98 blue:0.97 alpha:1.0],
+  searchContainerView.layer.shadowOpacity = 0.04f;
+  searchContainerView.layer.shadowRadius = 12.0f;
+  searchContainerView.layer.shadowOffset = CGSizeMake(0.0, 6.0);
+  searchContainerView.backgroundColor = MRRHomeNamedColor(@"HomeSearchSurfaceColor", [UIColor colorWithRed:1.0 green:1.0 blue:0.99 alpha:1.0],
                                                           [UIColor colorWithRed:0.14 green:0.15 blue:0.16 alpha:1.0]);
   [contentStackView addArrangedSubview:searchContainerView];
   self.searchContainerView = searchContainerView;
@@ -426,7 +409,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   searchTextField.borderStyle = UITextBorderStyleNone;
   searchTextField.backgroundColor = [UIColor clearColor];
   searchTextField.adjustsFontForContentSizeCategory = YES;
-  searchTextField.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium];
+  searchTextField.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightRegular];
   searchTextField.textColor = MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
                                                 [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0]);
   searchTextField.attributedPlaceholder = [[[NSAttributedString alloc] initWithString:@"Search any recipes"
@@ -444,15 +427,19 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [searchContainerView addSubview:searchTextField];
   self.searchTextField = searchTextField;
 
+  UIView *dividerView = [[[UIView alloc] init] autorelease];
+  dividerView.translatesAutoresizingMaskIntoConstraints = NO;
+  dividerView.backgroundColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.92 green:0.91 blue:0.88 alpha:1.0],
+                                                  [UIColor colorWithRed:0.24 green:0.24 blue:0.22 alpha:1.0]);
+  [searchContainerView addSubview:dividerView];
+
   UIButton *filterButton = [UIButton buttonWithType:UIButtonTypeSystem];
   filterButton.translatesAutoresizingMaskIntoConstraints = NO;
   filterButton.accessibilityIdentifier = @"home.filterButton";
-  filterButton.layer.cornerRadius = 18.0;
+  filterButton.layer.cornerRadius = 20.0;
   filterButton.tintColor = MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
                                              [UIColor colorWithRed:0.95 green:0.95 blue:0.93 alpha:1.0]);
-  filterButton.backgroundColor =
-      [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
-                         [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.10];
+  filterButton.backgroundColor = [UIColor clearColor];
   if (@available(iOS 13.0, *)) {
     [filterButton setImage:[UIImage systemImageNamed:@"slider.horizontal.3"] forState:UIControlStateNormal];
   } else {
@@ -467,7 +454,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   self.filterButton = filterButton;
 
   [NSLayoutConstraint activateConstraints:@[
-    [searchContainerView.heightAnchor constraintEqualToConstant:58.0],
+    [searchContainerView.heightAnchor constraintEqualToConstant:60.0],
 
     [searchAdornmentView.leadingAnchor constraintEqualToAnchor:searchContainerView.leadingAnchor constant:18.0],
     [searchAdornmentView.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor],
@@ -478,7 +465,12 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     [searchTextField.topAnchor constraintEqualToAnchor:searchContainerView.topAnchor constant:10.0],
     [searchTextField.bottomAnchor constraintEqualToAnchor:searchContainerView.bottomAnchor constant:-10.0],
 
-    [filterButton.leadingAnchor constraintEqualToAnchor:searchTextField.trailingAnchor constant:10.0],
+    [dividerView.leadingAnchor constraintEqualToAnchor:searchTextField.trailingAnchor constant:12.0],
+    [dividerView.widthAnchor constraintEqualToConstant:1.0],
+    [dividerView.topAnchor constraintEqualToAnchor:searchContainerView.topAnchor constant:15.0],
+    [dividerView.bottomAnchor constraintEqualToAnchor:searchContainerView.bottomAnchor constant:-15.0],
+
+    [filterButton.leadingAnchor constraintEqualToAnchor:dividerView.trailingAnchor constant:6.0],
     [filterButton.trailingAnchor constraintEqualToAnchor:searchContainerView.trailingAnchor constant:-8.0],
     [filterButton.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor],
     [filterButton.widthAnchor constraintEqualToConstant:44.0],
@@ -653,16 +645,6 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     [contentView.bottomAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.bottomAnchor],
     [contentView.widthAnchor constraintEqualToAnchor:scrollView.frameLayoutGuide.widthAnchor],
 
-    [heroAccentView.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:-18.0],
-    [heroAccentView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-8.0],
-    [heroAccentView.widthAnchor constraintEqualToConstant:176.0],
-    [heroAccentView.heightAnchor constraintEqualToConstant:176.0],
-
-    [heroAccentOrbView.topAnchor constraintEqualToAnchor:heroAccentView.bottomAnchor constant:-34.0],
-    [heroAccentOrbView.trailingAnchor constraintEqualToAnchor:heroAccentView.trailingAnchor constant:-12.0],
-    [heroAccentOrbView.widthAnchor constraintEqualToConstant:72.0],
-    [heroAccentOrbView.heightAnchor constraintEqualToConstant:72.0],
-
     [contentStackView.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:16.0],
     [contentStackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
     [contentStackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
@@ -674,7 +656,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [self.view addGestureRecognizer:tapGestureRecognizer];
 
   [contentStackView setCustomSpacing:18.0 afterView:headerRowView];
-  [contentStackView setCustomSpacing:30.0 afterView:searchContainerView];
+  [contentStackView setCustomSpacing:28.0 afterView:searchContainerView];
   [self updateMetricsForCurrentViewport];
 }
 
@@ -967,16 +949,15 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   BOOL compactWidth = viewportSize.width < 390.0;
   BOOL compactViewport = compactHeight || compactWidth;
 
-  self.contentStackView.spacing = compactViewport ? 22.0 : 24.0;
-  self.headlineLabel.font = [UIFont systemFontOfSize:(compactViewport ? 34.0 : 40.0) weight:UIFontWeightBold];
-  self.supportingLabel.font = [UIFont systemFontOfSize:(compactViewport ? 14.0 : 15.0) weight:UIFontWeightRegular];
+  self.contentStackView.spacing = compactViewport ? 20.0 : 24.0;
+  self.headlineLabel.font = [UIFont systemFontOfSize:(compactViewport ? 30.0 : 34.0) weight:UIFontWeightBold];
   self.categoryCollectionHeightConstraint.constant = compactViewport ? 72.0 : 80.0;
 
   CGFloat railHeight = compactViewport ? 306.0 : 332.0;
   self.recommendationCollectionHeightConstraint.constant = railHeight;
   self.weeklyCollectionHeightConstraint.constant = railHeight;
   [self.contentStackView setCustomSpacing:(compactViewport ? 16.0 : 18.0) afterView:self.contentStackView.arrangedSubviews.firstObject];
-  [self.contentStackView setCustomSpacing:(compactViewport ? 26.0 : 30.0) afterView:self.searchContainerView];
+  [self.contentStackView setCustomSpacing:(compactViewport ? 24.0 : 28.0) afterView:self.searchContainerView];
 }
 
 - (void)updateSearchSectionVisibility {
