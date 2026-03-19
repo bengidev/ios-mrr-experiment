@@ -160,6 +160,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 - (void)updateLayoutMetricsIfNeeded;
 - (CGSize)layoutViewportSize;
 - (BOOL)usesNavigationPresentationChrome;
+- (void)applyCloseButtonVisualStyleForNavigationChrome:(BOOL)usesNavigationChrome viewportSize:(CGSize)viewportSize;
 
 @end
 
@@ -349,11 +350,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
   closeButton.translatesAutoresizingMaskIntoConstraints = NO;
   closeButton.accessibilityIdentifier = @"onboarding.recipeDetail.closeButton";
-  closeButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.28];
-  closeButton.layer.cornerRadius = 19.0;
-  closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:20.0];
-  [closeButton setTitle:@"X" forState:UIControlStateNormal];
-  [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  closeButton.accessibilityLabel = @"Close recipe";
+  closeButton.accessibilityHint = @"Dismisses the recipe detail screen.";
+  closeButton.contentEdgeInsets = UIEdgeInsetsZero;
+  closeButton.layer.borderWidth = 1.0;
   [self configurePressFeedbackForButton:closeButton];
   [closeButton addTarget:self action:@selector(didTapCloseButton) forControlEvents:UIControlEventTouchUpInside];
   if (usesNavigationChrome) {
@@ -362,6 +362,11 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [heroContainerView addSubview:closeButton];
   }
   self.closeButton = closeButton;
+  CGSize initialViewportSize = self.view.bounds.size;
+  if (initialViewportSize.width <= 0.0 || initialViewportSize.height <= 0.0) {
+    initialViewportSize = [UIScreen mainScreen].bounds.size;
+  }
+  [self applyCloseButtonVisualStyleForNavigationChrome:usesNavigationChrome viewportSize:initialViewportSize];
 
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
   contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -2116,7 +2121,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     self.closeButtonWidthConstraint.constant = closeButtonSize;
     self.closeButtonHeightConstraint.constant = closeButtonSize;
     self.closeButton.layer.cornerRadius = closeButtonSize / 2.0;
-    self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
+    [self applyCloseButtonVisualStyleForNavigationChrome:usesNavigationChrome viewportSize:viewportSize];
   }
 
   if (!usesNavigationChrome) {
@@ -2196,6 +2201,45 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   } else {
     self.heroImageTopConstraint.constant = -offsetY * 0.32;
     self.heroImageHeightConstraint.constant = headerHeight;
+  }
+}
+
+- (void)applyCloseButtonVisualStyleForNavigationChrome:(BOOL)usesNavigationChrome viewportSize:(CGSize)viewportSize {
+  if (self.closeButton == nil) {
+    return;
+  }
+
+  UIColor *surfaceColor = usesNavigationChrome
+                              ? MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0],
+                                              [UIColor colorWithWhite:0.16 alpha:1.0])
+                              : MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
+                                              [UIColor colorWithWhite:0.18 alpha:1.0]);
+  UIColor *iconColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.14 alpha:1.0],
+                                     [UIColor colorWithWhite:0.96 alpha:1.0]);
+  UIColor *borderColor = MRRNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.88 green:0.86 blue:0.82 alpha:1.0],
+                                       [UIColor colorWithRed:0.28 green:0.29 blue:0.30 alpha:1.0]);
+
+  self.closeButton.backgroundColor = [surfaceColor colorWithAlphaComponent:(usesNavigationChrome ? 0.90 : 0.82)];
+  self.closeButton.layer.borderColor = [borderColor colorWithAlphaComponent:0.78].CGColor;
+  self.closeButton.layer.shadowColor = [UIColor blackColor].CGColor;
+  self.closeButton.layer.shadowOpacity = usesNavigationChrome ? 0.12f : 0.08f;
+  self.closeButton.layer.shadowRadius = usesNavigationChrome ? 16.0f : 12.0f;
+  self.closeButton.layer.shadowOffset = CGSizeMake(0.0, 8.0);
+
+  if (@available(iOS 13.0, *)) {
+    CGFloat symbolPointSize = MRRLayoutScaledValue(14.0, viewportSize, MRRLayoutScaleAxisWidth);
+    UIImageSymbolConfiguration *configuration =
+        [UIImageSymbolConfiguration configurationWithPointSize:symbolPointSize weight:UIImageSymbolWeightSemibold];
+    UIImage *closeImage = [[UIImage systemImageNamed:@"xmark" withConfiguration:configuration]
+        imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    [self.closeButton setImage:closeImage forState:UIControlStateNormal];
+    [self.closeButton setTitle:nil forState:UIControlStateNormal];
+    self.closeButton.tintColor = iconColor;
+  } else {
+    [self.closeButton setImage:nil forState:UIControlStateNormal];
+    [self.closeButton setTitle:@"\u00D7" forState:UIControlStateNormal];
+    [self.closeButton setTitleColor:iconColor forState:UIControlStateNormal];
+    self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
   }
 }
 
