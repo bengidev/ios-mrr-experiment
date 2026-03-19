@@ -12,6 +12,7 @@ DERIVED_DATA_PATH="$ARTIFACTS_DIR/DerivedData"
 RESULT_BUNDLE_PATH="$RESULTS_DIR/MRR-Project-Tests.xcresult"
 COVERAGE_REPORT_PATH="$COVERAGE_DIR/coverage-report.txt"
 COVERAGE_JSON_PATH="$COVERAGE_DIR/coverage-report.json"
+COBERTURA_XML_PATH="$COVERAGE_DIR/cobertura.xml"
 
 declare -a PREFERRED_SIMULATORS=()
 if [[ -n "${IOS_SIMULATOR_NAME:-}" ]]; then
@@ -70,6 +71,7 @@ xcodebuild \
 
 xcrun xccov view --report "$RESULT_BUNDLE_PATH" > "$COVERAGE_REPORT_PATH"
 xcrun xccov view --report --json "$RESULT_BUNDLE_PATH" > "$COVERAGE_JSON_PATH"
+python3 "$ROOT_DIR/scripts/generate-cobertura-from-xccov.py" "$RESULT_BUNDLE_PATH" "$COVERAGE_JSON_PATH" "$COBERTURA_XML_PATH" "${SCHEME}.app" "$ROOT_DIR"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
@@ -85,3 +87,4 @@ fi
 
 printf 'Coverage report saved to %s\n' "$COVERAGE_REPORT_PATH"
 printf 'Coverage JSON saved to %s\n' "$COVERAGE_JSON_PATH"
+printf 'Cobertura XML saved to %s\n' "$COBERTURA_XML_PATH"

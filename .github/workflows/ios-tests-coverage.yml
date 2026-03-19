@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   test-with-coverage:
@@ -39,3 +40,15 @@ jobs:
             ci_artifacts/coverage
             ci_artifacts/test-results
           if-no-files-found: warn
+
+      - name: Upload coverage to Codecov
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v5
+        with:
+          disable_search: true
+          fail_ci_if_error: false
+          files: ./ci_artifacts/coverage/cobertura.xml
+          flags: ios-unit-tests
+          name: ios-mrr-experiment
+          use_oidc: true
+          verbose: true

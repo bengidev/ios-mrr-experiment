@@ -1,6 +1,7 @@
 # iOS MRR Learning Project
 
 [![iOS Tests and Coverage](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml/badge.svg)](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml)
+[![Coverage](https://codecov.io/gh/bengidev/ios-mrr-experiment/graph/badge.svg)](https://codecov.io/gh/bengidev/ios-mrr-experiment)
 ![Platform](https://img.shields.io/badge/platform-iOS%2012%2B-0A84FF)
 ![Objective-C MRR](https://img.shields.io/badge/Objective--C-MRR-5C4EE5)
 
@@ -67,7 +68,7 @@ Within recipe detail, `Ingredients`, `Methods`, `Tools & Equipment`, and `Tags` 
 | Stack | Used for | Where it shows up | Notes |
 | --- | --- | --- | --- |
 | `XCTest` | Unit and UI-structure regression coverage | `MRR ProjectTests/` | Covers root routing, onboarding, pushed auth screens, home summary, logout flow, and carousel behavior. |
-| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled and uploads `.xcresult` plus `xccov` artifacts. The workflow uses only tracked repo contents and does not depend on a committed Firebase plist. |
+| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled, uploads `.xcresult` plus `xccov` artifacts, and publishes Cobertura coverage to Codecov for the README badge. The workflow uses only tracked repo contents and does not depend on a committed Firebase plist. |
 | `clang-format` | Objective-C formatting | `.clang-format`, `scripts/format-objc.sh`, `.githooks/pre-commit` | Uses Google-based formatting rules with a `ColumnLimit` of `150`. |
 | `xcodebuild analyze` | Objective-C static analysis lint pass | `scripts/lint-objc.sh` | Used by the pre-commit hook so analyzer findings block a bad commit. |
 | `Git pre-commit hook` | Local guardrail before commits | `.githooks/pre-commit` | Formats staged Objective-C files, re-stages them, then runs the analyzer. |
