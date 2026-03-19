@@ -159,6 +159,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
 - (void)updateLayoutMetricsIfNeeded;
 - (CGSize)layoutViewportSize;
+- (BOOL)usesNavigationPresentationChrome;
 
 @end
 
@@ -248,7 +249,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  if ([self usesSheetPresentationChrome]) {
+  if ([self usesNavigationPresentationChrome]) {
     self.view.backgroundColor = MRRNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.08 alpha:1.0]);
   } else {
     self.view.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.58];
@@ -263,7 +264,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
 
-  if ([self usesSheetPresentationChrome]) {
+  if ([self usesNavigationPresentationChrome]) {
     [self.navigationController setNavigationBarHidden:YES animated:animated];
   }
 }
@@ -297,11 +298,20 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   return self.navigationController != nil && self.navigationController.modalPresentationStyle == UIModalPresentationPageSheet;
 }
 
+- (BOOL)usesNavigationPresentationChrome {
+  if (self.navigationController == nil) {
+    return NO;
+  }
+
+  UIModalPresentationStyle presentationStyle = self.navigationController.modalPresentationStyle;
+  return presentationStyle == UIModalPresentationPageSheet || presentationStyle == UIModalPresentationFullScreen;
+}
+
 - (void)buildViewHierarchy {
-  BOOL usesSheetChrome = [self usesSheetPresentationChrome];
+  BOOL usesNavigationChrome = [self usesNavigationPresentationChrome];
   UIView *surfaceView = self.view;
 
-  if (!usesSheetChrome) {
+  if (!usesNavigationChrome) {
     UIView *cardView = [[[UIView alloc] init] autorelease];
     cardView.translatesAutoresizingMaskIntoConstraints = NO;
     [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:cardView];
@@ -378,7 +388,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   self.closeButtonWidthConstraint = [self.closeButton.widthAnchor constraintEqualToConstant:38.0];
   self.closeButtonHeightConstraint = [self.closeButton.heightAnchor constraintEqualToConstant:38.0];
 
-  if (usesSheetChrome) {
+  if (usesNavigationChrome) {
     [constraints addObjectsFromArray:@[
       [scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
       [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
@@ -2067,7 +2077,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (void)updateLayoutMetricsIfNeeded {
-  BOOL usesSheetChrome = [self usesSheetPresentationChrome];
+  BOOL usesNavigationChrome = [self usesNavigationPresentationChrome];
   CGSize viewportSize = [self layoutViewportSize];
   if (viewportSize.width <= 0.0 || viewportSize.height <= 0.0) {
     return;
@@ -2095,7 +2105,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGFloat startButtonHorizontalInset = MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth);
   CGFloat startButtonFontSize = MRRLayoutScaledValue(18.0, viewportSize, MRRLayoutScaleAxisWidth);
   if (self.closeButton != nil) {
-    self.closeButtonTopConstraint.constant = usesSheetChrome ? topSafeInset + closeButtonInset : closeButtonInset;
+    self.closeButtonTopConstraint.constant = usesNavigationChrome ? topSafeInset + closeButtonInset : closeButtonInset;
     self.closeButtonTrailingConstraint.constant = -closeButtonInset;
     self.closeButtonWidthConstraint.constant = closeButtonSize;
     self.closeButtonHeightConstraint.constant = closeButtonSize;
@@ -2103,7 +2113,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     self.closeButton.titleLabel.font = [UIFont boldSystemFontOfSize:MRRLayoutScaledValue(20.0, viewportSize, MRRLayoutScaleAxisWidth)];
   }
 
-  if (!usesSheetChrome) {
+  if (!usesNavigationChrome) {
     self.cardTopConstraint.constant = cardTopInset;
     self.cardLeadingConstraint.constant = cardSideInset;
     self.cardTrailingConstraint.constant = -cardSideInset;

@@ -1218,24 +1218,10 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   }
 
   UIViewController *presenter = [self preferredPresenterViewController];
-  if (@available(iOS 15.0, *)) {
-    UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
-    navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
-    navigationController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
-    if (navigationController.sheetPresentationController != nil) {
-      navigationController.sheetPresentationController.prefersGrabberVisible = YES;
-      navigationController.sheetPresentationController.preferredCornerRadius = 28.0;
-      navigationController.sheetPresentationController.detents = @[
-        UISheetPresentationControllerDetent.mediumDetent,
-        UISheetPresentationControllerDetent.largeDetent
-      ];
-      navigationController.sheetPresentationController.selectedDetentIdentifier = UISheetPresentationControllerDetentIdentifierMedium;
-    }
-    [presenter presentViewController:navigationController animated:YES completion:nil];
-    return;
-  }
-
-  [presenter presentViewController:detailViewController animated:YES completion:nil];
+  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
+  navigationController.modalPresentationStyle = UIModalPresentationFullScreen;
+  navigationController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
+  [presenter presentViewController:navigationController animated:YES completion:nil];
 }
 
 - (UIViewController *)preferredPresenterViewController {
