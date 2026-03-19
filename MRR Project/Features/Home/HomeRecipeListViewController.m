@@ -26,6 +26,7 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
 @property(nonatomic, copy) NSString *emptyMessage;
 @property(nonatomic, retain) UICollectionView *collectionView;
 @property(nonatomic, retain) UILabel *emptyStateLabel;
+@property(nonatomic, retain) HomeRecipeCardCell *sizingCell;
 
 @end
 
@@ -47,6 +48,7 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
 }
 
 - (void)dealloc {
+  [_sizingCell release];
   [_emptyStateLabel release];
   [_collectionView release];
   [_emptyMessage release];
@@ -71,12 +73,16 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
   collectionView.translatesAutoresizingMaskIntoConstraints = NO;
   collectionView.backgroundColor = [UIColor clearColor];
   collectionView.alwaysBounceVertical = YES;
+  collectionView.contentInset = UIEdgeInsetsMake(8.0, 0.0, 24.0, 0.0);
   collectionView.accessibilityIdentifier = @"home.recipeList.collectionView";
+  collectionView.accessibilityLabel = self.screenTitle;
   collectionView.dataSource = self;
   collectionView.delegate = self;
   [collectionView registerClass:[HomeRecipeCardCell class] forCellWithReuseIdentifier:MRRHomeRecipeListCellReuseIdentifier];
   [self.view addSubview:collectionView];
   self.collectionView = collectionView;
+
+  self.sizingCell = [[[HomeRecipeCardCell alloc] initWithFrame:CGRectZero] autorelease];
 
   UILabel *emptyStateLabel = [[[UILabel alloc] init] autorelease];
   emptyStateLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -89,6 +95,8 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
   emptyStateLabel.text = self.emptyMessage;
   emptyStateLabel.hidden = self.recipes.count > 0;
   emptyStateLabel.accessibilityIdentifier = @"home.recipeList.emptyStateLabel";
+  emptyStateLabel.isAccessibilityElement = YES;
+  emptyStateLabel.accessibilityTraits = UIAccessibilityTraitStaticText;
   [self.view addSubview:emptyStateLabel];
   self.emptyStateLabel = emptyStateLabel;
 
@@ -120,7 +128,29 @@ static UIColor *MRRHomeListNamedColor(NSString *name, UIColor *lightColor, UICol
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
   CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - 32.0;
-  return CGSizeMake(MAX(availableWidth, 220.0), 272.0);
+  CGFloat targetWidth = MAX(availableWidth, 220.0);
+
+  if (indexPath.item >= self.recipes.count) {
+    return CGSizeMake(targetWidth, 320.0);
+  }
+
+  HomeRecipeCardCell *sizingCell = self.sizingCell;
+  if (sizingCell == nil) {
+    sizingCell = [[[HomeRecipeCardCell alloc] initWithFrame:CGRectZero] autorelease];
+    self.sizingCell = sizingCell;
+  }
+
+  [sizingCell configureWithRecipeCard:self.recipes[indexPath.item] style:HomeRecipeCardCellStyleList];
+  sizingCell.bounds = CGRectMake(0.0, 0.0, targetWidth, 1200.0);
+  [sizingCell setNeedsLayout];
+  [sizingCell layoutIfNeeded];
+
+  CGSize fittingSize = [sizingCell.contentView
+      systemLayoutSizeFittingSize:CGSizeMake(targetWidth, UILayoutFittingCompressedSize.height)
+    withHorizontalFittingPriority:UILayoutPriorityRequired
+          verticalFittingPriority:UILayoutPriorityFittingSizeLevel];
+  CGFloat height = ceil(MAX(fittingSize.height, 320.0));
+  return CGSizeMake(targetWidth, height);
 }
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {

@@ -25,6 +25,17 @@
 @property(nonatomic, assign) HomeFilterOption currentFilterOption;
 @property(nonatomic, assign) HomeSearchState searchState;
 @property(nonatomic, readonly, getter=isLoadingContent) BOOL loadingContent;
+- (void)applyFilterOption:(HomeFilterOption)filterOption;
+- (BOOL)textFieldShouldReturn:(UITextField *)textField;
+
+@end
+
+@interface HomeRecipeListViewController (Testing)
+
+@property(nonatomic, readonly) UICollectionView *collectionView;
+@property(nonatomic, readonly) UILabel *emptyStateLabel;
+@property(nonatomic, readonly) NSArray<HomeRecipeCard *> *recipes;
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath;
 
 @end
 
@@ -158,6 +169,83 @@
   XCTAssertFalse(self.viewController.searchEmptyStateLabel.hidden);
 }
 
+- (void)testSearchReturnUsesLatestQueryResultsAfterDebounceWindow {
+  [self finishInitialLoadIfNeeded];
+
+  self.viewController.searchTextField.text = @"a";
+  [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
+  [self waitForCondition:^BOOL {
+    return self.viewController.searchState == HomeSearchStateResults;
+  } timeout:1.0];
+
+  XCTAssertGreaterThan(self.viewController.currentSearchResults.count, 1);
+
+  self.viewController.searchTextField.text = @"salad";
+  [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
+  [self.viewController textFieldShouldReturn:self.viewController.searchTextField];
+  [self spinMainRunLoop];
+
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]]);
+
+  HomeRecipeListViewController *presentedList = (HomeRecipeListViewController *)self.navigationController.topViewController;
+  XCTAssertEqualObjects(presentedList.title, @"Search Results");
+  XCTAssertEqual(presentedList.recipes.count, 1U);
+  XCTAssertEqualObjects(presentedList.recipes.firstObject.title, @"Greek Salad");
+}
+
+- (void)testChangingSearchFilterReordersVisibleResults {
+  [self finishInitialLoadIfNeeded];
+
+  self.viewController.searchTextField.text = @"a";
+  [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
+  [self waitForCondition:^BOOL {
+    return self.viewController.searchState == HomeSearchStateResults;
+  } timeout:1.0];
+
+  NSArray<NSString *> *initialTitles = [self titlesForRecipes:self.viewController.currentSearchResults];
+  XCTAssertGreaterThan(initialTitles.count, 2U);
+
+  [self.viewController applyFilterOption:HomeFilterOptionLowCalorie];
+
+  NSArray<HomeRecipeCard *> *expectedRecipes =
+      [[self.dataProvider searchRecipes:@"a"] sortedArrayUsingComparator:^NSComparisonResult(HomeRecipeCard *left, HomeRecipeCard *right) {
+        if (left.calorieCount == right.calorieCount) {
+          return [left.title localizedCaseInsensitiveCompare:right.title];
+        }
+        return left.calorieCount < right.calorieCount ? NSOrderedAscending : NSOrderedDescending;
+      }];
+
+  XCTAssertEqualObjects([self titlesForRecipes:self.viewController.currentSearchResults], [self titlesForRecipes:expectedRecipes]);
+}
+
+- (void)testRecipeListViewControllerSizesCardsToFitContent {
+  NSArray<HomeRecipeCard *> *recipes = [self.dataProvider searchRecipes:@"a"];
+  HomeRecipeListViewController *listViewController =
+      [[HomeRecipeListViewController alloc] initWithScreenTitle:@"Search Results"
+                                                        recipes:recipes
+                                                   emptyMessage:@"No recipes match that search yet."];
+
+  UIWindow *window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:listViewController];
+  window.rootViewController = navigationController;
+  [window makeKeyAndVisible];
+  [navigationController loadViewIfNeeded];
+  [listViewController loadViewIfNeeded];
+  [listViewController.view layoutIfNeeded];
+
+  CGSize itemSize = [listViewController collectionView:listViewController.collectionView
+                                layout:listViewController.collectionView.collectionViewLayout
+                 sizeForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
+
+  XCTAssertEqualObjects(listViewController.collectionView.accessibilityLabel, @"Search Results");
+  XCTAssertTrue(listViewController.emptyStateLabel.hidden);
+  XCTAssertTrue(listViewController.emptyStateLabel.isAccessibilityElement);
+  XCTAssertGreaterThanOrEqual(itemSize.height, 320.0);
+  XCTAssertGreaterThan(itemSize.width, 200.0);
+
+  window.hidden = YES;
+}
+
 - (void)testFilterButtonPresentsActionSheet {
   [self finishInitialLoadIfNeeded];
 
@@ -240,6 +328,14 @@
 
 - (void)spinMainRunLoop {
   [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.08]];
+}
+
+- (NSArray<NSString *> *)titlesForRecipes:(NSArray<HomeRecipeCard *> *)recipes {
+  NSMutableArray<NSString *> *titles = [NSMutableArray arrayWithCapacity:recipes.count];
+  for (HomeRecipeCard *recipe in recipes) {
+    [titles addObject:recipe.title ?: @""];
+  }
+  return titles;
 }
 
 @end
