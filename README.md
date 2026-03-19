@@ -1,7 +1,7 @@
 # iOS MRR Learning Project
 
 [![iOS Tests and Coverage](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml/badge.svg)](https://github.com/bengidev/ios-mrr-experiment/actions/workflows/ios-tests-coverage.yml)
-[![Coverage](https://codecov.io/gh/bengidev/ios-mrr-experiment/graph/badge.svg)](https://codecov.io/gh/bengidev/ios-mrr-experiment)
+[![Coverage](https://codecov.io/gh/bengidev/ios-mrr-experiment/graph/badge.svg?branch=main)](https://codecov.io/gh/bengidev/ios-mrr-experiment)
 ![Platform](https://img.shields.io/badge/platform-iOS%2012%2B-0A84FF)
 ![Objective-C MRR](https://img.shields.io/badge/Objective--C-MRR-5C4EE5)
 
@@ -145,7 +145,8 @@ The active unit-test coverage focuses on root flow, onboarding presentation, aut
 - onboarding accessibility identifiers and carousel backdrop styling
 - onboarding recipe loading behavior on the `iPhone 16e` simulator
 
-Remote coverage runs automatically through [ios-tests-coverage.yml](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Learning%20Project/ios_mrr_learning_project/.github/workflows/ios-tests-coverage.yml). The workflow executes the full `MRR ProjectTests` target on GitHub Actions with code coverage enabled, then uploads the `.xcresult` bundle plus `xccov` text/JSON reports as artifacts. The repo intentionally ignores any local `Packages/CocoaLumberjack/` checkout so CI stays aligned with the tracked project graph and does not treat that folder as a submodule.
+Remote coverage runs automatically through [ios-tests-coverage.yml](/Users/beng/Documents/iOS%20Projects/iOS%20MRR%20Experiment/ios-mrr-experiment/.github/workflows/ios-tests-coverage.yml). The workflow executes the full `MRR ProjectTests` target on GitHub Actions with code coverage enabled, then uploads the `.xcresult` bundle plus `xccov` text/JSON reports as artifacts. The repo intentionally ignores any local `Packages/CocoaLumberjack/` checkout so CI stays aligned with the tracked project graph and does not treat that folder as a submodule.
+Codecov publishing on `main` now requires the GitHub Actions secret `CODECOV_TOKEN`; if that secret is missing or upload fails, the workflow surfaces the error explicitly instead of silently leaving the README badge in an `unknown` state.
 
 For a matching local batch run, use:
 

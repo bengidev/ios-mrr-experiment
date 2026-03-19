@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   test-with-coverage:
@@ -41,14 +40,24 @@ jobs:
             ci_artifacts/test-results
           if-no-files-found: warn
 
+      - name: Verify Codecov token is configured
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "::error::CODECOV_TOKEN secret is missing. Add it to GitHub Actions secrets so coverage can be uploaded to Codecov and the README badge can update."
+            exit 1
+          fi
+
       - name: Upload coverage to Codecov
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v5
         with:
           disable_search: true
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           files: ./ci_artifacts/coverage/cobertura.xml
           flags: ios-unit-tests
           name: ios-mrr-experiment
-          use_oidc: true
+          token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
