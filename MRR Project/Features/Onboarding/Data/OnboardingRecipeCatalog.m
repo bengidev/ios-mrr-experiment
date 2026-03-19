@@ -43,6 +43,34 @@ static OnboardingRecipeDetail *MRRDetail(NSString *title,
                                          productContext:nil] autorelease];
 }
 
+static OnboardingRecipeDetail *MRRDetailWithMetadata(NSString *title,
+                                                     NSString *subtitle,
+                                                     NSString *assetName,
+                                                     NSString *durationText,
+                                                     NSString *calorieText,
+                                                     NSString *servingsText,
+                                                     NSString *summaryText,
+                                                     NSArray<NSString *> *ingredients,
+                                                     NSArray<OnboardingRecipeInstruction *> *instructions,
+                                                     NSArray<NSString *> *tools,
+                                                     NSArray<NSString *> *tags) {
+  return [[[OnboardingRecipeDetail alloc] initWithTitle:title
+                                               subtitle:subtitle
+                                              assetName:assetName
+                                     heroImageURLString:nil
+                                           durationText:durationText
+                                            calorieText:calorieText
+                                           servingsText:servingsText
+                                            summaryText:summaryText
+                                            ingredients:MRRIngredients(ingredients)
+                                           instructions:instructions
+                                                  tools:tools ?: @[]
+                                                   tags:tags ?: @[]
+                                             sourceName:nil
+                                        sourceURLString:nil
+                                         productContext:nil] autorelease];
+}
+
 static OnboardingRecipePreview *MRRPreview(NSString *title,
                                            NSString *subtitle,
                                            NSString *assetName,
@@ -64,20 +92,24 @@ static OnboardingRecipePreview *MRRPreview(NSString *title,
         @"Bright breakfast",
         @"avocado-toast",
         nil,
-        MRRDetail(
+        MRRDetailWithMetadata(
             @"Avocado Toast",
             @"Bright breakfast",
             @"avocado-toast",
             @"10 min",
             @"280 kcal",
             @"2 servings",
-            @"Creamy avocado, crisp sourdough, and a quick citrus finish make this an easy starter recipe.",
+            @"Creamy avocado, crisp sourdough, and a quick citrus finish make this an easy starter recipe for onboarding. "
+            @"It feels familiar on the first glance, opens with bright texture, and gives new users a clear example of a dish "
+            @"they could realistically make in a few calm steps at home.",
             @[ @"2 ripe avocados", @"4 slices sourdough", @"1 lemon", @"Chili flakes", @"Sea salt", @"Olive oil" ],
             @[
               MRRInstruction(@"Mash the base", @"Crush avocado with lemon juice, olive oil, and a pinch of salt until creamy."),
               MRRInstruction(@"Toast the bread", @"Toast sourdough until golden so the topping stays crisp and lifted."),
               MRRInstruction(@"Finish with contrast", @"Spread generously, then add chili flakes and another squeeze of lemon.")
-            ])),
+            ],
+            @[ @"Chef knife", @"Mixing bowl", @"Toaster or skillet" ],
+            @[ @"Breakfast", @"Quick", @"Vegetarian" ])),
     MRRPreview(
         @"Seared Salmon",
         @"Fast weeknight dinner",

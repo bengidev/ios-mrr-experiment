@@ -4,7 +4,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol MRRAuthenticationController;
 @protocol MRROnboardingRecipeCataloging;
-@protocol MRROnboardingRecipeSearching;
 @class OnboardingStateController;
 @class OnboardingViewController;
 
@@ -23,8 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
                 authenticationController:(id<MRRAuthenticationController>)authenticationController;
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
                authenticationController:(id<MRRAuthenticationController>)authenticationController
-                           recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog
-                           recipeSearcher:(id<MRROnboardingRecipeSearching>)recipeSearcher;
+                           recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog;
 
 @end
 
