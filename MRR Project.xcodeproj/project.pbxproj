@@ -42,6 +42,10 @@
 		D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000110 /* MainMenuTabBarControllerTests.m */; };
 		E10000000000000000000001 /* OnboardingRecipeModels.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000102 /* OnboardingRecipeModels.m */; };
 		E10000000000000000000002 /* OnboardingRecipeCatalog.m in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000104 /* OnboardingRecipeCatalog.m */; };
+		F10000000000000000000001 /* HomeDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000101 /* HomeDataSource.m */; };
+		F10000000000000000000002 /* HomeSectionHeaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000103 /* HomeSectionHeaderView.m */; };
+		F10000000000000000000003 /* HomeCollectionViewCells.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000105 /* HomeCollectionViewCells.m */; };
+		F10000000000000000000004 /* HomeRecipeListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000107 /* HomeRecipeListViewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,6 +123,14 @@
 		E10000000000000000000103 /* OnboardingRecipeCatalog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OnboardingRecipeCatalog.h; sourceTree = "<group>"; };
 		E10000000000000000000104 /* OnboardingRecipeCatalog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OnboardingRecipeCatalog.m; sourceTree = "<group>"; };
 		E10000000000000000000107 /* RecipeAPIConfig.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = RecipeAPIConfig.example.plist; sourceTree = "<group>"; };
+		F10000000000000000000100 /* HomeDataSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeDataSource.h; sourceTree = "<group>"; };
+		F10000000000000000000101 /* HomeDataSource.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeDataSource.m; sourceTree = "<group>"; };
+		F10000000000000000000102 /* HomeSectionHeaderView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeSectionHeaderView.h; sourceTree = "<group>"; };
+		F10000000000000000000103 /* HomeSectionHeaderView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeSectionHeaderView.m; sourceTree = "<group>"; };
+		F10000000000000000000104 /* HomeCollectionViewCells.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeCollectionViewCells.h; sourceTree = "<group>"; };
+		F10000000000000000000105 /* HomeCollectionViewCells.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeCollectionViewCells.m; sourceTree = "<group>"; };
+		F10000000000000000000106 /* HomeRecipeListViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeRecipeListViewController.h; sourceTree = "<group>"; };
+		F10000000000000000000107 /* HomeRecipeListViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeRecipeListViewController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -295,6 +307,14 @@
 			children = (
 				D10000000000000000000106 /* HomeCoordinator.h */,
 				D10000000000000000000107 /* HomeCoordinator.m */,
+				F10000000000000000000104 /* HomeCollectionViewCells.h */,
+				F10000000000000000000105 /* HomeCollectionViewCells.m */,
+				F10000000000000000000100 /* HomeDataSource.h */,
+				F10000000000000000000101 /* HomeDataSource.m */,
+				F10000000000000000000106 /* HomeRecipeListViewController.h */,
+				F10000000000000000000107 /* HomeRecipeListViewController.m */,
+				F10000000000000000000102 /* HomeSectionHeaderView.h */,
+				F10000000000000000000103 /* HomeSectionHeaderView.m */,
 				A0000000000000000000066C /* HomeViewController.h */,
 				A0000000000000000000066D /* HomeViewController.m */,
 			);
@@ -511,7 +531,11 @@
 			files = (
 				A00000000000000000000700 /* main.m in Sources */,
 				A00000000000000000000701 /* AppDelegate.m in Sources */,
+				F10000000000000000000003 /* HomeCollectionViewCells.m in Sources */,
 				D10000000000000000000003 /* HomeCoordinator.m in Sources */,
+				F10000000000000000000001 /* HomeDataSource.m in Sources */,
+				F10000000000000000000004 /* HomeRecipeListViewController.m in Sources */,
+				F10000000000000000000002 /* HomeSectionHeaderView.m in Sources */,
 				A0000000000000000000073A /* HomeViewController.m in Sources */,
 				D10000000000000000000002 /* MainMenuCoordinator.m in Sources */,
 				D10000000000000000000001 /* MainMenuTabBarController.m in Sources */,
