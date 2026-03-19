@@ -298,6 +298,27 @@
   XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
 }
 
+- (void)testSelectingRecommendationRecipeUsesBottomUpDetailPresentation {
+  [self finishInitialLoadIfNeeded];
+
+  NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
+  [self spinMainRunLoop];
+
+  UIViewController *presentedViewController = [self presentedRecipeContainerViewController];
+  XCTAssertNotNil(presentedViewController);
+
+  if (@available(iOS 15.0, *)) {
+    XCTAssertTrue([presentedViewController isKindOfClass:[UINavigationController class]]);
+    XCTAssertEqual(presentedViewController.modalPresentationStyle, UIModalPresentationPageSheet);
+    XCTAssertEqual(presentedViewController.modalTransitionStyle, UIModalTransitionStyleCoverVertical);
+  } else {
+    XCTAssertTrue([presentedViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
+    XCTAssertEqual(presentedViewController.modalPresentationStyle, UIModalPresentationFullScreen);
+    XCTAssertEqual(presentedViewController.modalTransitionStyle, UIModalTransitionStyleCoverVertical);
+  }
+}
+
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
   if ([view.accessibilityIdentifier isEqualToString:identifier]) {
     return view;
