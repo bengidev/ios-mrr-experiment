@@ -547,7 +547,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   categoryCollectionView.showsHorizontalScrollIndicator = NO;
   [categoriesSectionView addArrangedSubview:categoryCollectionView];
   self.categoryCollectionView = categoryCollectionView;
-  self.categoryCollectionHeightConstraint = [categoryCollectionView.heightAnchor constraintEqualToConstant:84.0];
+  self.categoryCollectionHeightConstraint = [categoryCollectionView.heightAnchor constraintEqualToConstant:96.0];
   self.categoryCollectionHeightConstraint.active = YES;
 
   UIStackView *searchResultsSectionView = [self sectionStackView];
@@ -605,7 +605,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [recommendationCollectionView registerClass:[HomeRecipeCardCell class] forCellWithReuseIdentifier:MRRHomeRecipeCardCellReuseIdentifier];
   [recommendationSectionView addArrangedSubview:recommendationCollectionView];
   self.recommendationCollectionView = recommendationCollectionView;
-  self.recommendationCollectionHeightConstraint = [recommendationCollectionView.heightAnchor constraintEqualToConstant:344.0];
+  self.recommendationCollectionHeightConstraint = [recommendationCollectionView.heightAnchor constraintEqualToConstant:298.0];
   self.recommendationCollectionHeightConstraint.active = YES;
 
   UILabel *recommendationEmptyStateLabel = [self emptyStateLabelWithAccessibilityIdentifier:@"home.recommendation.emptyStateLabel"];
@@ -630,7 +630,7 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   [weeklyCollectionView registerClass:[HomeRecipeCardCell class] forCellWithReuseIdentifier:MRRHomeRecipeCardCellReuseIdentifier];
   [weeklySectionView addArrangedSubview:weeklyCollectionView];
   self.weeklyCollectionView = weeklyCollectionView;
-  self.weeklyCollectionHeightConstraint = [weeklyCollectionView.heightAnchor constraintEqualToConstant:344.0];
+  self.weeklyCollectionHeightConstraint = [weeklyCollectionView.heightAnchor constraintEqualToConstant:298.0];
   self.weeklyCollectionHeightConstraint.active = YES;
 
   [NSLayoutConstraint activateConstraints:@[
@@ -951,9 +951,9 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
   self.contentStackView.spacing = compactViewport ? 20.0 : 24.0;
   self.headlineLabel.font = [UIFont systemFontOfSize:(compactViewport ? 27.0 : 30.0) weight:UIFontWeightBold];
-  self.categoryCollectionHeightConstraint.constant = compactViewport ? 72.0 : 80.0;
+  self.categoryCollectionHeightConstraint.constant = compactViewport ? 88.0 : 96.0;
 
-  CGFloat railHeight = compactViewport ? 306.0 : 332.0;
+  CGFloat railHeight = compactViewport ? 282.0 : 298.0;
   self.recommendationCollectionHeightConstraint.constant = railHeight;
   self.weeklyCollectionHeightConstraint.constant = railHeight;
   [self.contentStackView setCustomSpacing:(compactViewport ? 16.0 : 18.0) afterView:self.contentStackView.arrangedSubviews.firstObject];
@@ -1221,8 +1221,15 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
   if (@available(iOS 15.0, *)) {
     UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
     navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
+    navigationController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
     if (navigationController.sheetPresentationController != nil) {
       navigationController.sheetPresentationController.prefersGrabberVisible = YES;
+      navigationController.sheetPresentationController.preferredCornerRadius = 28.0;
+      navigationController.sheetPresentationController.detents = @[
+        UISheetPresentationControllerDetent.mediumDetent,
+        UISheetPresentationControllerDetent.largeDetent
+      ];
+      navigationController.sheetPresentationController.selectedDetentIdentifier = UISheetPresentationControllerDetentIdentifierMedium;
     }
     [presenter presentViewController:navigationController animated:YES completion:nil];
     return;
@@ -1402,8 +1409,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
   CGSize viewportSize = self.view.bounds.size;
   if (collectionView == self.categoryCollectionView) {
-    CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(136.0, viewportSize, MRRLayoutScaleAxisWidth), 110.0, 160.0);
-    return CGSizeMake(width, 72.0);
+    CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(92.0, viewportSize, MRRLayoutScaleAxisWidth), 82.0, 98.0);
+    return CGSizeMake(width, 88.0);
   }
 
   if (collectionView == self.searchResultsCollectionView) {
@@ -1411,8 +1418,8 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
     return CGSizeMake(MAX(width, 220.0), 304.0);
   }
 
-  CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(266.0, viewportSize, MRRLayoutScaleAxisWidth), 232.0, 292.0);
-  CGFloat height = viewportSize.height < 760.0 ? 308.0 : 330.0;
+  CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(206.0, viewportSize, MRRLayoutScaleAxisWidth), 180.0, 220.0);
+  CGFloat height = viewportSize.height < 760.0 ? 282.0 : 298.0;
   return CGSizeMake(width, height);
 }
 
@@ -1428,12 +1435,12 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
   if (collectionView == self.categoryCollectionView) {
-    return 12.0;
+    return 10.0;
   }
   if (collectionView == self.searchResultsCollectionView) {
     return 14.0;
   }
-  return 16.0;
+  return 14.0;
 }
 
 #pragma mark - HomeRecipeListViewControllerDelegate

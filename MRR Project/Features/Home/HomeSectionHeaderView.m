@@ -46,7 +46,7 @@ static UIColor *MRRHomeHeaderNamedColor(NSString *name, UIColor *lightColor, UIC
 
     UILabel *titleLabel = [[[UILabel alloc] init] autorelease];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    titleLabel.font = [UIFont systemFontOfSize:22.0 weight:UIFontWeightSemibold];
+    titleLabel.font = [UIFont systemFontOfSize:20.0 weight:UIFontWeightSemibold];
     titleLabel.adjustsFontForContentSizeCategory = YES;
     titleLabel.numberOfLines = 1;
     titleLabel.adjustsFontSizeToFitWidth = YES;
@@ -61,8 +61,8 @@ static UIColor *MRRHomeHeaderNamedColor(NSString *name, UIColor *lightColor, UIC
 
     UIButton *seeAllButton = [[[MRRHomeSectionHeaderButton alloc] initWithFrame:CGRectZero] autorelease];
     seeAllButton.translatesAutoresizingMaskIntoConstraints = NO;
-    seeAllButton.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightMedium];
-    seeAllButton.contentEdgeInsets = UIEdgeInsetsMake(8.0, 10.0, 8.0, 10.0);
+    seeAllButton.titleLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium];
+    seeAllButton.contentEdgeInsets = UIEdgeInsetsMake(6.0, 2.0, 6.0, 2.0);
     seeAllButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     seeAllButton.titleLabel.adjustsFontForContentSizeCategory = YES;
     UIColor *accentColor = MRRHomeHeaderNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],

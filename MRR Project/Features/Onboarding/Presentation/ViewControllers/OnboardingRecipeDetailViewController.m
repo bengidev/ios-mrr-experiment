@@ -175,8 +175,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     if (!loading) {
       _recipeDetail = [recipePreview.fallbackDetail retain];
     }
-    self.modalPresentationStyle = UIModalPresentationOverFullScreen;
-    self.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+    self.modalPresentationStyle = UIModalPresentationFullScreen;
+    self.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
   }
 
   return self;
