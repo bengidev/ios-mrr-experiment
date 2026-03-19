@@ -292,7 +292,9 @@
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] != nil;
+  } timeout:1.2];
 
   XCTAssertNotNil([self presentedRecipeContainerViewController]);
   XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
@@ -303,7 +305,9 @@
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] != nil;
+  } timeout:1.2];
 
   UIViewController *presentedViewController = [self presentedRecipeContainerViewController];
   XCTAssertNotNil(presentedViewController);
@@ -317,13 +321,32 @@
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] != nil;
+  } timeout:1.2];
 
   UIView *detailRootView = [self presentedRecipeDetailRootView];
   UIButton *closeButton =
       (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
   XCTAssertNotNil(closeButton);
   XCTAssertEqualObjects(closeButton.superview, detailRootView);
+}
+
+- (void)testFullscreenRecipeDetailUsesPremiumCloseButtonIcon {
+  [self finishInitialLoadIfNeeded];
+
+  NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+  [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
+  [self waitForCondition:^BOOL {
+    return [self presentedRecipeContainerViewController] != nil;
+  } timeout:1.2];
+
+  UIView *detailRootView = [self presentedRecipeDetailRootView];
+  UIButton *closeButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
+  XCTAssertNotNil(closeButton);
+  XCTAssertNotNil(closeButton.currentImage);
+  XCTAssertEqual(closeButton.currentTitle.length, 0U);
 }
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
