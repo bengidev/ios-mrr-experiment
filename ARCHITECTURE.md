@@ -332,7 +332,7 @@ flowchart LR
 - The auth screens are keyboard-aware: they use scroll insets, tap-to-dismiss, and focused-field visibility handling.
 - Light and dark appearance rely on named colors from the shared asset catalog.
 - Accessibility identifiers are a maintained part of the onboarding, auth, and home debug/test contract.
-- The repository now includes a tracked GitHub Actions coverage workflow and a tracked pre-commit hook for Objective-C formatting and linting.
+- The repository now includes a tracked GitHub Actions coverage workflow that uploads Cobertura coverage to Codecov on `main` via `CODECOV_TOKEN`, plus a tracked pre-commit hook for Objective-C formatting and linting.
 - Any local `Packages/CocoaLumberjack/` checkout is outside the tracked runtime graph and ignored by git so CI does not treat it as a submodule.
 
 ## Conclusion

@@ -64,7 +64,7 @@ Within recipe detail, `Ingredients`, `Methods`, `Tools & Equipment`, and `Tags` 
 | Stack | Used for | Where it shows up | Notes |
 | --- | --- | --- | --- |
 | `XCTest` | Unit and UI-structure regression coverage | `MRR ProjectTests/` | Covers root routing, onboarding, pushed auth screens, home summary, logout flow, and carousel behavior. |
-| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled, uploads `.xcresult` plus `xccov` artifacts, and publishes Cobertura coverage to Codecov for the README badge. The workflow uses only tracked repo contents and does not depend on a committed Firebase plist. |
+| `GitHub Actions` | Remote batch test and code coverage execution | `.github/workflows/ios-tests-coverage.yml` | Runs the iOS test suite with coverage enabled, uploads `.xcresult` plus `xccov` artifacts, and publishes Cobertura coverage to Codecov for the README badge. Coverage publishing on `main` now uses the `CODECOV_TOKEN` GitHub Actions secret so badge updates fail loudly instead of silently degrading to `unknown`. |
 | `clang-format` | Objective-C formatting | `.clang-format`, `scripts/format-objc.sh`, `.githooks/pre-commit` | Uses Google-based formatting rules with a `ColumnLimit` of `150`. |
 | `xcodebuild analyze` | Objective-C static analysis lint pass | `scripts/lint-objc.sh` | Used by the pre-commit hook so analyzer findings block a bad commit. |
 | `Git pre-commit hook` | Local guardrail before commits | `.githooks/pre-commit` | Formats staged Objective-C files, re-stages them, then runs the analyzer. |
