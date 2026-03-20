@@ -40,6 +40,7 @@ Carthage/Build/
 
 # Local repo guidance
 AGENTS.md
+.impeccable.md
 Packages/CocoaLumberjack/
 # Credential-bearing local app config
 MRR Project/Resources/*.local.plist
