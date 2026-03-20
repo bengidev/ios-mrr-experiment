@@ -35,7 +35,13 @@
 @property(nonatomic, readonly) UICollectionView *collectionView;
 @property(nonatomic, readonly) UILabel *emptyStateLabel;
 @property(nonatomic, readonly) NSArray<HomeRecipeCard *> *recipes;
+@property(nonatomic, readonly) UIButton *compactDropdownButton;
+@property(nonatomic, readonly) UIView *introCardSurfaceView;
+@property(nonatomic, readonly) UIStackView *expandedIntroStackView;
+@property(nonatomic, readonly) BOOL introCompact;
+@property(nonatomic, readonly) BOOL introDropdownExpanded;
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath;
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView;
 
 @end
 
@@ -51,6 +57,12 @@
 - (void)finishInitialLoadIfNeeded;
 - (UIViewController *)presentedRecipeContainerViewController;
 - (UIView *)presentedRecipeDetailRootView;
+- (NSArray<HomeRecipeCard *> *)weeklyRecipes;
+- (HomeRecipeListViewController *)mountedRecipeListViewControllerWithTitle:(NSString *)title
+                                                                   recipes:(NSArray<HomeRecipeCard *> *)recipes
+                                                              emptyMessage:(NSString *)emptyMessage
+                                                                    window:(UIWindow * __strong *)window
+                                                      navigationController:(UINavigationController * __strong *)navigationController;
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 - (void)spinMainRunLoop;
 
@@ -263,6 +275,120 @@
   window.hidden = YES;
 }
 
+- (void)testWeeklyRecipeListCompactsIntroIntoDropdownWhenScrolled {
+  UIWindow *window = nil;
+  UINavigationController *navigationController = nil;
+  HomeRecipeListViewController *listViewController =
+      [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
+                                            recipes:[self weeklyRecipes]
+                                       emptyMessage:@"No weekly picks yet."
+                                             window:&window
+                               navigationController:&navigationController];
+
+  XCTAssertFalse(listViewController.introCompact);
+  XCTAssertTrue(listViewController.introDropdownExpanded);
+  XCTAssertTrue(listViewController.compactDropdownButton.hidden);
+
+  listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
+  [listViewController scrollViewDidScroll:listViewController.collectionView];
+  [self spinMainRunLoop];
+  [listViewController.view layoutIfNeeded];
+
+  XCTAssertTrue(listViewController.introCompact);
+  XCTAssertFalse(listViewController.introDropdownExpanded);
+  XCTAssertFalse(listViewController.compactDropdownButton.hidden);
+
+  window.hidden = YES;
+}
+
+- (void)testWeeklyRecipeListDropdownReExpandsIntroAndResetsNearTop {
+  UIWindow *window = nil;
+  UINavigationController *navigationController = nil;
+  HomeRecipeListViewController *listViewController =
+      [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
+                                            recipes:[self weeklyRecipes]
+                                       emptyMessage:@"No weekly picks yet."
+                                             window:&window
+                               navigationController:&navigationController];
+
+  listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
+  [listViewController scrollViewDidScroll:listViewController.collectionView];
+  [self spinMainRunLoop];
+
+  [listViewController.compactDropdownButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+  [listViewController.view layoutIfNeeded];
+
+  XCTAssertTrue(listViewController.introCompact);
+  XCTAssertTrue(listViewController.introDropdownExpanded);
+
+  listViewController.collectionView.contentOffset = CGPointMake(0.0, -listViewController.collectionView.adjustedContentInset.top);
+  [listViewController scrollViewDidScroll:listViewController.collectionView];
+  [self spinMainRunLoop];
+  [listViewController.view layoutIfNeeded];
+
+  XCTAssertFalse(listViewController.introCompact);
+  XCTAssertTrue(listViewController.introDropdownExpanded);
+  XCTAssertTrue(listViewController.compactDropdownButton.hidden);
+
+  window.hidden = YES;
+}
+
+- (void)testWeeklyRecipeListExpandedDropdownStaysClippedInsideIntroCard {
+  UIWindow *window = nil;
+  UINavigationController *navigationController = nil;
+  HomeRecipeListViewController *listViewController =
+      [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
+                                            recipes:[self weeklyRecipes]
+                                       emptyMessage:@"No weekly picks yet."
+                                             window:&window
+                               navigationController:&navigationController];
+
+  listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
+  [listViewController scrollViewDidScroll:listViewController.collectionView];
+  [self spinMainRunLoop];
+
+  [listViewController.compactDropdownButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [self spinMainRunLoop];
+  [listViewController.view layoutIfNeeded];
+
+  CGRect compactDropdownFrame =
+      [listViewController.compactDropdownButton.superview convertRect:listViewController.compactDropdownButton.frame toView:listViewController.view];
+  CGRect expandedIntroFrame =
+      [listViewController.expandedIntroStackView.superview convertRect:listViewController.expandedIntroStackView.frame toView:listViewController.view];
+  CGRect introCardFrame =
+      [listViewController.introCardSurfaceView.superview convertRect:listViewController.introCardSurfaceView.frame toView:listViewController.view];
+
+  XCTAssertTrue(listViewController.introCardSurfaceView.clipsToBounds);
+  XCTAssertLessThanOrEqual(CGRectGetMaxY(compactDropdownFrame), CGRectGetMinY(expandedIntroFrame));
+  XCTAssertGreaterThanOrEqual(CGRectGetMinY(expandedIntroFrame), CGRectGetMinY(introCardFrame));
+  XCTAssertLessThanOrEqual(CGRectGetMaxY(expandedIntroFrame), CGRectGetMaxY(introCardFrame));
+
+  window.hidden = YES;
+}
+
+- (void)testSearchResultsRecipeListKeepsExpandedIntroWhileScrolling {
+  UIWindow *window = nil;
+  UINavigationController *navigationController = nil;
+  HomeRecipeListViewController *listViewController =
+      [self mountedRecipeListViewControllerWithTitle:@"Search Results"
+                                            recipes:[self.dataProvider searchRecipes:@"a"]
+                                       emptyMessage:@"No recipes match that search yet."
+                                             window:&window
+                               navigationController:&navigationController];
+
+  listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
+  [listViewController scrollViewDidScroll:listViewController.collectionView];
+  [self spinMainRunLoop];
+  [listViewController.view layoutIfNeeded];
+
+  XCTAssertFalse(listViewController.introCompact);
+  XCTAssertTrue(listViewController.introDropdownExpanded);
+  XCTAssertTrue(listViewController.compactDropdownButton.hidden);
+
+  window.hidden = YES;
+}
+
 - (void)testFilterButtonPresentsActionSheet {
   [self finishInitialLoadIfNeeded];
 
@@ -381,6 +507,41 @@
     return navigationController.topViewController.view;
   }
   return presentedViewController.view;
+}
+
+- (NSArray<HomeRecipeCard *> *)weeklyRecipes {
+  for (HomeSection *section in [self.dataProvider featuredSections]) {
+    if ([section.identifier isEqualToString:HomeSectionIdentifierWeekly]) {
+      return section.recipes;
+    }
+  }
+
+  return @[];
+}
+
+- (HomeRecipeListViewController *)mountedRecipeListViewControllerWithTitle:(NSString *)title
+                                                                   recipes:(NSArray<HomeRecipeCard *> *)recipes
+                                                              emptyMessage:(NSString *)emptyMessage
+                                                                    window:(UIWindow * __strong *)window
+                                                      navigationController:(UINavigationController * __strong *)navigationController {
+  HomeRecipeListViewController *listViewController =
+      [[HomeRecipeListViewController alloc] initWithScreenTitle:title recipes:recipes emptyMessage:emptyMessage];
+  UIWindow *mountedWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  UINavigationController *mountedNavigationController = [[UINavigationController alloc] initWithRootViewController:listViewController];
+  mountedWindow.rootViewController = mountedNavigationController;
+  [mountedWindow makeKeyAndVisible];
+  [mountedNavigationController loadViewIfNeeded];
+  [listViewController loadViewIfNeeded];
+  [listViewController.view layoutIfNeeded];
+
+  if (window != nil) {
+    *window = mountedWindow;
+  }
+  if (navigationController != nil) {
+    *navigationController = mountedNavigationController;
+  }
+
+  return listViewController;
 }
 
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
