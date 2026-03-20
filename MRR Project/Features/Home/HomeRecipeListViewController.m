@@ -387,23 +387,39 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   return [self.screenTitle isEqualToString:@"Recipes Of The Week"];
 }
 
-- (BOOL)usesCollapsibleWeeklyIntro {
+- (BOOL)isRecommendationIntroScreen {
+  return [self.screenTitle isEqualToString:@"Recommendation"];
+}
+
+- (BOOL)isRecommendationPicksIntroScreen {
+  return [self isRecommendationIntroScreen] || [self.screenTitle hasSuffix:@"Picks"];
+}
+
+- (BOOL)usesCollapsibleCuratedIntro {
   if (self.recipes.count == 0) {
     return NO;
   }
 
-  return [self isWeeklyIntroScreen];
+  return [self isWeeklyIntroScreen] || [self isRecommendationPicksIntroScreen];
 }
 
 - (NSString *)compactDropdownSummaryText {
   NSUInteger count = self.recipes.count;
-  return [NSString stringWithFormat:@"%lu %@", (unsigned long)count, (count == 1 ? @"weekend pick" : @"weekend picks")];
+  if ([self isWeeklyIntroScreen]) {
+    return [NSString stringWithFormat:@"%lu %@", (unsigned long)count, (count == 1 ? @"weekend pick" : @"weekend picks")];
+  }
+
+  if ([self isRecommendationPicksIntroScreen]) {
+    return [NSString stringWithFormat:@"%lu %@", (unsigned long)count, (count == 1 ? @"curated pick" : @"curated picks")];
+  }
+
+  return [NSString stringWithFormat:@"%lu %@", (unsigned long)count, (count == 1 ? @"item" : @"items")];
 }
 
 - (void)updateIntroPresentationAnimated:(BOOL)animated {
-  BOOL usesCollapsibleWeeklyIntro = [self usesCollapsibleWeeklyIntro];
-  BOOL showsCompactButton = usesCollapsibleWeeklyIntro && self.introCompact;
-  BOOL showsExpandedIntro = !usesCollapsibleWeeklyIntro || !self.introCompact || self.introDropdownExpanded;
+  BOOL usesCollapsibleCuratedIntro = [self usesCollapsibleCuratedIntro];
+  BOOL showsCompactButton = usesCollapsibleCuratedIntro && self.introCompact;
+  BOOL showsExpandedIntro = !usesCollapsibleCuratedIntro || !self.introCompact || self.introDropdownExpanded;
   BOOL wasShowingCompactButton = !self.compactDropdownButton.hidden;
   BOOL wasShowingExpandedIntro = !self.expandedIntroStackView.hidden;
   BOOL revealsCompactButton = showsCompactButton && !wasShowingCompactButton;
@@ -412,7 +428,7 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   [self.compactDropdownButton setImage:MRRHomeListChevronImage(showsExpandedIntro) forState:UIControlStateNormal];
   self.compactDropdownButton.accessibilityLabel =
       showsCompactButton ? [NSString stringWithFormat:@"%@, %@", self.screenTitle, (showsExpandedIntro ? @"Collapse summary" : @"Expand summary")] : nil;
-  self.compactDropdownButton.accessibilityHint = showsCompactButton ? @"Double tap to toggle the weekly summary." : nil;
+  self.compactDropdownButton.accessibilityHint = showsCompactButton ? @"Double tap to toggle the list summary." : nil;
   [self.compactDropdownButton.layer removeAllAnimations];
   [self.expandedIntroStackView.layer removeAllAnimations];
   [self.introCardView.layer removeAllAnimations];
@@ -486,7 +502,7 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
 }
 
 - (void)updateIntroPresentationForScrollOffset:(CGFloat)scrollOffset animated:(BOOL)animated {
-  if (![self usesCollapsibleWeeklyIntro]) {
+  if (![self usesCollapsibleCuratedIntro]) {
     if (self.introCompact) {
       self.introCompact = NO;
       self.introDropdownExpanded = YES;
@@ -508,7 +524,7 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
 }
 
 - (void)handleCompactDropdownButtonTapped:(id)sender {
-  if (![self usesCollapsibleWeeklyIntro] || !self.introCompact) {
+  if (![self usesCollapsibleCuratedIntro] || !self.introCompact) {
     return;
   }
 
@@ -537,6 +553,10 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
 
   if ([self isWeeklyIntroScreen]) {
     return @"A sharper look at the week's highlights, with more breathing room.";
+  }
+
+  if ([self isRecommendationIntroScreen]) {
+    return @"A curated selection with more breathing room and clearer hierarchy.";
   }
 
   if ([self.screenTitle hasSuffix:@"Picks"]) {
