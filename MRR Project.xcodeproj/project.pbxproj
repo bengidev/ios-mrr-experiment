@@ -30,6 +30,7 @@
 		A0000000000000000000073D /* MRRForgotPasswordViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000671 /* MRRForgotPasswordViewController.m */; };
 		A0000000000000000000073E /* MRRLiquidGlassStyling.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000673 /* MRRLiquidGlassStyling.m */; };
 		A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */; };
+		A00000000000000000000740 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000676 /* LaunchScreen.storyboard */; };
 		B62132B22F6531980061670E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B12F6531980061670E /* FirebaseAuth */; };
 		B62132B52F6533030061670E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B42F6533030061670E /* GoogleSignIn */; };
 		D10000000000000000000001 /* MainMenuTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000103 /* MainMenuTabBarController.m */; };
@@ -100,6 +101,7 @@
 		A00000000000000000000672 /* MRRLiquidGlassStyling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRLiquidGlassStyling.h; sourceTree = "<group>"; };
 		A00000000000000000000673 /* MRRLiquidGlassStyling.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLiquidGlassStyling.m; sourceTree = "<group>"; };
 		A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRLiquidGlassStylingTests.m; sourceTree = "<group>"; };
+		A00000000000000000000676 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B679281C2F6A632C00D8F70A /* RecipeAPIConfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = RecipeAPIConfig.plist; sourceTree = "<group>"; };
 		C0FFEE000000000000000101 /* GoogleService-Info.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.example.plist"; sourceTree = "<group>"; };
@@ -337,6 +339,7 @@
 			children = (
 				B6629FDC2F67B8CA00666EE1 /* GoogleService-Info.plist */,
 				A00000000000000000000655 /* Assets.xcassets */,
+				A00000000000000000000676 /* LaunchScreen.storyboard */,
 				A00000000000000000000606 /* Info.plist */,
 				C0FFEE000000000000000101 /* GoogleService-Info.example.plist */,
 				E10000000000000000000107 /* RecipeAPIConfig.example.plist */,
@@ -470,6 +473,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000729 /* Assets.xcassets in Resources */,
+				A00000000000000000000740 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
