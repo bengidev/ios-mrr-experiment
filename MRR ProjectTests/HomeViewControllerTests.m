@@ -450,10 +450,15 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testChangingFilterReloadsLiveHomeSections {
   [self finishInitialLoadIfNeeded];
 
+  self.dataProvider.initialDelay = 0.12;
   NSUInteger initialRequestCount = self.dataProvider.initialRequests.count;
   [self.viewController applyFilterOption:HomeFilterOptionFastest];
+  XCTAssertFalse(self.viewController.filterButton.enabled);
   [self waitForCondition:^BOOL {
     return self.dataProvider.initialRequests.count == initialRequestCount + 1;
+  } timeout:1.2];
+  [self waitForCondition:^BOOL {
+    return self.viewController.filterButton.enabled;
   } timeout:1.2];
 
   XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount + 1);
@@ -602,6 +607,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testChangingSearchFilterRefetchesVisibleResultsWithSelectedOption {
   [self finishInitialLoadIfNeeded];
 
+  NSMutableDictionary<NSString *, NSNumber *> *searchDelayByQuery =
+      [NSMutableDictionary dictionaryWithDictionary:self.dataProvider.searchDelayByQuery ?: @{}];
+  [searchDelayByQuery setObject:@(0.12) forKey:@"curry"];
+  self.dataProvider.searchDelayByQuery = searchDelayByQuery;
+
   self.viewController.searchTextField.text = @"curry";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
   [self waitForCondition:^BOOL {
@@ -611,12 +621,16 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   NSUInteger requestCountBeforeFilter = self.dataProvider.searchRequests.count;
 
   [self.viewController applyFilterOption:HomeFilterOptionLowCalorie];
+  XCTAssertFalse(self.viewController.filterButton.enabled);
   [self waitForCondition:^BOOL {
     return self.dataProvider.searchRequests.count == requestCountBeforeFilter + 1;
   } timeout:1.0];
   [self waitForCondition:^BOOL {
     return [self.viewController.lastCompletedSearchQuery isEqualToString:@"curry"] &&
            self.viewController.currentSearchResults.count == 2U;
+  } timeout:1.0];
+  [self waitForCondition:^BOOL {
+    return self.viewController.filterButton.enabled;
   } timeout:1.0];
 
   XCTAssertEqual(self.dataProvider.searchRequests.count, requestCountBeforeFilter + 1);
