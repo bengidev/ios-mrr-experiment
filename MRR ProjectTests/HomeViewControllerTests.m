@@ -13,6 +13,7 @@
 
 @property(nonatomic, readonly) UITextField *searchTextField;
 @property(nonatomic, readonly) UIButton *filterButton;
+@property(nonatomic, readonly) UIView *activeFiltersContainerView;
 @property(nonatomic, readonly) UIView *loadingStateView;
 @property(nonatomic, readonly) UICollectionView *categoryCollectionView;
 @property(nonatomic, readonly) UICollectionView *recommendationCollectionView;
@@ -33,6 +34,7 @@
 @property(nonatomic, readonly) UIView *poweredByContainerView;
 @property(nonatomic, assign) BOOL displayingLiveContent;
 - (void)applyFilterOption:(HomeFilterOption)filterOption;
+- (void)applyAdvancedFilters:(HomeAdvancedFilterSettings *)advancedFilters;
 - (BOOL)textFieldShouldReturn:(UITextField *)textField;
 - (void)executeSearchForQuery:(NSString *)query resultLimit:(NSUInteger)resultLimit presentingResultsList:(BOOL)presentResultsList;
 
@@ -156,24 +158,74 @@
   }
 }
 
-- (NSArray<HomeSection *> *)sectionsForFilterOption:(HomeFilterOption)filterOption {
+- (NSArray<HomeRecipeCard *> *)recipes:(NSArray<HomeRecipeCard *> *)recipes filteredForAdvancedFilters:(HomeAdvancedFilterSettings *)advancedFilters {
+  if (recipes.count == 0 || advancedFilters == nil || ![advancedFilters hasActiveFilters]) {
+    return recipes ?: @[];
+  }
+
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(HomeRecipeCard *recipeCard, NSDictionary<NSString *, id> *bindings) {
+    NSMutableArray<NSString *> *parts = [NSMutableArray arrayWithObjects:
+        recipeCard.title ?: @"",
+        recipeCard.subtitle ?: @"",
+        recipeCard.summaryText ?: @"",
+        recipeCard.mealType ?: @"",
+        nil];
+    [parts addObjectsFromArray:recipeCard.tags ?: @[]];
+    NSString *joinedText = [[parts componentsJoinedByString:@" "] lowercaseString];
+
+    if (advancedFilters.maxReadyTime > 0 && recipeCard.readyInMinutes > advancedFilters.maxReadyTime) {
+      return NO;
+    }
+    if (advancedFilters.cuisine.length > 0 && ![joinedText containsString:advancedFilters.cuisine.lowercaseString]) {
+      return NO;
+    }
+    if (advancedFilters.diet.length > 0 && ![joinedText containsString:advancedFilters.diet.lowercaseString]) {
+      return NO;
+    }
+    if (advancedFilters.intolerances.length > 0) {
+      NSString *term = advancedFilters.intolerances.lowercaseString;
+      BOOL matchesIntolerance = [joinedText containsString:[NSString stringWithFormat:@"%@ free", term]] ||
+                                [joinedText containsString:[NSString stringWithFormat:@"%@-free", term]] ||
+                                [joinedText containsString:[NSString stringWithFormat:@"no %@", term]];
+      if (!matchesIntolerance) {
+        return NO;
+      }
+    }
+    if (advancedFilters.includeIngredients.length > 0 && ![joinedText containsString:advancedFilters.includeIngredients.lowercaseString]) {
+      return NO;
+    }
+    if (advancedFilters.excludeIngredients.length > 0 && [joinedText containsString:advancedFilters.excludeIngredients.lowercaseString]) {
+      return NO;
+    }
+    if (advancedFilters.equipment.length > 0 && ![joinedText containsString:advancedFilters.equipment.lowercaseString]) {
+      return NO;
+    }
+    return YES;
+  }];
+  return [recipes filteredArrayUsingPredicate:predicate];
+}
+
+- (NSArray<HomeSection *> *)sectionsForFilterOption:(HomeFilterOption)filterOption advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters {
   NSArray<HomeSection *> *sections = self.initialSectionsOverride ?: [self featuredSections];
   NSMutableArray<HomeSection *> *filteredSections = [NSMutableArray arrayWithCapacity:sections.count];
   for (HomeSection *section in sections) {
+    NSArray<HomeRecipeCard *> *filteredRecipes = [self recipes:section.recipes filteredForAdvancedFilters:advancedFilters];
     [filteredSections addObject:[[HomeSection alloc] initWithIdentifier:section.identifier
                                                                   title:section.title
-                                                                recipes:[self sortedRecipes:section.recipes forFilterOption:filterOption]]];
+                                                                recipes:[self sortedRecipes:filteredRecipes forFilterOption:filterOption]]];
   }
   return filteredSections;
 }
 
-- (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)recipesByCategoryIdentifierForFilterOption:(HomeFilterOption)filterOption {
+- (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)recipesByCategoryIdentifierForFilterOption:(HomeFilterOption)filterOption
+                                                                                 advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters {
   NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier = self.initialRecipesByCategoryIdentifierOverride;
   if (recipesByCategoryIdentifier == nil) {
     NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *derivedRecipesByCategoryIdentifier =
         [NSMutableDictionary dictionary];
     for (HomeCategory *category in [self availableCategories]) {
       NSArray<HomeRecipeCard *> *recipes = [self recipesForCategory:category] ?: @[];
+      recipes = [self recipes:recipes filteredForAdvancedFilters:advancedFilters];
       [derivedRecipesByCategoryIdentifier setObject:[self sortedRecipes:recipes forFilterOption:filterOption]
                                              forKey:category.identifier];
     }
@@ -184,6 +236,7 @@
     [recipesByCategoryIdentifier enumerateKeysAndObjectsUsingBlock:^(NSString *key,
                                                                      NSArray<HomeRecipeCard *> *recipes,
                                                                      BOOL *stop) {
+      recipes = [self recipes:recipes filteredForAdvancedFilters:advancedFilters];
       [filteredRecipesByCategoryIdentifier setObject:[self sortedRecipes:recipes forFilterOption:filterOption]
                                               forKey:key];
     }];
@@ -194,14 +247,23 @@
 }
 
 - (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption completion:(HomeInitialSectionsCompletion)completion {
+  [self loadInitialSectionsForFilterOption:filterOption advancedFilters:nil completion:completion];
+}
+
+- (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption
+                           advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters
+                                completion:(HomeInitialSectionsCompletion)completion {
   if (completion == nil) {
     return;
   }
 
-  [self.initialRequests addObject:@{ @"filterOption" : @(filterOption) }];
-  NSArray<HomeSection *> *sections = [self sectionsForFilterOption:filterOption];
+  [self.initialRequests addObject:@{
+    @"filterOption" : @(filterOption),
+    @"advancedFilters" : advancedFilters ?: [HomeAdvancedFilterSettings emptySettings]
+  }];
+  NSArray<HomeSection *> *sections = [self sectionsForFilterOption:filterOption advancedFilters:advancedFilters];
   NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier =
-      [self recipesByCategoryIdentifierForFilterOption:filterOption];
+      [self recipesByCategoryIdentifierForFilterOption:filterOption advancedFilters:advancedFilters];
   BOOL usesLiveData = self.initialUsesLiveData;
   NSTimeInterval delay = MAX(self.initialDelay, 0.0);
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -210,12 +272,13 @@
 }
 
 - (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion {
-  [self loadInitialSectionsForFilterOption:HomeFilterOptionFeatured completion:completion];
+  [self loadInitialSectionsForFilterOption:HomeFilterOptionFeatured advancedFilters:nil completion:completion];
 }
 
 - (void)searchRecipes:(NSString *)query
                 limit:(NSUInteger)limit
          filterOption:(HomeFilterOption)filterOption
+      advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters
            completion:(HomeRecipeSearchCompletion)completion {
   if (completion == nil) {
     return;
@@ -237,13 +300,19 @@
     recipes = [self.searchResultsByQuery objectForKey:trimmedQuery];
     recipes = [self sortedRecipes:recipes ?: [self searchRecipes:trimmedQuery] forFilterOption:filterOption];
   }
+  recipes = [self recipes:recipes filteredForAdvancedFilters:advancedFilters];
   if (limit > 0 && recipes.count > limit) {
     recipes = [recipes subarrayWithRange:NSMakeRange(0, limit)];
   }
 
   NSNumber *overrideDelay = [self.searchDelayByQuery objectForKey:trimmedQuery];
   NSTimeInterval delay = overrideDelay != nil ? overrideDelay.doubleValue : self.searchDelay;
-  [self.searchRequests addObject:@{ @"query" : trimmedQuery, @"limit" : @(limit), @"filterOption" : @(filterOption) }];
+  [self.searchRequests addObject:@{
+    @"query" : trimmedQuery,
+    @"limit" : @(limit),
+    @"filterOption" : @(filterOption),
+    @"advancedFilters" : advancedFilters ?: [HomeAdvancedFilterSettings emptySettings]
+  }];
   BOOL usesLiveData = self.searchUsesLiveData;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(delay, 0.0) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
     completion(recipes ?: @[], usesLiveData);
@@ -251,7 +320,7 @@
 }
 
 - (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion {
-  [self searchRecipes:query limit:limit filterOption:HomeFilterOptionFeatured completion:completion];
+  [self searchRecipes:query limit:limit filterOption:HomeFilterOptionFeatured advancedFilters:nil completion:completion];
 }
 
 - (void)loadRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard completion:(HomeRecipeDetailCompletion)completion {
@@ -465,6 +534,38 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertEqualObjects([[self.dataProvider.initialRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionFastest));
 }
 
+- (void)testApplyingAdvancedFiltersReloadsHomeSectionsAndShowsSummary {
+  [self finishInitialLoadIfNeeded];
+
+  self.dataProvider.initialDelay = 0.12;
+  NSUInteger initialRequestCount = self.dataProvider.initialRequests.count;
+  HomeAdvancedFilterSettings *advancedFilters =
+      [[HomeAdvancedFilterSettings alloc] initWithCuisine:@"Italian"
+                                                     diet:nil
+                                             intolerances:nil
+                                       includeIngredients:nil
+                                       excludeIngredients:nil
+                                                equipment:nil
+                                             maxReadyTime:30];
+
+  [self.viewController applyAdvancedFilters:advancedFilters];
+  XCTAssertFalse(self.viewController.activeFiltersContainerView.hidden);
+  [self waitForCondition:^BOOL {
+    return self.dataProvider.initialRequests.count == initialRequestCount + 1;
+  } timeout:1.2];
+  [self waitForCondition:^BOOL {
+    return self.viewController.filterButton.enabled;
+  } timeout:1.2];
+
+  NSDictionary<NSString *, id> *lastRequest = [self.dataProvider.initialRequests lastObject];
+  HomeAdvancedFilterSettings *capturedFilters = [lastRequest objectForKey:@"advancedFilters"];
+
+  XCTAssertEqualObjects(capturedFilters.cuisine, @"Italian");
+  XCTAssertEqual(capturedFilters.maxReadyTime, 30);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"home.activeFilters.chip.1" inView:self.viewController.view]);
+  XCTAssertTrue([[self titlesForRecipes:self.viewController.filteredRecommendationRecipes] containsObject:@"Pasta Carbonara"]);
+}
+
 - (void)testFallbackInitialLoadKeepsPoweredByHidden {
   HomeAsyncTestDataProvider *fallbackProvider = [[HomeAsyncTestDataProvider alloc] init];
   fallbackProvider.initialUsesLiveData = NO;
@@ -639,6 +740,82 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertEqualObjects([[self.dataProvider.searchRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionLowCalorie));
   XCTAssertEqual(self.viewController.currentSearchResults.count, 2U);
   XCTAssertEqualObjects([self titlesForRecipes:self.viewController.currentSearchResults], (@[ @"Curry 01", @"Curry 02" ]));
+}
+
+- (void)testApplyingAdvancedFiltersRefetchesVisibleSearchResults {
+  [self finishInitialLoadIfNeeded];
+
+  NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *searchResultsByQuery =
+      [NSMutableDictionary dictionaryWithDictionary:self.dataProvider.searchResultsByQuery ?: @{}];
+  [searchResultsByQuery setObject:@[
+    MRRTestHomeRecipeCard(@"test.green.01",
+                          @"Green Pasta",
+                          @"Italian garden bowl",
+                          @"avocado-toast",
+                          @"Tomato basil pasta blended into a bright blender sauce.",
+                          18,
+                          2,
+                          320,
+                          98,
+                          @"Culina Test Kitchen",
+                          HomeCategoryIdentifierLunch,
+                          @[ @"Italian", @"Vegetarian", @"Tomato", @"Blender" ]),
+    MRRTestHomeRecipeCard(@"test.green.02",
+                          @"Green Curry",
+                          @"Comfort bowl",
+                          @"green-curry",
+                          @"Herby curry for a slower dinner with a stock pot.",
+                          34,
+                          3,
+                          410,
+                          94,
+                          @"Culina Test Kitchen",
+                          HomeCategoryIdentifierDinner,
+                          @[ @"Thai", @"Curry", @"Dinner" ])
+  ] forKey:@"green"];
+  self.dataProvider.searchResultsByQuery = searchResultsByQuery;
+
+  NSMutableDictionary<NSString *, NSNumber *> *searchDelayByQuery =
+      [NSMutableDictionary dictionaryWithDictionary:self.dataProvider.searchDelayByQuery ?: @{}];
+  [searchDelayByQuery setObject:@(0.12) forKey:@"green"];
+  self.dataProvider.searchDelayByQuery = searchDelayByQuery;
+
+  self.viewController.searchTextField.text = @"green";
+  [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
+  [self waitForCondition:^BOOL {
+    return self.viewController.searchState == HomeSearchStateResults;
+  } timeout:2.0];
+
+  NSUInteger requestCountBeforeFilter = self.dataProvider.searchRequests.count;
+  HomeAdvancedFilterSettings *advancedFilters =
+      [[HomeAdvancedFilterSettings alloc] initWithCuisine:@"Italian"
+                                                     diet:nil
+                                             intolerances:nil
+                                       includeIngredients:@"Tomato"
+                                       excludeIngredients:nil
+                                                equipment:@"Blender"
+                                             maxReadyTime:20];
+
+  [self.viewController applyAdvancedFilters:advancedFilters];
+  XCTAssertFalse(self.viewController.filterButton.enabled);
+  [self waitForCondition:^BOOL {
+    return self.dataProvider.searchRequests.count == requestCountBeforeFilter + 1;
+  } timeout:1.2];
+  [self waitForCondition:^BOOL {
+    return self.viewController.currentSearchResults.count == 1U;
+  } timeout:1.2];
+  [self waitForCondition:^BOOL {
+    return self.viewController.filterButton.enabled;
+  } timeout:1.2];
+
+  NSDictionary<NSString *, id> *lastRequest = [self.dataProvider.searchRequests lastObject];
+  HomeAdvancedFilterSettings *capturedFilters = [lastRequest objectForKey:@"advancedFilters"];
+
+  XCTAssertEqualObjects(capturedFilters.cuisine, @"Italian");
+  XCTAssertEqualObjects(capturedFilters.includeIngredients, @"Tomato");
+  XCTAssertEqualObjects(capturedFilters.equipment, @"Blender");
+  XCTAssertEqualObjects([self titlesForRecipes:self.viewController.currentSearchResults], (@[ @"Green Pasta" ]));
+  XCTAssertFalse(self.viewController.activeFiltersContainerView.hidden);
 }
 
 - (void)testSearchSeeAllRequestsFullResultSetAndPushesRecipeList {
