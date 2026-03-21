@@ -1,5 +1,16 @@
 #import "HomeCollectionViewCells.h"
 
+static NSCache *MRRHomeRecipeImageCache(void) {
+  static NSCache *imageCache = nil;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    imageCache = [[NSCache alloc] init];
+    imageCache.countLimit = 120;
+  });
+
+  return imageCache;
+}
+
 static UIColor *MRRHomeCellDynamicColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
@@ -267,6 +278,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
 @property(nonatomic, retain) UIView *surfaceView;
 @property(nonatomic, retain) UIImageView *heroImageView;
+@property(nonatomic, retain, nullable) NSURLSessionDataTask *heroImageTask;
 @property(nonatomic, retain) UILabel *eyebrowLabel;
 @property(nonatomic, retain) UILabel *titleLabel;
 @property(nonatomic, retain) UILabel *subtitleLabel;
@@ -275,6 +287,10 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 @property(nonatomic, retain) NSLayoutConstraint *heroTopConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *heroLeadingConstraint;
 @property(nonatomic, retain) NSLayoutConstraint *heroTrailingConstraint;
+@property(nonatomic, assign) NSUInteger heroImageRequestToken;
+
+- (void)cancelHeroImageRequest;
+- (void)configureHeroImageForRecipeCard:(HomeRecipeCard *)recipeCard;
 
 @end
 
@@ -398,6 +414,8 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 }
 
 - (void)dealloc {
+  [_heroImageTask cancel];
+  [_heroImageTask release];
   [_heroTrailingConstraint release];
   [_heroLeadingConstraint release];
   [_heroTopConstraint release];
@@ -420,6 +438,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
 
 - (void)prepareForReuse {
   [super prepareForReuse];
+  [self cancelHeroImageRequest];
   self.heroImageView.image = nil;
   self.heroImageView.backgroundColor = MRRHomeCellNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.96 alpha:1.0],
                                                              [UIColor colorWithWhite:0.18 alpha:1.0]);
@@ -437,7 +456,7 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
   self.accessibilityLabel = recipeCard.title;
   self.accessibilityHint = @"Double tap to open the recipe.";
   self.accessibilityValue = [NSString stringWithFormat:@"%@, %@, %@", recipeCard.subtitle, recipeCard.durationText, recipeCard.servingsText];
-  self.heroImageView.image = [UIImage imageNamed:recipeCard.assetName];
+  [self configureHeroImageForRecipeCard:recipeCard];
   self.titleLabel.text = recipeCard.title;
   self.subtitleLabel.text = [NSString stringWithFormat:@"By %@", recipeCard.sourceName];
   if (style == HomeRecipeCardCellStyleRail) {
@@ -482,6 +501,63 @@ static UIColor *MRRHomeCategoryBadgeColor(NSString *identifier) {
     self.surfaceView.layer.shadowOpacity = 0.06f;
     self.heroImageView.layer.cornerRadius = 22.0;
   }
+}
+
+- (void)cancelHeroImageRequest {
+  self.heroImageRequestToken += 1;
+
+  [self.heroImageTask cancel];
+  self.heroImageTask = nil;
+}
+
+- (void)configureHeroImageForRecipeCard:(HomeRecipeCard *)recipeCard {
+  [self cancelHeroImageRequest];
+
+  UIImage *placeholderImage = [UIImage imageNamed:recipeCard.assetName];
+  self.heroImageView.image = placeholderImage;
+
+  NSString *imageURLString = recipeCard.imageURLString;
+  if (imageURLString.length == 0) {
+    return;
+  }
+
+  NSURL *imageURL = [NSURL URLWithString:imageURLString];
+  if (imageURL == nil) {
+    return;
+  }
+
+  UIImage *cachedImage = [MRRHomeRecipeImageCache() objectForKey:imageURL.absoluteString];
+  if (cachedImage != nil) {
+    self.heroImageView.image = cachedImage;
+    return;
+  }
+
+  NSUInteger requestToken = self.heroImageRequestToken;
+  __weak HomeRecipeCardCell *weakSelf = self;
+  NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:imageURL
+                                                          completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                            UIImage *image = nil;
+                                                            if (error == nil && data.length > 0) {
+                                                              image = [[[UIImage alloc] initWithData:data] autorelease];
+                                                              if (image != nil) {
+                                                                [MRRHomeRecipeImageCache() setObject:image forKey:imageURL.absoluteString];
+                                                              }
+                                                            }
+
+                                                            dispatch_async(dispatch_get_main_queue(), ^{
+                                                              HomeRecipeCardCell *strongSelf = weakSelf;
+                                                              if (strongSelf == nil || strongSelf.heroImageRequestToken != requestToken) {
+                                                                return;
+                                                              }
+
+                                                              strongSelf.heroImageTask = nil;
+                                                              if (image != nil) {
+                                                                strongSelf.heroImageView.image = image;
+                                                              }
+                                                            });
+                                                          }];
+  self.heroImageTask = task;
+  [task resume];
 }
 
 - (void)setHighlighted:(BOOL)highlighted {
