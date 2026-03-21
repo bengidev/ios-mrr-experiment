@@ -98,8 +98,11 @@ typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail * _Nullable re
 @protocol HomeDataProviding <NSObject>
 
 - (NSArray<HomeCategory *> *)availableCategories;
-- (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion;
-- (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion;
+- (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption completion:(HomeInitialSectionsCompletion)completion;
+- (void)searchRecipes:(NSString *)query
+                limit:(NSUInteger)limit
+         filterOption:(HomeFilterOption)filterOption
+           completion:(HomeRecipeSearchCompletion)completion;
 - (void)loadRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard completion:(HomeRecipeDetailCompletion)completion;
 
 @end

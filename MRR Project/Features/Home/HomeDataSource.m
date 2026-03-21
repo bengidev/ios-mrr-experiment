@@ -172,6 +172,89 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   return @"Recipe";
 }
 
+static NSArray<HomeRecipeCard *> *MRRHomeRecipesSortedForFilterOption(NSArray<HomeRecipeCard *> *recipes, HomeFilterOption filterOption) {
+  if (recipes.count < 2) {
+    return recipes;
+  }
+
+  switch (filterOption) {
+    case HomeFilterOptionFeatured:
+      return recipes;
+    case HomeFilterOptionFastest:
+      return [recipes sortedArrayUsingComparator:^NSComparisonResult(HomeRecipeCard *left, HomeRecipeCard *right) {
+        if (left.readyInMinutes == right.readyInMinutes) {
+          return [left.title localizedCaseInsensitiveCompare:right.title];
+        }
+        return left.readyInMinutes < right.readyInMinutes ? NSOrderedAscending : NSOrderedDescending;
+      }];
+    case HomeFilterOptionPopular:
+      return [recipes sortedArrayUsingComparator:^NSComparisonResult(HomeRecipeCard *left, HomeRecipeCard *right) {
+        if (left.popularityScore == right.popularityScore) {
+          return [left.title localizedCaseInsensitiveCompare:right.title];
+        }
+        return left.popularityScore > right.popularityScore ? NSOrderedAscending : NSOrderedDescending;
+      }];
+    case HomeFilterOptionLowCalorie:
+      return [recipes sortedArrayUsingComparator:^NSComparisonResult(HomeRecipeCard *left, HomeRecipeCard *right) {
+        if (left.calorieCount == right.calorieCount) {
+          return [left.title localizedCaseInsensitiveCompare:right.title];
+        }
+        return left.calorieCount < right.calorieCount ? NSOrderedAscending : NSOrderedDescending;
+      }];
+  }
+}
+
+static NSString *MRRHomeSpoonacularSortDirectionForFilterOption(HomeFilterOption filterOption) {
+  switch (filterOption) {
+    case HomeFilterOptionFeatured:
+      return nil;
+    case HomeFilterOptionFastest:
+      return @"asc";
+    case HomeFilterOptionPopular:
+      return @"desc";
+    case HomeFilterOptionLowCalorie:
+      return @"asc";
+  }
+}
+
+static NSString *MRRHomeSpoonacularSearchSortForFilterOption(HomeFilterOption filterOption) {
+  switch (filterOption) {
+    case HomeFilterOptionFeatured:
+      return nil;
+    case HomeFilterOptionFastest:
+      return @"time";
+    case HomeFilterOptionPopular:
+      return @"popularity";
+    case HomeFilterOptionLowCalorie:
+      return @"calories";
+  }
+}
+
+static NSString *MRRHomeSpoonacularRecommendationSortForFilterOption(HomeFilterOption filterOption) {
+  switch (filterOption) {
+    case HomeFilterOptionFeatured:
+    case HomeFilterOptionPopular:
+      return @"popularity";
+    case HomeFilterOptionFastest:
+      return @"time";
+    case HomeFilterOptionLowCalorie:
+      return @"calories";
+  }
+}
+
+static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption filterOption) {
+  switch (filterOption) {
+    case HomeFilterOptionFeatured:
+      return @"random";
+    case HomeFilterOptionPopular:
+      return @"popularity";
+    case HomeFilterOptionFastest:
+      return @"time";
+    case HomeFilterOptionLowCalorie:
+      return @"calories";
+  }
+}
+
 @interface HomeCategory ()
 
 @property(nonatomic, copy, readwrite) NSString *identifier;
@@ -373,24 +456,37 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   return self.categories;
 }
 
-- (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion {
+- (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption completion:(HomeInitialSectionsCompletion)completion {
   if (completion == nil) {
     return;
   }
 
-  NSArray<HomeSection *> *sections = self.sections ?: @[];
-  NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier = [self recipesByCategoryIdentifier];
+  NSMutableArray<HomeSection *> *sections = [NSMutableArray array];
+  for (HomeSection *section in (self.sections ?: @[])) {
+    NSArray<HomeRecipeCard *> *sortedRecipes = MRRHomeRecipesSortedForFilterOption(section.recipes ?: @[], filterOption);
+    [sections addObject:[[[HomeSection alloc] initWithIdentifier:section.identifier title:section.title recipes:sortedRecipes] autorelease]];
+  }
+
+  NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier = [NSMutableDictionary dictionary];
+  for (NSString *identifier in [[self recipesByCategoryIdentifier] allKeys]) {
+    NSArray<HomeRecipeCard *> *recipes = [[self recipesByCategoryIdentifier] objectForKey:identifier] ?: @[];
+    [recipesByCategoryIdentifier setObject:MRRHomeRecipesSortedForFilterOption(recipes, filterOption) forKey:identifier];
+  }
   MRRHomeCompleteOnMainThread(^{
     completion(sections, recipesByCategoryIdentifier, NO);
   });
 }
 
-- (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion {
+- (void)searchRecipes:(NSString *)query
+                limit:(NSUInteger)limit
+         filterOption:(HomeFilterOption)filterOption
+           completion:(HomeRecipeSearchCompletion)completion {
   if (completion == nil) {
     return;
   }
 
   NSArray<HomeRecipeCard *> *recipes = [self searchRecipes:query];
+  recipes = MRRHomeRecipesSortedForFilterOption(recipes, filterOption);
   recipes = MRRHomeLimitedRecipeCards(recipes, limit > 0 ? limit : MRRHomeFallbackSearchResultLimit);
   MRRHomeCompleteOnMainThread(^{
     completion(recipes, NO);
@@ -562,6 +658,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (instancetype)initWithAPIKey:(NSString *)apiKey URLSession:(NSURLSession *)URLSession;
 - (void)fetchRecipesForQuery:(nullable NSString *)query
                         sort:(nullable NSString *)sort
+               sortDirection:(nullable NSString *)sortDirection
                     mealType:(nullable NSString *)mealType
                       number:(NSUInteger)number
                   completion:(void (^)(NSArray<NSDictionary *> * _Nullable recipes, BOOL succeeded))completion;
@@ -593,6 +690,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (void)fetchRecipesForQuery:(NSString *)query
                         sort:(NSString *)sort
+               sortDirection:(NSString *)sortDirection
                     mealType:(NSString *)mealType
                       number:(NSUInteger)number
                   completion:(void (^)(NSArray<NSDictionary *> * _Nullable recipes, BOOL succeeded))completion {
@@ -610,6 +708,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   }
   if (MRRHomeTrimmedString(sort).length > 0) {
     [queryItems addObject:[NSURLQueryItem queryItemWithName:@"sort" value:MRRHomeTrimmedString(sort)]];
+  }
+  if (MRRHomeTrimmedString(sortDirection).length > 0) {
+    [queryItems addObject:[NSURLQueryItem queryItemWithName:@"sortDirection" value:MRRHomeTrimmedString(sortDirection)]];
   }
   if (MRRHomeTrimmedString(mealType).length > 0) {
     [queryItems addObject:[NSURLQueryItem queryItemWithName:@"type" value:MRRHomeTrimmedString(mealType)]];
@@ -844,23 +945,41 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   return [self.fallbackDataProvider availableCategories];
 }
 
-- (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion {
+- (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption completion:(HomeInitialSectionsCompletion)completion {
   if (completion == nil) {
     return;
   }
 
   if (self.client == nil) {
     NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *fallbackCategories = [self fallbackRecipesByCategoryIdentifier];
-    NSArray<HomeSection *> *fallbackSections = [self fallbackSections];
-    self.cachedRecipesByCategoryIdentifier = fallbackCategories;
-    self.cachedSections = fallbackSections;
+    NSArray<HomeSection *> *fallbackSections = [self.fallbackDataProvider featuredSections] ?: @[];
+    NSMutableArray<HomeSection *> *sortedFallbackSections = [NSMutableArray arrayWithCapacity:fallbackSections.count];
+    for (HomeSection *section in fallbackSections) {
+      NSArray<HomeRecipeCard *> *sortedRecipes = MRRHomeRecipesSortedForFilterOption(section.recipes ?: @[], filterOption);
+      [sortedFallbackSections addObject:[[[HomeSection alloc] initWithIdentifier:section.identifier
+                                                                           title:section.title
+                                                                         recipes:sortedRecipes] autorelease]];
+    }
+    NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *sortedFallbackCategories =
+        [NSMutableDictionary dictionaryWithCapacity:fallbackCategories.count];
+    for (NSString *identifier in fallbackCategories) {
+      NSArray<HomeRecipeCard *> *recipes = [fallbackCategories objectForKey:identifier] ?: @[];
+      [sortedFallbackCategories setObject:MRRHomeRecipesSortedForFilterOption(recipes, filterOption) forKey:identifier];
+    }
+    self.cachedRecipesByCategoryIdentifier = sortedFallbackCategories;
+    self.cachedSections = sortedFallbackSections;
     MRRHomeCompleteOnMainThread(^{
-      completion(fallbackSections, fallbackCategories, NO);
+      completion(sortedFallbackSections, sortedFallbackCategories, NO);
     });
     return;
   }
 
   NSArray<HomeCategory *> *categories = [self availableCategories];
+  NSString *recommendationSort = MRRHomeSpoonacularRecommendationSortForFilterOption(filterOption);
+  NSString *weeklySort = MRRHomeSpoonacularWeeklySortForFilterOption(filterOption);
+  NSString *sortDirection = MRRHomeSpoonacularSortDirectionForFilterOption(filterOption);
+  NSString *recommendationSortDirection = [recommendationSort isEqualToString:@"random"] ? nil : sortDirection;
+  NSString *weeklySortDirection = [weeklySort isEqualToString:@"random"] ? nil : sortDirection;
   NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *categoryResults = [NSMutableDictionary dictionaryWithCapacity:categories.count];
   NSMutableDictionary<NSString *, NSNumber *> *categorySuccessByIdentifier = [NSMutableDictionary dictionaryWithCapacity:categories.count];
   __block NSArray<HomeRecipeCard *> *recommendationRecipes = nil;
@@ -872,7 +991,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   dispatch_group_enter(requestGroup);
   [self.client fetchRecipesForQuery:nil
-                               sort:@"popularity"
+                               sort:recommendationSort
+                      sortDirection:recommendationSortDirection
                            mealType:nil
                              number:MRRHomeLiveRailRecipeCount
                          completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
@@ -886,7 +1006,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   dispatch_group_enter(requestGroup);
   [self.client fetchRecipesForQuery:nil
-                               sort:@"random"
+                               sort:weeklySort
+                      sortDirection:weeklySortDirection
                            mealType:nil
                              number:MRRHomeLiveRailRecipeCount
                          completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
@@ -901,7 +1022,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   for (HomeCategory *category in categories) {
     dispatch_group_enter(requestGroup);
     [self.client fetchRecipesForQuery:nil
-                                 sort:@"popularity"
+                                 sort:recommendationSort
+                        sortDirection:recommendationSortDirection
                              mealType:category.identifier
                                number:MRRHomeLiveRailRecipeCount
                            completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
@@ -961,7 +1083,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   });
 }
 
-- (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion {
+- (void)searchRecipes:(NSString *)query
+                limit:(NSUInteger)limit
+         filterOption:(HomeFilterOption)filterOption
+           completion:(HomeRecipeSearchCompletion)completion {
   if (completion == nil) {
     return;
   }
@@ -976,15 +1101,20 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   NSUInteger requestedLimit = limit > 0 ? limit : MRRHomeFallbackSearchResultLimit;
   if (self.client == nil) {
-    NSArray<HomeRecipeCard *> *fallbackRecipes = [self fallbackSearchResultsForQuery:trimmedQuery limit:requestedLimit];
+    NSArray<HomeRecipeCard *> *fallbackRecipes =
+        MRRHomeRecipesSortedForFilterOption([self fallbackSearchResultsForQuery:trimmedQuery limit:0], filterOption);
+    fallbackRecipes = MRRHomeLimitedRecipeCards(fallbackRecipes, requestedLimit);
     MRRHomeCompleteOnMainThread(^{
       completion(fallbackRecipes, NO);
     });
     return;
   }
 
+  NSString *sort = MRRHomeSpoonacularSearchSortForFilterOption(filterOption);
+  NSString *sortDirection = MRRHomeSpoonacularSortDirectionForFilterOption(filterOption);
   [self.client fetchRecipesForQuery:trimmedQuery
-                               sort:nil
+                               sort:sort
+                      sortDirection:sortDirection
                            mealType:nil
                              number:requestedLimit
                          completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
@@ -996,7 +1126,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                              return;
                            }
 
-                           NSArray<HomeRecipeCard *> *fallbackRecipes = [self fallbackSearchResultsForQuery:trimmedQuery limit:requestedLimit];
+                           NSArray<HomeRecipeCard *> *fallbackRecipes =
+                               MRRHomeRecipesSortedForFilterOption([self fallbackSearchResultsForQuery:trimmedQuery limit:0], filterOption);
+                           fallbackRecipes = MRRHomeLimitedRecipeCards(fallbackRecipes, requestedLimit);
                            MRRHomeCompleteOnMainThread(^{
                              completion(fallbackRecipes, NO);
                            });
