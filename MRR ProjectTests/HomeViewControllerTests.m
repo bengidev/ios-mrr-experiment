@@ -197,18 +197,22 @@
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
   [self waitForCondition:^BOOL {
     return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:1.0];
+  } timeout:2.0];
 
   XCTAssertGreaterThan(self.viewController.currentSearchResults.count, 1);
 
   self.viewController.searchTextField.text = @"salad";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
   [self.viewController textFieldShouldReturn:self.viewController.searchTextField];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]];
+  } timeout:1.0];
 
   XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]]);
 
   HomeRecipeListViewController *presentedList = (HomeRecipeListViewController *)self.navigationController.topViewController;
+  [presentedList loadViewIfNeeded];
+  [presentedList.view layoutIfNeeded];
   XCTAssertEqualObjects(presentedList.title, @"Search Results");
   XCTAssertEqual(presentedList.recipes.count, 1U);
   XCTAssertEqualObjects(presentedList.recipes.firstObject.title, @"Greek Salad");

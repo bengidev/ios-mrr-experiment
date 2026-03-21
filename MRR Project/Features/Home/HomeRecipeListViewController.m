@@ -343,8 +343,10 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
 }
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - 4.0;
-  CGFloat targetWidth = MAX(availableWidth, 220.0);
+  UIEdgeInsets contentInsets = collectionView.adjustedContentInset;
+  UIEdgeInsets sectionInsets = [self collectionView:collectionView layout:collectionViewLayout insetForSectionAtIndex:indexPath.section];
+  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - contentInsets.left - contentInsets.right - sectionInsets.left - sectionInsets.right;
+  CGFloat targetWidth = availableWidth > 1.0 ? floor(availableWidth - 1.0) : 220.0;
 
   if (indexPath.item >= self.recipes.count) {
     return CGSizeMake(targetWidth, 320.0);

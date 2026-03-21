@@ -1454,19 +1454,26 @@ static NSString *MRRHomeInitialsFromName(NSString *name) {
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
   CGSize viewportSize = self.view.bounds.size;
+  UIEdgeInsets contentInsets = collectionView.adjustedContentInset;
+  UIEdgeInsets sectionInsets = [self collectionView:collectionView layout:collectionViewLayout insetForSectionAtIndex:indexPath.section];
+  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - contentInsets.left - contentInsets.right - sectionInsets.left - sectionInsets.right;
+  CGFloat availableHeight = CGRectGetHeight(collectionView.bounds) - contentInsets.top - contentInsets.bottom - sectionInsets.top - sectionInsets.bottom;
+
   if (collectionView == self.categoryCollectionView) {
     CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(92.0, viewportSize, MRRLayoutScaleAxisWidth), 82.0, 98.0);
-    return CGSizeMake(width, 88.0);
+    CGFloat height = availableHeight > 1.0 ? floor(availableHeight - 1.0) : 88.0;
+    return CGSizeMake(width, MAX(height, 1.0));
   }
 
   if (collectionView == self.searchResultsCollectionView) {
-    CGFloat width = CGRectGetWidth(collectionView.bounds);
-    return CGSizeMake(MAX(width, 220.0), 304.0);
+    CGFloat width = availableWidth > 1.0 ? floor(availableWidth - 1.0) : CGRectGetWidth(collectionView.bounds);
+    return CGSizeMake(MAX(width, 1.0), 304.0);
   }
 
   CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(206.0, viewportSize, MRRLayoutScaleAxisWidth), 180.0, 220.0);
-  CGFloat height = viewportSize.height < 760.0 ? 282.0 : 298.0;
-  return CGSizeMake(width, height);
+  CGFloat baseHeight = viewportSize.height < 760.0 ? 282.0 : 298.0;
+  CGFloat height = availableHeight > 1.0 ? MIN(baseHeight, floor(availableHeight - 1.0)) : baseHeight;
+  return CGSizeMake(width, MAX(height, 1.0));
 }
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
