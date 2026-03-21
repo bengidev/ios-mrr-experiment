@@ -111,6 +111,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, retain) UIView *searchContainerView;
 @property(nonatomic, retain) UITextField *searchTextField;
 @property(nonatomic, retain) UIButton *filterButton;
+@property(nonatomic, retain) UIActivityIndicatorView *filterLoadingIndicator;
 @property(nonatomic, retain) UIView *loadingStateView;
 @property(nonatomic, retain) UIActivityIndicatorView *loadingIndicator;
 @property(nonatomic, retain) UILabel *loadingStateLabel;
@@ -159,6 +160,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, assign) NSUInteger contentRequestToken;
 @property(nonatomic, assign) NSUInteger searchRequestToken;
 @property(nonatomic, assign) BOOL displayingLiveContent;
+@property(nonatomic, assign, getter=isApplyingFilter) BOOL applyingFilter;
 
 - (void)buildViewHierarchy;
 - (UIStackView *)sectionStackView;
@@ -183,6 +185,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)updateSearchSectionVisibility;
 - (void)updateRecommendationSectionVisibility;
 - (void)updatePoweredByVisibility;
+- (void)updateFilterLoadingState;
 - (void)updateSearchResultsHeightConstraintIfNeeded;
 - (void)animateEntranceIfNeeded;
 - (void)handleSearchTextChanged:(UITextField *)sender;
@@ -271,6 +274,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [_loadingStateLabel release];
   [_loadingIndicator release];
   [_loadingStateView release];
+  [_filterLoadingIndicator release];
   [_filterButton release];
   [_searchTextField release];
   [_searchContainerView release];
@@ -492,6 +496,20 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [searchContainerView addSubview:filterButton];
   self.filterButton = filterButton;
 
+  UIActivityIndicatorViewStyle filterIndicatorStyle = UIActivityIndicatorViewStyleGray;
+  if (@available(iOS 13.0, *)) {
+    filterIndicatorStyle = UIActivityIndicatorViewStyleMedium;
+  }
+  UIActivityIndicatorView *filterLoadingIndicator =
+      [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:filterIndicatorStyle] autorelease];
+  filterLoadingIndicator.translatesAutoresizingMaskIntoConstraints = NO;
+  filterLoadingIndicator.hidesWhenStopped = YES;
+  filterLoadingIndicator.userInteractionEnabled = NO;
+  filterLoadingIndicator.color = MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                                   [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
+  [filterButton addSubview:filterLoadingIndicator];
+  self.filterLoadingIndicator = filterLoadingIndicator;
+
   [NSLayoutConstraint activateConstraints:@[
     [searchContainerView.heightAnchor constraintEqualToConstant:60.0],
 
@@ -513,8 +531,12 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     [filterButton.trailingAnchor constraintEqualToAnchor:searchContainerView.trailingAnchor constant:-8.0],
     [filterButton.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor],
     [filterButton.widthAnchor constraintEqualToConstant:44.0],
-    [filterButton.heightAnchor constraintEqualToConstant:44.0]
+    [filterButton.heightAnchor constraintEqualToConstant:44.0],
+
+    [filterLoadingIndicator.centerXAnchor constraintEqualToAnchor:filterButton.centerXAnchor],
+    [filterLoadingIndicator.centerYAnchor constraintEqualToAnchor:filterButton.centerYAnchor]
   ]];
+  [self updateFilterLoadingState];
 
   UIView *loadingStateView = [[[UIView alloc] init] autorelease];
   loadingStateView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -876,6 +898,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   if (showLoadingState) {
     self.loadingContent = YES;
     self.searchTextField.enabled = NO;
+    self.applyingFilter = NO;
+    [self updateFilterLoadingState];
   }
 
   self.contentRequestToken += 1;
@@ -900,6 +924,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
       self.searchTextField.enabled = YES;
       self.searchState = HomeSearchStateIdle;
     }
+    self.applyingFilter = NO;
+    [self updateFilterLoadingState];
     [self applyCurrentPresentationStateAnimated:animated];
   }];
 }
@@ -1079,7 +1105,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   if (self.searchState == HomeSearchStateSearching) {
     self.searchStatusLabel.hidden = NO;
-    self.searchStatusLabel.text = @"Searching recipes...";
+    self.searchStatusLabel.text = self.isApplyingFilter ? @"Applying filter..." : @"Searching recipes...";
     self.searchEmptyStateLabel.hidden = YES;
     self.searchResultsCollectionView.hidden = YES;
     self.searchResultsHeightConstraint.constant = 0.0;
@@ -1111,6 +1137,19 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (void)updatePoweredByVisibility {
   self.poweredByContainerView.hidden = self.isLoadingContent || !self.displayingLiveContent;
+}
+
+- (void)updateFilterLoadingState {
+  self.filterButton.enabled = !self.isApplyingFilter;
+  self.filterButton.imageView.alpha = self.isApplyingFilter ? 0.0 : 1.0;
+  self.filterButton.titleLabel.alpha = self.isApplyingFilter ? 0.0 : 1.0;
+  self.filterButton.accessibilityHint = self.isApplyingFilter ? @"Applying the selected sort order." : @"Choose how recipes are ordered.";
+  self.filterButton.accessibilityValue = self.isApplyingFilter ? @"Loading" : nil;
+  if (self.isApplyingFilter) {
+    [self.filterLoadingIndicator startAnimating];
+  } else {
+    [self.filterLoadingIndicator stopAnimating];
+  }
 }
 
 - (void)updateSearchResultsHeightConstraintIfNeeded {
@@ -1221,6 +1260,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                           self.allSearchResults = recipes ?: @[];
                           self.lastCompletedSearchQuery = trimmedQuery;
                           self.searchState = self.allSearchResults.count > 0 ? HomeSearchStateResults : HomeSearchStateEmpty;
+                          self.applyingFilter = NO;
+                          [self updateFilterLoadingState];
                           [self applyCurrentPresentationStateAnimated:YES];
 
                           if (presentResultsList && self.currentSearchResults.count > 0) {
@@ -1239,6 +1280,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self.searchDebounceTimer invalidate];
   self.searchDebounceTimer = nil;
   self.searchRequestToken += 1;
+  self.applyingFilter = NO;
+  [self updateFilterLoadingState];
   [self applyCurrentPresentationStateAnimated:YES];
 }
 
@@ -1285,6 +1328,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   }
 
   self.currentFilterOption = filterOption;
+  self.applyingFilter = YES;
+  [self updateFilterLoadingState];
   [self refreshVisibleContentForCurrentFilter];
 }
 
