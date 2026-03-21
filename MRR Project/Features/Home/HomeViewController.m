@@ -156,6 +156,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, retain, nullable) NSTimer *searchDebounceTimer;
 @property(nonatomic, copy, nullable) NSString *lastCompletedSearchQuery;
 @property(nonatomic, assign) BOOL hasAnimatedEntrance;
+@property(nonatomic, assign) NSUInteger contentRequestToken;
 @property(nonatomic, assign) NSUInteger searchRequestToken;
 @property(nonatomic, assign) BOOL displayingLiveContent;
 
@@ -170,7 +171,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (NSString *)avatarInitialsText;
 - (void)beginInitialLoad;
 - (void)handleInitialLoadTimer:(NSTimer *)timer;
-- (void)loadContentFromProvider;
+- (void)loadContentFromProviderShowingLoadingState:(BOOL)showLoadingState animated:(BOOL)animated;
+- (void)refreshVisibleContentForCurrentFilter;
 - (HomeSection * _Nullable)sectionWithIdentifier:(NSString *)identifier inSections:(NSArray<HomeSection *> *)sections;
 - (NSArray<HomeRecipeCard *> *)sortedRecipesFromRecipes:(NSArray<HomeRecipeCard *> *)recipes;
 - (NSArray<HomeRecipeCard *> *)recommendationRecipesForCurrentSelection;
@@ -866,15 +868,26 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (void)handleInitialLoadTimer:(NSTimer *)timer {
   self.initialLoadTimer = nil;
-  [self loadContentFromProvider];
+  [self loadContentFromProviderShowingLoadingState:YES animated:NO];
 }
 
-- (void)loadContentFromProvider {
+- (void)loadContentFromProviderShowingLoadingState:(BOOL)showLoadingState animated:(BOOL)animated {
   self.categories = [self.dataProvider availableCategories];
+  if (showLoadingState) {
+    self.loadingContent = YES;
+    self.searchTextField.enabled = NO;
+  }
 
-  [self.dataProvider loadInitialSectionsWithCompletion:^(NSArray<HomeSection *> *sections,
-                                                        NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier,
-                                                        BOOL usesLiveData) {
+  self.contentRequestToken += 1;
+  NSUInteger requestToken = self.contentRequestToken;
+  [self.dataProvider loadInitialSectionsForFilterOption:self.currentFilterOption
+                                             completion:^(NSArray<HomeSection *> *sections,
+                                                          NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier,
+                                                          BOOL usesLiveData) {
+    if (requestToken != self.contentRequestToken) {
+      return;
+    }
+
     HomeSection *recommendationSection = [self sectionWithIdentifier:HomeSectionIdentifierRecommendation inSections:sections];
     HomeSection *weeklySection = [self sectionWithIdentifier:HomeSectionIdentifierWeekly inSections:sections];
 
@@ -882,11 +895,29 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     self.weeklyBaseRecipes = weeklySection != nil ? weeklySection.recipes : @[];
     self.recipesByCategoryIdentifier = recipesByCategoryIdentifier ?: @{};
     self.displayingLiveContent = usesLiveData;
-    self.loadingContent = NO;
-    self.searchTextField.enabled = YES;
-    self.searchState = HomeSearchStateIdle;
-    [self applyCurrentPresentationStateAnimated:NO];
+    if (showLoadingState) {
+      self.loadingContent = NO;
+      self.searchTextField.enabled = YES;
+      self.searchState = HomeSearchStateIdle;
+    }
+    [self applyCurrentPresentationStateAnimated:animated];
   }];
+}
+
+- (void)refreshVisibleContentForCurrentFilter {
+  NSString *currentQuery = [self currentSearchQuery];
+  if (currentQuery.length >= 3) {
+    [self.searchDebounceTimer invalidate];
+    self.searchDebounceTimer = nil;
+    self.searchState = HomeSearchStateSearching;
+    [self updateSearchSectionVisibility];
+    [self updateRecommendationSectionVisibility];
+    [self updatePoweredByVisibility];
+    [self executeSearchForQuery:currentQuery resultLimit:MRRHomeSearchPreviewDisplayLimit presentingResultsList:NO];
+    return;
+  }
+
+  [self loadContentFromProviderShowingLoadingState:NO animated:YES];
 }
 
 - (HomeSection *)sectionWithIdentifier:(NSString *)identifier inSections:(NSArray<HomeSection *> *)sections {
@@ -1176,6 +1207,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   NSUInteger requestToken = self.searchRequestToken;
   [self.dataProvider searchRecipes:trimmedQuery
                              limit:(resultLimit > 0 ? resultLimit : MRRHomeSearchRequestLimit)
+                      filterOption:self.currentFilterOption
                         completion:^(NSArray<HomeRecipeCard *> *recipes, BOOL usesLiveData) {
                           if (requestToken != self.searchRequestToken) {
                             return;
@@ -1247,8 +1279,13 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)applyFilterOption:(HomeFilterOption)filterOption {
+  if (self.currentFilterOption == filterOption) {
+    [self applyCurrentPresentationStateAnimated:YES];
+    return;
+  }
+
   self.currentFilterOption = filterOption;
-  [self applyCurrentPresentationStateAnimated:YES];
+  [self refreshVisibleContentForCurrentFilter];
 }
 
 - (NSString *)displayTitleForFilterOption:(HomeFilterOption)filterOption {
