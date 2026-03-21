@@ -27,6 +27,16 @@ typedef NS_ENUM(NSInteger, HomeSearchState) {
   HomeSearchStateEmpty = 3,
 };
 
+@class HomeCategory;
+@class HomeRecipeCard;
+@class HomeSection;
+
+typedef void (^HomeInitialSectionsCompletion)(NSArray<HomeSection *> *sections,
+                                              NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier,
+                                              BOOL usesLiveData);
+typedef void (^HomeRecipeSearchCompletion)(NSArray<HomeRecipeCard *> *recipes, BOOL usesLiveData);
+typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail * _Nullable recipeDetail, BOOL usesLiveData);
+
 @interface HomeCategory : NSObject
 
 @property(nonatomic, copy, readonly) NSString *identifier;
@@ -88,6 +98,14 @@ typedef NS_ENUM(NSInteger, HomeSearchState) {
 @protocol HomeDataProviding <NSObject>
 
 - (NSArray<HomeCategory *> *)availableCategories;
+- (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion;
+- (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion;
+- (void)loadRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard completion:(HomeRecipeDetailCompletion)completion;
+
+@end
+
+@interface HomeMockDataProvider : NSObject <HomeDataProviding>
+
 - (NSArray<HomeSection *> *)featuredSections;
 - (NSArray<HomeRecipeCard *> *)recipesForCategory:(nullable HomeCategory *)category;
 - (NSArray<HomeRecipeCard *> *)searchRecipes:(NSString *)query;
@@ -95,7 +113,12 @@ typedef NS_ENUM(NSInteger, HomeSearchState) {
 
 @end
 
-@interface HomeMockDataProvider : NSObject <HomeDataProviding>
+@interface HomeCompositeDataProvider : NSObject <HomeDataProviding>
+
+- (instancetype)init;
+- (instancetype)initWithAPIKey:(nullable NSString *)apiKey
+                    URLSession:(nullable NSURLSession *)URLSession
+          fallbackDataProvider:(nullable HomeMockDataProvider *)fallbackDataProvider NS_DESIGNATED_INITIALIZER;
 
 @end
 

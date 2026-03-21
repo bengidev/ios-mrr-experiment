@@ -11,6 +11,9 @@ NSString *const HomeCategoryIdentifierDinner = @"dinner";
 NSString *const HomeCategoryIdentifierDessert = @"dessert";
 NSString *const HomeCategoryIdentifierSnack = @"snack";
 
+static NSUInteger const MRRHomeLiveRailRecipeCount = 8;
+static NSUInteger const MRRHomeFallbackSearchResultLimit = 12;
+
 static HomeCategory *MRRHomeCategory(NSString *identifier, NSString *title, NSString *badgeText) {
   return [[[HomeCategory alloc] initWithIdentifier:identifier title:title badgeText:badgeText] autorelease];
 }
@@ -59,6 +62,114 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
   }
 
   return NO;
+}
+
+static void MRRHomeCompleteOnMainThread(dispatch_block_t block) {
+  if (block == nil) {
+    return;
+  }
+
+  if ([NSThread isMainThread]) {
+    block();
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), block);
+}
+
+static NSString *MRRHomeTrimmedString(id candidate) {
+  if (![candidate isKindOfClass:[NSString class]]) {
+    return @"";
+  }
+
+  return [(NSString *)candidate stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+static NSString *MRRHomeNormalizedKey(NSString *string) {
+  return [[MRRHomeTrimmedString(string) lowercaseString] stringByReplacingOccurrencesOfString:@"  " withString:@" "];
+}
+
+static NSInteger MRRHomeFirstIntegerFromString(NSString *string) {
+  NSScanner *scanner = [NSScanner scannerWithString:MRRHomeTrimmedString(string)];
+  NSInteger value = 0;
+  if ([scanner scanInteger:&value]) {
+    return value;
+  }
+  return 0;
+}
+
+static NSArray<NSString *> *MRRHomeStringArrayFromJSONArray(id candidate) {
+  if (![candidate isKindOfClass:[NSArray class]]) {
+    return @[];
+  }
+
+  NSMutableArray<NSString *> *strings = [NSMutableArray array];
+  for (id entry in (NSArray *)candidate) {
+    NSString *value = MRRHomeTrimmedString(entry);
+    if (value.length > 0) {
+      [strings addObject:value];
+    }
+  }
+
+  return strings;
+}
+
+static NSArray<HomeRecipeCard *> *MRRHomeLimitedRecipeCards(NSArray<HomeRecipeCard *> *recipes, NSUInteger limit) {
+  if (limit == 0 || recipes.count <= limit) {
+    return recipes;
+  }
+
+  return [recipes subarrayWithRange:NSMakeRange(0, limit)];
+}
+
+static NSString *MRRHomeDecodedHTMLString(NSString *string) {
+  NSString *decodedString = MRRHomeTrimmedString(string);
+  if (decodedString.length == 0) {
+    return @"";
+  }
+
+  NSDictionary<NSString *, NSString *> *replacements = @{
+    @"&amp;" : @"&",
+    @"&nbsp;" : @" ",
+    @"&quot;" : @"\"",
+    @"&#39;" : @"'",
+    @"&apos;" : @"'",
+    @"&rsquo;" : @"'",
+    @"&ldquo;" : @"\"",
+    @"&rdquo;" : @"\"",
+  };
+  for (NSString *entity in replacements) {
+    decodedString = [decodedString stringByReplacingOccurrencesOfString:entity withString:[replacements objectForKey:entity]];
+  }
+
+  decodedString = [decodedString stringByReplacingOccurrencesOfString:@"<[^>]+>"
+                                                           withString:@" "
+                                                              options:NSRegularExpressionSearch
+                                                                range:NSMakeRange(0, decodedString.length)];
+  decodedString = [decodedString stringByReplacingOccurrencesOfString:@"\\s+"
+                                                           withString:@" "
+                                                              options:NSRegularExpressionSearch
+                                                                range:NSMakeRange(0, decodedString.length)];
+  return [decodedString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierBreakfast]) {
+    return @"Breakfast";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierLunch]) {
+    return @"Lunch";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierDinner]) {
+    return @"Dinner";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierDessert]) {
+    return @"Dessert";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierSnack]) {
+    return @"Snack";
+  }
+  return @"Recipe";
 }
 
 @interface HomeCategory ()
@@ -176,10 +287,20 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
 
 - (NSString *)durationText { return [NSString stringWithFormat:@"%ld min", (long)self.readyInMinutes]; }
 
-- (NSString *)calorieText { return [NSString stringWithFormat:@"%ld kcal", (long)self.calorieCount]; }
+- (NSString *)calorieText {
+  if (self.calorieCount > 0) {
+    return [NSString stringWithFormat:@"%ld kcal", (long)self.calorieCount];
+  }
+
+  return @"Calories vary";
+}
 
 - (NSString *)servingsText {
-  return [NSString stringWithFormat:@"%ld servings", (long)self.servings];
+  if (self.servings > 0) {
+    return [NSString stringWithFormat:@"%ld servings", (long)self.servings];
+  }
+
+  return @"Serving info varies";
 }
 
 @end
@@ -225,6 +346,8 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
 @property(nonatomic, copy) NSArray<HomeRecipeCard *> *allRecipes;
 @property(nonatomic, retain) NSDictionary<NSString *, OnboardingRecipeDetail *> *detailsByRecipeID;
 
+- (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)recipesByCategoryIdentifier;
+
 @end
 
 @implementation HomeMockDataProvider
@@ -248,6 +371,41 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
 
 - (NSArray<HomeCategory *> *)availableCategories {
   return self.categories;
+}
+
+- (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion {
+  if (completion == nil) {
+    return;
+  }
+
+  NSArray<HomeSection *> *sections = self.sections ?: @[];
+  NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier = [self recipesByCategoryIdentifier];
+  MRRHomeCompleteOnMainThread(^{
+    completion(sections, recipesByCategoryIdentifier, NO);
+  });
+}
+
+- (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion {
+  if (completion == nil) {
+    return;
+  }
+
+  NSArray<HomeRecipeCard *> *recipes = [self searchRecipes:query];
+  recipes = MRRHomeLimitedRecipeCards(recipes, limit > 0 ? limit : MRRHomeFallbackSearchResultLimit);
+  MRRHomeCompleteOnMainThread(^{
+    completion(recipes, NO);
+  });
+}
+
+- (void)loadRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard completion:(HomeRecipeDetailCompletion)completion {
+  if (completion == nil) {
+    return;
+  }
+
+  OnboardingRecipeDetail *detail = [self recipeDetailForID:recipeCard.recipeID];
+  MRRHomeCompleteOnMainThread(^{
+    completion(detail, NO);
+  });
 }
 
 - (NSArray<HomeSection *> *)featuredSections {
@@ -291,6 +449,17 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
   }
 
   return [self.detailsByRecipeID objectForKey:recipeID];
+}
+
+- (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)recipesByCategoryIdentifier {
+  NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier =
+      [NSMutableDictionary dictionaryWithCapacity:self.categories.count];
+  for (HomeCategory *category in self.categories) {
+    NSArray<HomeRecipeCard *> *recipes = [self recipesForCategory:category] ?: @[];
+    [recipesByCategoryIdentifier setObject:recipes forKey:category.identifier];
+  }
+
+  return recipesByCategoryIdentifier;
 }
 
 - (void)buildData {
@@ -381,6 +550,999 @@ static BOOL MRRHomeArrayContainsQuery(NSArray<NSString *> *strings, NSString *qu
     }
   }
   self.detailsByRecipeID = details;
+}
+
+@end
+
+@interface MRRHomeSpoonacularAPIClient : NSObject
+
+@property(nonatomic, copy) NSString *apiKey;
+@property(nonatomic, retain) NSURLSession *URLSession;
+
+- (instancetype)initWithAPIKey:(NSString *)apiKey URLSession:(NSURLSession *)URLSession;
+- (void)fetchRecipesForQuery:(nullable NSString *)query
+                        sort:(nullable NSString *)sort
+                    mealType:(nullable NSString *)mealType
+                      number:(NSUInteger)number
+                  completion:(void (^)(NSArray<NSDictionary *> * _Nullable recipes, BOOL succeeded))completion;
+- (void)fetchRecipeInformationForIdentifier:(NSString *)recipeIdentifier
+                                 completion:(void (^)(NSDictionary * _Nullable recipe, BOOL succeeded))completion;
+
+@end
+
+@implementation MRRHomeSpoonacularAPIClient
+
+- (instancetype)initWithAPIKey:(NSString *)apiKey URLSession:(NSURLSession *)URLSession {
+  NSParameterAssert(apiKey.length > 0);
+  NSParameterAssert(URLSession != nil);
+
+  self = [super init];
+  if (self) {
+    _apiKey = [apiKey copy];
+    _URLSession = [URLSession retain];
+  }
+
+  return self;
+}
+
+- (void)dealloc {
+  [_URLSession release];
+  [_apiKey release];
+  [super dealloc];
+}
+
+- (void)fetchRecipesForQuery:(NSString *)query
+                        sort:(NSString *)sort
+                    mealType:(NSString *)mealType
+                      number:(NSUInteger)number
+                  completion:(void (^)(NSArray<NSDictionary *> * _Nullable recipes, BOOL succeeded))completion {
+  NSURLComponents *components = [NSURLComponents componentsWithString:@"https://api.spoonacular.com/recipes/complexSearch"];
+  NSMutableArray<NSURLQueryItem *> *queryItems = [NSMutableArray arrayWithObjects:
+                                                  [NSURLQueryItem queryItemWithName:@"apiKey" value:self.apiKey],
+                                                  [NSURLQueryItem queryItemWithName:@"number" value:[NSString stringWithFormat:@"%lu", (unsigned long)number]],
+                                                  [NSURLQueryItem queryItemWithName:@"instructionsRequired" value:@"true"],
+                                                  [NSURLQueryItem queryItemWithName:@"addRecipeInformation" value:@"true"],
+                                                  [NSURLQueryItem queryItemWithName:@"addRecipeInstructions" value:@"true"],
+                                                  [NSURLQueryItem queryItemWithName:@"addRecipeNutrition" value:@"true"],
+                                                  nil];
+  if (MRRHomeTrimmedString(query).length > 0) {
+    [queryItems addObject:[NSURLQueryItem queryItemWithName:@"query" value:MRRHomeTrimmedString(query)]];
+  }
+  if (MRRHomeTrimmedString(sort).length > 0) {
+    [queryItems addObject:[NSURLQueryItem queryItemWithName:@"sort" value:MRRHomeTrimmedString(sort)]];
+  }
+  if (MRRHomeTrimmedString(mealType).length > 0) {
+    [queryItems addObject:[NSURLQueryItem queryItemWithName:@"type" value:MRRHomeTrimmedString(mealType)]];
+  }
+  components.queryItems = queryItems;
+
+  NSURL *URL = components.URL;
+  if (URL == nil) {
+    if (completion != nil) {
+      completion(nil, NO);
+    }
+    return;
+  }
+
+  NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
+  request.HTTPMethod = @"GET";
+  request.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+
+  NSURLSessionDataTask *task = [self.URLSession dataTaskWithRequest:request
+                                                  completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                    if (error != nil || data == nil) {
+                                                      if (completion != nil) {
+                                                        completion(nil, NO);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    NSInteger statusCode = 0;
+                                                    if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+                                                      statusCode = [(NSHTTPURLResponse *)response statusCode];
+                                                    }
+
+                                                    if (statusCode < 200 || statusCode >= 300) {
+                                                      if (completion != nil) {
+                                                        completion(nil, NO);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    NSError *JSONError = nil;
+                                                    id JSONObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&JSONError];
+                                                    if (JSONError != nil || ![JSONObject isKindOfClass:[NSDictionary class]]) {
+                                                      if (completion != nil) {
+                                                        completion(nil, NO);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    id results = [(NSDictionary *)JSONObject objectForKey:@"results"];
+                                                    if (![results isKindOfClass:[NSArray class]]) {
+                                                      if (completion != nil) {
+                                                        completion(@[], YES);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    if (completion != nil) {
+                                                      completion((NSArray<NSDictionary *> *)results, YES);
+                                                    }
+                                                  }];
+  [task resume];
+}
+
+- (void)fetchRecipeInformationForIdentifier:(NSString *)recipeIdentifier
+                                 completion:(void (^)(NSDictionary * _Nullable recipe, BOOL succeeded))completion {
+  NSString *trimmedIdentifier = MRRHomeTrimmedString(recipeIdentifier);
+  if (trimmedIdentifier.length == 0) {
+    if (completion != nil) {
+      completion(nil, NO);
+    }
+    return;
+  }
+
+  NSString *URLString =
+      [NSString stringWithFormat:@"https://api.spoonacular.com/recipes/%@/information?apiKey=%@&includeNutrition=true",
+                                 trimmedIdentifier, self.apiKey];
+  NSURL *URL = [NSURL URLWithString:URLString];
+  if (URL == nil) {
+    if (completion != nil) {
+      completion(nil, NO);
+    }
+    return;
+  }
+
+  NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
+  request.HTTPMethod = @"GET";
+  request.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+
+  NSURLSessionDataTask *task = [self.URLSession dataTaskWithRequest:request
+                                                  completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                    if (error != nil || data == nil) {
+                                                      if (completion != nil) {
+                                                        completion(nil, NO);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    NSInteger statusCode = 0;
+                                                    if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+                                                      statusCode = [(NSHTTPURLResponse *)response statusCode];
+                                                    }
+
+                                                    if (statusCode < 200 || statusCode >= 300) {
+                                                      if (completion != nil) {
+                                                        completion(nil, NO);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    NSError *JSONError = nil;
+                                                    id JSONObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&JSONError];
+                                                    if (JSONError != nil || ![JSONObject isKindOfClass:[NSDictionary class]]) {
+                                                      if (completion != nil) {
+                                                        completion(nil, NO);
+                                                      }
+                                                      return;
+                                                    }
+
+                                                    if (completion != nil) {
+                                                      completion((NSDictionary *)JSONObject, YES);
+                                                    }
+                                                  }];
+  [task resume];
+}
+
+@end
+
+@interface HomeCompositeDataProvider ()
+
+@property(nonatomic, copy) NSString *apiKey;
+@property(nonatomic, retain, nullable) MRRHomeSpoonacularAPIClient *client;
+@property(nonatomic, retain) NSURLSession *URLSession;
+@property(nonatomic, retain) HomeMockDataProvider *fallbackDataProvider;
+@property(nonatomic, copy) NSDictionary<NSString *, OnboardingRecipePreview *> *previewByNormalizedTitle;
+@property(nonatomic, copy) NSDictionary<NSString *, OnboardingRecipePreview *> *previewByAssetName;
+@property(nonatomic, copy) NSArray<HomeSection *> *cachedSections;
+@property(nonatomic, copy) NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *cachedRecipesByCategoryIdentifier;
+@property(nonatomic, retain) NSMutableDictionary<NSString *, OnboardingRecipeDetail *> *detailCacheByRecipeID;
+
+- (nullable NSString *)bundleAPIKey;
+- (NSDictionary<NSString *, OnboardingRecipePreview *> *)previewMapByNormalizedTitle;
+- (NSDictionary<NSString *, OnboardingRecipePreview *> *)previewMapByAssetName;
+- (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)fallbackRecipesByCategoryIdentifier;
+- (NSArray<HomeSection *> *)fallbackSections;
+- (NSArray<HomeRecipeCard *> *)fallbackSearchResultsForQuery:(NSString *)query limit:(NSUInteger)limit;
+- (nullable OnboardingRecipePreview *)previewTemplateForTitle:(NSString *)title mealType:(NSString *)mealType;
+- (NSArray<HomeRecipeCard *> *)recipeCardsFromRecipeDictionaries:(NSArray<NSDictionary *> *)recipeDictionaries preferredMealType:(nullable NSString *)preferredMealType;
+- (nullable HomeRecipeCard *)recipeCardFromRecipeDictionary:(NSDictionary *)recipeDictionary preferredMealType:(nullable NSString *)preferredMealType;
+- (nullable OnboardingRecipeDetail *)recipeDetailFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                                            recipeCard:(HomeRecipeCard *)recipeCard
+                                                       fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSString *)mealTypeIdentifierFromRecipeDictionary:(NSDictionary *)recipeDictionary preferredMealType:(nullable NSString *)preferredMealType;
+- (NSString *)assetNameForMealType:(NSString *)mealTypeIdentifier fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSString *)subtitleTextFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                      mealType:(NSString *)mealTypeIdentifier
+                               fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSString *)summaryTextFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSInteger)readyInMinutesFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSInteger)servingsFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSInteger)calorieCountFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSInteger)popularityScoreFromRecipeDictionary:(NSDictionary *)recipeDictionary;
+- (NSString *)sourceNameFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                             sourceURLString:(nullable NSString *)sourceURLString
+                              fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSArray<NSString *> *)tagsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                         mealType:(NSString *)mealTypeIdentifier
+                                  fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSArray<OnboardingRecipeIngredient *> *)ingredientsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                                          fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSArray<OnboardingRecipeInstruction *> *)instructionsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                                            fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+- (NSArray<NSString *> *)toolsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                   fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+
+@end
+
+@implementation HomeCompositeDataProvider
+
+- (instancetype)init {
+  return [self initWithAPIKey:nil URLSession:nil fallbackDataProvider:nil];
+}
+
+- (instancetype)initWithAPIKey:(NSString *)apiKey
+                    URLSession:(NSURLSession *)URLSession
+          fallbackDataProvider:(HomeMockDataProvider *)fallbackDataProvider {
+  self = [super init];
+  if (self) {
+    NSURLSession *effectiveSession = URLSession;
+    if (effectiveSession == nil) {
+      NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+      configuration.URLCache = nil;
+      configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+      effectiveSession = [NSURLSession sessionWithConfiguration:configuration];
+    }
+
+    NSString *resolvedAPIKey = MRRHomeTrimmedString(apiKey);
+    if (resolvedAPIKey.length == 0) {
+      resolvedAPIKey = [self bundleAPIKey];
+    }
+
+    _URLSession = [effectiveSession retain];
+    _apiKey = [resolvedAPIKey copy];
+    HomeMockDataProvider *resolvedFallbackDataProvider =
+        fallbackDataProvider != nil ? fallbackDataProvider : [[[HomeMockDataProvider alloc] init] autorelease];
+    _fallbackDataProvider = [resolvedFallbackDataProvider retain];
+    _previewByNormalizedTitle = [[self previewMapByNormalizedTitle] copy];
+    _previewByAssetName = [[self previewMapByAssetName] copy];
+    _detailCacheByRecipeID = [[NSMutableDictionary alloc] init];
+
+    if (_apiKey.length > 0) {
+      _client = [[MRRHomeSpoonacularAPIClient alloc] initWithAPIKey:_apiKey URLSession:_URLSession];
+    }
+  }
+
+  return self;
+}
+
+- (void)dealloc {
+  [_detailCacheByRecipeID release];
+  [_cachedRecipesByCategoryIdentifier release];
+  [_cachedSections release];
+  [_previewByAssetName release];
+  [_previewByNormalizedTitle release];
+  [_fallbackDataProvider release];
+  [_URLSession release];
+  [_client release];
+  [_apiKey release];
+  [super dealloc];
+}
+
+- (NSArray<HomeCategory *> *)availableCategories {
+  return [self.fallbackDataProvider availableCategories];
+}
+
+- (void)loadInitialSectionsWithCompletion:(HomeInitialSectionsCompletion)completion {
+  if (completion == nil) {
+    return;
+  }
+
+  if (self.client == nil) {
+    NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *fallbackCategories = [self fallbackRecipesByCategoryIdentifier];
+    NSArray<HomeSection *> *fallbackSections = [self fallbackSections];
+    self.cachedRecipesByCategoryIdentifier = fallbackCategories;
+    self.cachedSections = fallbackSections;
+    MRRHomeCompleteOnMainThread(^{
+      completion(fallbackSections, fallbackCategories, NO);
+    });
+    return;
+  }
+
+  NSArray<HomeCategory *> *categories = [self availableCategories];
+  NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *categoryResults = [NSMutableDictionary dictionaryWithCapacity:categories.count];
+  NSMutableDictionary<NSString *, NSNumber *> *categorySuccessByIdentifier = [NSMutableDictionary dictionaryWithCapacity:categories.count];
+  __block NSArray<HomeRecipeCard *> *recommendationRecipes = nil;
+  __block NSArray<HomeRecipeCard *> *weeklyRecipes = nil;
+  __block BOOL recommendationSucceeded = NO;
+  __block BOOL weeklySucceeded = NO;
+
+  dispatch_group_t requestGroup = dispatch_group_create();
+
+  dispatch_group_enter(requestGroup);
+  [self.client fetchRecipesForQuery:nil
+                               sort:@"popularity"
+                           mealType:nil
+                             number:MRRHomeLiveRailRecipeCount
+                         completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
+                           NSArray<HomeRecipeCard *> *mappedRecipes = succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil] : nil;
+                           @synchronized(self) {
+                             recommendationSucceeded = succeeded;
+                             recommendationRecipes = [mappedRecipes copy];
+                           }
+                           dispatch_group_leave(requestGroup);
+                         }];
+
+  dispatch_group_enter(requestGroup);
+  [self.client fetchRecipesForQuery:nil
+                               sort:@"random"
+                           mealType:nil
+                             number:MRRHomeLiveRailRecipeCount
+                         completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
+                           NSArray<HomeRecipeCard *> *mappedRecipes = succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil] : nil;
+                           @synchronized(self) {
+                             weeklySucceeded = succeeded;
+                             weeklyRecipes = [mappedRecipes copy];
+                           }
+                           dispatch_group_leave(requestGroup);
+                         }];
+
+  for (HomeCategory *category in categories) {
+    dispatch_group_enter(requestGroup);
+    [self.client fetchRecipesForQuery:nil
+                                 sort:@"popularity"
+                             mealType:category.identifier
+                               number:MRRHomeLiveRailRecipeCount
+                           completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
+                             NSArray<HomeRecipeCard *> *mappedRecipes = succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:category.identifier] : nil;
+                             @synchronized(self) {
+                               if (mappedRecipes != nil) {
+                                 [categoryResults setObject:mappedRecipes forKey:category.identifier];
+                               }
+                               [categorySuccessByIdentifier setObject:@(succeeded) forKey:category.identifier];
+                             }
+                             dispatch_group_leave(requestGroup);
+                           }];
+  }
+
+  dispatch_group_notify(requestGroup, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+    NSArray<HomeSection *> *fallbackSections = [self fallbackSections];
+    NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *fallbackCategories = [self fallbackRecipesByCategoryIdentifier];
+
+    NSArray<HomeRecipeCard *> *resolvedRecommendationRecipes =
+        recommendationSucceeded ? (recommendationRecipes ?: @[]) : [[[self.fallbackDataProvider featuredSections] firstObject] recipes];
+    NSArray<HomeRecipeCard *> *resolvedWeeklyRecipes =
+        weeklySucceeded ? (weeklyRecipes ?: @[]) : [[[self.fallbackDataProvider featuredSections] lastObject] recipes];
+
+    NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *resolvedCategories =
+        [NSMutableDictionary dictionaryWithDictionary:fallbackCategories];
+    for (HomeCategory *category in categories) {
+      NSNumber *successValue = [categorySuccessByIdentifier objectForKey:category.identifier];
+      if (successValue.boolValue) {
+        [resolvedCategories setObject:([categoryResults objectForKey:category.identifier] ?: @[]) forKey:category.identifier];
+      }
+    }
+
+    NSArray<HomeSection *> *resolvedSections = @[
+      [[[HomeSection alloc] initWithIdentifier:HomeSectionIdentifierRecommendation
+                                         title:@"Recommendation"
+                                       recipes:resolvedRecommendationRecipes ?: @[]] autorelease],
+      [[[HomeSection alloc] initWithIdentifier:HomeSectionIdentifierWeekly
+                                         title:@"Recipes Of The Week"
+                                       recipes:resolvedWeeklyRecipes ?: @[]] autorelease]
+    ];
+
+    BOOL usesLiveData = recommendationSucceeded || weeklySucceeded;
+    for (NSNumber *successValue in [categorySuccessByIdentifier allValues]) {
+      usesLiveData = usesLiveData || successValue.boolValue;
+    }
+
+    self.cachedSections = resolvedSections;
+    self.cachedRecipesByCategoryIdentifier = resolvedCategories;
+
+    MRRHomeCompleteOnMainThread(^{
+      completion(resolvedSections, resolvedCategories, usesLiveData);
+    });
+
+    [recommendationRecipes release];
+    [weeklyRecipes release];
+    (void)fallbackSections;
+  });
+}
+
+- (void)searchRecipes:(NSString *)query limit:(NSUInteger)limit completion:(HomeRecipeSearchCompletion)completion {
+  if (completion == nil) {
+    return;
+  }
+
+  NSString *trimmedQuery = MRRHomeTrimmedString(query);
+  if (trimmedQuery.length == 0) {
+    MRRHomeCompleteOnMainThread(^{
+      completion(@[], NO);
+    });
+    return;
+  }
+
+  NSUInteger requestedLimit = limit > 0 ? limit : MRRHomeFallbackSearchResultLimit;
+  if (self.client == nil) {
+    NSArray<HomeRecipeCard *> *fallbackRecipes = [self fallbackSearchResultsForQuery:trimmedQuery limit:requestedLimit];
+    MRRHomeCompleteOnMainThread(^{
+      completion(fallbackRecipes, NO);
+    });
+    return;
+  }
+
+  [self.client fetchRecipesForQuery:trimmedQuery
+                               sort:nil
+                           mealType:nil
+                             number:requestedLimit
+                         completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
+                           if (succeeded) {
+                             NSArray<HomeRecipeCard *> *mappedRecipes = [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil];
+                             MRRHomeCompleteOnMainThread(^{
+                               completion(mappedRecipes ?: @[], YES);
+                             });
+                             return;
+                           }
+
+                           NSArray<HomeRecipeCard *> *fallbackRecipes = [self fallbackSearchResultsForQuery:trimmedQuery limit:requestedLimit];
+                           MRRHomeCompleteOnMainThread(^{
+                             completion(fallbackRecipes, NO);
+                           });
+                         }];
+}
+
+- (void)loadRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard completion:(HomeRecipeDetailCompletion)completion {
+  if (completion == nil || recipeCard == nil) {
+    return;
+  }
+
+  OnboardingRecipeDetail *cachedDetail = nil;
+  @synchronized(self) {
+    cachedDetail = [[self.detailCacheByRecipeID objectForKey:recipeCard.recipeID] retain];
+  }
+  if (cachedDetail != nil) {
+    MRRHomeCompleteOnMainThread(^{
+      completion([cachedDetail autorelease], YES);
+    });
+    return;
+  }
+
+  BOOL looksLikeLiveRecipe = [recipeCard.recipeID rangeOfCharacterFromSet:[[NSCharacterSet decimalDigitCharacterSet] invertedSet]].location == NSNotFound;
+  if (!looksLikeLiveRecipe) {
+    OnboardingRecipeDetail *fallbackDetail = [self.fallbackDataProvider recipeDetailForID:recipeCard.recipeID];
+    MRRHomeCompleteOnMainThread(^{
+      completion(fallbackDetail, NO);
+    });
+    return;
+  }
+
+  if (self.client == nil) {
+    MRRHomeCompleteOnMainThread(^{
+      completion(nil, NO);
+    });
+    return;
+  }
+
+  [self.client fetchRecipeInformationForIdentifier:recipeCard.recipeID
+                                        completion:^(NSDictionary *recipeDictionary, BOOL succeeded) {
+                                          if (!succeeded || recipeDictionary == nil) {
+                                            MRRHomeCompleteOnMainThread(^{
+                                              completion(nil, NO);
+                                            });
+                                            return;
+                                          }
+
+                                          OnboardingRecipePreview *fallbackPreview =
+                                              [self previewTemplateForTitle:recipeCard.title mealType:recipeCard.mealType];
+                                          OnboardingRecipeDetail *detail =
+                                              [self recipeDetailFromRecipeDictionary:recipeDictionary
+                                                                          recipeCard:recipeCard
+                                                                     fallbackPreview:fallbackPreview];
+                                          if (detail != nil) {
+                                            @synchronized(self) {
+                                              [self.detailCacheByRecipeID setObject:detail forKey:recipeCard.recipeID];
+                                            }
+                                          }
+
+                                          MRRHomeCompleteOnMainThread(^{
+                                            completion(detail, detail != nil);
+                                          });
+                                        }];
+}
+
+- (NSString *)bundleAPIKey {
+  NSArray<NSBundle *> *candidateBundles = @[ [NSBundle mainBundle], [NSBundle bundleForClass:[self class]] ];
+  for (NSBundle *bundle in candidateBundles) {
+    NSString *path = [bundle pathForResource:@"RecipeAPIConfig" ofType:@"plist"];
+    if (path.length == 0) {
+      continue;
+    }
+
+    NSDictionary *configuration = [NSDictionary dictionaryWithContentsOfFile:path];
+    NSString *APIKey = MRRHomeTrimmedString([configuration objectForKey:@"SpoonacularAPIKey"]);
+    if (APIKey.length > 0) {
+      return APIKey;
+    }
+  }
+
+  return nil;
+}
+
+- (NSDictionary<NSString *, OnboardingRecipePreview *> *)previewMapByNormalizedTitle {
+  OnboardingRecipeCatalog *catalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
+  NSMutableDictionary<NSString *, OnboardingRecipePreview *> *previewsByNormalizedTitle = [NSMutableDictionary dictionary];
+  for (OnboardingRecipePreview *preview in [catalog allRecipePreviews]) {
+    NSString *key = MRRHomeNormalizedKey(preview.title);
+    if (key.length > 0) {
+      [previewsByNormalizedTitle setObject:preview forKey:key];
+    }
+  }
+  return previewsByNormalizedTitle;
+}
+
+- (NSDictionary<NSString *, OnboardingRecipePreview *> *)previewMapByAssetName {
+  OnboardingRecipeCatalog *catalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
+  NSMutableDictionary<NSString *, OnboardingRecipePreview *> *previewsByAssetName = [NSMutableDictionary dictionary];
+  for (OnboardingRecipePreview *preview in [catalog allRecipePreviews]) {
+    if (preview.assetName.length > 0) {
+      [previewsByAssetName setObject:preview forKey:preview.assetName];
+    }
+  }
+  return previewsByAssetName;
+}
+
+- (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)fallbackRecipesByCategoryIdentifier {
+  NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier = [NSMutableDictionary dictionary];
+  for (HomeCategory *category in [self availableCategories]) {
+    NSArray<HomeRecipeCard *> *recipes = [self.fallbackDataProvider recipesForCategory:category] ?: @[];
+    [recipesByCategoryIdentifier setObject:recipes forKey:category.identifier];
+  }
+  return recipesByCategoryIdentifier;
+}
+
+- (NSArray<HomeSection *> *)fallbackSections {
+  return [self.fallbackDataProvider featuredSections] ?: @[];
+}
+
+- (NSArray<HomeRecipeCard *> *)fallbackSearchResultsForQuery:(NSString *)query limit:(NSUInteger)limit {
+  NSArray<HomeRecipeCard *> *recipes = [self.fallbackDataProvider searchRecipes:query] ?: @[];
+  return MRRHomeLimitedRecipeCards(recipes, limit > 0 ? limit : MRRHomeFallbackSearchResultLimit);
+}
+
+- (OnboardingRecipePreview *)previewTemplateForTitle:(NSString *)title mealType:(NSString *)mealType {
+  OnboardingRecipePreview *preview = [self.previewByNormalizedTitle objectForKey:MRRHomeNormalizedKey(title)];
+  if (preview != nil) {
+    return preview;
+  }
+
+  preview = [self.previewByAssetName objectForKey:[self assetNameForMealType:mealType fallbackPreview:nil]];
+  if (preview != nil) {
+    return preview;
+  }
+
+  return [[self.previewByAssetName allValues] firstObject];
+}
+
+- (NSArray<HomeRecipeCard *> *)recipeCardsFromRecipeDictionaries:(NSArray<NSDictionary *> *)recipeDictionaries preferredMealType:(NSString *)preferredMealType {
+  NSMutableArray<HomeRecipeCard *> *recipeCards = [NSMutableArray arrayWithCapacity:recipeDictionaries.count];
+  for (NSDictionary *recipeDictionary in recipeDictionaries) {
+    HomeRecipeCard *recipeCard = [self recipeCardFromRecipeDictionary:recipeDictionary preferredMealType:preferredMealType];
+    if (recipeCard != nil) {
+      [recipeCards addObject:recipeCard];
+    }
+  }
+  return recipeCards;
+}
+
+- (HomeRecipeCard *)recipeCardFromRecipeDictionary:(NSDictionary *)recipeDictionary preferredMealType:(NSString *)preferredMealType {
+  NSString *title = MRRHomeTrimmedString([recipeDictionary objectForKey:@"title"]);
+  NSNumber *identifierNumber = [recipeDictionary objectForKey:@"id"];
+  if (title.length == 0 || ![identifierNumber respondsToSelector:@selector(stringValue)]) {
+    return nil;
+  }
+
+  NSString *recipeIdentifier = MRRHomeTrimmedString([identifierNumber stringValue]);
+  if (recipeIdentifier.length == 0) {
+    return nil;
+  }
+
+  NSString *mealTypeIdentifier = [self mealTypeIdentifierFromRecipeDictionary:recipeDictionary preferredMealType:preferredMealType];
+  OnboardingRecipePreview *fallbackPreview = [self previewTemplateForTitle:title mealType:mealTypeIdentifier];
+  NSString *assetName = [self assetNameForMealType:mealTypeIdentifier fallbackPreview:fallbackPreview];
+  NSString *sourceURLString = MRRHomeTrimmedString([recipeDictionary objectForKey:@"sourceUrl"]);
+  NSString *sourceName = [self sourceNameFromRecipeDictionary:recipeDictionary sourceURLString:sourceURLString fallbackPreview:fallbackPreview];
+  NSArray<NSString *> *tags = [self tagsFromRecipeDictionary:recipeDictionary mealType:mealTypeIdentifier fallbackPreview:fallbackPreview];
+  NSString *subtitle = [self subtitleTextFromRecipeDictionary:recipeDictionary mealType:mealTypeIdentifier fallbackPreview:fallbackPreview];
+  NSString *summaryText = [self summaryTextFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
+
+  HomeRecipeCard *recipeCard = [[[HomeRecipeCard alloc] initWithRecipeID:recipeIdentifier
+                                                                   title:title
+                                                                subtitle:subtitle
+                                                               assetName:assetName
+                                                          imageURLString:MRRHomeTrimmedString([recipeDictionary objectForKey:@"image"])
+                                                             summaryText:summaryText
+                                                          readyInMinutes:[self readyInMinutesFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
+                                                                servings:[self servingsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
+                                                            calorieCount:[self calorieCountFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
+                                                         popularityScore:[self popularityScoreFromRecipeDictionary:recipeDictionary]
+                                                              sourceName:sourceName
+                                                         sourceURLString:sourceURLString
+                                                                mealType:mealTypeIdentifier
+                                                                    tags:tags] autorelease];
+
+  OnboardingRecipeDetail *seedDetail =
+      [self recipeDetailFromRecipeDictionary:recipeDictionary recipeCard:recipeCard fallbackPreview:fallbackPreview];
+  if (seedDetail != nil) {
+    @synchronized(self) {
+      [self.detailCacheByRecipeID setObject:seedDetail forKey:recipeIdentifier];
+    }
+  }
+
+  return recipeCard;
+}
+
+- (OnboardingRecipeDetail *)recipeDetailFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                                   recipeCard:(HomeRecipeCard *)recipeCard
+                                              fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  OnboardingRecipeDetail *fallbackDetail = fallbackPreview.fallbackDetail;
+  NSArray<OnboardingRecipeIngredient *> *ingredients = [self ingredientsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
+  NSArray<OnboardingRecipeInstruction *> *instructions = [self instructionsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
+  NSArray<NSString *> *tools = [self toolsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
+  NSArray<NSString *> *tags = recipeCard.tags.count > 0 ? recipeCard.tags : (fallbackDetail.tags ?: @[]);
+
+  NSString *summaryText = recipeCard.summaryText.length > 0 ? recipeCard.summaryText : (fallbackDetail.summaryText ?: @"Recipe summary coming soon.");
+  NSString *durationText = recipeCard.readyInMinutes > 0 ? [recipeCard durationText] : (fallbackDetail.durationText ?: @"30 min");
+  NSString *calorieText = recipeCard.calorieCount > 0 ? [recipeCard calorieText] : (fallbackDetail.calorieText ?: @"Calories vary");
+  NSString *servingsText = recipeCard.servings > 0 ? [recipeCard servingsText] : (fallbackDetail.servingsText ?: @"2 servings");
+
+  return [[[OnboardingRecipeDetail alloc] initWithTitle:recipeCard.title
+                                               subtitle:recipeCard.subtitle
+                                              assetName:recipeCard.assetName
+                                     heroImageURLString:recipeCard.imageURLString
+                                           durationText:durationText
+                                            calorieText:calorieText
+                                           servingsText:servingsText
+                                            summaryText:summaryText
+                                            ingredients:ingredients
+                                           instructions:instructions
+                                                  tools:tools
+                                                   tags:tags
+                                             sourceName:recipeCard.sourceName
+                                        sourceURLString:recipeCard.sourceURLString
+                                         productContext:nil] autorelease];
+}
+
+- (NSString *)mealTypeIdentifierFromRecipeDictionary:(NSDictionary *)recipeDictionary preferredMealType:(NSString *)preferredMealType {
+  NSString *trimmedPreferredMealType = MRRHomeTrimmedString(preferredMealType);
+  if (trimmedPreferredMealType.length > 0) {
+    return trimmedPreferredMealType;
+  }
+
+  NSArray<NSString *> *dishTypes = MRRHomeStringArrayFromJSONArray([recipeDictionary objectForKey:@"dishTypes"]);
+  for (NSString *dishType in dishTypes) {
+    NSString *lowercasedDishType = [dishType lowercaseString];
+    if ([lowercasedDishType containsString:HomeCategoryIdentifierBreakfast]) {
+      return HomeCategoryIdentifierBreakfast;
+    }
+    if ([lowercasedDishType containsString:HomeCategoryIdentifierLunch]) {
+      return HomeCategoryIdentifierLunch;
+    }
+    if ([lowercasedDishType containsString:HomeCategoryIdentifierDinner]) {
+      return HomeCategoryIdentifierDinner;
+    }
+    if ([lowercasedDishType containsString:HomeCategoryIdentifierDessert]) {
+      return HomeCategoryIdentifierDessert;
+    }
+    if ([lowercasedDishType containsString:HomeCategoryIdentifierSnack]) {
+      return HomeCategoryIdentifierSnack;
+    }
+  }
+
+  return HomeCategoryIdentifierSnack;
+}
+
+- (NSString *)assetNameForMealType:(NSString *)mealTypeIdentifier fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  if (fallbackPreview.assetName.length > 0) {
+    return fallbackPreview.assetName;
+  }
+
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierBreakfast]) {
+    return @"avocado-toast";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierLunch]) {
+    return @"greek-salad";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierDinner]) {
+    return @"salmon";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierDessert]) {
+    return @"pizza";
+  }
+  if ([mealTypeIdentifier isEqualToString:HomeCategoryIdentifierSnack]) {
+    return @"ramen";
+  }
+  return @"avocado-toast";
+}
+
+- (NSString *)subtitleTextFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                      mealType:(NSString *)mealTypeIdentifier
+                               fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSArray<NSString *> *cuisines = MRRHomeStringArrayFromJSONArray([recipeDictionary objectForKey:@"cuisines"]);
+  NSArray<NSString *> *diets = MRRHomeStringArrayFromJSONArray([recipeDictionary objectForKey:@"diets"]);
+  NSString *mealTypeDisplayName = MRRHomeMealTypeDisplayName(mealTypeIdentifier);
+  if (cuisines.count > 0) {
+    return [NSString stringWithFormat:@"%@ %@ pick", cuisines.firstObject, [mealTypeDisplayName lowercaseString]];
+  }
+  if (diets.count > 0) {
+    return diets.firstObject;
+  }
+  if (fallbackPreview.subtitle.length > 0) {
+    return fallbackPreview.subtitle;
+  }
+  return [NSString stringWithFormat:@"%@ highlight", mealTypeDisplayName];
+}
+
+- (NSString *)summaryTextFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSString *summaryText = MRRHomeDecodedHTMLString([recipeDictionary objectForKey:@"summary"]);
+  if (summaryText.length > 0) {
+    return summaryText;
+  }
+
+  if (fallbackPreview.fallbackDetail.summaryText.length > 0) {
+    return fallbackPreview.fallbackDetail.summaryText;
+  }
+
+  return @"Fresh live recipe inspiration from Spoonacular.";
+}
+
+- (NSInteger)readyInMinutesFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSNumber *readyInMinutesNumber = [recipeDictionary objectForKey:@"readyInMinutes"];
+  if ([readyInMinutesNumber respondsToSelector:@selector(integerValue)] && readyInMinutesNumber.integerValue > 0) {
+    return readyInMinutesNumber.integerValue;
+  }
+
+  NSInteger fallbackValue = MRRHomeFirstIntegerFromString(fallbackPreview.fallbackDetail.durationText);
+  return fallbackValue > 0 ? fallbackValue : 20;
+}
+
+- (NSInteger)servingsFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSNumber *servingsNumber = [recipeDictionary objectForKey:@"servings"];
+  if ([servingsNumber respondsToSelector:@selector(integerValue)] && servingsNumber.integerValue > 0) {
+    return servingsNumber.integerValue;
+  }
+
+  NSInteger fallbackValue = MRRHomeFirstIntegerFromString(fallbackPreview.fallbackDetail.servingsText);
+  return fallbackValue > 0 ? fallbackValue : 2;
+}
+
+- (NSInteger)calorieCountFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSDictionary *nutritionDictionary = [recipeDictionary objectForKey:@"nutrition"];
+  if ([nutritionDictionary isKindOfClass:[NSDictionary class]]) {
+    NSArray<NSDictionary *> *nutrients = [nutritionDictionary objectForKey:@"nutrients"];
+    if ([nutrients isKindOfClass:[NSArray class]]) {
+      for (NSDictionary *nutrient in nutrients) {
+        NSString *name = [MRRHomeTrimmedString([nutrient objectForKey:@"name"]) lowercaseString];
+        if ([name containsString:@"calories"]) {
+          NSNumber *amountNumber = [nutrient objectForKey:@"amount"];
+          if ([amountNumber respondsToSelector:@selector(doubleValue)]) {
+            return (NSInteger)llround(amountNumber.doubleValue);
+          }
+        }
+      }
+    }
+  }
+
+  NSInteger fallbackValue = MRRHomeFirstIntegerFromString(fallbackPreview.fallbackDetail.calorieText);
+  return MAX(fallbackValue, 0);
+}
+
+- (NSInteger)popularityScoreFromRecipeDictionary:(NSDictionary *)recipeDictionary {
+  NSNumber *aggregateLikesNumber = [recipeDictionary objectForKey:@"aggregateLikes"];
+  if ([aggregateLikesNumber respondsToSelector:@selector(integerValue)] && aggregateLikesNumber.integerValue > 0) {
+    return aggregateLikesNumber.integerValue;
+  }
+
+  NSNumber *scoreNumber = [recipeDictionary objectForKey:@"spoonacularScore"];
+  if ([scoreNumber respondsToSelector:@selector(integerValue)]) {
+    return scoreNumber.integerValue;
+  }
+
+  return 0;
+}
+
+- (NSString *)sourceNameFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                             sourceURLString:(NSString *)sourceURLString
+                              fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSString *sourceName = MRRHomeTrimmedString([recipeDictionary objectForKey:@"sourceName"]);
+  if (sourceName.length > 0) {
+    return sourceName;
+  }
+
+  if (sourceURLString.length > 0) {
+    NSURL *sourceURL = [NSURL URLWithString:sourceURLString];
+    NSString *host = MRRHomeTrimmedString(sourceURL.host);
+    if (host.length > 0) {
+      return host;
+    }
+  }
+
+  if (fallbackPreview.fallbackDetail.sourceName.length > 0) {
+    return fallbackPreview.fallbackDetail.sourceName;
+  }
+
+  return @"Spoonacular";
+}
+
+- (NSArray<NSString *> *)tagsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                         mealType:(NSString *)mealTypeIdentifier
+                                  fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSMutableOrderedSet<NSString *> *tagSet = [NSMutableOrderedSet orderedSet];
+  NSArray<NSString *> *dishTypes = MRRHomeStringArrayFromJSONArray([recipeDictionary objectForKey:@"dishTypes"]);
+  NSArray<NSString *> *cuisines = MRRHomeStringArrayFromJSONArray([recipeDictionary objectForKey:@"cuisines"]);
+  NSArray<NSString *> *diets = MRRHomeStringArrayFromJSONArray([recipeDictionary objectForKey:@"diets"]);
+
+  [tagSet addObjectsFromArray:dishTypes];
+  [tagSet addObjectsFromArray:cuisines];
+  [tagSet addObjectsFromArray:diets];
+
+  NSInteger readyInMinutes = [self readyInMinutesFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
+  if (readyInMinutes > 0 && readyInMinutes <= 20) {
+    [tagSet addObject:@"Quick"];
+  }
+
+  if (tagSet.count == 0 && fallbackPreview.fallbackDetail.tags.count > 0) {
+    [tagSet addObjectsFromArray:fallbackPreview.fallbackDetail.tags];
+  }
+  if (tagSet.count == 0) {
+    [tagSet addObject:MRRHomeMealTypeDisplayName(mealTypeIdentifier)];
+  }
+
+  return [tagSet array];
+}
+
+- (NSArray<OnboardingRecipeIngredient *> *)ingredientsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                                          fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSArray<NSDictionary *> *extendedIngredients = [recipeDictionary objectForKey:@"extendedIngredients"];
+  NSMutableArray<OnboardingRecipeIngredient *> *ingredients = [NSMutableArray array];
+  if ([extendedIngredients isKindOfClass:[NSArray class]]) {
+    for (NSDictionary *ingredientDictionary in extendedIngredients) {
+      NSString *name = MRRHomeTrimmedString([ingredientDictionary objectForKey:@"name"]);
+      NSString *displayText = MRRHomeTrimmedString([ingredientDictionary objectForKey:@"original"]);
+      if (name.length == 0) {
+        name = displayText;
+      }
+      if (displayText.length == 0) {
+        displayText = name;
+      }
+      if (name.length == 0 || displayText.length == 0) {
+        continue;
+      }
+
+      OnboardingRecipeIngredient *ingredient =
+          [[[OnboardingRecipeIngredient alloc] initWithName:name displayText:displayText] autorelease];
+      [ingredients addObject:ingredient];
+    }
+  }
+
+  if (ingredients.count > 0) {
+    return ingredients;
+  }
+
+  if (fallbackPreview.fallbackDetail.ingredients.count > 0) {
+    return fallbackPreview.fallbackDetail.ingredients;
+  }
+
+  OnboardingRecipeIngredient *placeholderIngredient =
+      [[[OnboardingRecipeIngredient alloc] initWithName:@"Ingredients"
+                                            displayText:@"See the recipe source for the latest ingredient list."] autorelease];
+  return @[ placeholderIngredient ];
+}
+
+- (NSArray<OnboardingRecipeInstruction *> *)instructionsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                                            fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSArray<NSDictionary *> *analyzedInstructions = [recipeDictionary objectForKey:@"analyzedInstructions"];
+  NSMutableArray<OnboardingRecipeInstruction *> *instructions = [NSMutableArray array];
+
+  if ([analyzedInstructions isKindOfClass:[NSArray class]]) {
+    for (NSDictionary *instructionGroup in analyzedInstructions) {
+      NSArray<NSDictionary *> *steps = [instructionGroup objectForKey:@"steps"];
+      if (![steps isKindOfClass:[NSArray class]]) {
+        continue;
+      }
+
+      for (NSDictionary *stepDictionary in steps) {
+        NSNumber *number = [stepDictionary objectForKey:@"number"];
+        NSString *stepText = MRRHomeDecodedHTMLString([stepDictionary objectForKey:@"step"]);
+        if (stepText.length == 0) {
+          continue;
+        }
+
+        NSString *title = number != nil ? [NSString stringWithFormat:@"Step %@", number] : @"Step";
+        OnboardingRecipeInstruction *instruction =
+            [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:stepText] autorelease];
+        [instructions addObject:instruction];
+      }
+    }
+  }
+
+  if (instructions.count == 0) {
+    NSString *instructionText = MRRHomeDecodedHTMLString([recipeDictionary objectForKey:@"instructions"]);
+    if (instructionText.length > 0) {
+      NSArray<NSString *> *components = [instructionText componentsSeparatedByString:@"."];
+      NSUInteger stepIndex = 1;
+      for (NSString *component in components) {
+        NSString *stepText = MRRHomeTrimmedString(component);
+        if (stepText.length == 0) {
+          continue;
+        }
+
+        NSString *title = [NSString stringWithFormat:@"Step %lu", (unsigned long)stepIndex];
+        OnboardingRecipeInstruction *instruction =
+            [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:stepText] autorelease];
+        [instructions addObject:instruction];
+        stepIndex += 1;
+      }
+    }
+  }
+
+  if (instructions.count > 0) {
+    return instructions;
+  }
+
+  if (fallbackPreview.fallbackDetail.instructions.count > 0) {
+    return fallbackPreview.fallbackDetail.instructions;
+  }
+
+  OnboardingRecipeInstruction *placeholderInstruction =
+      [[[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1"
+                                               detailText:@"Open the source recipe to view the latest preparation steps."] autorelease];
+  return @[ placeholderInstruction ];
+}
+
+- (NSArray<NSString *> *)toolsFromRecipeDictionary:(NSDictionary *)recipeDictionary
+                                   fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+  NSArray<NSDictionary *> *analyzedInstructions = [recipeDictionary objectForKey:@"analyzedInstructions"];
+  NSMutableOrderedSet<NSString *> *toolSet = [NSMutableOrderedSet orderedSet];
+  if ([analyzedInstructions isKindOfClass:[NSArray class]]) {
+    for (NSDictionary *instructionGroup in analyzedInstructions) {
+      NSArray<NSDictionary *> *steps = [instructionGroup objectForKey:@"steps"];
+      if (![steps isKindOfClass:[NSArray class]]) {
+        continue;
+      }
+
+      for (NSDictionary *stepDictionary in steps) {
+        NSArray<NSDictionary *> *equipment = [stepDictionary objectForKey:@"equipment"];
+        if (![equipment isKindOfClass:[NSArray class]]) {
+          continue;
+        }
+
+        for (NSDictionary *equipmentDictionary in equipment) {
+          NSString *name = MRRHomeTrimmedString([equipmentDictionary objectForKey:@"name"]);
+          if (name.length > 0) {
+            [toolSet addObject:name];
+          }
+        }
+      }
+    }
+  }
+
+  if (toolSet.count > 0) {
+    return [toolSet array];
+  }
+
+  return fallbackPreview.fallbackDetail.tools ?: @[];
 }
 
 @end

@@ -25,7 +25,7 @@
   self = [super init];
   if (self) {
     _session = [session retain];
-    _dataProvider = [dataProvider != nil ? dataProvider : [[[HomeMockDataProvider alloc] init] autorelease] retain];
+    _dataProvider = [dataProvider != nil ? dataProvider : [[[HomeCompositeDataProvider alloc] init] autorelease] retain];
   }
 
   return self;
