@@ -28,6 +28,7 @@ typedef NS_ENUM(NSInteger, HomeSearchState) {
 };
 
 @class HomeCategory;
+@class HomeAdvancedFilterSettings;
 @class HomeRecipeCard;
 @class HomeSection;
 
@@ -44,6 +45,29 @@ typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail * _Nullable re
 @property(nonatomic, copy, readonly) NSString *badgeText;
 
 - (instancetype)initWithIdentifier:(NSString *)identifier title:(NSString *)title badgeText:(NSString *)badgeText;
+
+@end
+
+@interface HomeAdvancedFilterSettings : NSObject <NSCopying>
+
+@property(nonatomic, copy, readonly) NSString *cuisine;
+@property(nonatomic, copy, readonly) NSString *diet;
+@property(nonatomic, copy, readonly) NSString *intolerances;
+@property(nonatomic, copy, readonly) NSString *includeIngredients;
+@property(nonatomic, copy, readonly) NSString *excludeIngredients;
+@property(nonatomic, copy, readonly) NSString *equipment;
+@property(nonatomic, assign, readonly) NSInteger maxReadyTime;
+
++ (instancetype)emptySettings;
+- (instancetype)initWithCuisine:(nullable NSString *)cuisine
+                           diet:(nullable NSString *)diet
+                   intolerances:(nullable NSString *)intolerances
+               includeIngredients:(nullable NSString *)includeIngredients
+               excludeIngredients:(nullable NSString *)excludeIngredients
+                      equipment:(nullable NSString *)equipment
+                   maxReadyTime:(NSInteger)maxReadyTime;
+- (BOOL)hasActiveFilters;
+- (NSArray<NSString *> *)summaryTokens;
 
 @end
 
@@ -98,10 +122,13 @@ typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail * _Nullable re
 @protocol HomeDataProviding <NSObject>
 
 - (NSArray<HomeCategory *> *)availableCategories;
-- (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption completion:(HomeInitialSectionsCompletion)completion;
+- (void)loadInitialSectionsForFilterOption:(HomeFilterOption)filterOption
+                           advancedFilters:(nullable HomeAdvancedFilterSettings *)advancedFilters
+                                completion:(HomeInitialSectionsCompletion)completion;
 - (void)searchRecipes:(NSString *)query
                 limit:(NSUInteger)limit
          filterOption:(HomeFilterOption)filterOption
+      advancedFilters:(nullable HomeAdvancedFilterSettings *)advancedFilters
            completion:(HomeRecipeSearchCompletion)completion;
 - (void)loadRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard completion:(HomeRecipeDetailCompletion)completion;
 
