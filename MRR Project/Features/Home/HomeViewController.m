@@ -112,6 +112,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, retain) UITextField *searchTextField;
 @property(nonatomic, retain) UIButton *filterButton;
 @property(nonatomic, retain) UIActivityIndicatorView *filterLoadingIndicator;
+@property(nonatomic, retain) UIView *activeFiltersContainerView;
+@property(nonatomic, retain) UIScrollView *activeFiltersScrollView;
+@property(nonatomic, retain) UIStackView *activeFiltersStackView;
+@property(nonatomic, retain) UIButton *clearFiltersButton;
 @property(nonatomic, retain) UIView *loadingStateView;
 @property(nonatomic, retain) UIActivityIndicatorView *loadingIndicator;
 @property(nonatomic, retain) UILabel *loadingStateLabel;
@@ -151,6 +155,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, copy) NSArray<HomeRecipeCard *> *currentSearchResults;
 @property(nonatomic, retain, nullable) HomeCategory *selectedCategory;
 @property(nonatomic, assign) HomeFilterOption currentFilterOption;
+@property(nonatomic, retain) HomeAdvancedFilterSettings *advancedFilterSettings;
 @property(nonatomic, assign) HomeSearchState searchState;
 @property(nonatomic, assign, getter=isLoadingContent) BOOL loadingContent;
 @property(nonatomic, retain, nullable) NSTimer *initialLoadTimer;
@@ -186,6 +191,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)updateRecommendationSectionVisibility;
 - (void)updatePoweredByVisibility;
 - (void)updateFilterLoadingState;
+- (void)updateActiveFiltersSummary;
 - (void)updateSearchResultsHeightConstraintIfNeeded;
 - (void)animateEntranceIfNeeded;
 - (void)handleSearchTextChanged:(UITextField *)sender;
@@ -194,7 +200,13 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)clearSearchState;
 - (void)handleFilterButtonTapped:(id)sender;
 - (void)applyFilterOption:(HomeFilterOption)filterOption;
+- (void)presentAdvancedFiltersAlert;
+- (void)applyAdvancedFilters:(HomeAdvancedFilterSettings *)advancedFilters;
+- (void)clearAdvancedFilters;
 - (NSString *)displayTitleForFilterOption:(HomeFilterOption)filterOption;
+- (NSString *)filterActionSheetMessage;
+- (UIView *)activeFilterChipViewWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier;
+- (NSInteger)integerValueFromTextFieldString:(NSString *)string;
 - (void)handleSeeAllButtonTapped:(UIButton *)sender;
 - (void)presentRecipeListWithTitle:(NSString *)title recipes:(NSArray<HomeRecipeCard *> *)recipes emptyMessage:(NSString *)emptyMessage;
 - (void)presentRecipeDetailForCard:(HomeRecipeCard *)recipeCard;
@@ -227,6 +239,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     _session = [session retain];
     _dataProvider = [dataProvider retain];
     _currentFilterOption = HomeFilterOptionFeatured;
+    _advancedFilterSettings = [[HomeAdvancedFilterSettings emptySettings] retain];
     _searchState = HomeSearchStateIdle;
     _loadingContent = YES;
   }
@@ -240,6 +253,11 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   [_searchDebounceTimer release];
   [_initialLoadTimer release];
+  [_advancedFilterSettings release];
+  [_clearFiltersButton release];
+  [_activeFiltersStackView release];
+  [_activeFiltersScrollView release];
+  [_activeFiltersContainerView release];
   [_selectedCategory release];
   [_lastCompletedSearchQuery release];
   [_currentSearchResults release];
@@ -486,11 +504,11 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   if (@available(iOS 13.0, *)) {
     [filterButton setImage:[UIImage systemImageNamed:@"slider.horizontal.3"] forState:UIControlStateNormal];
   } else {
-    [filterButton setTitle:@"Sort" forState:UIControlStateNormal];
+    [filterButton setTitle:@"Filter" forState:UIControlStateNormal];
     filterButton.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
   }
-  filterButton.accessibilityLabel = @"Sort recipes";
-  filterButton.accessibilityHint = @"Choose how recipes are ordered.";
+  filterButton.accessibilityLabel = @"Sort and filter recipes";
+  filterButton.accessibilityHint = @"Adjust sort order and advanced recipe filters.";
   [filterButton addTarget:self action:@selector(handleFilterButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:filterButton];
   [searchContainerView addSubview:filterButton];
@@ -537,6 +555,45 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     [filterLoadingIndicator.centerYAnchor constraintEqualToAnchor:filterButton.centerYAnchor]
   ]];
   [self updateFilterLoadingState];
+
+  UIView *activeFiltersContainerView = [[[UIView alloc] init] autorelease];
+  activeFiltersContainerView.translatesAutoresizingMaskIntoConstraints = NO;
+  activeFiltersContainerView.hidden = YES;
+  activeFiltersContainerView.accessibilityIdentifier = @"home.activeFilters.containerView";
+  [contentStackView addArrangedSubview:activeFiltersContainerView];
+  self.activeFiltersContainerView = activeFiltersContainerView;
+
+  UIScrollView *activeFiltersScrollView = [[[UIScrollView alloc] init] autorelease];
+  activeFiltersScrollView.translatesAutoresizingMaskIntoConstraints = NO;
+  activeFiltersScrollView.showsHorizontalScrollIndicator = NO;
+  activeFiltersScrollView.alwaysBounceHorizontal = YES;
+  activeFiltersScrollView.accessibilityIdentifier = @"home.activeFilters.scrollView";
+  [activeFiltersContainerView addSubview:activeFiltersScrollView];
+  self.activeFiltersScrollView = activeFiltersScrollView;
+
+  UIStackView *activeFiltersStackView = [[[UIStackView alloc] init] autorelease];
+  activeFiltersStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  activeFiltersStackView.axis = UILayoutConstraintAxisHorizontal;
+  activeFiltersStackView.alignment = UIStackViewAlignmentFill;
+  activeFiltersStackView.spacing = 8.0;
+  [activeFiltersScrollView addSubview:activeFiltersStackView];
+  self.activeFiltersStackView = activeFiltersStackView;
+
+  [NSLayoutConstraint activateConstraints:@[
+    [activeFiltersContainerView.heightAnchor constraintEqualToConstant:38.0],
+
+    [activeFiltersScrollView.topAnchor constraintEqualToAnchor:activeFiltersContainerView.topAnchor],
+    [activeFiltersScrollView.leadingAnchor constraintEqualToAnchor:activeFiltersContainerView.leadingAnchor],
+    [activeFiltersScrollView.trailingAnchor constraintEqualToAnchor:activeFiltersContainerView.trailingAnchor],
+    [activeFiltersScrollView.bottomAnchor constraintEqualToAnchor:activeFiltersContainerView.bottomAnchor],
+
+    [activeFiltersStackView.topAnchor constraintEqualToAnchor:activeFiltersScrollView.contentLayoutGuide.topAnchor],
+    [activeFiltersStackView.leadingAnchor constraintEqualToAnchor:activeFiltersScrollView.contentLayoutGuide.leadingAnchor],
+    [activeFiltersStackView.trailingAnchor constraintEqualToAnchor:activeFiltersScrollView.contentLayoutGuide.trailingAnchor],
+    [activeFiltersStackView.bottomAnchor constraintEqualToAnchor:activeFiltersScrollView.contentLayoutGuide.bottomAnchor],
+    [activeFiltersStackView.heightAnchor constraintEqualToAnchor:activeFiltersScrollView.frameLayoutGuide.heightAnchor]
+  ]];
+  [self updateActiveFiltersSummary];
 
   UIView *loadingStateView = [[[UIView alloc] init] autorelease];
   loadingStateView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -748,7 +805,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self.view addGestureRecognizer:tapGestureRecognizer];
 
   [contentStackView setCustomSpacing:18.0 afterView:headerRowView];
-  [contentStackView setCustomSpacing:28.0 afterView:searchContainerView];
+  [contentStackView setCustomSpacing:14.0 afterView:searchContainerView];
+  [contentStackView setCustomSpacing:28.0 afterView:activeFiltersContainerView];
   [self updateMetricsForCurrentViewport];
 }
 
@@ -905,6 +963,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   self.contentRequestToken += 1;
   NSUInteger requestToken = self.contentRequestToken;
   [self.dataProvider loadInitialSectionsForFilterOption:self.currentFilterOption
+                                        advancedFilters:self.advancedFilterSettings
                                              completion:^(NSArray<HomeSection *> *sections,
                                                           NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier,
                                                           BOOL usesLiveData) {
@@ -1034,6 +1093,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                                                 : @"No recommendations are available right now.";
 
   [self reloadCollectionContentAnimated:animated];
+  [self updateActiveFiltersSummary];
+  [self updateFilterLoadingState];
   [self updateSearchSectionVisibility];
   [self updateRecommendationSectionVisibility];
   [self updatePoweredByVisibility];
@@ -1088,7 +1149,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   self.recommendationCollectionHeightConstraint.constant = railHeight;
   self.weeklyCollectionHeightConstraint.constant = railHeight;
   [self.contentStackView setCustomSpacing:(compactViewport ? 16.0 : 18.0) afterView:self.contentStackView.arrangedSubviews.firstObject];
-  [self.contentStackView setCustomSpacing:(compactViewport ? 24.0 : 28.0) afterView:self.searchContainerView];
+  [self.contentStackView setCustomSpacing:(compactViewport ? 10.0 : 12.0) afterView:self.searchContainerView];
+  [self.contentStackView setCustomSpacing:(compactViewport ? 24.0 : 28.0) afterView:self.activeFiltersContainerView];
 }
 
 - (void)updateSearchSectionVisibility {
@@ -1140,16 +1202,72 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)updateFilterLoadingState {
+  NSArray<NSString *> *summaryTokens = [self.advancedFilterSettings summaryTokens];
+  BOOL hasAdvancedFilters = summaryTokens.count > 0;
   self.filterButton.enabled = !self.isApplyingFilter;
+  self.clearFiltersButton.enabled = !self.isApplyingFilter;
   self.filterButton.imageView.alpha = self.isApplyingFilter ? 0.0 : 1.0;
   self.filterButton.titleLabel.alpha = self.isApplyingFilter ? 0.0 : 1.0;
-  self.filterButton.accessibilityHint = self.isApplyingFilter ? @"Applying the selected sort order." : @"Choose how recipes are ordered.";
-  self.filterButton.accessibilityValue = self.isApplyingFilter ? @"Loading" : nil;
+  self.filterButton.backgroundColor = hasAdvancedFilters
+                                          ? [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                                               [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.12]
+                                          : [UIColor clearColor];
+  self.filterButton.accessibilityHint = self.isApplyingFilter ? @"Applying the selected sort order and filters."
+                                                              : @"Adjust sort order and advanced recipe filters.";
+  self.filterButton.accessibilityValue = self.isApplyingFilter ? @"Loading"
+                                                               : (hasAdvancedFilters
+                                                                      ? [NSString stringWithFormat:@"%lu filters active",
+                                                                                                     (unsigned long)summaryTokens.count]
+                                                                      : nil);
   if (self.isApplyingFilter) {
     [self.filterLoadingIndicator startAnimating];
   } else {
     [self.filterLoadingIndicator stopAnimating];
   }
+}
+
+- (void)updateActiveFiltersSummary {
+  NSArray<UIView *> *existingViews = [[self.activeFiltersStackView.arrangedSubviews copy] autorelease];
+  for (UIView *view in existingViews) {
+    [self.activeFiltersStackView removeArrangedSubview:view];
+    [view removeFromSuperview];
+  }
+  self.clearFiltersButton = nil;
+
+  NSArray<NSString *> *summaryTokens = [self.advancedFilterSettings summaryTokens];
+  self.activeFiltersContainerView.hidden = summaryTokens.count == 0;
+  self.activeFiltersScrollView.accessibilityValue = summaryTokens.count > 0 ? [summaryTokens componentsJoinedByString:@", "] : nil;
+  if (summaryTokens.count == 0) {
+    return;
+  }
+
+  NSUInteger chipIndex = 0;
+  for (NSString *token in summaryTokens) {
+    NSString *accessibilityIdentifier = [NSString stringWithFormat:@"home.activeFilters.chip.%lu", (unsigned long)(chipIndex + 1)];
+    [self.activeFiltersStackView addArrangedSubview:[self activeFilterChipViewWithText:token accessibilityIdentifier:accessibilityIdentifier]];
+    chipIndex += 1;
+  }
+
+  UIButton *clearButton = [UIButton buttonWithType:UIButtonTypeSystem];
+  clearButton.translatesAutoresizingMaskIntoConstraints = NO;
+  clearButton.accessibilityIdentifier = @"home.activeFilters.clearButton";
+  clearButton.accessibilityLabel = @"Clear advanced filters";
+  clearButton.titleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold];
+  clearButton.contentEdgeInsets = UIEdgeInsetsMake(0.0, 14.0, 0.0, 14.0);
+  clearButton.layer.cornerRadius = 16.0;
+  clearButton.layer.borderWidth = 1.0;
+  clearButton.layer.borderColor = [MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.92 green:0.91 blue:0.88 alpha:1.0],
+                                                     [UIColor colorWithRed:0.24 green:0.24 blue:0.22 alpha:1.0]) CGColor];
+  clearButton.backgroundColor = MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
+                                                  [UIColor colorWithWhite:0.14 alpha:1.0]);
+  [clearButton setTitle:@"Clear" forState:UIControlStateNormal];
+  [clearButton setTitleColor:MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
+                                               [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0])
+                    forState:UIControlStateNormal];
+  [clearButton addTarget:self action:@selector(clearAdvancedFilters) forControlEvents:UIControlEventTouchUpInside];
+  [self configurePressFeedbackForButton:clearButton];
+  [self.activeFiltersStackView addArrangedSubview:clearButton];
+  self.clearFiltersButton = clearButton;
 }
 
 - (void)updateSearchResultsHeightConstraintIfNeeded {
@@ -1169,7 +1287,13 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   }
 
   self.hasAnimatedEntrance = YES;
-  NSArray<UIView *> *viewsToAnimate = @[ self.searchContainerView, self.categoriesSectionView, self.recommendationSectionView, self.weeklySectionView ];
+  NSArray<UIView *> *viewsToAnimate = @[
+    self.searchContainerView,
+    self.activeFiltersContainerView,
+    self.categoriesSectionView,
+    self.recommendationSectionView,
+    self.weeklySectionView
+  ];
   CGFloat delay = 0.0;
   for (UIView *view in viewsToAnimate) {
     if (view.hidden) {
@@ -1247,6 +1371,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self.dataProvider searchRecipes:trimmedQuery
                              limit:(resultLimit > 0 ? resultLimit : MRRHomeSearchRequestLimit)
                       filterOption:self.currentFilterOption
+                   advancedFilters:self.advancedFilterSettings
                         completion:^(NSArray<HomeRecipeCard *> *recipes, BOOL usesLiveData) {
                           if (requestToken != self.searchRequestToken) {
                             return;
@@ -1287,8 +1412,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (void)handleFilterButtonTapped:(id)sender {
   UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:@"Sort Recipes"
-                                          message:@"Choose how Home should organize the current recipes."
+      [UIAlertController alertControllerWithTitle:@"Filters & Sort"
+                                          message:[self filterActionSheetMessage]
                                    preferredStyle:UIAlertControllerStyleActionSheet];
   alertController.view.accessibilityIdentifier = @"home.filterActionSheet";
 
@@ -1307,6 +1432,23 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                                                         style:UIAlertActionStyleDefault
                                                       handler:^(__unused UIAlertAction *action) {
                                                         [self applyFilterOption:filterOption];
+                                                      }]];
+  }
+
+  NSString *advancedTitle = [self.advancedFilterSettings hasActiveFilters] ? @"Edit Advanced Filters…" : @"Advanced Filters…";
+  [alertController addAction:[UIAlertAction actionWithTitle:advancedTitle
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:^(__unused UIAlertAction *action) {
+                                                      dispatch_async(dispatch_get_main_queue(), ^{
+                                                        [self presentAdvancedFiltersAlert];
+                                                      });
+                                                    }]];
+
+  if ([self.advancedFilterSettings hasActiveFilters]) {
+    [alertController addAction:[UIAlertAction actionWithTitle:@"Clear Advanced Filters"
+                                                        style:UIAlertActionStyleDestructive
+                                                      handler:^(__unused UIAlertAction *action) {
+                                                        [self clearAdvancedFilters];
                                                       }]];
   }
 
@@ -1333,6 +1475,117 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self refreshVisibleContentForCurrentFilter];
 }
 
+- (void)presentAdvancedFiltersAlert {
+  UIAlertController *alertController =
+      [UIAlertController alertControllerWithTitle:@"Advanced Filters"
+                                          message:@"Refine Home and search using Spoonacular filters."
+                                   preferredStyle:UIAlertControllerStyleAlert];
+  alertController.view.accessibilityIdentifier = @"home.advancedFilters.alert";
+
+  NSArray<NSDictionary<NSString *, id> *> *fieldConfigurations = @[
+    @{
+      @"placeholder" : @"Cuisine (e.g. Italian)",
+      @"text" : self.advancedFilterSettings.cuisine ?: @"",
+      @"identifier" : @"home.advancedFilters.cuisineField"
+    },
+    @{
+      @"placeholder" : @"Diet (e.g. vegetarian)",
+      @"text" : self.advancedFilterSettings.diet ?: @"",
+      @"identifier" : @"home.advancedFilters.dietField"
+    },
+    @{
+      @"placeholder" : @"Intolerances (comma separated)",
+      @"text" : self.advancedFilterSettings.intolerances ?: @"",
+      @"identifier" : @"home.advancedFilters.intolerancesField"
+    },
+    @{
+      @"placeholder" : @"Max ready time (minutes)",
+      @"text" : self.advancedFilterSettings.maxReadyTime > 0 ? [NSString stringWithFormat:@"%ld", (long)self.advancedFilterSettings.maxReadyTime] : @"",
+      @"identifier" : @"home.advancedFilters.maxReadyTimeField",
+      @"keyboardType" : @(UIKeyboardTypeNumberPad)
+    },
+    @{
+      @"placeholder" : @"Include ingredients",
+      @"text" : self.advancedFilterSettings.includeIngredients ?: @"",
+      @"identifier" : @"home.advancedFilters.includeIngredientsField"
+    },
+    @{
+      @"placeholder" : @"Exclude ingredients",
+      @"text" : self.advancedFilterSettings.excludeIngredients ?: @"",
+      @"identifier" : @"home.advancedFilters.excludeIngredientsField"
+    },
+    @{
+      @"placeholder" : @"Required equipment",
+      @"text" : self.advancedFilterSettings.equipment ?: @"",
+      @"identifier" : @"home.advancedFilters.equipmentField"
+    }
+  ];
+
+  for (NSDictionary<NSString *, id> *fieldConfiguration in fieldConfigurations) {
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+      textField.placeholder = [fieldConfiguration objectForKey:@"placeholder"];
+      textField.text = [fieldConfiguration objectForKey:@"text"];
+      textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+      textField.accessibilityIdentifier = [fieldConfiguration objectForKey:@"identifier"];
+      NSNumber *keyboardTypeValue = [fieldConfiguration objectForKey:@"keyboardType"];
+      if (keyboardTypeValue != nil) {
+        textField.keyboardType = keyboardTypeValue.integerValue;
+      }
+    }];
+  }
+
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Clear All"
+                                                      style:UIAlertActionStyleDestructive
+                                                    handler:^(__unused UIAlertAction *action) {
+                                                      [self clearAdvancedFilters];
+                                                    }]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Apply"
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:^(__unused UIAlertAction *action) {
+                                                      NSArray<UITextField *> *textFields = alertController.textFields ?: @[];
+                                                      NSString *cuisine = textFields.count > 0 ? textFields[0].text : @"";
+                                                      NSString *diet = textFields.count > 1 ? textFields[1].text : @"";
+                                                      NSString *intolerances = textFields.count > 2 ? textFields[2].text : @"";
+                                                      NSString *maxReadyTimeText = textFields.count > 3 ? textFields[3].text : @"";
+                                                      NSString *includeIngredients = textFields.count > 4 ? textFields[4].text : @"";
+                                                      NSString *excludeIngredients = textFields.count > 5 ? textFields[5].text : @"";
+                                                      NSString *equipment = textFields.count > 6 ? textFields[6].text : @"";
+
+                                                      HomeAdvancedFilterSettings *advancedFilters =
+                                                          [[[HomeAdvancedFilterSettings alloc] initWithCuisine:cuisine
+                                                                                                          diet:diet
+                                                                                                  intolerances:intolerances
+                                                                                            includeIngredients:includeIngredients
+                                                                                            excludeIngredients:excludeIngredients
+                                                                                                     equipment:equipment
+                                                                                                  maxReadyTime:[self integerValueFromTextFieldString:maxReadyTimeText]] autorelease];
+                                                      [self applyAdvancedFilters:advancedFilters];
+                                                    }]];
+
+  [self presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)applyAdvancedFilters:(HomeAdvancedFilterSettings *)advancedFilters {
+  HomeAdvancedFilterSettings *resolvedAdvancedFilters = advancedFilters ?: [HomeAdvancedFilterSettings emptySettings];
+  if ([self.advancedFilterSettings isEqual:resolvedAdvancedFilters]) {
+    [self updateActiveFiltersSummary];
+    [self updateFilterLoadingState];
+    [self applyCurrentPresentationStateAnimated:YES];
+    return;
+  }
+
+  self.advancedFilterSettings = resolvedAdvancedFilters;
+  self.applyingFilter = YES;
+  [self updateActiveFiltersSummary];
+  [self updateFilterLoadingState];
+  [self refreshVisibleContentForCurrentFilter];
+}
+
+- (void)clearAdvancedFilters {
+  [self applyAdvancedFilters:[HomeAdvancedFilterSettings emptySettings]];
+}
+
 - (NSString *)displayTitleForFilterOption:(HomeFilterOption)filterOption {
   switch (filterOption) {
     case HomeFilterOptionFeatured:
@@ -1344,6 +1597,57 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     case HomeFilterOptionLowCalorie:
       return @"Low Calorie";
   }
+}
+
+- (NSString *)filterActionSheetMessage {
+  NSMutableArray<NSString *> *lines = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"Sort: %@", [self displayTitleForFilterOption:self.currentFilterOption]]];
+  NSArray<NSString *> *summaryTokens = [self.advancedFilterSettings summaryTokens];
+  if (summaryTokens.count > 0) {
+    [lines addObject:[NSString stringWithFormat:@"Active filters: %@", [summaryTokens componentsJoinedByString:@"  •  "]]];
+  } else {
+    [lines addObject:@"Add cuisine, diet, intolerance, time, ingredient, or equipment filters."];
+  }
+  return [lines componentsJoinedByString:@"\n"];
+}
+
+- (UIView *)activeFilterChipViewWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier {
+  UIView *containerView = [[[UIView alloc] init] autorelease];
+  containerView.translatesAutoresizingMaskIntoConstraints = NO;
+  containerView.accessibilityIdentifier = accessibilityIdentifier;
+  containerView.layer.cornerRadius = 16.0;
+  containerView.layer.borderWidth = 1.0;
+  containerView.layer.borderColor = [[MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                                        [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.16] CGColor];
+  containerView.backgroundColor = [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                                     [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.10];
+
+  UILabel *label = [[[UILabel alloc] init] autorelease];
+  label.translatesAutoresizingMaskIntoConstraints = NO;
+  label.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold];
+  label.adjustsFontForContentSizeCategory = YES;
+  label.textColor = MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
+                                      [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0]);
+  label.text = text;
+  label.lineBreakMode = NSLineBreakByTruncatingTail;
+  [containerView addSubview:label];
+
+  [NSLayoutConstraint activateConstraints:@[
+    [containerView.heightAnchor constraintEqualToConstant:32.0],
+    [label.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:12.0],
+    [label.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-12.0],
+    [label.centerYAnchor constraintEqualToAnchor:containerView.centerYAnchor]
+  ]];
+
+  return containerView;
+}
+
+- (NSInteger)integerValueFromTextFieldString:(NSString *)string {
+  NSScanner *scanner = [NSScanner scannerWithString:[string stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+  NSInteger value = 0;
+  if ([scanner scanInteger:&value]) {
+    return MAX(value, 0);
+  }
+  return 0;
 }
 
 - (void)handleSeeAllButtonTapped:(UIButton *)sender {
