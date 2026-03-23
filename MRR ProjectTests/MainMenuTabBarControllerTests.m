@@ -274,6 +274,21 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertEqualObjects([[profileCoordinator tabBarItem] title], @"Profile");
 }
 
+- (void)testSavedTabShowsSectionHeadersAndExpandedRecipeCards {
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  [savedNavigationController.topViewController loadViewIfNeeded];
+
+  UIView *savedView = savedNavigationController.topViewController.view;
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionsStack" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.salad" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.dessert" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.mainCourse" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.breakfast" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.soup" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
+}
+
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index {
   XCTAssertLessThan(index, self.tabBarController.viewControllers.count);
   UIViewController *viewController = self.tabBarController.viewControllers[index];
