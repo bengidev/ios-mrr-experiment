@@ -163,6 +163,11 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   [self.navigationController setNavigationBarHidden:YES animated:animated];
 }
 
+- (void)viewWillDisappear:(BOOL)animated {
+  [super viewWillDisappear:animated];
+  [self.navigationController setNavigationBarHidden:NO animated:animated];
+}
+
 - (void)buildViewHierarchy {
   UIScrollView *scrollView = [[[UIScrollView alloc] init] autorelease];
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
