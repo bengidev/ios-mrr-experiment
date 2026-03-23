@@ -236,6 +236,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
+    self.title = @"Home";
     _session = [session retain];
     _dataProvider = [dataProvider retain];
     _currentFilterOption = HomeFilterOptionFeatured;
@@ -310,7 +311,6 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  self.title = @"";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
   }

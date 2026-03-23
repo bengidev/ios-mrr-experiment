@@ -11,6 +11,39 @@
 #import "../MRR Project/Features/Saved/SavedCoordinator.h"
 #import "../MRR Project/Features/Saved/SavedViewController.h"
 
+static UIColor *MRRMainMenuTestDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
+  if (@available(iOS 13.0, *)) {
+    return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
+      if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
+        return darkColor;
+      }
+
+      return lightColor;
+    }];
+  }
+
+  return lightColor;
+}
+
+static UIColor *MRRMainMenuTestNamedColor(NSString *name, UIColor *lightColor, UIColor *darkColor) {
+  UIColor *namedColor = [UIColor colorNamed:name];
+  return namedColor ?: MRRMainMenuTestDynamicFallbackColor(lightColor, darkColor);
+}
+
+static UIColor *MRRMainMenuTestSelectedColor(void) {
+  return MRRMainMenuTestNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
+                                   [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
+}
+
+static UIColor *MRRMainMenuTestUnselectedColor(void) {
+  return MRRMainMenuTestNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
+                                   [UIColor colorWithWhite:0.63 alpha:1.0]);
+}
+
+static UIColor *MRRMainMenuTestBackgroundColor(void) {
+  return MRRMainMenuTestNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0], [UIColor colorWithWhite:0.15 alpha:1.0]);
+}
+
 @interface MainMenuAuthStateObservationSpy : NSObject <MRRAuthStateObservation>
 @end
 
@@ -82,6 +115,11 @@
 
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
+- (UIColor *)resolvedColor:(UIColor *)color forTraitCollection:(UITraitCollection *)traitCollection;
+- (void)assertColor:(UIColor *)actual matchesColor:(UIColor *)expected;
+- (void)assertItemAppearance:(UITabBarItemAppearance *)itemAppearance
+           selectedIconColor:(UIColor *)selectedIconColor
+             unselectedColor:(UIColor *)unselectedColor API_AVAILABLE(ios(13.0));
 
 @end
 
@@ -127,122 +165,6 @@
   XCTAssertEqual(self.tabBarController.selectedIndex, 0);
 }
 
-- (void)testEachTabUsesItsOwnNavigationController {
-  for (NSUInteger index = 0; index < self.tabBarController.viewControllers.count; index += 1) {
-    XCTAssertTrue([self.tabBarController.viewControllers[index] isKindOfClass:[UINavigationController class]]);
-  }
-}
-
-- (void)testProfileTabHostsProfileViewController {
-  UINavigationController *navigationController = [self navigationControllerAtIndex:2];
-  XCTAssertTrue([navigationController.topViewController isKindOfClass:[ProfileViewController class]]);
-  XCTAssertEqualObjects(navigationController.tabBarItem.title, @"Profile");
-}
-
-- (void)testMountedTabsExposeFeatureAccessibilityIdentifiers {
-  UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
-  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
-  UINavigationController *profileNavigationController = [self navigationControllerAtIndex:2];
-
-  [homeNavigationController.topViewController loadViewIfNeeded];
-  [savedNavigationController.topViewController loadViewIfNeeded];
-  [profileNavigationController.topViewController loadViewIfNeeded];
-
-  XCTAssertEqualObjects(homeNavigationController.topViewController.view.accessibilityIdentifier, @"home.view");
-  XCTAssertEqualObjects(savedNavigationController.topViewController.view.accessibilityIdentifier, @"saved.view");
-  XCTAssertEqualObjects(profileNavigationController.topViewController.view.accessibilityIdentifier, @"profile.view");
-}
-
-- (void)testHomeTabReceivesAuthenticatedGreeting {
-  UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
-  [homeNavigationController.topViewController loadViewIfNeeded];
-
-  UILabel *greetingLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.greetingLabel" inView:homeNavigationController.topViewController.view];
-  XCTAssertNotNil(greetingLabel);
-  XCTAssertEqualObjects(greetingLabel.text, @"Hello, Test Cook");
-}
-
-- (void)testFeatureCoordinatorsReturnStandaloneContentControllers {
-  HomeCoordinator *homeCoordinator = [[HomeCoordinator alloc] init];
-  SavedCoordinator *savedCoordinator = [[SavedCoordinator alloc] init];
-  ProfileCoordinator *profileCoordinator =
-      [[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController session:self.session];
-
-  XCTAssertTrue([[homeCoordinator rootViewController] isKindOfClass:[HomeViewController class]]);
-  XCTAssertFalse([[homeCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
-  XCTAssertEqualObjects([[homeCoordinator tabBarItem] title], @"Home");
-
-  XCTAssertTrue([[savedCoordinator rootViewController] isKindOfClass:[SavedViewController class]]);
-  XCTAssertFalse([[savedCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
-  XCTAssertEqualObjects([[savedCoordinator tabBarItem] title], @"Saved");
-
-  XCTAssertTrue([[profileCoordinator rootViewController] isKindOfClass:[ProfileViewController class]]);
-  XCTAssertFalse([[profileCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
-  XCTAssertEqualObjects([[profileCoordinator tabBarItem] title], @"Profile");
-}
-
-- (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index {
-  XCTAssertLessThan(index, self.tabBarController.viewControllers.count);
-  UIViewController *viewController = self.tabBarController.viewControllers[index];
-  XCTAssertTrue([viewController isKindOfClass:[UINavigationController class]]);
-  return (UINavigationController *)viewController;
-}
-
-- (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
-  if ([view.accessibilityIdentifier isEqualToString:identifier]) {
-    return view;
-  }
-
-  for (UIView *subview in view.subviews) {
-    UIView *matchingView = [self findViewWithAccessibilityIdentifier:identifier inView:subview];
-    if (matchingView != nil) {
-      return matchingView;
-    }
-  }
-
-  return nil;
-}
-
-@end
-static UIColor *MRRMainMenuTestDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
-  if (@available(iOS 13.0, *)) {
-    return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
-      if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
-        return darkColor;
-      }
-
-      return lightColor;
-    }];
-  }
-
-  return lightColor;
-}
-
-static UIColor *MRRMainMenuTestNamedColor(NSString *name, UIColor *lightColor, UIColor *darkColor) {
-  UIColor *namedColor = [UIColor colorNamed:name];
-  return namedColor ?: MRRMainMenuTestDynamicFallbackColor(lightColor, darkColor);
-}
-
-static UIColor *MRRMainMenuTestSelectedColor(void) {
-  return MRRMainMenuTestNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
-                                   [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
-}
-
-static UIColor *MRRMainMenuTestUnselectedColor(void) {
-  return MRRMainMenuTestNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                   [UIColor colorWithWhite:0.63 alpha:1.0]);
-}
-
-static UIColor *MRRMainMenuTestBackgroundColor(void) {
-  return MRRMainMenuTestNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0], [UIColor colorWithWhite:0.15 alpha:1.0]);
-}
-
-- (UIColor *)resolvedColor:(UIColor *)color forTraitCollection:(UITraitCollection *)traitCollection;
-- (void)assertColor:(UIColor *)actual matchesColor:(UIColor *)expected;
-- (void)assertItemAppearance:(UITabBarItemAppearance *)itemAppearance
-           selectedIconColor:(UIColor *)selectedIconColor
-             unselectedColor:(UIColor *)unselectedColor API_AVAILABLE(ios(13.0));
 - (void)testMainMenuAppliesThemeColorsToTabBar {
   UIColor *selectedIconColor = MRRMainMenuTestSelectedColor();
   UIColor *unselectedColor = MRRMainMenuTestUnselectedColor();
@@ -290,6 +212,88 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
              selectedIconColor:standardAppearance.stackedLayoutAppearance.selected.iconColor
                unselectedColor:standardAppearance.stackedLayoutAppearance.normal.iconColor];
   }
+}
+
+- (void)testEachTabUsesItsOwnNavigationController {
+  for (NSUInteger index = 0; index < self.tabBarController.viewControllers.count; index += 1) {
+    XCTAssertTrue([self.tabBarController.viewControllers[index] isKindOfClass:[UINavigationController class]]);
+  }
+}
+
+- (void)testProfileTabHostsProfileViewController {
+  UINavigationController *navigationController = [self navigationControllerAtIndex:2];
+  XCTAssertTrue([navigationController.topViewController isKindOfClass:[ProfileViewController class]]);
+  XCTAssertEqualObjects(navigationController.tabBarItem.title, @"Profile");
+}
+
+- (void)testMountedTabsExposeFeatureAccessibilityIdentifiers {
+  UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  UINavigationController *profileNavigationController = [self navigationControllerAtIndex:2];
+
+  [homeNavigationController.topViewController loadViewIfNeeded];
+  [savedNavigationController.topViewController loadViewIfNeeded];
+  [profileNavigationController.topViewController loadViewIfNeeded];
+
+  XCTAssertEqualObjects(homeNavigationController.topViewController.view.accessibilityIdentifier, @"home.view");
+  XCTAssertEqualObjects(savedNavigationController.topViewController.view.accessibilityIdentifier, @"saved.view");
+  XCTAssertEqualObjects(profileNavigationController.topViewController.view.accessibilityIdentifier, @"profile.view");
+}
+
+- (void)testHomeTabReceivesAuthenticatedGreeting {
+  UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
+  [homeNavigationController.topViewController loadViewIfNeeded];
+
+  UILabel *greetingLabel =
+      (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.greetingLabel" inView:homeNavigationController.topViewController.view];
+  XCTAssertNotNil(greetingLabel);
+  XCTAssertEqualObjects(greetingLabel.text, @"Hello, Test Cook");
+}
+
+- (void)testHomeViewControllerSetsTitleDuringInitialization {
+  UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
+  XCTAssertEqualObjects(homeNavigationController.topViewController.title, @"Home");
+}
+
+- (void)testFeatureCoordinatorsReturnStandaloneContentControllers {
+  HomeCoordinator *homeCoordinator = [[HomeCoordinator alloc] init];
+  SavedCoordinator *savedCoordinator = [[SavedCoordinator alloc] init];
+  ProfileCoordinator *profileCoordinator =
+      [[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController session:self.session];
+
+  XCTAssertTrue([[homeCoordinator rootViewController] isKindOfClass:[HomeViewController class]]);
+  XCTAssertFalse([[homeCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
+  XCTAssertEqualObjects([[homeCoordinator tabBarItem] title], @"Home");
+
+  XCTAssertTrue([[savedCoordinator rootViewController] isKindOfClass:[SavedViewController class]]);
+  XCTAssertFalse([[savedCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
+  XCTAssertEqualObjects([[savedCoordinator tabBarItem] title], @"Saved");
+
+  XCTAssertTrue([[profileCoordinator rootViewController] isKindOfClass:[ProfileViewController class]]);
+  XCTAssertFalse([[profileCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
+  XCTAssertEqualObjects([[profileCoordinator tabBarItem] title], @"Profile");
+}
+
+- (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index {
+  XCTAssertLessThan(index, self.tabBarController.viewControllers.count);
+  UIViewController *viewController = self.tabBarController.viewControllers[index];
+  XCTAssertTrue([viewController isKindOfClass:[UINavigationController class]]);
+  return (UINavigationController *)viewController;
+}
+
+- (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
+  if ([view.accessibilityIdentifier isEqualToString:identifier]) {
+    return view;
+  }
+
+  for (UIView *subview in view.subviews) {
+    UIView *matchingView = [self findViewWithAccessibilityIdentifier:identifier inView:subview];
+    if (matchingView != nil) {
+      return matchingView;
+    }
+  }
+
+  return nil;
 }
 
 - (UIColor *)resolvedColor:(UIColor *)color forTraitCollection:(UITraitCollection *)traitCollection {
@@ -354,3 +358,4 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertEqualWithAccuracy(itemAppearance.normal.titlePositionAdjustment.vertical, 0.0, 0.001);
 }
 
+@end
