@@ -147,7 +147,6 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  self.title = @"Saved";
   self.expandedSectionIdentifier = @"salad";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
