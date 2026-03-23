@@ -97,7 +97,10 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     sections = [@[
-      MRRSavedSection(@"salad", @"Salad", @"2", @[]),
+      MRRSavedSection(@"salad", @"Salad", @"2", @[
+        MRRSavedRecipe(@"caesarCrunch", @"Garden Caesar Crunch", @"avocado-toast", @"20 mins", @"140k views"),
+        MRRSavedRecipe(@"spinachFeta", @"Spinach & Blueberry Feta Salad", @"greek-salad", @"15 mins", @"120k views")
+      ]),
       MRRSavedSection(@"dessert", @"Dessert", @"10", @[]),
       MRRSavedSection(@"mainCourse", @"Main Course", @"4", @[]),
       MRRSavedSection(@"breakfast", @"Breakfast", @"2", @[]),
@@ -145,7 +148,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   [super viewDidLoad];
 
   self.title = @"Saved";
-  self.expandedSectionIdentifier = nil;
+  self.expandedSectionIdentifier = @"salad";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
   }
