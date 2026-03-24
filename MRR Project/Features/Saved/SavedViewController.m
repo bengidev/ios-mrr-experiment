@@ -550,9 +550,18 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   UIView *cardView = [[[UIView alloc] init] autorelease];
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
   cardView.backgroundColor = [UIColor clearColor];
-  cardView.accessibilityIdentifier = [NSString stringWithFormat:@"saved.recipeCard.%@", recipe[@"identifier"]];
   cardView.isAccessibilityElement = NO;
   cardView.shouldGroupAccessibilityChildren = NO;
+
+  UIControl *cardControl = [[[UIControl alloc] init] autorelease];
+  cardControl.translatesAutoresizingMaskIntoConstraints = NO;
+  cardControl.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedRecipeCardIdentifierPrefix, recipe[@"identifier"]];
+  cardControl.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe[@"title"], recipe[@"durationText"], recipe[@"popularityText"]];
+  cardControl.accessibilityHint = @"Double tap to view recipe details.";
+  cardControl.accessibilityTraits = UIAccessibilityTraitButton;
+  [cardControl addTarget:self action:@selector(handleRecipeCardTapped:) forControlEvents:UIControlEventTouchUpInside];
+  [self configurePressFeedbackForControl:cardControl];
+  [cardView addSubview:cardControl];
 
   UIView *imageContainerView = [[[UIView alloc] init] autorelease];
   imageContainerView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -560,7 +569,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   imageContainerView.layer.cornerRadius = 30.0;
   imageContainerView.layer.masksToBounds = YES;
   imageContainerView.isAccessibilityElement = NO;
-  [cardView addSubview:imageContainerView];
+  [cardControl addSubview:imageContainerView];
 
   UIImageView *imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:recipe[@"assetName"]]] autorelease];
   imageView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -571,15 +580,15 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   [imageContainerView addSubview:imageView];
 
   UIButton *favoriteButton = [self favoriteButtonForRecipe:recipe];
-  [imageContainerView addSubview:favoriteButton];
+  [cardView addSubview:favoriteButton];
 
   UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:18.0 weight:UIFontWeightSemibold] color:MRRSavedPrimaryTextColor()];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   titleLabel.numberOfLines = 2;
   titleLabel.adjustsFontForContentSizeCategory = YES;
   titleLabel.text = recipe[@"title"];
-  titleLabel.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe[@"title"], recipe[@"durationText"], recipe[@"popularityText"]];
-  [cardView addSubview:titleLabel];
+  titleLabel.isAccessibilityElement = NO;
+  [cardControl addSubview:titleLabel];
 
   UIStackView *chipsStackView = [[[UIStackView alloc] init] autorelease];
   chipsStackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -589,13 +598,18 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   chipsStackView.isAccessibilityElement = NO;
   [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"durationText"]]];
   [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"popularityText"]]];
-  [cardView addSubview:chipsStackView];
-  cardView.accessibilityElements = @[ titleLabel, favoriteButton ];
+  [cardControl addSubview:chipsStackView];
+  cardView.accessibilityElements = @[ cardControl, favoriteButton ];
 
   [NSLayoutConstraint activateConstraints:@[
-    [imageContainerView.topAnchor constraintEqualToAnchor:cardView.topAnchor],
-    [imageContainerView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
-    [imageContainerView.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
+    [cardControl.topAnchor constraintEqualToAnchor:cardView.topAnchor],
+    [cardControl.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
+    [cardControl.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
+    [cardControl.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor],
+
+    [imageContainerView.topAnchor constraintEqualToAnchor:cardControl.topAnchor],
+    [imageContainerView.leadingAnchor constraintEqualToAnchor:cardControl.leadingAnchor],
+    [imageContainerView.trailingAnchor constraintEqualToAnchor:cardControl.trailingAnchor],
     [imageContainerView.heightAnchor constraintEqualToAnchor:imageContainerView.widthAnchor multiplier:1.20],
 
     [imageView.topAnchor constraintEqualToAnchor:imageContainerView.topAnchor],
@@ -609,13 +623,13 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
     [favoriteButton.bottomAnchor constraintEqualToAnchor:imageContainerView.bottomAnchor constant:-12.0],
 
     [titleLabel.topAnchor constraintEqualToAnchor:imageContainerView.bottomAnchor constant:14.0],
-    [titleLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
-    [titleLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor],
+    [titleLabel.leadingAnchor constraintEqualToAnchor:cardControl.leadingAnchor],
+    [titleLabel.trailingAnchor constraintEqualToAnchor:cardControl.trailingAnchor],
 
     [chipsStackView.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:12.0],
-    [chipsStackView.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
-    [chipsStackView.trailingAnchor constraintLessThanOrEqualToAnchor:cardView.trailingAnchor],
-    [chipsStackView.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor]
+    [chipsStackView.leadingAnchor constraintEqualToAnchor:cardControl.leadingAnchor],
+    [chipsStackView.trailingAnchor constraintLessThanOrEqualToAnchor:cardControl.trailingAnchor],
+    [chipsStackView.bottomAnchor constraintEqualToAnchor:cardControl.bottomAnchor]
   ]];
 
   return cardView;
