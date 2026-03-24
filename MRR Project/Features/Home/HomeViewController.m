@@ -354,6 +354,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
   scrollView.alwaysBounceVertical = YES;
   scrollView.showsVerticalScrollIndicator = NO;
+  scrollView.delaysContentTouches = NO;
   scrollView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
   [self.view addSubview:scrollView];
   self.scrollView = scrollView;
@@ -567,6 +568,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   activeFiltersScrollView.translatesAutoresizingMaskIntoConstraints = NO;
   activeFiltersScrollView.showsHorizontalScrollIndicator = NO;
   activeFiltersScrollView.alwaysBounceHorizontal = YES;
+  activeFiltersScrollView.delaysContentTouches = NO;
   activeFiltersScrollView.accessibilityIdentifier = @"home.activeFilters.scrollView";
   [activeFiltersContainerView addSubview:activeFiltersScrollView];
   self.activeFiltersScrollView = activeFiltersScrollView;
