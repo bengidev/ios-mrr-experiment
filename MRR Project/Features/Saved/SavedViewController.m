@@ -116,10 +116,13 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *sectionsStackView;
+@property(nonatomic, retain) NSMutableSet<NSString *> *savedRecipeIdentifiers;
 @property(nonatomic, copy) NSString *expandedSectionIdentifier;
 
 - (void)buildViewHierarchy;
 - (void)reloadSections;
+- (NSArray<NSDictionary<NSString *, id> *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section;
+- (NSString *)countTextForSection:(NSDictionary<NSString *, id> *)section;
 - (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section
                           atIndex:(NSUInteger)index
                          expanded:(BOOL)expanded;
@@ -138,6 +141,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 
 - (void)dealloc {
   [_expandedSectionIdentifier release];
+  [_savedRecipeIdentifiers release];
   [_sectionsStackView release];
   [_contentView release];
   [_scrollView release];
@@ -146,6 +150,17 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 
 - (void)viewDidLoad {
   [super viewDidLoad];
+
+  NSMutableSet<NSString *> *savedRecipeIdentifiers = [NSMutableSet set];
+  for (NSDictionary<NSString *, id> *section in MRRSavedSections()) {
+    for (NSDictionary<NSString *, id> *recipe in section[@"recipes"]) {
+      NSString *identifier = recipe[@"identifier"];
+      if (identifier.length > 0) {
+        [savedRecipeIdentifiers addObject:identifier];
+      }
+    }
+  }
+  self.savedRecipeIdentifiers = savedRecipeIdentifiers;
 
   self.expandedSectionIdentifier = @"salad";
   if (@available(iOS 11.0, *)) {
@@ -227,18 +242,44 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   }
 }
 
+- (NSArray<NSDictionary<NSString *, id> *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section {
+  NSArray<NSDictionary<NSString *, id> *> *recipes = section[@"recipes"];
+  if (recipes.count == 0) {
+    return recipes;
+  }
+
+  NSMutableArray<NSDictionary<NSString *, id> *> *visibleRecipes = [NSMutableArray arrayWithCapacity:recipes.count];
+  for (NSDictionary<NSString *, id> *recipe in recipes) {
+    if ([self.savedRecipeIdentifiers containsObject:recipe[@"identifier"]]) {
+      [visibleRecipes addObject:recipe];
+    }
+  }
+
+  return visibleRecipes;
+}
+
+- (NSString *)countTextForSection:(NSDictionary<NSString *, id> *)section {
+  NSArray<NSDictionary<NSString *, id> *> *recipes = section[@"recipes"];
+  if (recipes.count == 0) {
+    return section[@"countText"];
+  }
+
+  return [NSString stringWithFormat:@"%lu", (unsigned long)[self visibleRecipesForSection:section].count];
+}
+
 - (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section
                           atIndex:(NSUInteger)index
                          expanded:(BOOL)expanded {
   UIView *containerView = [[[UIView alloc] init] autorelease];
   containerView.translatesAutoresizingMaskIntoConstraints = NO;
   containerView.backgroundColor = [UIColor clearColor];
+  NSString *countText = [self countTextForSection:section];
 
   UIControl *headerControl = [[[UIControl alloc] init] autorelease];
   headerControl.translatesAutoresizingMaskIntoConstraints = NO;
   headerControl.tag = index;
   headerControl.accessibilityIdentifier = [NSString stringWithFormat:@"saved.sectionHeader.%@", section[@"identifier"]];
-  headerControl.accessibilityLabel = [NSString stringWithFormat:@"%@, %@ saved recipes", section[@"title"], section[@"countText"]];
+  headerControl.accessibilityLabel = [NSString stringWithFormat:@"%@, %@ saved recipes", section[@"title"], countText];
   headerControl.accessibilityTraits = UIAccessibilityTraitButton | (expanded ? UIAccessibilityTraitSelected : 0);
   [headerControl addTarget:self action:@selector(handleSectionTapped:) forControlEvents:UIControlEventTouchUpInside];
   [containerView addSubview:headerControl];
@@ -251,7 +292,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 
   UILabel *countLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium] color:MRRSavedSecondaryTextColor()];
   countLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  countLabel.text = section[@"countText"];
+  countLabel.text = countText;
   countLabel.adjustsFontForContentSizeCategory = YES;
   [headerControl addSubview:countLabel];
 
