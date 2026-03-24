@@ -1,5 +1,8 @@
 #import "SavedViewController.h"
 
+#import "../Onboarding/Data/OnboardingRecipeModels.h"
+#import "../Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
+
 static UIColor *MRRSavedDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
@@ -61,6 +64,7 @@ static UIColor *MRRSavedHeartButtonInactiveBackgroundColor(void) {
   return [surfaceColor colorWithAlphaComponent:UIAccessibilityIsReduceTransparencyEnabled() ? 0.98 : 0.92];
 }
 
+static NSString *const MRRSavedRecipeCardIdentifierPrefix = @"saved.recipeCard.";
 static NSString *const MRRSavedFavoriteButtonIdentifierPrefix = @"saved.favoriteButton.";
 
 static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGFloat weight) {
@@ -73,17 +77,75 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
   return nil;
 }
 
+static OnboardingRecipeInstruction *MRRSavedInstruction(NSString *title, NSString *detailText) {
+  return [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:detailText] autorelease];
+}
+
+static OnboardingRecipeIngredient *MRRSavedIngredient(NSString *text) {
+  return [[[OnboardingRecipeIngredient alloc] initWithName:text displayText:text] autorelease];
+}
+
+static NSArray<OnboardingRecipeIngredient *> *MRRSavedIngredients(NSArray<NSString *> *items) {
+  NSMutableArray<OnboardingRecipeIngredient *> *ingredients = [NSMutableArray arrayWithCapacity:items.count];
+  for (NSString *item in items) {
+    [ingredients addObject:MRRSavedIngredient(item)];
+  }
+
+  return ingredients;
+}
+
+static OnboardingRecipeDetail *MRRSavedDetail(NSString *title,
+                                              NSString *subtitle,
+                                              NSString *assetName,
+                                              NSString *durationText,
+                                              NSString *calorieText,
+                                              NSString *servingsText,
+                                              NSString *summaryText,
+                                              NSArray<NSString *> *ingredients,
+                                              NSArray<OnboardingRecipeInstruction *> *instructions,
+                                              NSArray<NSString *> *tools,
+                                              NSArray<NSString *> *tags) {
+  return [[[OnboardingRecipeDetail alloc] initWithTitle:title
+                                               subtitle:subtitle
+                                              assetName:assetName
+                                     heroImageURLString:nil
+                                           durationText:durationText
+                                            calorieText:calorieText
+                                           servingsText:servingsText
+                                            summaryText:summaryText
+                                            ingredients:MRRSavedIngredients(ingredients)
+                                           instructions:instructions
+                                                  tools:tools ?: @[]
+                                                   tags:tags ?: @[]
+                                             sourceName:nil
+                                        sourceURLString:nil
+                                         productContext:nil] autorelease];
+}
+
+static OnboardingRecipePreview *MRRSavedPreview(NSString *title,
+                                                NSString *subtitle,
+                                                NSString *assetName,
+                                                OnboardingRecipeDetail *fallbackDetail) {
+  return [[[OnboardingRecipePreview alloc] initWithTitle:title
+                                                subtitle:subtitle
+                                               assetName:assetName
+                                    openFoodFactsBarcode:nil
+                                          fallbackDetail:fallbackDetail] autorelease];
+}
+
 static NSDictionary<NSString *, id> *MRRSavedRecipe(NSString *identifier,
                                                     NSString *title,
                                                     NSString *assetName,
                                                     NSString *durationText,
-                                                    NSString *popularityText) {
+                                                    NSString *popularityText,
+                                                    OnboardingRecipePreview *preview) {
   return @{
     @"identifier" : identifier,
     @"title" : title,
     @"assetName" : assetName,
     @"durationText" : durationText,
-    @"popularityText" : popularityText
+    @"popularityText" : popularityText,
+    @"preview" : preview
   };
 }
 
@@ -105,8 +167,68 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   dispatch_once(&onceToken, ^{
     sections = [@[
       MRRSavedSection(@"salad", @"Salad", @"2", @[
-        MRRSavedRecipe(@"caesarCrunch", @"Garden Caesar Crunch", @"avocado-toast", @"20 mins", @"140k views"),
-        MRRSavedRecipe(@"spinachFeta", @"Spinach & Blueberry Feta Salad", @"greek-salad", @"15 mins", @"120k views")
+        MRRSavedRecipe(
+            @"caesarCrunch",
+            @"Garden Caesar Crunch",
+            @"avocado-toast",
+            @"20 mins",
+            @"140k views",
+            MRRSavedPreview(
+                @"Garden Caesar Crunch",
+                @"Crisp lunch favorite",
+                @"avocado-toast",
+                MRRSavedDetail(
+                    @"Garden Caesar Crunch",
+                    @"Crisp lunch favorite",
+                    @"avocado-toast",
+                    @"20 min",
+                    @"390 kcal",
+                    @"2 servings",
+                    @"A creamy Caesar-style avocado spread, crunchy toast, and a bright herb finish make this saved recipe "
+                    @"feel light, savory, and satisfying enough for a quick lunch.",
+                    @[ @"2 slices sourdough", @"1 ripe avocado", @"2 eggs", @"1 small romaine heart", @"2 tbsp Caesar dressing",
+                       @"Parmesan", @"Lemon zest", @"Black pepper" ],
+                    @[
+                      MRRSavedInstruction(@"Toast for contrast",
+                                          @"Cook the sourdough until golden so it stays crisp under the creamy topping."),
+                      MRRSavedInstruction(@"Build the Caesar layer",
+                                          @"Mash avocado with Caesar dressing, lemon zest, and pepper until glossy and smooth."),
+                      MRRSavedInstruction(@"Finish with crunch",
+                                          @"Top the toast with eggs, shaved romaine, and Parmesan for a bright, crunchy bite.")
+                    ],
+                    @[ @"Skillet", @"Mixing bowl", @"Chef knife" ],
+                    @[ @"Lunch", @"Quick", @"Fresh" ]))),
+        MRRSavedRecipe(
+            @"spinachFeta",
+            @"Spinach & Blueberry Feta Salad",
+            @"greek-salad",
+            @"15 mins",
+            @"120k views",
+            MRRSavedPreview(
+                @"Spinach & Blueberry Feta Salad",
+                @"Bright bowl for warm days",
+                @"greek-salad",
+                MRRSavedDetail(
+                    @"Spinach & Blueberry Feta Salad",
+                    @"Bright bowl for warm days",
+                    @"greek-salad",
+                    @"15 min",
+                    @"310 kcal",
+                    @"2 servings",
+                    @"Sweet blueberries, cool cucumber, and salty feta come together in a refreshing salad that still feels "
+                    @"substantial thanks to crisp greens and a citrusy dressing.",
+                    @[ @"Baby spinach", @"Blueberries", @"Cucumber", @"Cherry tomatoes", @"Red onion", @"Feta", @"Olive oil",
+                       @"Lemon juice" ],
+                    @[
+                      MRRSavedInstruction(@"Layer the base",
+                                          @"Start with spinach, cucumber, and tomatoes so the bowl feels fresh and structured."),
+                      MRRSavedInstruction(@"Balance the flavor",
+                                          @"Whisk olive oil with lemon juice and a pinch of salt for a light, sharp dressing."),
+                      MRRSavedInstruction(@"Fold in the finish",
+                                          @"Add blueberries and feta at the end so the salad keeps its color and texture.")
+                    ],
+                    @[ @"Salad bowl", @"Small whisk", @"Cutting board" ],
+                    @[ @"Salad", @"Vegetarian", @"No-Cook" ])))
       ]),
       MRRSavedSection(@"dessert", @"Dessert", @"10", @[]),
       MRRSavedSection(@"mainCourse", @"Main Course", @"4", @[]),
