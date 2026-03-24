@@ -52,8 +52,8 @@ static UIColor *MRRSavedChipFillColor(void) {
 }
 
 static UIColor *MRRSavedHeartBubbleColor(void) {
-  return MRRSavedNamedColor(@"AccentColor", [UIColor colorWithRed:0.93 green:0.43 blue:0.54 alpha:1.0],
-                            [UIColor colorWithRed:0.85 green:0.35 blue:0.48 alpha:1.0]);
+  return MRRSavedNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
+                            [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
 }
 
 static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGFloat weight) {
