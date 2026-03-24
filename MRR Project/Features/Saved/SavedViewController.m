@@ -64,6 +64,12 @@ static UIColor *MRRSavedHeartButtonInactiveBackgroundColor(void) {
   return [surfaceColor colorWithAlphaComponent:UIAccessibilityIsReduceTransparencyEnabled() ? 0.98 : 0.92];
 }
 
+static CGFloat const MRRSavedCardPressedAlpha = 0.92;
+static CGFloat const MRRSavedCardPressedScale = 0.97;
+static CGFloat const MRRSavedCardPressedTranslationY = 4.0;
+static CGFloat const MRRSavedButtonPressedAlpha = 0.84;
+static CGFloat const MRRSavedButtonPressedScale = 0.96;
+
 static NSString *const MRRSavedRecipeCardIdentifierPrefix = @"saved.recipeCard.";
 static NSString *const MRRSavedFavoriteButtonIdentifierPrefix = @"saved.favoriteButton.";
 
@@ -851,9 +857,12 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 }
 
 - (void)handlePressableControlTouchDown:(UIControl *)sender {
-  UIView *targetView = [sender.accessibilityIdentifier hasPrefix:MRRSavedRecipeCardIdentifierPrefix] ? sender.superview : sender;
+  BOOL isRecipeCard = [sender.accessibilityIdentifier hasPrefix:MRRSavedRecipeCardIdentifierPrefix];
+  UIView *targetView = isRecipeCard ? sender.superview : sender;
+  CGFloat pressedAlpha = isRecipeCard ? MRRSavedCardPressedAlpha : MRRSavedButtonPressedAlpha;
+  CGFloat pressedScale = isRecipeCard ? MRRSavedCardPressedScale : MRRSavedButtonPressedScale;
   if (UIAccessibilityIsReduceMotionEnabled()) {
-    targetView.alpha = 0.86;
+    targetView.alpha = pressedAlpha;
     return;
   }
 
@@ -861,8 +870,15 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                         delay:0.0
                       options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction
                    animations:^{
-                     targetView.alpha = 0.84;
-                     targetView.transform = CGAffineTransformMakeScale(0.96, 0.96);
+                     targetView.alpha = pressedAlpha;
+                     if (isRecipeCard) {
+                       targetView.transform =
+                           CGAffineTransformTranslate(CGAffineTransformMakeScale(pressedScale, pressedScale),
+                                                      0.0,
+                                                      MRRSavedCardPressedTranslationY);
+                     } else {
+                       targetView.transform = CGAffineTransformMakeScale(pressedScale, pressedScale);
+                     }
                    }
                    completion:nil];
 }
