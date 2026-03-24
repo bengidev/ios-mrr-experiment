@@ -830,6 +830,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   collectionView.backgroundColor = [UIColor clearColor];
   collectionView.showsHorizontalScrollIndicator = NO;
   collectionView.alwaysBounceHorizontal = YES;
+  collectionView.delaysContentTouches = NO;
   collectionView.accessibilityIdentifier = accessibilityIdentifier;
   collectionView.dataSource = self;
   collectionView.delegate = self;
