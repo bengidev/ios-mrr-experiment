@@ -846,6 +846,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   collectionView.translatesAutoresizingMaskIntoConstraints = NO;
   collectionView.backgroundColor = [UIColor clearColor];
   collectionView.scrollEnabled = NO;
+  collectionView.delaysContentTouches = NO;
   collectionView.accessibilityIdentifier = accessibilityIdentifier;
   collectionView.dataSource = self;
   collectionView.delegate = self;
