@@ -330,6 +330,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
   scrollView.showsVerticalScrollIndicator = NO;
   scrollView.alwaysBounceVertical = YES;
+  scrollView.delaysContentTouches = NO;
   scrollView.backgroundColor = [UIColor clearColor];
   [self.view addSubview:scrollView];
   self.scrollView = scrollView;
