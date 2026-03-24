@@ -240,7 +240,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   return sections;
 }
 
-@interface SavedViewController ()
+@interface SavedViewController () <OnboardingRecipeDetailViewControllerDelegate>
 
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
@@ -259,14 +259,19 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 - (UIButton *)favoriteButtonForRecipe:(NSDictionary<NSString *, id> *)recipe;
 - (UIView *)chipViewWithText:(NSString *)text;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
+- (nullable NSDictionary<NSString *, id> *)recipeForIdentifier:(NSString *)recipeIdentifier;
 - (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved;
-- (void)configurePressFeedbackForButton:(UIButton *)button;
+- (void)configurePressFeedbackForControl:(UIControl *)control;
+- (nullable NSString *)recipeIdentifierForCardControl:(UIControl *)control;
 - (NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button;
 - (NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier;
 - (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title saved:(BOOL)saved;
+- (void)presentRecipeDetailForRecipe:(NSDictionary<NSString *, id> *)recipe;
+- (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
+- (void)handleRecipeCardTapped:(UIControl *)sender;
 - (void)handleFavoriteButtonTapped:(UIButton *)sender;
-- (void)handlePressableButtonTouchDown:(UIButton *)sender;
-- (void)handlePressableButtonTouchUp:(UIButton *)sender;
+- (void)handlePressableControlTouchDown:(UIControl *)sender;
+- (void)handlePressableControlTouchUp:(UIControl *)sender;
 - (void)handleSectionTapped:(UIControl *)sender;
 
 @end
@@ -639,7 +644,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   favoriteButton.clipsToBounds = NO;
   favoriteButton.adjustsImageWhenHighlighted = NO;
   [favoriteButton addTarget:self action:@selector(handleFavoriteButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [self configurePressFeedbackForButton:favoriteButton];
+  [self configurePressFeedbackForControl:favoriteButton];
   if (recipeIdentifier.length > 0 && ![self.savedRecipeIdentifiers containsObject:recipeIdentifier]) {
     [self.savedRecipeIdentifiers addObject:recipeIdentifier];
   }
@@ -675,7 +680,24 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   UILabel *label = [[[UILabel alloc] init] autorelease];
   label.font = font;
   label.textColor = color;
+  label.adjustsFontForContentSizeCategory = YES;
   return label;
+}
+
+- (NSDictionary<NSString *, id> *)recipeForIdentifier:(NSString *)recipeIdentifier {
+  if (recipeIdentifier.length == 0) {
+    return nil;
+  }
+
+  for (NSDictionary<NSString *, id> *section in MRRSavedSections()) {
+    for (NSDictionary<NSString *, id> *recipe in section[@"recipes"]) {
+      if ([recipe[@"identifier"] isEqualToString:recipeIdentifier]) {
+        return recipe;
+      }
+    }
+  }
+
+  return nil;
 }
 
 - (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved {
@@ -701,12 +723,21 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   button.accessibilityHint = saved ? @"Double tap to remove this recipe from your saved list." : @"Double tap to save this recipe.";
 }
 
-- (void)configurePressFeedbackForButton:(UIButton *)button {
-  [button addTarget:self action:@selector(handlePressableButtonTouchDown:) forControlEvents:UIControlEventTouchDown];
-  [button addTarget:self
-                action:@selector(handlePressableButtonTouchUp:)
+- (void)configurePressFeedbackForControl:(UIControl *)control {
+  [control addTarget:self action:@selector(handlePressableControlTouchDown:) forControlEvents:UIControlEventTouchDown];
+  [control addTarget:self
+                action:@selector(handlePressableControlTouchUp:)
       forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel | UIControlEventTouchDragExit];
-  [button addTarget:self action:@selector(handlePressableButtonTouchDown:) forControlEvents:UIControlEventTouchDragEnter];
+  [control addTarget:self action:@selector(handlePressableControlTouchDown:) forControlEvents:UIControlEventTouchDragEnter];
+}
+
+- (NSString *)recipeIdentifierForCardControl:(UIControl *)control {
+  NSString *identifier = control.accessibilityIdentifier;
+  if (![identifier hasPrefix:MRRSavedRecipeCardIdentifierPrefix]) {
+    return nil;
+  }
+
+  return [identifier substringFromIndex:MRRSavedRecipeCardIdentifierPrefix.length];
 }
 
 - (NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button {
@@ -742,6 +773,38 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   return [NSString stringWithFormat:@"Save %@ to saved recipes", title];
 }
 
+- (void)presentRecipeDetailForRecipe:(NSDictionary<NSString *, id> *)recipe {
+  OnboardingRecipePreview *preview = recipe[@"preview"];
+  if (preview == nil || self.presentedViewController != nil) {
+    return;
+  }
+
+  OnboardingRecipeDetailViewController *detailViewController =
+      [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:preview recipeDetail:preview.fallbackDetail] autorelease];
+  detailViewController.delegate = self;
+  [self presentRecipeDetailViewController:detailViewController];
+}
+
+- (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
+  if (detailViewController == nil) {
+    return;
+  }
+
+  UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:detailViewController] autorelease];
+  navigationController.modalPresentationStyle = UIModalPresentationFullScreen;
+  navigationController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
+  [self presentViewController:navigationController animated:YES completion:nil];
+}
+
+- (void)handleRecipeCardTapped:(UIControl *)sender {
+  NSDictionary<NSString *, id> *recipe = [self recipeForIdentifier:[self recipeIdentifierForCardControl:sender]];
+  if (recipe == nil) {
+    return;
+  }
+
+  [self presentRecipeDetailForRecipe:recipe];
+}
+
 - (void)handleFavoriteButtonTapped:(UIButton *)sender {
   NSString *recipeIdentifier = [self recipeIdentifierForFavoriteButton:sender];
   if (recipeIdentifier.length == 0) {
@@ -769,9 +832,10 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                   }];
 }
 
-- (void)handlePressableButtonTouchDown:(UIButton *)sender {
+- (void)handlePressableControlTouchDown:(UIControl *)sender {
+  UIView *targetView = [sender.accessibilityIdentifier hasPrefix:MRRSavedRecipeCardIdentifierPrefix] ? sender.superview : sender;
   if (UIAccessibilityIsReduceMotionEnabled()) {
-    sender.alpha = 0.86;
+    targetView.alpha = 0.86;
     return;
   }
 
@@ -779,19 +843,20 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                         delay:0.0
                       options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction
                    animations:^{
-                     sender.alpha = 0.84;
-                     sender.transform = CGAffineTransformMakeScale(0.96, 0.96);
+                     targetView.alpha = 0.84;
+                     targetView.transform = CGAffineTransformMakeScale(0.96, 0.96);
                    }
                    completion:nil];
 }
 
-- (void)handlePressableButtonTouchUp:(UIButton *)sender {
+- (void)handlePressableControlTouchUp:(UIControl *)sender {
+  UIView *targetView = [sender.accessibilityIdentifier hasPrefix:MRRSavedRecipeCardIdentifierPrefix] ? sender.superview : sender;
   [UIView animateWithDuration:0.16
                         delay:0.0
                       options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction
                    animations:^{
-                     sender.alpha = 1.0;
-                     sender.transform = CGAffineTransformIdentity;
+                     targetView.alpha = 1.0;
+                     targetView.transform = CGAffineTransformIdentity;
                    }
                    completion:nil];
 }
@@ -810,6 +875,16 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                     [self.view layoutIfNeeded];
                   }
                   completion:nil];
+}
+
+#pragma mark - OnboardingRecipeDetailViewControllerDelegate
+
+- (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController {
+  [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
+  [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end
