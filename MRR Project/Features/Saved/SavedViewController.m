@@ -140,6 +140,8 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 - (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved;
 - (void)configurePressFeedbackForButton:(UIButton *)button;
 - (NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button;
+- (NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier;
+- (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title saved:(BOOL)saved;
 - (void)handleFavoriteButtonTapped:(UIButton *)sender;
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
@@ -175,7 +177,6 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
     }
   }
   self.savedRecipeIdentifiers = savedRecipeIdentifiers;
-
   self.expandedSectionIdentifier = @"salad";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
@@ -347,7 +348,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
     [dividerView.heightAnchor constraintEqualToConstant:1.0]
   ]];
 
-  NSArray<NSDictionary<NSString *, id> *> *recipes = section[@"recipes"];
+  NSArray<NSDictionary<NSString *, id> *> *recipes = [self visibleRecipesForSection:section];
   if (expanded) {
     UIView *contentContainer = [[[UIView alloc] init] autorelease];
     contentContainer.translatesAutoresizingMaskIntoConstraints = NO;
@@ -424,12 +425,14 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   cardView.backgroundColor = [UIColor clearColor];
   cardView.accessibilityIdentifier = [NSString stringWithFormat:@"saved.recipeCard.%@", recipe[@"identifier"]];
   cardView.isAccessibilityElement = NO;
+  cardView.shouldGroupAccessibilityChildren = NO;
 
   UIView *imageContainerView = [[[UIView alloc] init] autorelease];
   imageContainerView.translatesAutoresizingMaskIntoConstraints = NO;
   imageContainerView.backgroundColor = MRRSavedMutedSurfaceColor();
   imageContainerView.layer.cornerRadius = 30.0;
   imageContainerView.layer.masksToBounds = YES;
+  imageContainerView.isAccessibilityElement = NO;
   [cardView addSubview:imageContainerView];
 
   UIImageView *imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:recipe[@"assetName"]]] autorelease];
@@ -437,6 +440,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   imageView.contentMode = UIViewContentModeScaleAspectFill;
   imageView.clipsToBounds = YES;
   imageView.layer.cornerRadius = 30.0;
+  imageView.isAccessibilityElement = NO;
   [imageContainerView addSubview:imageView];
 
   UIButton *favoriteButton = [self favoriteButtonForRecipe:recipe];
@@ -447,6 +451,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   titleLabel.numberOfLines = 2;
   titleLabel.adjustsFontForContentSizeCategory = YES;
   titleLabel.text = recipe[@"title"];
+  titleLabel.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe[@"title"], recipe[@"durationText"], recipe[@"popularityText"]];
   [cardView addSubview:titleLabel];
 
   UIStackView *chipsStackView = [[[UIStackView alloc] init] autorelease];
@@ -454,9 +459,11 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   chipsStackView.axis = UILayoutConstraintAxisHorizontal;
   chipsStackView.spacing = 8.0;
   chipsStackView.alignment = UIStackViewAlignmentLeading;
+  chipsStackView.isAccessibilityElement = NO;
   [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"durationText"]]];
   [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"popularityText"]]];
   [cardView addSubview:chipsStackView];
+  cardView.accessibilityElements = @[ titleLabel, favoriteButton ];
 
   [NSLayoutConstraint activateConstraints:@[
     [imageContainerView.topAnchor constraintEqualToAnchor:cardView.topAnchor],
@@ -492,7 +499,6 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   NSString *recipeIdentifier = recipe[@"identifier"];
   favoriteButton.translatesAutoresizingMaskIntoConstraints = NO;
   favoriteButton.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedFavoriteButtonIdentifierPrefix, recipeIdentifier];
-  favoriteButton.accessibilityLabel = recipe[@"title"];
   favoriteButton.contentEdgeInsets = UIEdgeInsetsMake(10.0, 12.0, 10.0, 14.0);
   favoriteButton.imageEdgeInsets = UIEdgeInsetsMake(0.0, -1.0, 0.0, 1.0);
   favoriteButton.titleEdgeInsets = UIEdgeInsetsMake(0.0, 6.0, 0.0, -6.0);
@@ -525,10 +531,12 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   chipView.translatesAutoresizingMaskIntoConstraints = NO;
   chipView.backgroundColor = MRRSavedChipFillColor();
   chipView.layer.cornerRadius = 14.0;
+  chipView.isAccessibilityElement = NO;
 
   UILabel *label = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium] color:MRRSavedPrimaryTextColor()];
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.text = text;
+  label.isAccessibilityElement = NO;
   [chipView addSubview:label];
 
   [NSLayoutConstraint activateConstraints:@[
@@ -551,6 +559,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 - (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved {
   UIColor *accentColor = MRRSavedHeartBubbleColor();
   UIColor *foregroundColor = saved ? [UIColor whiteColor] : accentColor;
+  NSString *recipeTitle = [self recipeTitleForIdentifier:[self recipeIdentifierForFavoriteButton:button]] ?: @"recipe";
   button.selected = saved;
   button.backgroundColor = saved ? accentColor : MRRSavedHeartButtonInactiveBackgroundColor();
   button.tintColor = foregroundColor;
@@ -565,6 +574,9 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   [button setImage:MRRSavedSymbolImage(saved ? @"heart.fill" : @"heart", 17.0, saved ? UIFontWeightBold : UIFontWeightSemibold)
           forState:UIControlStateNormal];
   button.accessibilityTraits = UIAccessibilityTraitButton | (saved ? UIAccessibilityTraitSelected : 0);
+  button.accessibilityLabel = [self favoriteButtonAccessibilityLabelForTitle:recipeTitle saved:saved];
+  button.accessibilityValue = saved ? @"Saved" : @"Not saved";
+  button.accessibilityHint = saved ? @"Double tap to remove this recipe from your saved list." : @"Double tap to save this recipe.";
 }
 
 - (void)configurePressFeedbackForButton:(UIButton *)button {
@@ -582,6 +594,30 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   }
 
   return [identifier substringFromIndex:MRRSavedFavoriteButtonIdentifierPrefix.length];
+}
+
+- (NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier {
+  if (recipeIdentifier.length == 0) {
+    return nil;
+  }
+
+  for (NSDictionary<NSString *, id> *section in MRRSavedSections()) {
+    for (NSDictionary<NSString *, id> *recipe in section[@"recipes"]) {
+      if ([recipe[@"identifier"] isEqualToString:recipeIdentifier]) {
+        return recipe[@"title"];
+      }
+    }
+  }
+
+  return nil;
+}
+
+- (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title saved:(BOOL)saved {
+  if (saved) {
+    return [NSString stringWithFormat:@"Remove %@ from saved recipes", title];
+  }
+
+  return [NSString stringWithFormat:@"Save %@ to saved recipes", title];
 }
 
 - (void)handleFavoriteButtonTapped:(UIButton *)sender {
@@ -604,7 +640,11 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                     [self reloadSections];
                     [self.view layoutIfNeeded];
                   }
-                  completion:nil];
+                  completion:^(BOOL finished) {
+                    if (UIAccessibilityIsVoiceOverRunning()) {
+                      UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, @"Removed from saved recipes.");
+                    }
+                  }];
 }
 
 - (void)handlePressableButtonTouchDown:(UIButton *)sender {
