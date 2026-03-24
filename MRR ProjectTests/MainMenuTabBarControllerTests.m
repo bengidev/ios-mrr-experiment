@@ -6,6 +6,7 @@
 #import "../MRR Project/Features/Home/HomeViewController.h"
 #import "../MRR Project/Features/MainMenu/MainMenuCoordinator.h"
 #import "../MRR Project/Features/MainMenu/MainMenuTabBarController.h"
+#import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
 #import "../MRR Project/Features/Profile/ProfileCoordinator.h"
 #import "../MRR Project/Features/Profile/ProfileViewController.h"
 #import "../MRR Project/Features/Saved/SavedCoordinator.h"
@@ -287,6 +288,47 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.soup" inView:savedView]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
+}
+
+- (void)testSavedRecipeCardPresentsRecipeDetail {
+  self.tabBarController.selectedIndex = 1;
+
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  [savedNavigationController.topViewController loadViewIfNeeded];
+
+  UIView *savedView = savedNavigationController.topViewController.view;
+  [savedView layoutIfNeeded];
+  UIControl *recipeCardControl =
+      (UIControl *)[self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView];
+
+  XCTAssertNotNil(recipeCardControl);
+  XCTAssertTrue([recipeCardControl isKindOfClass:[UIControl class]]);
+  XCTAssertEqualObjects(recipeCardControl.accessibilityHint, @"Double tap to view recipe details.");
+
+  [recipeCardControl sendActionsForControlEvents:UIControlEventTouchUpInside];
+
+  XCTestExpectation *presentationExpectation = [self expectationWithDescription:@"Saved recipe detail presentation"];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    UINavigationController *detailNavigationController =
+        (UINavigationController *)savedNavigationController.topViewController.presentedViewController;
+    XCTAssertNotNil(detailNavigationController);
+    XCTAssertTrue([detailNavigationController isKindOfClass:[UINavigationController class]]);
+    XCTAssertEqual(detailNavigationController.modalPresentationStyle, UIModalPresentationFullScreen);
+
+    UIViewController *detailRootViewController = detailNavigationController.topViewController;
+    XCTAssertTrue([detailRootViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
+    [detailRootViewController loadViewIfNeeded];
+
+    UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel"
+                                                                        inView:detailRootViewController.view];
+    XCTAssertNotNil(titleLabel);
+    XCTAssertEqualObjects(titleLabel.text, @"Garden Caesar Crunch");
+
+    [detailNavigationController dismissViewControllerAnimated:NO completion:nil];
+    [presentationExpectation fulfill];
+  });
+
+  [self waitForExpectations:@[ presentationExpectation ] timeout:1.0];
 }
 
 - (void)testSavedFavoriteHeartActsLikeASavedActionButton {
