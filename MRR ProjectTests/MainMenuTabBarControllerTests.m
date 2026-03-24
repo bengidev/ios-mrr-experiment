@@ -289,6 +289,38 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
 }
 
+- (void)testSavedFavoriteHeartActsLikeASavedActionButton {
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  [savedNavigationController.topViewController loadViewIfNeeded];
+
+  UIView *savedView = savedNavigationController.topViewController.view;
+  [savedView layoutIfNeeded];
+  UIButton *favoriteButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView];
+
+  XCTAssertNotNil(favoriteButton);
+  XCTAssertTrue([favoriteButton isKindOfClass:[UIButton class]]);
+  XCTAssertTrue((favoriteButton.accessibilityTraits & UIAccessibilityTraitButton) != 0);
+  XCTAssertTrue(favoriteButton.selected);
+  XCTAssertGreaterThanOrEqual(CGRectGetWidth(favoriteButton.bounds), 44.0);
+  XCTAssertGreaterThanOrEqual(CGRectGetHeight(favoriteButton.bounds), 44.0);
+  XCTAssertNotNil(favoriteButton.accessibilityLabel);
+  XCTAssertEqualObjects(favoriteButton.accessibilityValue, @"Saved");
+
+  [favoriteButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+
+  XCTestExpectation *transitionExpectation = [self expectationWithDescription:@"Saved favorite button transition"];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    [savedView layoutIfNeeded];
+    XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView]);
+    XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView]);
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
+    [transitionExpectation fulfill];
+  });
+
+  [self waitForExpectations:@[ transitionExpectation ] timeout:1.0];
+}
+
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index {
   XCTAssertLessThan(index, self.tabBarController.viewControllers.count);
   UIViewController *viewController = self.tabBarController.viewControllers[index];
