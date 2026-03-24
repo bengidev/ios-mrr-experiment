@@ -569,6 +569,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   imageContainerView.layer.cornerRadius = 30.0;
   imageContainerView.layer.masksToBounds = YES;
   imageContainerView.isAccessibilityElement = NO;
+  imageContainerView.userInteractionEnabled = NO;
   [cardControl addSubview:imageContainerView];
 
   UIImageView *imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:recipe[@"assetName"]]] autorelease];
@@ -596,6 +597,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   chipsStackView.spacing = 8.0;
   chipsStackView.alignment = UIStackViewAlignmentLeading;
   chipsStackView.isAccessibilityElement = NO;
+  chipsStackView.userInteractionEnabled = NO;
   [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"durationText"]]];
   [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"popularityText"]]];
   [cardControl addSubview:chipsStackView];
@@ -673,6 +675,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   chipView.backgroundColor = MRRSavedChipFillColor();
   chipView.layer.cornerRadius = 14.0;
   chipView.isAccessibilityElement = NO;
+  chipView.userInteractionEnabled = NO;
 
   UILabel *label = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium] color:MRRSavedPrimaryTextColor()];
   label.translatesAutoresizingMaskIntoConstraints = NO;
