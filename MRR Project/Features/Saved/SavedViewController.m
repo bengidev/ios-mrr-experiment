@@ -56,6 +56,13 @@ static UIColor *MRRSavedHeartBubbleColor(void) {
                             [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
 }
 
+static UIColor *MRRSavedHeartButtonInactiveBackgroundColor(void) {
+  UIColor *surfaceColor = MRRSavedNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
+  return [surfaceColor colorWithAlphaComponent:UIAccessibilityIsReduceTransparencyEnabled() ? 0.98 : 0.92];
+}
+
+static NSString *const MRRSavedFavoriteButtonIdentifierPrefix = @"saved.favoriteButton.";
+
 static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGFloat weight) {
   if (@available(iOS 13.0, *)) {
     UIImageSymbolConfiguration *configuration =
@@ -127,8 +134,15 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                           atIndex:(NSUInteger)index
                          expanded:(BOOL)expanded;
 - (UIView *)recipeCardViewForRecipe:(NSDictionary<NSString *, id> *)recipe;
+- (UIButton *)favoriteButtonForRecipe:(NSDictionary<NSString *, id> *)recipe;
 - (UIView *)chipViewWithText:(NSString *)text;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
+- (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved;
+- (void)configurePressFeedbackForButton:(UIButton *)button;
+- (NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button;
+- (void)handleFavoriteButtonTapped:(UIButton *)sender;
+- (void)handlePressableButtonTouchDown:(UIButton *)sender;
+- (void)handlePressableButtonTouchUp:(UIButton *)sender;
 - (void)handleSectionTapped:(UIControl *)sender;
 
 @end
@@ -409,11 +423,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
   cardView.backgroundColor = [UIColor clearColor];
   cardView.accessibilityIdentifier = [NSString stringWithFormat:@"saved.recipeCard.%@", recipe[@"identifier"]];
-  cardView.isAccessibilityElement = YES;
-  cardView.accessibilityTraits = UIAccessibilityTraitButton;
-  cardView.accessibilityLabel =
-      [NSString stringWithFormat:@"%@, %@, %@", recipe[@"title"], recipe[@"durationText"], recipe[@"popularityText"]];
-  cardView.accessibilityHint = @"Saved recipe preview.";
+  cardView.isAccessibilityElement = NO;
 
   UIView *imageContainerView = [[[UIView alloc] init] autorelease];
   imageContainerView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -429,20 +439,8 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   imageView.layer.cornerRadius = 30.0;
   [imageContainerView addSubview:imageView];
 
-  UIView *favoriteBubbleView = [[[UIView alloc] init] autorelease];
-  favoriteBubbleView.translatesAutoresizingMaskIntoConstraints = NO;
-  favoriteBubbleView.backgroundColor = MRRSavedHeartBubbleColor();
-  favoriteBubbleView.layer.cornerRadius = 21.0;
-  favoriteBubbleView.layer.shadowColor = [UIColor blackColor].CGColor;
-  favoriteBubbleView.layer.shadowOpacity = 0.12f;
-  favoriteBubbleView.layer.shadowRadius = 14.0f;
-  favoriteBubbleView.layer.shadowOffset = CGSizeMake(0.0, 8.0);
-  [imageContainerView addSubview:favoriteBubbleView];
-
-  UIImageView *heartImageView = [[[UIImageView alloc] initWithImage:MRRSavedSymbolImage(@"heart.fill", 16.0, UIFontWeightBold)] autorelease];
-  heartImageView.translatesAutoresizingMaskIntoConstraints = NO;
-  heartImageView.tintColor = [UIColor whiteColor];
-  [favoriteBubbleView addSubview:heartImageView];
+  UIButton *favoriteButton = [self favoriteButtonForRecipe:recipe];
+  [imageContainerView addSubview:favoriteButton];
 
   UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:18.0 weight:UIFontWeightSemibold] color:MRRSavedPrimaryTextColor()];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -471,15 +469,10 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
     [imageView.trailingAnchor constraintEqualToAnchor:imageContainerView.trailingAnchor],
     [imageView.bottomAnchor constraintEqualToAnchor:imageContainerView.bottomAnchor],
 
-    [favoriteBubbleView.widthAnchor constraintEqualToConstant:42.0],
-    [favoriteBubbleView.heightAnchor constraintEqualToConstant:42.0],
-    [favoriteBubbleView.trailingAnchor constraintEqualToAnchor:imageContainerView.trailingAnchor constant:-12.0],
-    [favoriteBubbleView.bottomAnchor constraintEqualToAnchor:imageContainerView.bottomAnchor constant:-12.0],
-
-    [heartImageView.centerXAnchor constraintEqualToAnchor:favoriteBubbleView.centerXAnchor],
-    [heartImageView.centerYAnchor constraintEqualToAnchor:favoriteBubbleView.centerYAnchor],
-    [heartImageView.widthAnchor constraintEqualToConstant:18.0],
-    [heartImageView.heightAnchor constraintEqualToConstant:18.0],
+    [favoriteButton.heightAnchor constraintEqualToConstant:46.0],
+    [favoriteButton.widthAnchor constraintGreaterThanOrEqualToConstant:84.0],
+    [favoriteButton.trailingAnchor constraintEqualToAnchor:imageContainerView.trailingAnchor constant:-12.0],
+    [favoriteButton.bottomAnchor constraintEqualToAnchor:imageContainerView.bottomAnchor constant:-12.0],
 
     [titleLabel.topAnchor constraintEqualToAnchor:imageContainerView.bottomAnchor constant:14.0],
     [titleLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor],
@@ -492,6 +485,39 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   ]];
 
   return cardView;
+}
+
+- (UIButton *)favoriteButtonForRecipe:(NSDictionary<NSString *, id> *)recipe {
+  UIButton *favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+  NSString *recipeIdentifier = recipe[@"identifier"];
+  favoriteButton.translatesAutoresizingMaskIntoConstraints = NO;
+  favoriteButton.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedFavoriteButtonIdentifierPrefix, recipeIdentifier];
+  favoriteButton.accessibilityLabel = recipe[@"title"];
+  favoriteButton.contentEdgeInsets = UIEdgeInsetsMake(10.0, 12.0, 10.0, 14.0);
+  favoriteButton.imageEdgeInsets = UIEdgeInsetsMake(0.0, -1.0, 0.0, 1.0);
+  favoriteButton.titleEdgeInsets = UIEdgeInsetsMake(0.0, 6.0, 0.0, -6.0);
+  favoriteButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+  favoriteButton.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
+  favoriteButton.titleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold];
+  favoriteButton.titleLabel.adjustsFontForContentSizeCategory = YES;
+  favoriteButton.titleLabel.adjustsFontSizeToFitWidth = YES;
+  favoriteButton.titleLabel.minimumScaleFactor = 0.82;
+  favoriteButton.layer.cornerRadius = 23.0;
+  favoriteButton.layer.borderWidth = 1.0;
+  favoriteButton.layer.shadowColor = [UIColor blackColor].CGColor;
+  favoriteButton.layer.shadowOpacity = 0.14f;
+  favoriteButton.layer.shadowRadius = 14.0f;
+  favoriteButton.layer.shadowOffset = CGSizeMake(0.0, 8.0);
+  favoriteButton.clipsToBounds = NO;
+  favoriteButton.adjustsImageWhenHighlighted = NO;
+  [favoriteButton addTarget:self action:@selector(handleFavoriteButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+  [self configurePressFeedbackForButton:favoriteButton];
+  if (recipeIdentifier.length > 0 && ![self.savedRecipeIdentifiers containsObject:recipeIdentifier]) {
+    [self.savedRecipeIdentifiers addObject:recipeIdentifier];
+  }
+  favoriteButton.selected = YES;
+  [self applyFavoriteButtonAppearance:favoriteButton saved:YES];
+  return favoriteButton;
 }
 
 - (UIView *)chipViewWithText:(NSString *)text {
@@ -520,6 +546,92 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   label.font = font;
   label.textColor = color;
   return label;
+}
+
+- (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved {
+  UIColor *accentColor = MRRSavedHeartBubbleColor();
+  UIColor *foregroundColor = saved ? [UIColor whiteColor] : accentColor;
+  button.selected = saved;
+  button.backgroundColor = saved ? accentColor : MRRSavedHeartButtonInactiveBackgroundColor();
+  button.tintColor = foregroundColor;
+  button.layer.borderColor = (saved ? [[UIColor whiteColor] colorWithAlphaComponent:0.18] : [accentColor colorWithAlphaComponent:0.24]).CGColor;
+  button.layer.shadowOpacity = saved ? 0.16f : 0.10f;
+  button.layer.shadowRadius = saved ? 16.0f : 12.0f;
+  button.layer.shadowOffset = saved ? CGSizeMake(0.0, 10.0) : CGSizeMake(0.0, 8.0);
+  [button setTitle:(saved ? @"Saved" : @"Save") forState:UIControlStateNormal];
+  [button setTitle:(saved ? @"Saved" : @"Save") forState:UIControlStateHighlighted];
+  [button setTitleColor:foregroundColor forState:UIControlStateNormal];
+  [button setTitleColor:[foregroundColor colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
+  [button setImage:MRRSavedSymbolImage(saved ? @"heart.fill" : @"heart", 17.0, saved ? UIFontWeightBold : UIFontWeightSemibold)
+          forState:UIControlStateNormal];
+  button.accessibilityTraits = UIAccessibilityTraitButton | (saved ? UIAccessibilityTraitSelected : 0);
+}
+
+- (void)configurePressFeedbackForButton:(UIButton *)button {
+  [button addTarget:self action:@selector(handlePressableButtonTouchDown:) forControlEvents:UIControlEventTouchDown];
+  [button addTarget:self
+                action:@selector(handlePressableButtonTouchUp:)
+      forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel | UIControlEventTouchDragExit];
+  [button addTarget:self action:@selector(handlePressableButtonTouchDown:) forControlEvents:UIControlEventTouchDragEnter];
+}
+
+- (NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button {
+  NSString *identifier = button.accessibilityIdentifier;
+  if (![identifier hasPrefix:MRRSavedFavoriteButtonIdentifierPrefix]) {
+    return nil;
+  }
+
+  return [identifier substringFromIndex:MRRSavedFavoriteButtonIdentifierPrefix.length];
+}
+
+- (void)handleFavoriteButtonTapped:(UIButton *)sender {
+  NSString *recipeIdentifier = [self recipeIdentifierForFavoriteButton:sender];
+  if (recipeIdentifier.length == 0) {
+    return;
+  }
+
+  BOOL currentlySaved = [self.savedRecipeIdentifiers containsObject:recipeIdentifier];
+  if (!currentlySaved) {
+    return;
+  }
+
+  [self.savedRecipeIdentifiers removeObject:recipeIdentifier];
+  NSTimeInterval animationDuration = UIAccessibilityIsReduceMotionEnabled() ? 0.0 : 0.22;
+  [UIView transitionWithView:self.sectionsStackView
+                    duration:animationDuration
+                     options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionAllowAnimatedContent
+                  animations:^{
+                    [self reloadSections];
+                    [self.view layoutIfNeeded];
+                  }
+                  completion:nil];
+}
+
+- (void)handlePressableButtonTouchDown:(UIButton *)sender {
+  if (UIAccessibilityIsReduceMotionEnabled()) {
+    sender.alpha = 0.86;
+    return;
+  }
+
+  [UIView animateWithDuration:0.14
+                        delay:0.0
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction
+                   animations:^{
+                     sender.alpha = 0.84;
+                     sender.transform = CGAffineTransformMakeScale(0.96, 0.96);
+                   }
+                   completion:nil];
+}
+
+- (void)handlePressableButtonTouchUp:(UIButton *)sender {
+  [UIView animateWithDuration:0.16
+                        delay:0.0
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction
+                   animations:^{
+                     sender.alpha = 1.0;
+                     sender.transform = CGAffineTransformIdentity;
+                   }
+                   completion:nil];
 }
 
 - (void)handleSectionTapped:(UIControl *)sender {
