@@ -583,6 +583,31 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertEqual(firstPlaceholderView.layer.sublayers.count, 0U);
 }
 
+- (void)testPullToRefreshHidesPoweredByWhileShimmerIsVisible {
+  [self finishInitialLoadIfNeeded];
+
+  self.dataProvider.initialDelay = 0.12;
+  XCTAssertFalse(self.viewController.poweredByContainerView.hidden);
+
+  UIRefreshControl *refreshControl = nil;
+  if (@available(iOS 10.0, *)) {
+    refreshControl = self.viewController.scrollView.refreshControl;
+  }
+  XCTAssertNotNil(refreshControl);
+
+  [refreshControl beginRefreshing];
+  [refreshControl sendActionsForControlEvents:UIControlEventValueChanged];
+
+  XCTAssertTrue(self.viewController.poweredByContainerView.hidden);
+
+  [self waitForCondition:^BOOL {
+    return !refreshControl.isRefreshing;
+  } timeout:1.2];
+  [self waitForCondition:^BOOL {
+    return !self.viewController.poweredByContainerView.hidden;
+  } timeout:1.2];
+}
+
 - (void)testChangingFilterReloadsLiveHomeSections {
   [self finishInitialLoadIfNeeded];
 
