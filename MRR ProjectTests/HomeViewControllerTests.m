@@ -1,5 +1,7 @@
 #import <XCTest/XCTest.h>
 
+#import <QuartzCore/QuartzCore.h>
+
 #import "../MRR Project/Features/Authentication/MRRAuthSession.h"
 #import "../MRR Project/Features/Home/HomeCollectionViewCells.h"
 #import "../MRR Project/Features/Home/HomeDataSource.h"
@@ -544,6 +546,41 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount + 1);
   XCTAssertEqualObjects([[self.dataProvider.initialRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionLowCalorie));
+}
+
+- (void)testPullToRefreshShowsAndClearsShimmerState {
+  [self finishInitialLoadIfNeeded];
+
+  self.dataProvider.initialDelay = 0.12;
+
+  UIRefreshControl *refreshControl = nil;
+  if (@available(iOS 10.0, *)) {
+    refreshControl = self.viewController.scrollView.refreshControl;
+  }
+  XCTAssertNotNil(refreshControl);
+
+  UIView *refreshStateView = [self findViewWithAccessibilityIdentifier:@"home.refreshStateView" inView:self.viewController.view];
+  UIView *firstPlaceholderView = [self findViewWithAccessibilityIdentifier:@"home.refreshShimmer.placeholder.1"
+                                                                    inView:self.viewController.view];
+  XCTAssertNotNil(refreshStateView);
+  XCTAssertNotNil(firstPlaceholderView);
+
+  [refreshControl beginRefreshing];
+  [refreshControl sendActionsForControlEvents:UIControlEventValueChanged];
+
+  XCTAssertFalse(refreshStateView.hidden);
+  XCTAssertGreaterThan(firstPlaceholderView.layer.sublayers.count, 0U);
+  if (!UIAccessibilityIsReduceMotionEnabled()) {
+    CALayer *shimmerLayer = [firstPlaceholderView.layer.sublayers firstObject];
+    XCTAssertNotNil([shimmerLayer animationForKey:@"home.refreshShimmerAnimation"]);
+  }
+
+  [self waitForCondition:^BOOL {
+    return !refreshControl.isRefreshing;
+  } timeout:1.2];
+
+  XCTAssertTrue(refreshStateView.hidden);
+  XCTAssertEqual(firstPlaceholderView.layer.sublayers.count, 0U);
 }
 
 - (void)testChangingFilterReloadsLiveHomeSections {
