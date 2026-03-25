@@ -11,6 +11,7 @@
 
 @interface HomeViewController (Testing) <UICollectionViewDelegate>
 
+@property(nonatomic, readonly) UIScrollView *scrollView;
 @property(nonatomic, readonly) UITextField *searchTextField;
 @property(nonatomic, readonly) UIButton *filterButton;
 @property(nonatomic, readonly) UIView *activeFiltersContainerView;
@@ -516,6 +517,35 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertEqualObjects([[self.dataProvider.initialRequests firstObject] objectForKey:@"filterOption"], @(HomeFilterOptionFeatured));
 }
 
+- (void)testPullToRefreshReloadsVisibleHomeContent {
+  [self finishInitialLoadIfNeeded];
+
+  self.dataProvider.initialDelay = 0.12;
+  self.viewController.currentFilterOption = HomeFilterOptionLowCalorie;
+
+  UIRefreshControl *refreshControl = nil;
+  if (@available(iOS 10.0, *)) {
+    refreshControl = self.viewController.scrollView.refreshControl;
+  }
+  XCTAssertNotNil(refreshControl);
+  XCTAssertEqualObjects(refreshControl.accessibilityIdentifier, @"home.refreshControl");
+
+  NSUInteger initialRequestCount = self.dataProvider.initialRequests.count;
+  [refreshControl beginRefreshing];
+  [refreshControl sendActionsForControlEvents:UIControlEventValueChanged];
+
+  XCTAssertTrue(refreshControl.isRefreshing);
+  [self waitForCondition:^BOOL {
+    return self.dataProvider.initialRequests.count == initialRequestCount + 1;
+  } timeout:1.0];
+  [self waitForCondition:^BOOL {
+    return !refreshControl.isRefreshing;
+  } timeout:1.2];
+
+  XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount + 1);
+  XCTAssertEqualObjects([[self.dataProvider.initialRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionLowCalorie));
+}
+
 - (void)testChangingFilterReloadsLiveHomeSections {
   [self finishInitialLoadIfNeeded];
 
@@ -740,6 +770,46 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertEqualObjects([[self.dataProvider.searchRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionLowCalorie));
   XCTAssertEqual(self.viewController.currentSearchResults.count, 2U);
   XCTAssertEqualObjects([self titlesForRecipes:self.viewController.currentSearchResults], (@[ @"Curry 01", @"Curry 02" ]));
+}
+
+- (void)testPullToRefreshRefetchesVisibleSearchResults {
+  [self finishInitialLoadIfNeeded];
+
+  NSMutableDictionary<NSString *, NSNumber *> *searchDelayByQuery =
+      [NSMutableDictionary dictionaryWithDictionary:self.dataProvider.searchDelayByQuery ?: @{}];
+  [searchDelayByQuery setObject:@(0.12) forKey:@"curry"];
+  self.dataProvider.searchDelayByQuery = searchDelayByQuery;
+
+  self.viewController.searchTextField.text = @"curry";
+  [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
+  [self waitForCondition:^BOOL {
+    return self.viewController.searchState == HomeSearchStateResults;
+  } timeout:2.0];
+
+  UIRefreshControl *refreshControl = nil;
+  if (@available(iOS 10.0, *)) {
+    refreshControl = self.viewController.scrollView.refreshControl;
+  }
+  XCTAssertNotNil(refreshControl);
+  NSUInteger searchRequestCount = self.dataProvider.searchRequests.count;
+  NSUInteger initialRequestCount = self.dataProvider.initialRequests.count;
+
+  [refreshControl beginRefreshing];
+  [refreshControl sendActionsForControlEvents:UIControlEventValueChanged];
+
+  XCTAssertTrue(refreshControl.isRefreshing);
+  [self waitForCondition:^BOOL {
+    return self.dataProvider.searchRequests.count == searchRequestCount + 1;
+  } timeout:1.0];
+  [self waitForCondition:^BOOL {
+    return !refreshControl.isRefreshing;
+  } timeout:1.2];
+
+  XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount);
+  XCTAssertEqual(self.dataProvider.searchRequests.count, searchRequestCount + 1);
+  XCTAssertEqualObjects([[self.dataProvider.searchRequests lastObject] objectForKey:@"query"], @"curry");
+  XCTAssertEqual([[[self.dataProvider.searchRequests lastObject] objectForKey:@"limit"] unsignedIntegerValue], 3U);
+  XCTAssertEqualObjects([[self.dataProvider.searchRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionFeatured));
 }
 
 - (void)testApplyingAdvancedFiltersRefetchesVisibleSearchResults {
