@@ -1,5 +1,7 @@
 #import "HomeViewController.h"
 
+#import <QuartzCore/QuartzCore.h>
+
 #import "../Authentication/MRRAuthSession.h"
 #import "../Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
 #import "../../Layout/MRRLayoutScaling.h"
@@ -14,6 +16,7 @@ static NSTimeInterval const MRRHomeInitialLoadDelay = 0.24;
 static NSTimeInterval const MRRHomeSearchDebounceDelay = 0.45;
 static NSUInteger const MRRHomeSearchPreviewDisplayLimit = 3;
 static NSUInteger const MRRHomeSearchRequestLimit = 12;
+static NSString *const MRRHomeRefreshShimmerAnimationKey = @"home.refreshShimmerAnimation";
 typedef NS_ENUM(NSInteger, MRRHomeSectionActionTag) {
   MRRHomeSectionActionTagSearchResults = 301,
   MRRHomeSectionActionTagRecommendation = 302,
@@ -119,6 +122,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, retain) UIView *loadingStateView;
 @property(nonatomic, retain) UIActivityIndicatorView *loadingIndicator;
 @property(nonatomic, retain) UILabel *loadingStateLabel;
+@property(nonatomic, retain) UIView *refreshStateView;
+@property(nonatomic, retain) UILabel *refreshStateLabel;
+@property(nonatomic, copy) NSArray<UIView *> *refreshPlaceholderViews;
+@property(nonatomic, copy) NSArray<CAGradientLayer *> *refreshShimmerLayers;
 
 @property(nonatomic, retain) UIStackView *categoriesSectionView;
 @property(nonatomic, retain) HomeSectionHeaderView *categoriesHeaderView;
@@ -172,6 +179,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (UICollectionView *)horizontalCollectionViewWithAccessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UICollectionView *)verticalCollectionViewWithAccessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UILabel *)emptyStateLabelWithAccessibilityIdentifier:(NSString *)accessibilityIdentifier;
+- (UIView *)refreshPlaceholderBarWithWidthMultiplier:(CGFloat)widthMultiplier
+                             accessibilityIdentifier:(NSString *)accessibilityIdentifier
+                                    placeholderViews:(NSMutableArray<UIView *> *)placeholderViews;
 - (UIView *)searchAdornmentView;
 - (UIView *)loadingPlaceholderBarWithWidthMultiplier:(CGFloat)widthMultiplier;
 - (NSString *)greetingText;
@@ -189,10 +199,15 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)updateMetricsForCurrentViewport;
 - (void)updateSearchSectionVisibility;
 - (void)updateRecommendationSectionVisibility;
+- (void)updateRefreshStateVisibility;
 - (void)updatePoweredByVisibility;
 - (void)updateFilterLoadingState;
 - (void)updateActiveFiltersSummary;
 - (void)updateSearchResultsHeightConstraintIfNeeded;
+- (BOOL)isShowingRefreshState;
+- (void)startRefreshShimmerIfNeeded;
+- (void)stopRefreshShimmerIfNeeded;
+- (void)updateRefreshShimmerLayerFrames;
 - (void)animateEntranceIfNeeded;
 - (void)handleSearchTextChanged:(UITextField *)sender;
 - (void)handleSearchDebounceTimer:(NSTimer *)timer;
@@ -292,6 +307,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [_categoryCollectionView release];
   [_categoriesHeaderView release];
   [_categoriesSectionView release];
+  [_refreshShimmerLayers release];
+  [_refreshPlaceholderViews release];
+  [_refreshStateLabel release];
+  [_refreshStateView release];
   [_loadingStateLabel release];
   [_loadingIndicator release];
   [_loadingStateView release];
@@ -348,6 +367,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self.weeklyCollectionView.collectionViewLayout invalidateLayout];
   [self.searchResultsCollectionView.collectionViewLayout invalidateLayout];
   [self updateSearchResultsHeightConstraintIfNeeded];
+  [self updateRefreshShimmerLayerFrames];
 }
 
 #pragma mark - View Setup
@@ -688,6 +708,58 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   self.categoryCollectionHeightConstraint = [categoryCollectionView.heightAnchor constraintEqualToConstant:96.0];
   self.categoryCollectionHeightConstraint.active = YES;
 
+  UIView *refreshStateView = [[[UIView alloc] init] autorelease];
+  refreshStateView.translatesAutoresizingMaskIntoConstraints = NO;
+  refreshStateView.hidden = YES;
+  refreshStateView.accessibilityIdentifier = @"home.refreshStateView";
+  refreshStateView.layer.cornerRadius = 28.0;
+  refreshStateView.layer.borderWidth = 1.0;
+  refreshStateView.layer.borderColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
+                                                         [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
+  refreshStateView.backgroundColor = MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
+                                                       [UIColor colorWithWhite:0.14 alpha:1.0]);
+  [contentStackView addArrangedSubview:refreshStateView];
+  self.refreshStateView = refreshStateView;
+
+  UIStackView *refreshStackView = [[[UIStackView alloc] init] autorelease];
+  refreshStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  refreshStackView.axis = UILayoutConstraintAxisVertical;
+  refreshStackView.spacing = 14.0;
+  [refreshStateView addSubview:refreshStackView];
+
+  UILabel *refreshStateLabel = [[[UILabel alloc] init] autorelease];
+  refreshStateLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  refreshStateLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
+  refreshStateLabel.adjustsFontForContentSizeCategory = YES;
+  refreshStateLabel.textColor = MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
+                                                  [UIColor colorWithWhite:0.74 alpha:1.0]);
+  refreshStateLabel.numberOfLines = 0;
+  refreshStateLabel.textAlignment = NSTextAlignmentCenter;
+  refreshStateLabel.text = @"Refreshing recipes...";
+  refreshStateLabel.accessibilityIdentifier = @"home.refreshStateLabel";
+  [refreshStackView addArrangedSubview:refreshStateLabel];
+  self.refreshStateLabel = refreshStateLabel;
+
+  NSMutableArray<UIView *> *refreshPlaceholderViews = [NSMutableArray array];
+  [refreshStackView addArrangedSubview:[self refreshPlaceholderBarWithWidthMultiplier:1.0
+                                                              accessibilityIdentifier:@"home.refreshShimmer.placeholder.1"
+                                                                     placeholderViews:refreshPlaceholderViews]];
+  [refreshStackView addArrangedSubview:[self refreshPlaceholderBarWithWidthMultiplier:0.84
+                                                              accessibilityIdentifier:@"home.refreshShimmer.placeholder.2"
+                                                                     placeholderViews:refreshPlaceholderViews]];
+  [refreshStackView addArrangedSubview:[self refreshPlaceholderBarWithWidthMultiplier:0.72
+                                                              accessibilityIdentifier:@"home.refreshShimmer.placeholder.3"
+                                                                     placeholderViews:refreshPlaceholderViews]];
+  self.refreshPlaceholderViews = refreshPlaceholderViews;
+  self.refreshShimmerLayers = @[];
+
+  [NSLayoutConstraint activateConstraints:@[
+    [refreshStackView.topAnchor constraintEqualToAnchor:refreshStateView.topAnchor constant:24.0],
+    [refreshStackView.leadingAnchor constraintEqualToAnchor:refreshStateView.leadingAnchor constant:22.0],
+    [refreshStackView.trailingAnchor constraintEqualToAnchor:refreshStateView.trailingAnchor constant:-22.0],
+    [refreshStackView.bottomAnchor constraintEqualToAnchor:refreshStateView.bottomAnchor constant:-24.0]
+  ]];
+
   UIStackView *searchResultsSectionView = [self sectionStackView];
   searchResultsSectionView.hidden = YES;
   searchResultsSectionView.accessibilityIdentifier = @"home.searchResultsSectionView";
@@ -882,6 +954,33 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   label.textAlignment = NSTextAlignmentCenter;
   label.accessibilityIdentifier = accessibilityIdentifier;
   return label;
+}
+
+- (UIView *)refreshPlaceholderBarWithWidthMultiplier:(CGFloat)widthMultiplier
+                             accessibilityIdentifier:(NSString *)accessibilityIdentifier
+                                    placeholderViews:(NSMutableArray<UIView *> *)placeholderViews {
+  UIView *wrapperView = [[[UIView alloc] init] autorelease];
+  wrapperView.translatesAutoresizingMaskIntoConstraints = NO;
+
+  UIView *barView = [[[UIView alloc] init] autorelease];
+  barView.translatesAutoresizingMaskIntoConstraints = NO;
+  barView.accessibilityIdentifier = accessibilityIdentifier;
+  barView.layer.cornerRadius = 14.0;
+  barView.clipsToBounds = YES;
+  barView.backgroundColor = MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
+                                              [UIColor colorWithWhite:0.18 alpha:1.0]);
+  [wrapperView addSubview:barView];
+  [placeholderViews addObject:barView];
+
+  [NSLayoutConstraint activateConstraints:@[
+    [wrapperView.heightAnchor constraintEqualToConstant:58.0],
+    [barView.topAnchor constraintEqualToAnchor:wrapperView.topAnchor],
+    [barView.bottomAnchor constraintEqualToAnchor:wrapperView.bottomAnchor],
+    [barView.centerXAnchor constraintEqualToAnchor:wrapperView.centerXAnchor],
+    [barView.widthAnchor constraintEqualToAnchor:wrapperView.widthAnchor multiplier:widthMultiplier]
+  ]];
+
+  return wrapperView;
 }
 
 - (UIView *)searchAdornmentView {
@@ -1118,6 +1217,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self reloadCollectionContentAnimated:animated];
   [self updateActiveFiltersSummary];
   [self updateFilterLoadingState];
+  [self updateRefreshStateVisibility];
   [self updateSearchSectionVisibility];
   [self updateRecommendationSectionVisibility];
   [self updatePoweredByVisibility];
@@ -1177,7 +1277,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)updateSearchSectionVisibility {
-  BOOL shouldShowSearchSection = self.searchState != HomeSearchStateIdle;
+  BOOL shouldShowSearchSection = self.searchState != HomeSearchStateIdle && ![self isShowingRefreshState];
   self.searchResultsSectionView.hidden = !shouldShowSearchSection;
 
   if (!shouldShowSearchSection) {
@@ -1210,18 +1310,33 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (void)updateRecommendationSectionVisibility {
   BOOL isShowingSearchResults = self.searchState != HomeSearchStateIdle;
+  BOOL isShowingRefreshState = [self isShowingRefreshState];
 
   self.loadingStateView.hidden = !self.isLoadingContent;
+  self.refreshStateView.hidden = !isShowingRefreshState;
   self.categoriesSectionView.hidden = self.isLoadingContent;
-  self.recommendationSectionView.hidden = self.isLoadingContent || isShowingSearchResults;
-  self.weeklySectionView.hidden = self.isLoadingContent || isShowingSearchResults;
+  self.recommendationSectionView.hidden = self.isLoadingContent || isShowingSearchResults || isShowingRefreshState;
+  self.weeklySectionView.hidden = self.isLoadingContent || isShowingSearchResults || isShowingRefreshState;
 
-  self.recommendationEmptyStateLabel.hidden = self.filteredRecommendationRecipes.count > 0 || self.isLoadingContent || isShowingSearchResults;
-  self.recommendationCollectionView.hidden = self.filteredRecommendationRecipes.count == 0 || self.isLoadingContent || isShowingSearchResults;
+  self.recommendationEmptyStateLabel.hidden = self.filteredRecommendationRecipes.count > 0 || self.isLoadingContent ||
+                                              isShowingSearchResults || isShowingRefreshState;
+  self.recommendationCollectionView.hidden = self.filteredRecommendationRecipes.count == 0 || self.isLoadingContent ||
+                                             isShowingSearchResults || isShowingRefreshState;
+}
+
+- (void)updateRefreshStateVisibility {
+  BOOL isShowingRefreshState = [self isShowingRefreshState];
+  self.refreshStateLabel.text = self.searchState != HomeSearchStateIdle ? @"Refreshing search results..." : @"Refreshing recipes...";
+  self.refreshStateView.hidden = !isShowingRefreshState;
+  if (isShowingRefreshState) {
+    [self startRefreshShimmerIfNeeded];
+  } else {
+    [self stopRefreshShimmerIfNeeded];
+  }
 }
 
 - (void)updatePoweredByVisibility {
-  self.poweredByContainerView.hidden = self.isLoadingContent || !self.displayingLiveContent;
+  self.poweredByContainerView.hidden = self.isLoadingContent || [self isShowingRefreshState] || !self.displayingLiveContent;
 }
 
 - (void)updateFilterLoadingState {
@@ -1302,6 +1417,66 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self.searchResultsCollectionView layoutIfNeeded];
   CGFloat contentHeight = self.searchResultsCollectionView.collectionViewLayout.collectionViewContentSize.height;
   self.searchResultsHeightConstraint.constant = MAX(contentHeight, 0.0);
+}
+
+- (BOOL)isShowingRefreshState {
+  return self.contentRefreshControl.isRefreshing && !self.isLoadingContent;
+}
+
+- (void)startRefreshShimmerIfNeeded {
+  if (self.refreshShimmerLayers.count > 0 || self.refreshPlaceholderViews.count == 0) {
+    return;
+  }
+
+  UIColor *baseColor = MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
+                                         [UIColor colorWithWhite:0.18 alpha:1.0]);
+  UIColor *highlightColor = MRRHomeDynamicColor([UIColor colorWithWhite:1.0 alpha:0.88],
+                                                [UIColor colorWithWhite:0.28 alpha:0.90]);
+  NSMutableArray<CAGradientLayer *> *shimmerLayers = [NSMutableArray arrayWithCapacity:self.refreshPlaceholderViews.count];
+
+  for (UIView *placeholderView in self.refreshPlaceholderViews) {
+    CAGradientLayer *shimmerLayer = [CAGradientLayer layer];
+    shimmerLayer.startPoint = CGPointMake(0.0, 0.5);
+    shimmerLayer.endPoint = CGPointMake(1.0, 0.5);
+    shimmerLayer.colors = @[ (id)baseColor.CGColor, (id)highlightColor.CGColor, (id)baseColor.CGColor ];
+    shimmerLayer.locations = @[ @(-1.0), @(-0.5), @(0.0) ];
+    shimmerLayer.cornerRadius = placeholderView.layer.cornerRadius;
+    shimmerLayer.frame = placeholderView.bounds;
+    [placeholderView.layer addSublayer:shimmerLayer];
+
+    if (!UIAccessibilityIsReduceMotionEnabled()) {
+      CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"locations"];
+      animation.fromValue = @[ @(-1.0), @(-0.5), @(0.0) ];
+      animation.toValue = @[ @(1.0), @(1.5), @(2.0) ];
+      animation.duration = 1.05;
+      animation.repeatCount = HUGE_VALF;
+      [shimmerLayer addAnimation:animation forKey:MRRHomeRefreshShimmerAnimationKey];
+    }
+
+    [shimmerLayers addObject:shimmerLayer];
+  }
+
+  self.refreshShimmerLayers = shimmerLayers;
+  [self updateRefreshShimmerLayerFrames];
+}
+
+- (void)stopRefreshShimmerIfNeeded {
+  for (CAGradientLayer *shimmerLayer in self.refreshShimmerLayers) {
+    [shimmerLayer removeAllAnimations];
+    [shimmerLayer removeFromSuperlayer];
+  }
+
+  self.refreshShimmerLayers = @[];
+}
+
+- (void)updateRefreshShimmerLayerFrames {
+  NSUInteger shimmerCount = MIN(self.refreshPlaceholderViews.count, self.refreshShimmerLayers.count);
+  for (NSUInteger index = 0; index < shimmerCount; index += 1) {
+    UIView *placeholderView = [self.refreshPlaceholderViews objectAtIndex:index];
+    CAGradientLayer *shimmerLayer = [self.refreshShimmerLayers objectAtIndex:index];
+    shimmerLayer.frame = placeholderView.bounds;
+    shimmerLayer.cornerRadius = placeholderView.layer.cornerRadius;
+  }
 }
 
 - (void)animateEntranceIfNeeded {
@@ -1493,6 +1668,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self.initialLoadTimer invalidate];
   self.initialLoadTimer = nil;
   [self dismissKeyboard];
+  [self updateRefreshStateVisibility];
+  [self updateSearchSectionVisibility];
+  [self updateRecommendationSectionVisibility];
+  [self updatePoweredByVisibility];
   [self refreshVisibleContentForCurrentFilter];
 }
 
@@ -1500,6 +1679,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   if (self.contentRefreshControl.isRefreshing) {
     [self.contentRefreshControl endRefreshing];
   }
+  [self updateRefreshStateVisibility];
 }
 
 - (void)applyFilterOption:(HomeFilterOption)filterOption {
