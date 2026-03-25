@@ -14,7 +14,6 @@ static NSTimeInterval const MRRHomeInitialLoadDelay = 0.24;
 static NSTimeInterval const MRRHomeSearchDebounceDelay = 0.45;
 static NSUInteger const MRRHomeSearchPreviewDisplayLimit = 3;
 static NSUInteger const MRRHomeSearchRequestLimit = 12;
-
 typedef NS_ENUM(NSInteger, MRRHomeSectionActionTag) {
   MRRHomeSectionActionTagSearchResults = 301,
   MRRHomeSectionActionTagRecommendation = 302,
@@ -103,6 +102,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @property(nonatomic, retain) id<HomeDataProviding> dataProvider;
 
 @property(nonatomic, retain) UIScrollView *scrollView;
+@property(nonatomic, retain) UIRefreshControl *contentRefreshControl;
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *contentStackView;
 @property(nonatomic, retain) UILabel *greetingLabel;
@@ -221,6 +221,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)handlePressableButtonTouchDown:(UIButton *)sender;
 - (void)handlePressableButtonTouchUp:(UIButton *)sender;
 - (void)configurePressFeedbackForButton:(UIButton *)button;
+- (void)handleContentRefreshControlValueChanged:(UIRefreshControl *)sender;
+- (void)endContentRefreshIfNeeded;
 - (void)dismissKeyboard;
 
 @end
@@ -302,6 +304,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [_greetingLabel release];
   [_contentStackView release];
   [_contentView release];
+  [_contentRefreshControl release];
   [_scrollView release];
   [_dataProvider release];
   [_session release];
@@ -358,6 +361,21 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   scrollView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
   [self.view addSubview:scrollView];
   self.scrollView = scrollView;
+
+  UIRefreshControl *refreshControl = [[[UIRefreshControl alloc] init] autorelease];
+  refreshControl.accessibilityIdentifier = @"home.refreshControl";
+  refreshControl.accessibilityLabel = @"Refresh recipes";
+  refreshControl.tintColor = MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                               [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
+  [refreshControl addTarget:self
+                     action:@selector(handleContentRefreshControlValueChanged:)
+           forControlEvents:UIControlEventValueChanged];
+  if (@available(iOS 10.0, *)) {
+    scrollView.refreshControl = refreshControl;
+  } else {
+    [scrollView addSubview:refreshControl];
+  }
+  self.contentRefreshControl = refreshControl;
 
   UIView *contentView = [[[UIView alloc] init] autorelease];
   contentView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -989,6 +1007,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     }
     self.applyingFilter = NO;
     [self updateFilterLoadingState];
+    [self endContentRefreshIfNeeded];
     [self applyCurrentPresentationStateAnimated:animated];
   }];
 }
@@ -1391,6 +1410,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                           self.searchState = self.allSearchResults.count > 0 ? HomeSearchStateResults : HomeSearchStateEmpty;
                           self.applyingFilter = NO;
                           [self updateFilterLoadingState];
+                          [self endContentRefreshIfNeeded];
                           [self applyCurrentPresentationStateAnimated:YES];
 
                           if (presentResultsList && self.currentSearchResults.count > 0) {
@@ -1411,6 +1431,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   self.searchRequestToken += 1;
   self.applyingFilter = NO;
   [self updateFilterLoadingState];
+  [self endContentRefreshIfNeeded];
   [self applyCurrentPresentationStateAnimated:YES];
 }
 
@@ -1465,6 +1486,20 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   }
 
   [self presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)handleContentRefreshControlValueChanged:(UIRefreshControl *)sender {
+  #pragma unused(sender)
+  [self.initialLoadTimer invalidate];
+  self.initialLoadTimer = nil;
+  [self dismissKeyboard];
+  [self refreshVisibleContentForCurrentFilter];
+}
+
+- (void)endContentRefreshIfNeeded {
+  if (self.contentRefreshControl.isRefreshing) {
+    [self.contentRefreshControl endRefreshing];
+  }
 }
 
 - (void)applyFilterOption:(HomeFilterOption)filterOption {
