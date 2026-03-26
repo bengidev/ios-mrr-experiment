@@ -12,6 +12,12 @@
 #import "../Features/MainMenu/MainMenuCoordinator.h"
 #import "../Features/MainMenu/MainMenuTabBarController.h"
 #import "../Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
+#import "../Persistence/CoreData/MRRCoreDataStack.h"
+#import "../Persistence/SavedRecipes/MRRSavedRecipesStore.h"
+#import "../Persistence/SavedRecipes/Sync/MRRNoOpSavedRecipesSyncEngine.h"
+#import "../Persistence/SavedRecipes/Sync/MRRSavedRecipesCloudSyncing.h"
+#import "../Persistence/SavedRecipes/Sync/MRRSavedRecipesSyncEngine.h"
+#import "../Persistence/SavedRecipes/Sync/MRRSyncingLogoutController.h"
 
 #import <GoogleSignIn/GoogleSignIn.h>
 
@@ -19,15 +25,24 @@
 
 @property(nonatomic, retain) OnboardingStateController *onboardingStateController;
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
+@property(nonatomic, retain, nullable) MRRCoreDataStack *coreDataStack;
+@property(nonatomic, retain, nullable) MRRSavedRecipesStore *savedRecipesStore;
+@property(nonatomic, retain) id<MRRSavedRecipesCloudSyncing> savedRecipesSyncEngine;
+@property(nonatomic, retain, nullable) id<MRRLogoutCoordinating> logoutController;
 @property(nonatomic, retain, nullable) id<MRRAuthStateObservation> authStateObservation;
 @property(nonatomic, retain, nullable) MainMenuCoordinator *mainMenuCoordinator;
 @property(nonatomic, copy, nullable) NSString *visibleAuthenticatedUserID;
+@property(nonatomic, assign) UIBackgroundTaskIdentifier savedRecipesBackgroundTaskIdentifier;
 
+- (void)configureSavedRecipesInfrastructure;
 - (void)startObservingAuthenticationState;
 - (void)handleObservedAuthenticationSession:(nullable MRRAuthSession *)session;
 - (void)updateRootForSession:(nullable MRRAuthSession *)session animated:(BOOL)animated;
 - (UIViewController *)buildRootViewControllerForSession:(nullable MRRAuthSession *)session;
 - (UIViewController *)buildMainMenuViewControllerWithSession:(MRRAuthSession *)session;
+- (void)startSavedRecipesSyncForSessionIfNeeded:(nullable MRRAuthSession *)session;
+- (void)flushSavedRecipesSyncForApplication:(UIApplication *)application;
+- (void)endSavedRecipesBackgroundTaskIfNeededForApplication:(UIApplication *)application;
 - (BOOL)isShowingOnboardingRoot;
 - (BOOL)isShowingMainMenuRoot;
 
@@ -57,6 +72,7 @@
   if (self) {
     _onboardingStateController = [onboardingStateController retain];
     _authenticationController = [authenticationController retain];
+    _savedRecipesBackgroundTaskIdentifier = UIBackgroundTaskInvalid;
   }
 
   return self;
@@ -66,6 +82,10 @@
 
 - (void)dealloc {
   [self.authStateObservation invalidate];
+  [_logoutController release];
+  [_savedRecipesSyncEngine release];
+  [_savedRecipesStore release];
+  [_coreDataStack release];
   [_visibleAuthenticatedUserID release];
   [_mainMenuCoordinator release];
   [_authStateObservation release];
@@ -78,9 +98,7 @@
 #pragma mark - UIApplicationDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  if ([self.authenticationController isKindOfClass:[MRRFirebaseAuthenticationController class]]) {
-    [MRRFirebaseAuthenticationController configureFirebaseIfPossible];
-  }
+  [self configureSavedRecipesInfrastructure];
 
   self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
   self.window.rootViewController = [self buildInitialRootViewController];
@@ -100,7 +118,7 @@
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
-  // Use this method to release shared resources, save user data, etc.
+  [self flushSavedRecipesSyncForApplication:application];
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
@@ -108,11 +126,14 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-  // Restart any tasks that were paused
+  [self endSavedRecipesBackgroundTaskIfNeededForApplication:application];
+  if (self.visibleAuthenticatedUserID.length > 0) {
+    [self.savedRecipesSyncEngine requestImmediateSyncForUserID:self.visibleAuthenticatedUserID];
+  }
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
-  // Called when the application is about to terminate
+  [self flushSavedRecipesSyncForApplication:application];
 }
 
 #pragma mark - Root Flow Delegate Events
@@ -128,6 +149,37 @@
 
 #pragma mark - Root View Controller Builders
 
+- (void)configureSavedRecipesInfrastructure {
+  NSError *coreDataError = nil;
+  self.coreDataStack = [[[MRRCoreDataStack alloc] initWithInMemoryStore:NO error:&coreDataError] autorelease];
+  if (self.coreDataStack == nil || coreDataError != nil) {
+    NSLog(@"[SavedRecipes] Core Data unavailable: %@", coreDataError);
+    self.savedRecipesStore = nil;
+    self.savedRecipesSyncEngine = [[[MRRNoOpSavedRecipesSyncEngine alloc] init] autorelease];
+    self.logoutController =
+        [[[MRRSyncingLogoutController alloc] initWithAuthenticationController:self.authenticationController
+                                                                   syncEngine:self.savedRecipesSyncEngine] autorelease];
+    return;
+  }
+
+  self.savedRecipesStore = [[[MRRSavedRecipesStore alloc] initWithCoreDataStack:self.coreDataStack] autorelease];
+
+  BOOL firebaseConfigured = NO;
+  if ([self.authenticationController isKindOfClass:[MRRFirebaseAuthenticationController class]]) {
+    firebaseConfigured = [MRRFirebaseAuthenticationController configureFirebaseIfPossible];
+  }
+
+  if (firebaseConfigured && self.savedRecipesStore != nil) {
+    self.savedRecipesSyncEngine = [[[MRRSavedRecipesSyncEngine alloc] initWithStore:self.savedRecipesStore] autorelease];
+  } else {
+    self.savedRecipesSyncEngine = [[[MRRNoOpSavedRecipesSyncEngine alloc] init] autorelease];
+  }
+
+  self.logoutController =
+      [[[MRRSyncingLogoutController alloc] initWithAuthenticationController:self.authenticationController
+                                                                 syncEngine:self.savedRecipesSyncEngine] autorelease];
+}
+
 - (UIViewController *)buildInitialRootViewController {
   return [self buildRootViewControllerForSession:[self.authenticationController currentSession]];
 }
@@ -135,6 +187,7 @@
 - (UIViewController *)buildOnboardingViewController {
   self.mainMenuCoordinator = nil;
   self.visibleAuthenticatedUserID = nil;
+  [self.savedRecipesSyncEngine stopSync];
 
   OnboardingViewController *viewController =
       [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController
@@ -149,6 +202,7 @@
 - (UIViewController *)buildRootViewControllerForSession:(MRRAuthSession *)session {
   if (session != nil) {
     self.visibleAuthenticatedUserID = session.userID;
+    [self startSavedRecipesSyncForSessionIfNeeded:session];
     return [self buildMainMenuViewControllerWithSession:session];
   }
 
@@ -156,8 +210,57 @@
 }
 
 - (UIViewController *)buildMainMenuViewControllerWithSession:(MRRAuthSession *)session {
-  self.mainMenuCoordinator = [[[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController session:session] autorelease];
+  self.mainMenuCoordinator = [[[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController
+                                                                                    session:session
+                                                                           savedRecipesStore:self.savedRecipesStore
+                                                                                 syncEngine:self.savedRecipesSyncEngine
+                                                                            logoutController:self.logoutController] autorelease];
   return [self.mainMenuCoordinator rootViewController];
+}
+
+- (void)startSavedRecipesSyncForSessionIfNeeded:(MRRAuthSession *)session {
+  if (session.userID.length == 0) {
+    [self.savedRecipesSyncEngine stopSync];
+    return;
+  }
+
+  [self.savedRecipesSyncEngine startSyncForUserID:session.userID completion:nil];
+}
+
+- (void)flushSavedRecipesSyncForApplication:(UIApplication *)application {
+  if (self.visibleAuthenticatedUserID.length == 0) {
+    return;
+  }
+
+  [self endSavedRecipesBackgroundTaskIfNeededForApplication:application];
+  self.savedRecipesBackgroundTaskIdentifier = [application beginBackgroundTaskWithExpirationHandler:^{
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [self endSavedRecipesBackgroundTaskIfNeededForApplication:application];
+    });
+  }];
+
+  NSString *userID = [[self.visibleAuthenticatedUserID copy] autorelease];
+  __block AppDelegate *blockSelf = self;
+  [self.savedRecipesSyncEngine flushPendingChangesForUserID:userID completion:^(__unused NSError *error) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      AppDelegate *strongSelf = blockSelf;
+      if (strongSelf == nil) {
+        return;
+      }
+
+      [strongSelf endSavedRecipesBackgroundTaskIfNeededForApplication:application];
+    });
+  }];
+}
+
+- (void)endSavedRecipesBackgroundTaskIfNeededForApplication:(UIApplication *)application {
+  if (self.savedRecipesBackgroundTaskIdentifier == UIBackgroundTaskInvalid) {
+    return;
+  }
+
+  UIBackgroundTaskIdentifier backgroundTaskIdentifier = self.savedRecipesBackgroundTaskIdentifier;
+  self.savedRecipesBackgroundTaskIdentifier = UIBackgroundTaskInvalid;
+  [application endBackgroundTask:backgroundTaskIdentifier];
 }
 
 - (void)setRootViewController:(UIViewController *)rootViewController animated:(BOOL)animated {
