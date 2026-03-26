@@ -16,6 +16,8 @@ typedef NS_ENUM(NSInteger, OnboardingRecipeDetailDebugOrigin) {
 
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController;
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController;
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
+          didRequestFavoriteState:(BOOL)favorite;
 
 @end
 
@@ -26,6 +28,9 @@ typedef NS_ENUM(NSInteger, OnboardingRecipeDetailDebugOrigin) {
 @property(nonatomic, retain, readonly, nullable) OnboardingRecipeDetail *recipeDetail;
 @property(nonatomic, assign, readonly, getter=isLoading) BOOL loading;
 @property(nonatomic, assign) OnboardingRecipeDetailDebugOrigin debugOrigin;
+@property(nonatomic, assign) BOOL showsFavoriteButton;
+@property(nonatomic, assign, getter=isFavoriteSelected) BOOL favoriteSelected;
+@property(nonatomic, assign, getter=isFavoriteButtonEnabled) BOOL favoriteButtonEnabled;
 
 - (instancetype)initWithRecipePreview:(OnboardingRecipePreview *)recipePreview loading:(BOOL)loading;
 - (instancetype)initWithRecipePreview:(OnboardingRecipePreview *)recipePreview recipeDetail:(OnboardingRecipeDetail *)recipeDetail;
