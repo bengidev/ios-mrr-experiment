@@ -2,6 +2,7 @@
 
 #import "../Authentication/MRRAuthErrorMapper.h"
 #import "../Authentication/MRRAuthSession.h"
+#import "../../Persistence/SavedRecipes/Sync/MRRSyncingLogoutController.h"
 #import "../../Layout/MRRLiquidGlassStyling.h"
 
 static UIColor *MRRProfileDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
@@ -26,6 +27,7 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
 @property(nonatomic, retain) MRRAuthSession *session;
+@property(nonatomic, retain, nullable) id<MRRLogoutCoordinating> logoutController;
 @property(nonatomic, retain) UIStackView *stackView;
 @property(nonatomic, retain) UIView *summaryCardView;
 @property(nonatomic, retain) UILabel *displayNameLabel;
@@ -34,11 +36,13 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 @property(nonatomic, retain) UILabel *emailVerificationLabel;
 @property(nonatomic, retain) UILabel *statusLabel;
 @property(nonatomic, retain) UIButton *logoutButton;
+@property(nonatomic, assign, getter=isPerformingLogout) BOOL performingLogout;
 
 - (void)buildViewHierarchy;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
 - (void)handleLogoutTapped:(id)sender;
 - (void)performConfirmedLogout;
+- (void)updateLogoutUIForInProgress:(BOOL)inProgress;
 - (void)presentLogoutConfirmationAlert;
 - (void)presentLogoutError:(NSError *)error;
 
@@ -48,6 +52,12 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                          session:(MRRAuthSession *)session {
+  return [self initWithAuthenticationController:authenticationController session:session logoutController:nil];
+}
+
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
+                                         session:(MRRAuthSession *)session
+                                logoutController:(id<MRRLogoutCoordinating>)logoutController {
   NSParameterAssert(authenticationController != nil);
   NSParameterAssert(session != nil);
 
@@ -55,6 +65,7 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   if (self) {
     _authenticationController = [authenticationController retain];
     _session = [session retain];
+    _logoutController = [logoutController retain];
   }
 
   return self;
@@ -69,6 +80,7 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [_displayNameLabel release];
   [_summaryCardView release];
   [_stackView release];
+  [_logoutController release];
   [_session release];
   [_authenticationController release];
   [super dealloc];
@@ -215,15 +227,53 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 }
 
 - (void)handleLogoutTapped:(id)sender {
+  if (self.isPerformingLogout) {
+    return;
+  }
+
   [self presentLogoutConfirmationAlert];
 }
 
 - (void)performConfirmedLogout {
+  if (self.isPerformingLogout) {
+    return;
+  }
+
+  [self updateLogoutUIForInProgress:YES];
+  if (self.logoutController != nil) {
+    __block ProfileViewController *blockSelf = self;
+    [self.logoutController performLogoutForSession:self.session completion:^(NSError *error) {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        ProfileViewController *strongSelf = blockSelf;
+        if (strongSelf == nil) {
+          return;
+        }
+
+        [strongSelf updateLogoutUIForInProgress:NO];
+        if (error != nil) {
+          [strongSelf presentLogoutError:error];
+        }
+      });
+    }];
+    return;
+  }
+
   NSError *signOutError = nil;
   BOOL didSignOut = [self.authenticationController signOut:&signOutError];
+  [self updateLogoutUIForInProgress:NO];
   if (!didSignOut || signOutError != nil) {
     [self presentLogoutError:signOutError];
   }
+}
+
+- (void)updateLogoutUIForInProgress:(BOOL)inProgress {
+  self.performingLogout = inProgress;
+  self.logoutButton.enabled = !inProgress;
+  [self.logoutButton setTitle:(inProgress ? @"Syncing saved recipes..." : @"Log Out") forState:UIControlStateNormal];
+  [self.logoutButton setTitle:(inProgress ? @"Syncing saved recipes..." : @"Log Out") forState:UIControlStateDisabled];
+  self.statusLabel.text = inProgress
+                              ? @"Syncing saved recipes before logout so your favorites stay available after you sign back in."
+                              : @"Your authentication session is active and ready for future subscription wiring.";
 }
 
 - (void)presentLogoutConfirmationAlert {
@@ -247,7 +297,12 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
                                                                            message:message
                                                                     preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = @"profile.logoutErrorAlert";
-  [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Retry"
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:^(__unused UIAlertAction *action) {
+                                                      [self performConfirmedLogout];
+                                                    }]];
   [self presentViewController:alertController animated:YES completion:nil];
 }
 
