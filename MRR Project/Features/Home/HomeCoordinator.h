@@ -6,11 +6,18 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class MRRSavedRecipesStore;
+@protocol MRRSavedRecipesCloudSyncing;
+
 @interface HomeCoordinator : NSObject <MRRTabFeatureCoordinator>
 
 - (instancetype)init;
 - (instancetype)initWithSession:(nullable MRRAuthSession *)session;
 - (instancetype)initWithSession:(nullable MRRAuthSession *)session dataProvider:(nullable id<HomeDataProviding>)dataProvider;
+- (instancetype)initWithSession:(nullable MRRAuthSession *)session
+                   dataProvider:(nullable id<HomeDataProviding>)dataProvider
+               savedRecipesStore:(nullable MRRSavedRecipesStore *)savedRecipesStore
+                     syncEngine:(nullable id<MRRSavedRecipesCloudSyncing>)syncEngine;
 
 @end
 
