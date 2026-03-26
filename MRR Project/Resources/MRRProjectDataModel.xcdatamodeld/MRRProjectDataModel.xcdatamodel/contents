@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23504" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Objective-C" userDefinedModelVersionIdentifier="">
+    <entity name="SavedRecipe" representedClassName="SavedRecipe" syncable="YES" codeGenerationType="class">
+        <attribute name="assetName" optional="NO" attributeType="String"/>
+        <attribute name="calorieCount" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="calorieText" optional="NO" attributeType="String"/>
+        <attribute name="durationText" optional="NO" attributeType="String"/>
+        <attribute name="heroImageURLString" optional="YES" attributeType="String"/>
+        <attribute name="localModifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="mealType" optional="NO" attributeType="String"/>
+        <attribute name="popularityScore" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="productBrandText" optional="YES" attributeType="String"/>
+        <attribute name="productName" optional="YES" attributeType="String"/>
+        <attribute name="productNutritionGradeText" optional="YES" attributeType="String"/>
+        <attribute name="productQuantityText" optional="YES" attributeType="String"/>
+        <attribute name="readyInMinutes" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="recipeID" optional="NO" attributeType="String"/>
+        <attribute name="remoteUpdatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="savedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="servings" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="servingsText" optional="NO" attributeType="String"/>
+        <attribute name="sourceName" optional="YES" attributeType="String"/>
+        <attribute name="sourceURLString" optional="YES" attributeType="String"/>
+        <attribute name="subtitle" optional="NO" attributeType="String"/>
+        <attribute name="summaryText" optional="NO" attributeType="String"/>
+        <attribute name="title" optional="NO" attributeType="String"/>
+        <attribute name="userID" optional="NO" attributeType="String"/>
+        <relationship name="ingredients" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SavedRecipeIngredient" inverseName="recipe" inverseEntity="SavedRecipeIngredient"/>
+        <relationship name="instructions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SavedRecipeInstruction" inverseName="recipe" inverseEntity="SavedRecipeInstruction"/>
+        <relationship name="tags" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SavedRecipeTag" inverseName="recipe" inverseEntity="SavedRecipeTag"/>
+        <relationship name="tools" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SavedRecipeTool" inverseName="recipe" inverseEntity="SavedRecipeTool"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="userID"/>
+                <constraint value="recipeID"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="SavedRecipeIngredient" representedClassName="SavedRecipeIngredient" syncable="YES" codeGenerationType="class">
+        <attribute name="displayText" optional="NO" attributeType="String"/>
+        <attribute name="name" optional="NO" attributeType="String"/>
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SavedRecipe" inverseName="ingredients" inverseEntity="SavedRecipe"/>
+    </entity>
+    <entity name="SavedRecipeInstruction" representedClassName="SavedRecipeInstruction" syncable="YES" codeGenerationType="class">
+        <attribute name="detailText" optional="NO" attributeType="String"/>
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="title" optional="NO" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SavedRecipe" inverseName="instructions" inverseEntity="SavedRecipe"/>
+    </entity>
+    <entity name="SavedRecipeSyncChange" representedClassName="SavedRecipeSyncChange" syncable="YES" codeGenerationType="class">
+        <attribute name="operationType" optional="NO" attributeType="String"/>
+        <attribute name="queuedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="recipeID" optional="NO" attributeType="String"/>
+        <attribute name="userID" optional="NO" attributeType="String"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="userID"/>
+                <constraint value="recipeID"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="SavedRecipeTag" representedClassName="SavedRecipeTag" syncable="YES" codeGenerationType="class">
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="value" optional="NO" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SavedRecipe" inverseName="tags" inverseEntity="SavedRecipe"/>
+    </entity>
+    <entity name="SavedRecipeTool" representedClassName="SavedRecipeTool" syncable="YES" codeGenerationType="class">
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="value" optional="NO" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SavedRecipe" inverseName="tools" inverseEntity="SavedRecipe"/>
+    </entity>
+    <elements>
+        <element name="SavedRecipe" positionX="-63" positionY="-18" width="128" height="390"/>
+        <element name="SavedRecipeIngredient" positionX="288" positionY="-153" width="128" height="103"/>
+        <element name="SavedRecipeInstruction" positionX="288" positionY="-18" width="128" height="118"/>
+        <element name="SavedRecipeSyncChange" positionX="-63" positionY="438" width="128" height="103"/>
+        <element name="SavedRecipeTag" positionX="288" positionY="115" width="128" height="88"/>
+        <element name="SavedRecipeTool" positionX="288" positionY="220" width="128" height="88"/>
+    </elements>
+</model>
