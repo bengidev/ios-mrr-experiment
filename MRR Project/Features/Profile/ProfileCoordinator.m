@@ -1,12 +1,14 @@
 #import "ProfileCoordinator.h"
 
 #import "../Authentication/MRRAuthSession.h"
+#import "../../Persistence/SavedRecipes/Sync/MRRSyncingLogoutController.h"
 #import "ProfileViewController.h"
 
 @interface ProfileCoordinator ()
 
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
 @property(nonatomic, retain) MRRAuthSession *session;
+@property(nonatomic, retain, nullable) id<MRRLogoutCoordinating> logoutController;
 @property(nonatomic, retain, nullable) ProfileViewController *viewController;
 @property(nonatomic, retain, nullable) UITabBarItem *tabBarItemValue;
 
@@ -16,6 +18,12 @@
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                          session:(MRRAuthSession *)session {
+  return [self initWithAuthenticationController:authenticationController session:session logoutController:nil];
+}
+
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
+                                         session:(MRRAuthSession *)session
+                                logoutController:(id<MRRLogoutCoordinating>)logoutController {
   NSParameterAssert(authenticationController != nil);
   NSParameterAssert(session != nil);
 
@@ -23,6 +31,7 @@
   if (self) {
     _authenticationController = [authenticationController retain];
     _session = [session retain];
+    _logoutController = [logoutController retain];
   }
 
   return self;
@@ -31,6 +40,7 @@
 - (void)dealloc {
   [_tabBarItemValue release];
   [_viewController release];
+  [_logoutController release];
   [_session release];
   [_authenticationController release];
   [super dealloc];
@@ -39,7 +49,8 @@
 - (UIViewController *)rootViewController {
   if (self.viewController == nil) {
     self.viewController = [[[ProfileViewController alloc] initWithAuthenticationController:self.authenticationController
-                                                                                   session:self.session] autorelease];
+                                                                                   session:self.session
+                                                                          logoutController:self.logoutController] autorelease];
   }
 
   return self.viewController;
