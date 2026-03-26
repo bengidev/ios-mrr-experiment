@@ -2,6 +2,9 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import "../../Persistence/SavedRecipes/MRRSavedRecipesStore.h"
+#import "../../Persistence/SavedRecipes/Models/MRRSavedRecipeSnapshot.h"
+#import "../../Persistence/SavedRecipes/Sync/MRRSavedRecipesCloudSyncing.h"
 #import "../Authentication/MRRAuthSession.h"
 #import "../Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
 #import "../../Layout/MRRLayoutScaling.h"
@@ -103,6 +106,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 @property(nonatomic, retain) MRRAuthSession *session;
 @property(nonatomic, retain) id<HomeDataProviding> dataProvider;
+@property(nonatomic, retain, nullable) MRRSavedRecipesStore *savedRecipesStore;
+@property(nonatomic, retain, nullable) id<MRRSavedRecipesCloudSyncing> syncEngine;
+@property(nonatomic, retain) NSMutableDictionary<NSValue *, HomeRecipeCard *> *recipeCardsByDetailController;
 
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIRefreshControl *contentRefreshControl;
@@ -228,6 +234,14 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)animateRecipeSelectionFromSourceView:(nullable UIView *)sourceView completion:(dispatch_block_t)completion;
 - (OnboardingRecipePreview *)previewForRecipeCard:(HomeRecipeCard *)recipeCard;
 - (OnboardingRecipeDetail *)seedRecipeDetailForRecipeCard:(HomeRecipeCard *)recipeCard;
+- (BOOL)favoriteFeatureAvailable;
+- (void)configureFavoriteStateForDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController
+                                           recipeCard:(HomeRecipeCard *)recipeCard
+                                              enabled:(BOOL)enabled;
+- (nullable HomeRecipeCard *)recipeCardForDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
+- (nullable MRRSavedRecipeSnapshot *)savedRecipeSnapshotForRecipeCard:(HomeRecipeCard *)recipeCard
+                                                 detailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
+- (void)presentSavedRecipePersistenceError:(NSError *)error actionTitle:(NSString *)actionTitle;
 - (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
 - (UIViewController *)preferredPresenterViewController;
 - (void)dismissPresentedRecipeDetailIfNeeded;
@@ -245,10 +259,20 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @implementation HomeViewController
 
 - (instancetype)init {
-  return [self initWithSession:nil dataProvider:[[[HomeCompositeDataProvider alloc] init] autorelease]];
+  return [self initWithSession:nil
+                  dataProvider:[[[HomeCompositeDataProvider alloc] init] autorelease]
+              savedRecipesStore:nil
+                    syncEngine:nil];
 }
 
 - (instancetype)initWithSession:(MRRAuthSession *)session dataProvider:(id<HomeDataProviding>)dataProvider {
+  return [self initWithSession:session dataProvider:dataProvider savedRecipesStore:nil syncEngine:nil];
+}
+
+- (instancetype)initWithSession:(MRRAuthSession *)session
+                   dataProvider:(id<HomeDataProviding>)dataProvider
+               savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                     syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
   NSParameterAssert(dataProvider != nil);
 
   self = [super initWithNibName:nil bundle:nil];
@@ -256,6 +280,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     self.title = @"Home";
     _session = [session retain];
     _dataProvider = [dataProvider retain];
+    _savedRecipesStore = [savedRecipesStore retain];
+    _syncEngine = [syncEngine retain];
+    _recipeCardsByDetailController = [[NSMutableDictionary alloc] init];
     _currentFilterOption = HomeFilterOptionFeatured;
     _advancedFilterSettings = [[HomeAdvancedFilterSettings emptySettings] retain];
     _searchState = HomeSearchStateIdle;
@@ -272,6 +299,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [_searchDebounceTimer release];
   [_initialLoadTimer release];
   [_advancedFilterSettings release];
+  [_recipeCardsByDetailController release];
   [_clearFiltersButton release];
   [_activeFiltersStackView release];
   [_activeFiltersScrollView release];
@@ -325,6 +353,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [_contentView release];
   [_contentRefreshControl release];
   [_scrollView release];
+  [_syncEngine release];
+  [_savedRecipesStore release];
   [_dataProvider release];
   [_session release];
   [super dealloc];
@@ -1905,16 +1935,21 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   OnboardingRecipeDetailViewController *detailViewController =
       [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:preview loading:YES] autorelease];
   detailViewController.delegate = self;
+  [self.recipeCardsByDetailController setObject:recipeCard forKey:[NSValue valueWithNonretainedObject:detailViewController]];
+  [self configureFavoriteStateForDetailViewController:detailViewController recipeCard:recipeCard enabled:NO];
   [self presentRecipeDetailViewController:detailViewController];
 
   OnboardingRecipeDetailViewController *retainedDetailViewController = [detailViewController retain];
+  HomeRecipeCard *retainedRecipeCard = [recipeCard retain];
   OnboardingRecipePreview *retainedPreview = [preview retain];
   [self.dataProvider loadRecipeDetailForRecipeCard:recipeCard completion:^(OnboardingRecipeDetail *detail, BOOL usesLiveData) {
     OnboardingRecipeDetail *resolvedDetail = detail ?: retainedPreview.fallbackDetail;
     OnboardingRecipeDetailDebugOrigin debugOrigin =
         detail != nil && usesLiveData ? OnboardingRecipeDetailDebugOriginLive : OnboardingRecipeDetailDebugOriginFallback;
     [retainedDetailViewController updateWithRecipeDetail:resolvedDetail debugOrigin:debugOrigin];
+    [self configureFavoriteStateForDetailViewController:retainedDetailViewController recipeCard:retainedRecipeCard enabled:YES];
     [retainedDetailViewController release];
+    [retainedRecipeCard release];
     [retainedPreview release];
   }];
 }
@@ -1951,6 +1986,56 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                                              sourceName:recipeCard.sourceName
                                         sourceURLString:recipeCard.sourceURLString
                                          productContext:nil] autorelease];
+}
+
+- (BOOL)favoriteFeatureAvailable {
+  return self.savedRecipesStore != nil && self.session.userID.length > 0;
+}
+
+- (void)configureFavoriteStateForDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController
+                                           recipeCard:(HomeRecipeCard *)recipeCard
+                                              enabled:(BOOL)enabled {
+  detailViewController.showsFavoriteButton = [self favoriteFeatureAvailable];
+  if (!detailViewController.showsFavoriteButton || recipeCard == nil) {
+    return;
+  }
+
+  NSError *lookupError = nil;
+  BOOL isSaved = [self.savedRecipesStore isRecipeSavedForUserID:self.session.userID recipeID:recipeCard.recipeID error:&lookupError];
+  detailViewController.favoriteSelected = lookupError == nil ? isSaved : NO;
+  detailViewController.favoriteButtonEnabled = enabled;
+}
+
+- (HomeRecipeCard *)recipeCardForDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
+  return [self.recipeCardsByDetailController objectForKey:[NSValue valueWithNonretainedObject:detailViewController]];
+}
+
+- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotForRecipeCard:(HomeRecipeCard *)recipeCard
+                                         detailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
+  if (![self favoriteFeatureAvailable] || recipeCard == nil) {
+    return nil;
+  }
+
+  OnboardingRecipeDetail *detail = detailViewController.recipeDetail ?: detailViewController.recipePreview.fallbackDetail;
+  NSError *existingError = nil;
+  MRRSavedRecipeSnapshot *existingSnapshot =
+      [self.savedRecipesStore savedRecipeForUserID:self.session.userID recipeID:recipeCard.recipeID error:&existingError];
+  NSDate *savedAt = existingSnapshot != nil ? existingSnapshot.savedAt : [NSDate date];
+  return [MRRSavedRecipeSnapshot snapshotWithUserID:self.session.userID
+                                         recipeCard:recipeCard
+                                       recipeDetail:detail
+                                            savedAt:savedAt
+                                    localModifiedAt:[NSDate date]];
+}
+
+- (void)presentSavedRecipePersistenceError:(NSError *)error actionTitle:(NSString *)actionTitle {
+  NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription
+                                                            : @"Please try again in a moment.";
+  UIAlertController *alertController =
+      [UIAlertController alertControllerWithTitle:actionTitle message:message preferredStyle:UIAlertControllerStyleAlert];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
+  UIViewController *presenter = self.presentedViewController ?: [self preferredPresenterViewController];
+  [presenter presentViewController:alertController animated:YES completion:nil];
 }
 
 - (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
@@ -2266,11 +2351,41 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
 
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController {
+  [self.recipeCardsByDetailController removeObjectForKey:[NSValue valueWithNonretainedObject:viewController]];
   [self dismissPresentedRecipeDetailIfNeeded];
 }
 
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
+  [self.recipeCardsByDetailController removeObjectForKey:[NSValue valueWithNonretainedObject:viewController]];
   [self dismissPresentedRecipeDetailIfNeeded];
+}
+
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
+          didRequestFavoriteState:(BOOL)favorite {
+  HomeRecipeCard *recipeCard = [self recipeCardForDetailViewController:viewController];
+  if (![self favoriteFeatureAvailable] || recipeCard == nil) {
+    return;
+  }
+
+  viewController.favoriteButtonEnabled = NO;
+  NSError *persistenceError = nil;
+  BOOL didPersist = NO;
+  if (favorite) {
+    MRRSavedRecipeSnapshot *snapshot = [self savedRecipeSnapshotForRecipeCard:recipeCard detailViewController:viewController];
+    didPersist = snapshot != nil && [self.savedRecipesStore saveRecipeSnapshot:snapshot error:&persistenceError];
+  } else {
+    didPersist = [self.savedRecipesStore removeRecipeForUserID:self.session.userID recipeID:recipeCard.recipeID error:&persistenceError];
+  }
+
+  if (!didPersist || persistenceError != nil) {
+    viewController.favoriteButtonEnabled = YES;
+    [self presentSavedRecipePersistenceError:persistenceError actionTitle:(favorite ? @"Couldn't save recipe" : @"Couldn't remove recipe")];
+    return;
+  }
+
+  viewController.favoriteSelected = favorite;
+  viewController.favoriteButtonEnabled = YES;
+  [self.syncEngine requestImmediateSyncForUserID:self.session.userID];
 }
 
 @end
