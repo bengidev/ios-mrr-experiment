@@ -6,6 +6,9 @@
 #import "../MRR Project/Features/Home/HomeViewController.h"
 #import "../MRR Project/Features/MainMenu/MainMenuCoordinator.h"
 #import "../MRR Project/Features/MainMenu/MainMenuTabBarController.h"
+#import "../MRR Project/Persistence/CoreData/MRRCoreDataStack.h"
+#import "../MRR Project/Persistence/SavedRecipes/MRRSavedRecipesStore.h"
+#import "../MRR Project/Persistence/SavedRecipes/Sync/MRRNoOpSavedRecipesSyncEngine.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
 #import "../MRR Project/Features/Profile/ProfileCoordinator.h"
 #import "../MRR Project/Features/Profile/ProfileViewController.h"
@@ -110,10 +113,17 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
 @property(nonatomic, strong) MainMenuAuthenticationControllerSpy *authenticationController;
 @property(nonatomic, strong) MRRAuthSession *session;
+@property(nonatomic, strong) MRRCoreDataStack *coreDataStack;
+@property(nonatomic, strong) MRRSavedRecipesStore *savedRecipesStore;
+@property(nonatomic, strong) MRRNoOpSavedRecipesSyncEngine *syncEngine;
 @property(nonatomic, strong) MainMenuCoordinator *mainMenuCoordinator;
 @property(nonatomic, strong) MainMenuTabBarController *tabBarController;
 @property(nonatomic, strong) UIWindow *window;
 
+- (void)seedSavedRecipes;
+- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotWithRecipeID:(NSString *)recipeID
+                                                     title:(NSString *)title
+                                                  subtitle:(NSString *)subtitle;
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
 - (UIColor *)resolvedColor:(UIColor *)color forTraitCollection:(UITraitCollection *)traitCollection;
@@ -136,7 +146,18 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
                                            providerType:MRRAuthProviderTypeGoogle
                                           emailVerified:YES];
   self.authenticationController.stubSession = self.session;
-  self.mainMenuCoordinator = [[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController session:self.session];
+  NSError *coreDataError = nil;
+  self.coreDataStack = [[MRRCoreDataStack alloc] initWithInMemoryStore:YES error:&coreDataError];
+  XCTAssertNil(coreDataError);
+  XCTAssertNotNil(self.coreDataStack);
+  self.savedRecipesStore = [[MRRSavedRecipesStore alloc] initWithCoreDataStack:self.coreDataStack];
+  self.syncEngine = [[MRRNoOpSavedRecipesSyncEngine alloc] init];
+  [self seedSavedRecipes];
+  self.mainMenuCoordinator = [[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController
+                                                                                   session:self.session
+                                                                          savedRecipesStore:self.savedRecipesStore
+                                                                                syncEngine:self.syncEngine
+                                                                           logoutController:nil];
   self.tabBarController = (MainMenuTabBarController *)[self.mainMenuCoordinator rootViewController];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.tabBarController;
@@ -149,6 +170,9 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   self.window = nil;
   self.tabBarController = nil;
   self.mainMenuCoordinator = nil;
+  self.syncEngine = nil;
+  self.savedRecipesStore = nil;
+  self.coreDataStack = nil;
   self.session = nil;
   self.authenticationController = nil;
 
@@ -281,11 +305,11 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   UIView *savedView = savedNavigationController.topViewController.view;
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionsStack" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.salad" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.dessert" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.mainCourse" inView:savedView]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.breakfast" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.soup" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.lunch" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.dessert" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.dinner" inView:savedView]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.snack" inView:savedView]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
 }
@@ -361,6 +385,118 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   });
 
   [self waitForExpectations:@[ transitionExpectation ] timeout:1.0];
+}
+
+- (void)testSavedTabRefreshesWhenStorePostsChangeNotification {
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  SavedViewController *savedViewController = (SavedViewController *)savedNavigationController.topViewController;
+  [savedViewController loadViewIfNeeded];
+
+  UIView *savedView = savedViewController.view;
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.chiliCrunchEggs" inView:savedView]);
+
+  NSError *saveError = nil;
+  XCTAssertTrue([self.savedRecipesStore saveRecipeSnapshot:[self savedRecipeSnapshotWithRecipeID:@"chiliCrunchEggs"
+                                                                                           title:@"Chili Crunch Eggs"
+                                                                                        subtitle:@"Fast breakfast bowl"]
+                                                     error:&saveError]);
+  XCTAssertNil(saveError);
+
+  XCTestExpectation *refreshExpectation = [self expectationWithDescription:@"Saved tab reacts to store notification"];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    [savedView layoutIfNeeded];
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.chiliCrunchEggs" inView:savedView]);
+    [refreshExpectation fulfill];
+  });
+
+  [self waitForExpectations:@[ refreshExpectation ] timeout:1.0];
+}
+
+- (void)testSavedTabReloadsFromStoreWhenItBecomesVisibleAgain {
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  SavedViewController *savedViewController = (SavedViewController *)savedNavigationController.topViewController;
+  [savedViewController loadViewIfNeeded];
+
+  UIView *savedView = savedViewController.view;
+  [[NSNotificationCenter defaultCenter] removeObserver:savedViewController
+                                                  name:MRRSavedRecipesStoreDidChangeNotification
+                                                object:self.savedRecipesStore];
+
+  NSError *saveError = nil;
+  XCTAssertTrue([self.savedRecipesStore saveRecipeSnapshot:[self savedRecipeSnapshotWithRecipeID:@"roastedTomatoes"
+                                                                                           title:@"Roasted Tomato Toast"
+                                                                                        subtitle:@"Savory morning bite"]
+                                                     error:&saveError]);
+  XCTAssertNil(saveError);
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.roastedTomatoes" inView:savedView]);
+
+  [savedViewController viewWillAppear:NO];
+  [savedView layoutIfNeeded];
+
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.roastedTomatoes" inView:savedView]);
+}
+
+- (void)seedSavedRecipes {
+  NSError *saveError = nil;
+  XCTAssertTrue([self.savedRecipesStore saveRecipeSnapshot:[self savedRecipeSnapshotWithRecipeID:@"caesarCrunch"
+                                                                                           title:@"Garden Caesar Crunch"
+                                                                                        subtitle:@"Crisp lunch favorite"]
+                                                     error:&saveError]);
+  XCTAssertNil(saveError);
+  XCTAssertTrue([self.savedRecipesStore saveRecipeSnapshot:[self savedRecipeSnapshotWithRecipeID:@"spinachFeta"
+                                                                                           title:@"Spinach & Blueberry Feta Salad"
+                                                                                        subtitle:@"Bright bowl for warm days"]
+                                                     error:&saveError]);
+  XCTAssertNil(saveError);
+}
+
+- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotWithRecipeID:(NSString *)recipeID
+                                                     title:(NSString *)title
+                                                  subtitle:(NSString *)subtitle {
+  HomeRecipeCard *recipeCard = [[HomeRecipeCard alloc] initWithRecipeID:recipeID
+                                                                  title:title
+                                                               subtitle:subtitle
+                                                              assetName:@"avocado-toast"
+                                                         imageURLString:nil
+                                                            summaryText:@"Persisted saved recipe for tab tests."
+                                                         readyInMinutes:20
+                                                               servings:2
+                                                           calorieCount:390
+                                                        popularityScore:120
+                                                             sourceName:@"MRR Tests"
+                                                        sourceURLString:@"https://example.com/saved"
+                                                               mealType:HomeCategoryIdentifierBreakfast
+                                                                   tags:@[ @"Breakfast", @"Fresh" ]];
+  OnboardingRecipeIngredient *ingredientOne =
+      [[OnboardingRecipeIngredient alloc] initWithName:@"Sourdough" displayText:@"2 slices sourdough"];
+  OnboardingRecipeIngredient *ingredientTwo =
+      [[OnboardingRecipeIngredient alloc] initWithName:@"Avocado" displayText:@"1 ripe avocado"];
+  OnboardingRecipeInstruction *instructionOne =
+      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Toast the bread until golden."];
+  OnboardingRecipeInstruction *instructionTwo =
+      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2" detailText:@"Top with avocado and finish."];
+  OnboardingRecipeDetail *detail =
+      [[OnboardingRecipeDetail alloc] initWithTitle:title
+                                           subtitle:subtitle
+                                          assetName:@"avocado-toast"
+                                 heroImageURLString:nil
+                                       durationText:@"20 mins"
+                                        calorieText:@"390 kcal"
+                                       servingsText:@"2 servings"
+                                        summaryText:@"Persisted saved recipe for tab tests."
+                                        ingredients:@[ ingredientOne, ingredientTwo ]
+                                       instructions:@[ instructionOne, instructionTwo ]
+                                              tools:@[ @"Skillet", @"Mixing bowl" ]
+                                               tags:@[ @"Breakfast", @"Fresh" ]
+                                         sourceName:@"MRR Tests"
+                                    sourceURLString:@"https://example.com/saved"
+                                     productContext:nil];
+  NSDate *savedAt = [NSDate dateWithTimeIntervalSince1970:1700000100.0];
+  return [MRRSavedRecipeSnapshot snapshotWithUserID:self.session.userID
+                                         recipeCard:recipeCard
+                                       recipeDetail:detail
+                                            savedAt:savedAt
+                                    localModifiedAt:[savedAt dateByAddingTimeInterval:15.0]];
 }
 
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index {
