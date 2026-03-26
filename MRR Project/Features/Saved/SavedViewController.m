@@ -1,6 +1,8 @@
 #import "SavedViewController.h"
 
-#import "../Onboarding/Data/OnboardingRecipeModels.h"
+#import "../../Persistence/SavedRecipes/MRRSavedRecipesStore.h"
+#import "../../Persistence/SavedRecipes/Models/MRRSavedRecipeSnapshot.h"
+#import "../../Persistence/SavedRecipes/Sync/MRRSavedRecipesCloudSyncing.h"
 #import "../Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
 
 static UIColor *MRRSavedDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
@@ -46,14 +48,6 @@ static UIColor *MRRSavedSecondaryTextColor(void) {
   return MRRSavedNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.45 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0]);
 }
 
-static UIColor *MRRSavedDividerColor(void) {
-  return MRRSavedBorderColor();
-}
-
-static UIColor *MRRSavedChipFillColor(void) {
-  return MRRSavedMutedSurfaceColor();
-}
-
 static UIColor *MRRSavedHeartBubbleColor(void) {
   return MRRSavedNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
                             [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
@@ -83,247 +77,127 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
   return nil;
 }
 
-static OnboardingRecipeInstruction *MRRSavedInstruction(NSString *title, NSString *detailText) {
-  return [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:detailText] autorelease];
-}
-
-static OnboardingRecipeIngredient *MRRSavedIngredient(NSString *text) {
-  return [[[OnboardingRecipeIngredient alloc] initWithName:text displayText:text] autorelease];
-}
-
-static NSArray<OnboardingRecipeIngredient *> *MRRSavedIngredients(NSArray<NSString *> *items) {
-  NSMutableArray<OnboardingRecipeIngredient *> *ingredients = [NSMutableArray arrayWithCapacity:items.count];
-  for (NSString *item in items) {
-    [ingredients addObject:MRRSavedIngredient(item)];
-  }
-
-  return ingredients;
-}
-
-static OnboardingRecipeDetail *MRRSavedDetail(NSString *title,
-                                              NSString *subtitle,
-                                              NSString *assetName,
-                                              NSString *durationText,
-                                              NSString *calorieText,
-                                              NSString *servingsText,
-                                              NSString *summaryText,
-                                              NSArray<NSString *> *ingredients,
-                                              NSArray<OnboardingRecipeInstruction *> *instructions,
-                                              NSArray<NSString *> *tools,
-                                              NSArray<NSString *> *tags) {
-  return [[[OnboardingRecipeDetail alloc] initWithTitle:title
-                                               subtitle:subtitle
-                                              assetName:assetName
-                                     heroImageURLString:nil
-                                           durationText:durationText
-                                            calorieText:calorieText
-                                           servingsText:servingsText
-                                            summaryText:summaryText
-                                            ingredients:MRRSavedIngredients(ingredients)
-                                           instructions:instructions
-                                                  tools:tools ?: @[]
-                                                   tags:tags ?: @[]
-                                             sourceName:nil
-                                        sourceURLString:nil
-                                         productContext:nil] autorelease];
-}
-
-static OnboardingRecipePreview *MRRSavedPreview(NSString *title,
-                                                NSString *subtitle,
-                                                NSString *assetName,
-                                                OnboardingRecipeDetail *fallbackDetail) {
-  return [[[OnboardingRecipePreview alloc] initWithTitle:title
-                                                subtitle:subtitle
-                                               assetName:assetName
-                                    openFoodFactsBarcode:nil
-                                          fallbackDetail:fallbackDetail] autorelease];
-}
-
-static NSDictionary<NSString *, id> *MRRSavedRecipe(NSString *identifier,
-                                                    NSString *title,
-                                                    NSString *assetName,
-                                                    NSString *durationText,
-                                                    NSString *popularityText,
-                                                    OnboardingRecipePreview *preview) {
-  return @{
-    @"identifier" : identifier,
-    @"title" : title,
-    @"assetName" : assetName,
-    @"durationText" : durationText,
-    @"popularityText" : popularityText,
-    @"preview" : preview
-  };
-}
-
-static NSDictionary<NSString *, id> *MRRSavedSection(NSString *identifier,
-                                                     NSString *title,
-                                                     NSString *countText,
-                                                     NSArray<NSDictionary<NSString *, id> *> *recipes) {
-  return @{
-    @"identifier" : identifier,
-    @"title" : title,
-    @"countText" : countText,
-    @"recipes" : recipes
-  };
-}
-
-static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
-  static NSArray<NSDictionary<NSString *, id> *> *sections = nil;
+static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescriptors(void) {
+  static NSArray<NSDictionary<NSString *, NSString *> *> *descriptors = nil;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    sections = [@[
-      MRRSavedSection(@"salad", @"Salad", @"2", @[
-        MRRSavedRecipe(
-            @"caesarCrunch",
-            @"Garden Caesar Crunch",
-            @"avocado-toast",
-            @"20 mins",
-            @"140k views",
-            MRRSavedPreview(
-                @"Garden Caesar Crunch",
-                @"Crisp lunch favorite",
-                @"avocado-toast",
-                MRRSavedDetail(
-                    @"Garden Caesar Crunch",
-                    @"Crisp lunch favorite",
-                    @"avocado-toast",
-                    @"20 min",
-                    @"390 kcal",
-                    @"2 servings",
-                    @"A creamy Caesar-style avocado spread, crunchy toast, and a bright herb finish make this saved recipe "
-                    @"feel light, savory, and satisfying enough for a quick lunch.",
-                    @[ @"2 slices sourdough", @"1 ripe avocado", @"2 eggs", @"1 small romaine heart", @"2 tbsp Caesar dressing",
-                       @"Parmesan", @"Lemon zest", @"Black pepper" ],
-                    @[
-                      MRRSavedInstruction(@"Toast for contrast",
-                                          @"Cook the sourdough until golden so it stays crisp under the creamy topping."),
-                      MRRSavedInstruction(@"Build the Caesar layer",
-                                          @"Mash avocado with Caesar dressing, lemon zest, and pepper until glossy and smooth."),
-                      MRRSavedInstruction(@"Finish with crunch",
-                                          @"Top the toast with eggs, shaved romaine, and Parmesan for a bright, crunchy bite.")
-                    ],
-                    @[ @"Skillet", @"Mixing bowl", @"Chef knife" ],
-                    @[ @"Lunch", @"Quick", @"Fresh" ]))),
-        MRRSavedRecipe(
-            @"spinachFeta",
-            @"Spinach & Blueberry Feta Salad",
-            @"greek-salad",
-            @"15 mins",
-            @"120k views",
-            MRRSavedPreview(
-                @"Spinach & Blueberry Feta Salad",
-                @"Bright bowl for warm days",
-                @"greek-salad",
-                MRRSavedDetail(
-                    @"Spinach & Blueberry Feta Salad",
-                    @"Bright bowl for warm days",
-                    @"greek-salad",
-                    @"15 min",
-                    @"310 kcal",
-                    @"2 servings",
-                    @"Sweet blueberries, cool cucumber, and salty feta come together in a refreshing salad that still feels "
-                    @"substantial thanks to crisp greens and a citrusy dressing.",
-                    @[ @"Baby spinach", @"Blueberries", @"Cucumber", @"Cherry tomatoes", @"Red onion", @"Feta", @"Olive oil",
-                       @"Lemon juice" ],
-                    @[
-                      MRRSavedInstruction(@"Layer the base",
-                                          @"Start with spinach, cucumber, and tomatoes so the bowl feels fresh and structured."),
-                      MRRSavedInstruction(@"Balance the flavor",
-                                          @"Whisk olive oil with lemon juice and a pinch of salt for a light, sharp dressing."),
-                      MRRSavedInstruction(@"Fold in the finish",
-                                          @"Add blueberries and feta at the end so the salad keeps its color and texture.")
-                    ],
-                    @[ @"Salad bowl", @"Small whisk", @"Cutting board" ],
-                    @[ @"Salad", @"Vegetarian", @"No-Cook" ])))
-      ]),
-      MRRSavedSection(@"dessert", @"Dessert", @"10", @[]),
-      MRRSavedSection(@"mainCourse", @"Main Course", @"4", @[]),
-      MRRSavedSection(@"breakfast", @"Breakfast", @"2", @[]),
-      MRRSavedSection(@"soup", @"Soup", @"5", @[])
-    ] retain];
+    descriptors = [[NSArray alloc] initWithObjects:
+                                 @{ @"identifier" : MRRSavedRecipeMealTypeBreakfast, @"title" : @"Breakfast" },
+                                 @{ @"identifier" : MRRSavedRecipeMealTypeLunch, @"title" : @"Lunch" },
+                                 @{ @"identifier" : MRRSavedRecipeMealTypeDinner, @"title" : @"Dinner" },
+                                 @{ @"identifier" : MRRSavedRecipeMealTypeDessert, @"title" : @"Dessert" },
+                                 @{ @"identifier" : MRRSavedRecipeMealTypeSnack, @"title" : @"Snack" },
+                                 nil];
   });
 
-  return sections;
+  return descriptors;
 }
 
 @interface SavedViewController () <OnboardingRecipeDetailViewControllerDelegate>
 
+@property(nonatomic, copy, nullable) NSString *sessionUserID;
+@property(nonatomic, retain, nullable) MRRSavedRecipesStore *savedRecipesStore;
+@property(nonatomic, retain, nullable) id<MRRSavedRecipesCloudSyncing> syncEngine;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *sectionsStackView;
-@property(nonatomic, retain) NSMutableSet<NSString *> *savedRecipeIdentifiers;
-@property(nonatomic, copy) NSString *expandedSectionIdentifier;
+@property(nonatomic, copy) NSArray<NSDictionary<NSString *, id> *> *sections;
+@property(nonatomic, copy, nullable) NSString *expandedSectionIdentifier;
+@property(nonatomic, copy, nullable) NSString *presentedRecipeIdentifier;
 
 - (void)buildViewHierarchy;
+- (void)loadSectionsFromStore;
 - (void)reloadSections;
-- (NSArray<NSDictionary<NSString *, id> *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section;
+- (NSArray<MRRSavedRecipeSnapshot *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section;
 - (NSString *)countTextForSection:(NSDictionary<NSString *, id> *)section;
 - (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section
                           atIndex:(NSUInteger)index
                          expanded:(BOOL)expanded;
-- (UIView *)recipeCardViewForRecipe:(NSDictionary<NSString *, id> *)recipe;
-- (UIButton *)favoriteButtonForRecipe:(NSDictionary<NSString *, id> *)recipe;
+- (UIView *)recipeCardViewForRecipe:(MRRSavedRecipeSnapshot *)recipe;
+- (UIButton *)favoriteButtonForRecipe:(MRRSavedRecipeSnapshot *)recipe;
 - (UIView *)chipViewWithText:(NSString *)text;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
-- (nullable NSDictionary<NSString *, id> *)recipeForIdentifier:(NSString *)recipeIdentifier;
-- (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved;
+- (nullable MRRSavedRecipeSnapshot *)snapshotForRecipeIdentifier:(NSString *)recipeIdentifier;
+- (void)applyFavoriteButtonAppearance:(UIButton *)button recipe:(MRRSavedRecipeSnapshot *)recipe;
 - (void)configurePressFeedbackForControl:(UIControl *)control;
 - (nullable NSString *)recipeIdentifierForCardControl:(UIControl *)control;
-- (NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button;
-- (NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier;
-- (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title saved:(BOOL)saved;
-- (void)presentRecipeDetailForRecipe:(NSDictionary<NSString *, id> *)recipe;
+- (nullable NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button;
+- (nullable NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier;
+- (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title;
+- (void)presentRecipeDetailForSnapshot:(MRRSavedRecipeSnapshot *)snapshot;
 - (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController;
+- (BOOL)removeRecipeWithIdentifier:(NSString *)recipeIdentifier dismissIfPresented:(BOOL)dismissIfPresented;
+- (void)presentPersistenceError:(NSError *)error title:(NSString *)title;
+- (void)animateReloadSectionsWithAnnouncement:(nullable NSString *)announcement;
 - (void)handleRecipeCardTapped:(UIControl *)sender;
 - (void)handleFavoriteButtonTapped:(UIButton *)sender;
 - (void)handlePressableControlTouchDown:(UIControl *)sender;
 - (void)handlePressableControlTouchUp:(UIControl *)sender;
 - (void)handleSectionTapped:(UIControl *)sender;
+- (void)savedRecipesStoreDidChange:(NSNotification *)notification;
 
 @end
 
 @implementation SavedViewController
 
 - (instancetype)init {
-  return [super initWithNibName:nil bundle:nil];
+  return [self initWithSessionUserID:nil savedRecipesStore:nil syncEngine:nil];
+}
+
+- (instancetype)initWithSessionUserID:(NSString *)sessionUserID
+                     savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                           syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
+  self = [super initWithNibName:nil bundle:nil];
+  if (self) {
+    _sessionUserID = [sessionUserID copy];
+    _savedRecipesStore = [savedRecipesStore retain];
+    _syncEngine = [syncEngine retain];
+    _sections = [[NSArray alloc] init];
+  }
+
+  return self;
 }
 
 - (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_presentedRecipeIdentifier release];
   [_expandedSectionIdentifier release];
-  [_savedRecipeIdentifiers release];
+  [_sections release];
   [_sectionsStackView release];
   [_contentView release];
   [_scrollView release];
+  [_syncEngine release];
+  [_savedRecipesStore release];
+  [_sessionUserID release];
   [super dealloc];
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  NSMutableSet<NSString *> *savedRecipeIdentifiers = [NSMutableSet set];
-  for (NSDictionary<NSString *, id> *section in MRRSavedSections()) {
-    for (NSDictionary<NSString *, id> *recipe in section[@"recipes"]) {
-      NSString *identifier = recipe[@"identifier"];
-      if (identifier.length > 0) {
-        [savedRecipeIdentifiers addObject:identifier];
-      }
-    }
-  }
-  self.savedRecipeIdentifiers = savedRecipeIdentifiers;
-  self.expandedSectionIdentifier = @"salad";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
   }
   self.view.accessibilityIdentifier = @"saved.view";
   self.view.backgroundColor = MRRSavedCanvasColor();
 
+  if (self.savedRecipesStore != nil) {
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(savedRecipesStoreDidChange:)
+                                                 name:MRRSavedRecipesStoreDidChangeNotification
+                                               object:self.savedRecipesStore];
+  }
+
   [self buildViewHierarchy];
+  [self loadSectionsFromStore];
   [self reloadSections];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
   [self.navigationController setNavigationBarHidden:YES animated:animated];
+  [self loadSectionsFromStore];
+  [self reloadSections];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -375,6 +249,52 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   ]];
 }
 
+- (void)loadSectionsFromStore {
+  NSMutableDictionary<NSString *, NSMutableArray<MRRSavedRecipeSnapshot *> *> *recipesByIdentifier = [NSMutableDictionary dictionary];
+  for (NSDictionary<NSString *, NSString *> *descriptor in MRRSavedSectionDescriptors()) {
+    recipesByIdentifier[descriptor[@"identifier"]] = [NSMutableArray array];
+  }
+
+  NSArray<MRRSavedRecipeSnapshot *> *snapshots = @[];
+  if (self.savedRecipesStore != nil && self.sessionUserID.length > 0) {
+    NSError *fetchError = nil;
+    NSArray<MRRSavedRecipeSnapshot *> *fetchedSnapshots = [self.savedRecipesStore savedRecipesForUserID:self.sessionUserID error:&fetchError];
+    if (fetchError == nil && fetchedSnapshots != nil) {
+      snapshots = fetchedSnapshots;
+    }
+  }
+
+  for (MRRSavedRecipeSnapshot *snapshot in snapshots) {
+    NSString *sectionIdentifier = snapshot.sectionIdentifier.length > 0 ? snapshot.sectionIdentifier : MRRSavedRecipeMealTypeSnack;
+    NSMutableArray<MRRSavedRecipeSnapshot *> *recipes = recipesByIdentifier[sectionIdentifier];
+    if (recipes == nil) {
+      recipes = recipesByIdentifier[MRRSavedRecipeMealTypeSnack];
+    }
+    [recipes addObject:snapshot];
+  }
+
+  NSMutableArray<NSDictionary<NSString *, id> *> *sectionModels = [NSMutableArray array];
+  NSString *firstNonEmptySectionIdentifier = nil;
+  for (NSDictionary<NSString *, NSString *> *descriptor in MRRSavedSectionDescriptors()) {
+    NSArray<MRRSavedRecipeSnapshot *> *recipes = recipesByIdentifier[descriptor[@"identifier"]] ?: @[];
+    if (firstNonEmptySectionIdentifier == nil && recipes.count > 0) {
+      firstNonEmptySectionIdentifier = descriptor[@"identifier"];
+    }
+
+    [sectionModels addObject:@{
+      @"identifier" : descriptor[@"identifier"],
+      @"title" : descriptor[@"title"],
+      @"recipes" : recipes
+    }];
+  }
+
+  self.sections = sectionModels;
+  NSArray<NSString *> *validIdentifiers = [self.sections valueForKey:@"identifier"];
+  if (self.expandedSectionIdentifier.length == 0 || ![validIdentifiers containsObject:self.expandedSectionIdentifier]) {
+    self.expandedSectionIdentifier = firstNonEmptySectionIdentifier ?: MRRSavedRecipeMealTypeBreakfast;
+  }
+}
+
 - (void)reloadSections {
   while (self.sectionsStackView.arrangedSubviews.count > 0) {
     UIView *subview = self.sectionsStackView.arrangedSubviews.firstObject;
@@ -382,37 +302,18 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
     [subview removeFromSuperview];
   }
 
-  NSArray<NSDictionary<NSString *, id> *> *sections = MRRSavedSections();
-  for (NSUInteger index = 0; index < sections.count; index += 1) {
-    NSDictionary<NSString *, id> *section = sections[index];
-    NSString *identifier = section[@"identifier"];
-    BOOL expanded = [self.expandedSectionIdentifier isEqualToString:identifier];
+  for (NSUInteger index = 0; index < self.sections.count; index += 1) {
+    NSDictionary<NSString *, id> *section = self.sections[index];
+    BOOL expanded = [self.expandedSectionIdentifier isEqualToString:section[@"identifier"]];
     [self.sectionsStackView addArrangedSubview:[self sectionViewForSection:section atIndex:index expanded:expanded]];
   }
 }
 
-- (NSArray<NSDictionary<NSString *, id> *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section {
-  NSArray<NSDictionary<NSString *, id> *> *recipes = section[@"recipes"];
-  if (recipes.count == 0) {
-    return recipes;
-  }
-
-  NSMutableArray<NSDictionary<NSString *, id> *> *visibleRecipes = [NSMutableArray arrayWithCapacity:recipes.count];
-  for (NSDictionary<NSString *, id> *recipe in recipes) {
-    if ([self.savedRecipeIdentifiers containsObject:recipe[@"identifier"]]) {
-      [visibleRecipes addObject:recipe];
-    }
-  }
-
-  return visibleRecipes;
+- (NSArray<MRRSavedRecipeSnapshot *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section {
+  return section[@"recipes"] ?: @[];
 }
 
 - (NSString *)countTextForSection:(NSDictionary<NSString *, id> *)section {
-  NSArray<NSDictionary<NSString *, id> *> *recipes = section[@"recipes"];
-  if (recipes.count == 0) {
-    return section[@"countText"];
-  }
-
   return [NSString stringWithFormat:@"%lu", (unsigned long)[self visibleRecipesForSection:section].count];
 }
 
@@ -454,7 +355,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
-  dividerView.backgroundColor = MRRSavedDividerColor();
+  dividerView.backgroundColor = MRRSavedBorderColor();
   [containerView addSubview:dividerView];
 
   NSMutableArray<NSLayoutConstraint *> *constraints = [NSMutableArray arrayWithArray:@[
@@ -482,7 +383,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
     [dividerView.heightAnchor constraintEqualToConstant:1.0]
   ]];
 
-  NSArray<NSDictionary<NSString *, id> *> *recipes = [self visibleRecipesForSection:section];
+  NSArray<MRRSavedRecipeSnapshot *> *recipes = [self visibleRecipesForSection:section];
   if (expanded) {
     UIView *contentContainer = [[[UIView alloc] init] autorelease];
     contentContainer.translatesAutoresizingMaskIntoConstraints = NO;
@@ -504,7 +405,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
       cardsStackView.distribution = UIStackViewDistributionFillEqually;
       [contentContainer addSubview:cardsStackView];
 
-      for (NSDictionary<NSString *, id> *recipe in recipes) {
+      for (MRRSavedRecipeSnapshot *recipe in recipes) {
         [cardsStackView addArrangedSubview:[self recipeCardViewForRecipe:recipe]];
       }
 
@@ -520,7 +421,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
       placeholderView.backgroundColor = MRRSavedSurfaceColor();
       placeholderView.layer.cornerRadius = 24.0;
       placeholderView.layer.borderWidth = 1.0;
-      placeholderView.layer.borderColor = [MRRSavedDividerColor() CGColor];
+      placeholderView.layer.borderColor = [MRRSavedBorderColor() CGColor];
       [contentContainer addSubview:placeholderView];
 
       UILabel *placeholderLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
@@ -528,8 +429,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
       placeholderLabel.translatesAutoresizingMaskIntoConstraints = NO;
       placeholderLabel.numberOfLines = 0;
       placeholderLabel.textAlignment = NSTextAlignmentCenter;
-      placeholderLabel.text = [NSString stringWithFormat:@"Your %@ collection is ready for the next recipe worth keeping.",
-                                                          [section[@"title"] lowercaseString]];
+      placeholderLabel.text = [NSString stringWithFormat:@"No saved %@ recipes yet.", [section[@"title"] lowercaseString]];
       [placeholderView addSubview:placeholderLabel];
 
       [constraints addObjectsFromArray:@[
@@ -553,7 +453,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   return containerView;
 }
 
-- (UIView *)recipeCardViewForRecipe:(NSDictionary<NSString *, id> *)recipe {
+- (UIView *)recipeCardViewForRecipe:(MRRSavedRecipeSnapshot *)recipe {
   UIView *cardView = [[[UIView alloc] init] autorelease];
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
   cardView.backgroundColor = [UIColor clearColor];
@@ -562,8 +462,8 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 
   UIControl *cardControl = [[[UIControl alloc] init] autorelease];
   cardControl.translatesAutoresizingMaskIntoConstraints = NO;
-  cardControl.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedRecipeCardIdentifierPrefix, recipe[@"identifier"]];
-  cardControl.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe[@"title"], recipe[@"durationText"], recipe[@"popularityText"]];
+  cardControl.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedRecipeCardIdentifierPrefix, recipe.recipeID];
+  cardControl.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipe.title, recipe.durationText, recipe.servingsText];
   cardControl.accessibilityHint = @"Double tap to view recipe details.";
   cardControl.accessibilityTraits = UIAccessibilityTraitButton;
   [cardControl addTarget:self action:@selector(handleRecipeCardTapped:) forControlEvents:UIControlEventTouchUpInside];
@@ -579,7 +479,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   imageContainerView.userInteractionEnabled = NO;
   [cardControl addSubview:imageContainerView];
 
-  UIImageView *imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:recipe[@"assetName"]]] autorelease];
+  UIImageView *imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:recipe.assetName]] autorelease];
   imageView.translatesAutoresizingMaskIntoConstraints = NO;
   imageView.contentMode = UIViewContentModeScaleAspectFill;
   imageView.clipsToBounds = YES;
@@ -594,7 +494,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   titleLabel.numberOfLines = 2;
   titleLabel.adjustsFontForContentSizeCategory = YES;
-  titleLabel.text = recipe[@"title"];
+  titleLabel.text = recipe.title;
   titleLabel.isAccessibilityElement = NO;
   [cardControl addSubview:titleLabel];
 
@@ -605,8 +505,8 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   chipsStackView.alignment = UIStackViewAlignmentLeading;
   chipsStackView.isAccessibilityElement = NO;
   chipsStackView.userInteractionEnabled = NO;
-  [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"durationText"]]];
-  [chipsStackView addArrangedSubview:[self chipViewWithText:recipe[@"popularityText"]]];
+  [chipsStackView addArrangedSubview:[self chipViewWithText:recipe.durationText]];
+  [chipsStackView addArrangedSubview:[self chipViewWithText:recipe.calorieText]];
   [cardControl addSubview:chipsStackView];
   cardView.accessibilityElements = @[ cardControl, favoriteButton ];
 
@@ -644,11 +544,10 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   return cardView;
 }
 
-- (UIButton *)favoriteButtonForRecipe:(NSDictionary<NSString *, id> *)recipe {
+- (UIButton *)favoriteButtonForRecipe:(MRRSavedRecipeSnapshot *)recipe {
   UIButton *favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
-  NSString *recipeIdentifier = recipe[@"identifier"];
   favoriteButton.translatesAutoresizingMaskIntoConstraints = NO;
-  favoriteButton.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedFavoriteButtonIdentifierPrefix, recipeIdentifier];
+  favoriteButton.accessibilityIdentifier = [NSString stringWithFormat:@"%@%@", MRRSavedFavoriteButtonIdentifierPrefix, recipe.recipeID];
   favoriteButton.contentEdgeInsets = UIEdgeInsetsMake(10.0, 12.0, 10.0, 14.0);
   favoriteButton.imageEdgeInsets = UIEdgeInsetsMake(0.0, -1.0, 0.0, 1.0);
   favoriteButton.titleEdgeInsets = UIEdgeInsetsMake(0.0, 6.0, 0.0, -6.0);
@@ -668,18 +567,14 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   favoriteButton.adjustsImageWhenHighlighted = NO;
   [favoriteButton addTarget:self action:@selector(handleFavoriteButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForControl:favoriteButton];
-  if (recipeIdentifier.length > 0 && ![self.savedRecipeIdentifiers containsObject:recipeIdentifier]) {
-    [self.savedRecipeIdentifiers addObject:recipeIdentifier];
-  }
-  favoriteButton.selected = YES;
-  [self applyFavoriteButtonAppearance:favoriteButton saved:YES];
+  [self applyFavoriteButtonAppearance:favoriteButton recipe:recipe];
   return favoriteButton;
 }
 
 - (UIView *)chipViewWithText:(NSString *)text {
   UIView *chipView = [[[UIView alloc] init] autorelease];
   chipView.translatesAutoresizingMaskIntoConstraints = NO;
-  chipView.backgroundColor = MRRSavedChipFillColor();
+  chipView.backgroundColor = MRRSavedMutedSurfaceColor();
   chipView.layer.cornerRadius = 14.0;
   chipView.isAccessibilityElement = NO;
   chipView.userInteractionEnabled = NO;
@@ -708,14 +603,14 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   return label;
 }
 
-- (NSDictionary<NSString *, id> *)recipeForIdentifier:(NSString *)recipeIdentifier {
+- (MRRSavedRecipeSnapshot *)snapshotForRecipeIdentifier:(NSString *)recipeIdentifier {
   if (recipeIdentifier.length == 0) {
     return nil;
   }
 
-  for (NSDictionary<NSString *, id> *section in MRRSavedSections()) {
-    for (NSDictionary<NSString *, id> *recipe in section[@"recipes"]) {
-      if ([recipe[@"identifier"] isEqualToString:recipeIdentifier]) {
+  for (NSDictionary<NSString *, id> *section in self.sections) {
+    for (MRRSavedRecipeSnapshot *recipe in section[@"recipes"]) {
+      if ([recipe.recipeID isEqualToString:recipeIdentifier]) {
         return recipe;
       }
     }
@@ -724,27 +619,38 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   return nil;
 }
 
-- (void)applyFavoriteButtonAppearance:(UIButton *)button saved:(BOOL)saved {
+- (void)applyFavoriteButtonAppearance:(UIButton *)button recipe:(MRRSavedRecipeSnapshot *)recipe {
   UIColor *accentColor = MRRSavedHeartBubbleColor();
-  UIColor *foregroundColor = saved ? [UIColor whiteColor] : accentColor;
-  NSString *recipeTitle = [self recipeTitleForIdentifier:[self recipeIdentifierForFavoriteButton:button]] ?: @"recipe";
-  button.selected = saved;
-  button.backgroundColor = saved ? accentColor : MRRSavedHeartButtonInactiveBackgroundColor();
-  button.tintColor = foregroundColor;
-  button.layer.borderColor = (saved ? [[UIColor whiteColor] colorWithAlphaComponent:0.18] : [accentColor colorWithAlphaComponent:0.24]).CGColor;
-  button.layer.shadowOpacity = saved ? 0.16f : 0.10f;
-  button.layer.shadowRadius = saved ? 16.0f : 12.0f;
-  button.layer.shadowOffset = saved ? CGSizeMake(0.0, 10.0) : CGSizeMake(0.0, 8.0);
-  [button setTitle:(saved ? @"Saved" : @"Save") forState:UIControlStateNormal];
-  [button setTitle:(saved ? @"Saved" : @"Save") forState:UIControlStateHighlighted];
-  [button setTitleColor:foregroundColor forState:UIControlStateNormal];
-  [button setTitleColor:[foregroundColor colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
-  [button setImage:MRRSavedSymbolImage(saved ? @"heart.fill" : @"heart", 17.0, saved ? UIFontWeightBold : UIFontWeightSemibold)
-          forState:UIControlStateNormal];
-  button.accessibilityTraits = UIAccessibilityTraitButton | (saved ? UIAccessibilityTraitSelected : 0);
-  button.accessibilityLabel = [self favoriteButtonAccessibilityLabelForTitle:recipeTitle saved:saved];
-  button.accessibilityValue = saved ? @"Saved" : @"Not saved";
-  button.accessibilityHint = saved ? @"Double tap to remove this recipe from your saved list." : @"Double tap to save this recipe.";
+  NSString *recipeTitle = recipe.title.length > 0 ? recipe.title : @"recipe";
+  button.selected = YES;
+  button.backgroundColor = accentColor;
+  button.tintColor = [UIColor whiteColor];
+  button.layer.borderColor = [[UIColor whiteColor] colorWithAlphaComponent:0.18].CGColor;
+  button.layer.shadowOpacity = 0.16f;
+  button.layer.shadowRadius = 16.0f;
+  button.layer.shadowOffset = CGSizeMake(0.0, 10.0);
+  [button setTitle:@"Saved" forState:UIControlStateNormal];
+  [button setTitle:@"Saved" forState:UIControlStateHighlighted];
+  [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  [button setTitleColor:[[UIColor whiteColor] colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
+  [button setImage:MRRSavedSymbolImage(@"heart.fill", 17.0, UIFontWeightBold) forState:UIControlStateNormal];
+  button.accessibilityTraits = UIAccessibilityTraitButton | UIAccessibilityTraitSelected;
+  button.accessibilityLabel = [self favoriteButtonAccessibilityLabelForTitle:recipeTitle];
+  button.accessibilityValue = @"Saved";
+  button.accessibilityHint = @"Double tap to remove this recipe from your saved list.";
+
+  if (@available(iOS 13.0, *)) {
+    return;
+  }
+
+  button.backgroundColor = MRRSavedHeartButtonInactiveBackgroundColor();
+  button.tintColor = accentColor;
+  button.layer.borderColor = [accentColor colorWithAlphaComponent:0.24].CGColor;
+  [button setImage:nil forState:UIControlStateNormal];
+  [button setTitle:@"Remove" forState:UIControlStateNormal];
+  [button setTitle:@"Remove" forState:UIControlStateHighlighted];
+  [button setTitleColor:accentColor forState:UIControlStateNormal];
+  [button setTitleColor:[accentColor colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
 }
 
 - (void)configurePressFeedbackForControl:(UIControl *)control {
@@ -774,38 +680,26 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 }
 
 - (NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier {
-  if (recipeIdentifier.length == 0) {
-    return nil;
-  }
-
-  for (NSDictionary<NSString *, id> *section in MRRSavedSections()) {
-    for (NSDictionary<NSString *, id> *recipe in section[@"recipes"]) {
-      if ([recipe[@"identifier"] isEqualToString:recipeIdentifier]) {
-        return recipe[@"title"];
-      }
-    }
-  }
-
-  return nil;
+  return [self snapshotForRecipeIdentifier:recipeIdentifier].title;
 }
 
-- (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title saved:(BOOL)saved {
-  if (saved) {
-    return [NSString stringWithFormat:@"Remove %@ from saved recipes", title];
-  }
-
-  return [NSString stringWithFormat:@"Save %@ to saved recipes", title];
+- (NSString *)favoriteButtonAccessibilityLabelForTitle:(NSString *)title {
+  return [NSString stringWithFormat:@"Remove %@ from saved recipes", title];
 }
 
-- (void)presentRecipeDetailForRecipe:(NSDictionary<NSString *, id> *)recipe {
-  OnboardingRecipePreview *preview = recipe[@"preview"];
-  if (preview == nil || self.presentedViewController != nil) {
+- (void)presentRecipeDetailForSnapshot:(MRRSavedRecipeSnapshot *)snapshot {
+  if (snapshot == nil || self.presentedViewController != nil) {
     return;
   }
 
   OnboardingRecipeDetailViewController *detailViewController =
-      [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:preview recipeDetail:preview.fallbackDetail] autorelease];
+      [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:[snapshot recipePreviewRepresentation]
+                                                              recipeDetail:[snapshot recipeDetailRepresentation]] autorelease];
   detailViewController.delegate = self;
+  detailViewController.showsFavoriteButton = self.sessionUserID.length > 0;
+  detailViewController.favoriteSelected = YES;
+  detailViewController.favoriteButtonEnabled = YES;
+  self.presentedRecipeIdentifier = snapshot.recipeID;
   [self presentRecipeDetailViewController:detailViewController];
 }
 
@@ -820,27 +714,41 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
   [self presentViewController:navigationController animated:YES completion:nil];
 }
 
-- (void)handleRecipeCardTapped:(UIControl *)sender {
-  NSDictionary<NSString *, id> *recipe = [self recipeForIdentifier:[self recipeIdentifierForCardControl:sender]];
-  if (recipe == nil) {
-    return;
+- (BOOL)removeRecipeWithIdentifier:(NSString *)recipeIdentifier dismissIfPresented:(BOOL)dismissIfPresented {
+  if (recipeIdentifier.length == 0 || self.savedRecipesStore == nil || self.sessionUserID.length == 0) {
+    return NO;
   }
 
-  [self presentRecipeDetailForRecipe:recipe];
+  NSError *removeError = nil;
+  BOOL didRemove = [self.savedRecipesStore removeRecipeForUserID:self.sessionUserID recipeID:recipeIdentifier error:&removeError];
+  if (!didRemove || removeError != nil) {
+    [self presentPersistenceError:removeError title:@"Couldn't remove recipe"];
+    return NO;
+  }
+
+  [self.syncEngine requestImmediateSyncForUserID:self.sessionUserID];
+  [self loadSectionsFromStore];
+  [self animateReloadSectionsWithAnnouncement:@"Removed from saved recipes."];
+
+  if (dismissIfPresented && [self.presentedRecipeIdentifier isEqualToString:recipeIdentifier] && self.presentedViewController != nil) {
+    self.presentedRecipeIdentifier = nil;
+    [self dismissViewControllerAnimated:YES completion:nil];
+  }
+
+  return YES;
 }
 
-- (void)handleFavoriteButtonTapped:(UIButton *)sender {
-  NSString *recipeIdentifier = [self recipeIdentifierForFavoriteButton:sender];
-  if (recipeIdentifier.length == 0) {
-    return;
-  }
+- (void)presentPersistenceError:(NSError *)error title:(NSString *)title {
+  NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription
+                                                            : @"Please try again in a moment.";
+  UIAlertController *alertController =
+      [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
+  UIViewController *presenter = self.presentedViewController ?: self;
+  [presenter presentViewController:alertController animated:YES completion:nil];
+}
 
-  BOOL currentlySaved = [self.savedRecipeIdentifiers containsObject:recipeIdentifier];
-  if (!currentlySaved) {
-    return;
-  }
-
-  [self.savedRecipeIdentifiers removeObject:recipeIdentifier];
+- (void)animateReloadSectionsWithAnnouncement:(NSString *)announcement {
   NSTimeInterval animationDuration = UIAccessibilityIsReduceMotionEnabled() ? 0.0 : 0.22;
   [UIView transitionWithView:self.sectionsStackView
                     duration:animationDuration
@@ -849,11 +757,25 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
                     [self reloadSections];
                     [self.view layoutIfNeeded];
                   }
-                  completion:^(BOOL finished) {
-                    if (UIAccessibilityIsVoiceOverRunning()) {
-                      UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, @"Removed from saved recipes.");
+                  completion:^(__unused BOOL finished) {
+                    if (announcement.length > 0 && UIAccessibilityIsVoiceOverRunning()) {
+                      UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
                     }
                   }];
+}
+
+- (void)handleRecipeCardTapped:(UIControl *)sender {
+  MRRSavedRecipeSnapshot *snapshot = [self snapshotForRecipeIdentifier:[self recipeIdentifierForCardControl:sender]];
+  if (snapshot == nil) {
+    return;
+  }
+
+  [self presentRecipeDetailForSnapshot:snapshot];
+}
+
+- (void)handleFavoriteButtonTapped:(UIButton *)sender {
+  NSString *recipeIdentifier = [self recipeIdentifierForFavoriteButton:sender];
+  [self removeRecipeWithIdentifier:recipeIdentifier dismissIfPresented:NO];
 }
 
 - (void)handlePressableControlTouchDown:(UIControl *)sender {
@@ -896,29 +818,51 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedSections(void) {
 }
 
 - (void)handleSectionTapped:(UIControl *)sender {
-  NSDictionary<NSString *, id> *section = MRRSavedSections()[sender.tag];
+  NSDictionary<NSString *, id> *section = self.sections[sender.tag];
   NSString *identifier = section[@"identifier"];
   BOOL willExpand = ![self.expandedSectionIdentifier isEqualToString:identifier];
   self.expandedSectionIdentifier = willExpand ? identifier : nil;
+  [self animateReloadSectionsWithAnnouncement:nil];
+}
 
-  [UIView transitionWithView:self.sectionsStackView
-                    duration:0.28
-                     options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionAllowAnimatedContent
-                  animations:^{
-                    [self reloadSections];
-                    [self.view layoutIfNeeded];
-                  }
-                  completion:nil];
+- (void)savedRecipesStoreDidChange:(NSNotification *)notification {
+  if (notification.object != nil && notification.object != self.savedRecipesStore) {
+    return;
+  }
+
+  [self loadSectionsFromStore];
+  [self reloadSections];
+
+  if (self.presentedRecipeIdentifier.length > 0 && [self snapshotForRecipeIdentifier:self.presentedRecipeIdentifier] == nil &&
+      self.presentedViewController != nil) {
+    self.presentedRecipeIdentifier = nil;
+    [self dismissViewControllerAnimated:YES completion:nil];
+  }
 }
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
 
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController {
+  self.presentedRecipeIdentifier = nil;
   [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
+  self.presentedRecipeIdentifier = nil;
   [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
+          didRequestFavoriteState:(BOOL)favorite {
+  if (favorite) {
+    viewController.favoriteSelected = YES;
+    return;
+  }
+
+  NSString *recipeIdentifier = self.presentedRecipeIdentifier;
+  if ([self removeRecipeWithIdentifier:recipeIdentifier dismissIfPresented:YES]) {
+    viewController.favoriteSelected = NO;
+  }
 }
 
 @end
