@@ -31,8 +31,13 @@
 		A0000000000000000000073E /* MRRLiquidGlassStyling.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000673 /* MRRLiquidGlassStyling.m */; };
 		A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */; };
 		A00000000000000000000740 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000676 /* LaunchScreen.storyboard */; };
-		B62132B22F6531980061670E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B12F6531980061670E /* FirebaseAuth */; };
 		B62132B52F6533030061670E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B62132B42F6533030061670E /* GoogleSignIn */; };
+		B69CE6D32F751E330094ED09 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B69CE6D22F751E330094ED09 /* FirebaseAnalytics */; };
+		B69CE6D52F751E330094ED09 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B69CE6D42F751E330094ED09 /* FirebaseAuth */; };
+		B69CE6D72F751E330094ED09 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = B69CE6D62F751E330094ED09 /* FirebaseCrashlytics */; };
+		B69CE6D92F751E330094ED09 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B69CE6D82F751E330094ED09 /* FirebaseFirestore */; };
+		B69CE6DB2F751E330094ED09 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B69CE6DA2F751E330094ED09 /* FirebaseMessaging */; };
+		B69CE6DD2F751E330094ED09 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = B69CE6DC2F751E330094ED09 /* FirebaseRemoteConfig */; };
 		D10000000000000000000001 /* MainMenuTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000103 /* MainMenuTabBarController.m */; };
 		D10000000000000000000002 /* MainMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000105 /* MainMenuCoordinator.m */; };
 		D10000000000000000000003 /* HomeCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000107 /* HomeCoordinator.m */; };
@@ -48,6 +53,16 @@
 		F10000000000000000000003 /* HomeCollectionViewCells.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000105 /* HomeCollectionViewCells.m */; };
 		F10000000000000000000004 /* HomeRecipeListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000107 /* HomeRecipeListViewController.m */; };
 		F10000000000000000000005 /* HomeViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000108 /* HomeViewControllerTests.m */; };
+		C10000000000000000000001 /* MRRCoreDataStack.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000106 /* MRRCoreDataStack.m */; };
+		C10000000000000000000002 /* MRRSavedRecipeSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000010A /* MRRSavedRecipeSnapshot.m */; };
+		C10000000000000000000003 /* MRRSavedRecipeSyncChange.m in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000010C /* MRRSavedRecipeSyncChange.m */; };
+		C10000000000000000000004 /* MRRSavedRecipesStore.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000108 /* MRRSavedRecipesStore.m */; };
+		C10000000000000000000005 /* MRRNoOpSavedRecipesSyncEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000010F /* MRRNoOpSavedRecipesSyncEngine.m */; };
+		C10000000000000000000006 /* MRRSavedRecipesSyncEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000111 /* MRRSavedRecipesSyncEngine.m */; };
+		C10000000000000000000007 /* MRRSyncingLogoutController.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000113 /* MRRSyncingLogoutController.m */; };
+		C10000000000000000000008 /* MRRProjectDataModel.xcdatamodeld in Resources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000115 /* MRRProjectDataModel.xcdatamodeld */; };
+		C10000000000000000000009 /* MRRSavedRecipesStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */; };
+		C1000000000000000000000A /* MRRSyncingLogoutControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,6 +150,24 @@
 		F10000000000000000000106 /* HomeRecipeListViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HomeRecipeListViewController.h; sourceTree = "<group>"; };
 		F10000000000000000000107 /* HomeRecipeListViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeRecipeListViewController.m; sourceTree = "<group>"; };
 		F10000000000000000000108 /* HomeViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HomeViewControllerTests.m; sourceTree = "<group>"; };
+		C10000000000000000000105 /* MRRCoreDataStack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRCoreDataStack.h; sourceTree = "<group>"; };
+		C10000000000000000000106 /* MRRCoreDataStack.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRCoreDataStack.m; sourceTree = "<group>"; };
+		C10000000000000000000107 /* MRRSavedRecipesStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRSavedRecipesStore.h; sourceTree = "<group>"; };
+		C10000000000000000000108 /* MRRSavedRecipesStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipesStore.m; sourceTree = "<group>"; };
+		C10000000000000000000109 /* MRRSavedRecipeSnapshot.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRSavedRecipeSnapshot.h; sourceTree = "<group>"; };
+		C1000000000000000000010A /* MRRSavedRecipeSnapshot.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipeSnapshot.m; sourceTree = "<group>"; };
+		C1000000000000000000010B /* MRRSavedRecipeSyncChange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRSavedRecipeSyncChange.h; sourceTree = "<group>"; };
+		C1000000000000000000010C /* MRRSavedRecipeSyncChange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipeSyncChange.m; sourceTree = "<group>"; };
+		C1000000000000000000010D /* MRRSavedRecipesCloudSyncing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRSavedRecipesCloudSyncing.h; sourceTree = "<group>"; };
+		C1000000000000000000010E /* MRRNoOpSavedRecipesSyncEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRNoOpSavedRecipesSyncEngine.h; sourceTree = "<group>"; };
+		C1000000000000000000010F /* MRRNoOpSavedRecipesSyncEngine.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRNoOpSavedRecipesSyncEngine.m; sourceTree = "<group>"; };
+		C10000000000000000000110 /* MRRSavedRecipesSyncEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRSavedRecipesSyncEngine.h; sourceTree = "<group>"; };
+		C10000000000000000000111 /* MRRSavedRecipesSyncEngine.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipesSyncEngine.m; sourceTree = "<group>"; };
+		C10000000000000000000112 /* MRRSyncingLogoutController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRSyncingLogoutController.h; sourceTree = "<group>"; };
+		C10000000000000000000113 /* MRRSyncingLogoutController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSyncingLogoutController.m; sourceTree = "<group>"; };
+		C10000000000000000000114 /* MRRProjectDataModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MRRProjectDataModel.xcdatamodel; sourceTree = "<group>"; };
+		C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipesStoreTests.m; sourceTree = "<group>"; };
+		C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSyncingLogoutControllerTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,7 +175,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B62132B22F6531980061670E /* FirebaseAuth in Frameworks */,
+				B69CE6DB2F751E330094ED09 /* FirebaseMessaging in Frameworks */,
+				B69CE6D32F751E330094ED09 /* FirebaseAnalytics in Frameworks */,
+				B69CE6D72F751E330094ED09 /* FirebaseCrashlytics in Frameworks */,
+				B69CE6DD2F751E330094ED09 /* FirebaseRemoteConfig in Frameworks */,
+				B69CE6D52F751E330094ED09 /* FirebaseAuth in Frameworks */,
+				B69CE6D92F751E330094ED09 /* FirebaseFirestore in Frameworks */,
 				B62132B52F6533030061670E /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -172,6 +210,7 @@
 			isa = PBXGroup;
 			children = (
 				B6B2BF092F61293700BF945D /* Resources */,
+				C10000000000000000000100 /* Persistence */,
 				A00000000000000000000033 /* Layout */,
 				A00000000000000000000018 /* App */,
 				A00000000000000000000011 /* Features */,
@@ -194,6 +233,8 @@
 				A00000000000000000000654 /* AppLaunchFlowTests.m */,
 				F10000000000000000000108 /* HomeViewControllerTests.m */,
 				D10000000000000000000110 /* MainMenuTabBarControllerTests.m */,
+				C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */,
+				C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */,
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */,
 				A0000000000000000000066E /* OnboardingAuthFlowTests.m */,
@@ -342,10 +383,65 @@
 				A00000000000000000000676 /* LaunchScreen.storyboard */,
 				A00000000000000000000606 /* Info.plist */,
 				C0FFEE000000000000000101 /* GoogleService-Info.example.plist */,
+				C10000000000000000000115 /* MRRProjectDataModel.xcdatamodeld */,
 				E10000000000000000000107 /* RecipeAPIConfig.example.plist */,
 				B679281C2F6A632C00D8F70A /* RecipeAPIConfig.plist */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000100 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				C10000000000000000000101 /* CoreData */,
+				C10000000000000000000102 /* SavedRecipes */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000101 /* CoreData */ = {
+			isa = PBXGroup;
+			children = (
+				C10000000000000000000105 /* MRRCoreDataStack.h */,
+				C10000000000000000000106 /* MRRCoreDataStack.m */,
+			);
+			path = CoreData;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000102 /* SavedRecipes */ = {
+			isa = PBXGroup;
+			children = (
+				C10000000000000000000103 /* Models */,
+				C10000000000000000000104 /* Sync */,
+				C10000000000000000000107 /* MRRSavedRecipesStore.h */,
+				C10000000000000000000108 /* MRRSavedRecipesStore.m */,
+			);
+			path = SavedRecipes;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000103 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C10000000000000000000109 /* MRRSavedRecipeSnapshot.h */,
+				C1000000000000000000010A /* MRRSavedRecipeSnapshot.m */,
+				C1000000000000000000010B /* MRRSavedRecipeSyncChange.h */,
+				C1000000000000000000010C /* MRRSavedRecipeSyncChange.m */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000104 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				C1000000000000000000010D /* MRRSavedRecipesCloudSyncing.h */,
+				C1000000000000000000010E /* MRRNoOpSavedRecipesSyncEngine.h */,
+				C1000000000000000000010F /* MRRNoOpSavedRecipesSyncEngine.m */,
+				C10000000000000000000110 /* MRRSavedRecipesSyncEngine.h */,
+				C10000000000000000000111 /* MRRSavedRecipesSyncEngine.m */,
+				C10000000000000000000112 /* MRRSyncingLogoutController.h */,
+				C10000000000000000000113 /* MRRSyncingLogoutController.m */,
+			);
+			path = Sync;
 			sourceTree = "<group>";
 		};
 		D10000000000000000000201 /* MainMenu */ = {
@@ -401,8 +497,13 @@
 			);
 			name = "MRR Project";
 			packageProductDependencies = (
-				B62132B12F6531980061670E /* FirebaseAuth */,
 				B62132B42F6533030061670E /* GoogleSignIn */,
+				B69CE6D22F751E330094ED09 /* FirebaseAnalytics */,
+				B69CE6D42F751E330094ED09 /* FirebaseAuth */,
+				B69CE6D62F751E330094ED09 /* FirebaseCrashlytics */,
+				B69CE6D82F751E330094ED09 /* FirebaseFirestore */,
+				B69CE6DA2F751E330094ED09 /* FirebaseMessaging */,
+				B69CE6DC2F751E330094ED09 /* FirebaseRemoteConfig */,
 			);
 			productName = "MRR Project";
 			productReference = A00000000000000000000600 /* MRR Project.app */;
@@ -454,8 +555,8 @@
 			);
 			mainGroup = A00000000000000000000002;
 			packageReferences = (
-				B62132B02F6531980061670E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				B62132B32F6533030061670E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = A00000000000000000000004 /* Products */;
 			projectDirPath = "";
@@ -474,6 +575,7 @@
 			files = (
 				A00000000000000000000729 /* Assets.xcassets in Resources */,
 				A00000000000000000000740 /* LaunchScreen.storyboard in Resources */,
+				C10000000000000000000008 /* MRRProjectDataModel.xcdatamodeld in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -538,6 +640,13 @@
 			files = (
 				A00000000000000000000700 /* main.m in Sources */,
 				A00000000000000000000701 /* AppDelegate.m in Sources */,
+				C10000000000000000000001 /* MRRCoreDataStack.m in Sources */,
+				C10000000000000000000005 /* MRRNoOpSavedRecipesSyncEngine.m in Sources */,
+				C10000000000000000000002 /* MRRSavedRecipeSnapshot.m in Sources */,
+				C10000000000000000000003 /* MRRSavedRecipeSyncChange.m in Sources */,
+				C10000000000000000000006 /* MRRSavedRecipesSyncEngine.m in Sources */,
+				C10000000000000000000004 /* MRRSavedRecipesStore.m in Sources */,
+				C10000000000000000000007 /* MRRSyncingLogoutController.m in Sources */,
 				F10000000000000000000003 /* HomeCollectionViewCells.m in Sources */,
 				D10000000000000000000003 /* HomeCoordinator.m in Sources */,
 				F10000000000000000000001 /* HomeDataSource.m in Sources */,
@@ -573,8 +682,10 @@
 				A00000000000000000000728 /* AppLaunchFlowTests.m in Sources */,
 				F10000000000000000000005 /* HomeViewControllerTests.m in Sources */,
 				D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */,
+				C10000000000000000000009 /* MRRSavedRecipesStoreTests.m in Sources */,
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */,
+				C1000000000000000000000A /* MRRSyncingLogoutControllerTests.m in Sources */,
 				A0000000000000000000073B /* OnboardingAuthFlowTests.m in Sources */,
 				A00000000000000000000732 /* OnboardingStateControllerTests.m in Sources */,
 				A00000000000000000000733 /* OnboardingViewControllerTests.m in Sources */,
@@ -591,6 +702,19 @@
 			targetProxy = A00000000000000000000500 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCVersionGroup section */
+		C10000000000000000000115 /* MRRProjectDataModel.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				C10000000000000000000114 /* MRRProjectDataModel.xcdatamodel */,
+			);
+			currentVersion = C10000000000000000000114 /* MRRProjectDataModel.xcdatamodel */;
+			path = MRRProjectDataModel.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 
 /* Begin XCBuildConfiguration section */
 		A00000000000000000000300 /* Debug */ = {
@@ -860,14 +984,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		B62132B02F6531980061670E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
-			requirement = {
-				kind = exactVersion;
-				version = 10.29.0;
-			};
-		};
 		B62132B32F6533030061670E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
@@ -876,18 +992,51 @@
 				version = 7.1.0;
 			};
 		};
+		B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = exactVersion;
+				version = 10.29.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		B62132B12F6531980061670E /* FirebaseAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B62132B02F6531980061670E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
 		B62132B42F6533030061670E /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B62132B32F6533030061670E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		B69CE6D22F751E330094ED09 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		B69CE6D42F751E330094ED09 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		B69CE6D62F751E330094ED09 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		B69CE6D82F751E330094ED09 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		B69CE6DA2F751E330094ED09 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		B69CE6DC2F751E330094ED09 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B69CE6D12F751E330094ED09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
