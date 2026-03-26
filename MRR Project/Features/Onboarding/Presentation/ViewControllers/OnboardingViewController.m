@@ -2261,6 +2261,10 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
                            }];
 }
 
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
+          didRequestFavoriteState:(BOOL)favorite {
+}
+
 #pragma mark - UIAdaptivePresentationControllerDelegate
 
 - (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController {
