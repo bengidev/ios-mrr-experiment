@@ -126,6 +126,8 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
                                                   subtitle:(NSString *)subtitle;
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
+- (void)spinMainRunLoop;
 - (UIColor *)resolvedColor:(UIColor *)color forTraitCollection:(UITraitCollection *)traitCollection;
 - (void)assertColor:(UIColor *)actual matchesColor:(UIColor *)expected;
 - (void)assertItemAppearance:(UITabBarItemAppearance *)itemAppearance
@@ -331,28 +333,29 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   [recipeCardControl sendActionsForControlEvents:UIControlEventTouchUpInside];
 
-  XCTestExpectation *presentationExpectation = [self expectationWithDescription:@"Saved recipe detail presentation"];
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-    UINavigationController *detailNavigationController =
-        (UINavigationController *)savedNavigationController.topViewController.presentedViewController;
-    XCTAssertNotNil(detailNavigationController);
-    XCTAssertTrue([detailNavigationController isKindOfClass:[UINavigationController class]]);
-    XCTAssertEqual(detailNavigationController.modalPresentationStyle, UIModalPresentationFullScreen);
+  __block UINavigationController *detailNavigationController = nil;
+  __block UILabel *titleLabel = nil;
+  [self waitForCondition:^BOOL {
+    detailNavigationController = (UINavigationController *)savedNavigationController.topViewController.presentedViewController;
+    if (![detailNavigationController isKindOfClass:[UINavigationController class]]) {
+      return NO;
+    }
 
     UIViewController *detailRootViewController = detailNavigationController.topViewController;
-    XCTAssertTrue([detailRootViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
+    if (![detailRootViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]) {
+      return NO;
+    }
+
     [detailRootViewController loadViewIfNeeded];
+    titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel"
+                                                               inView:detailRootViewController.view];
+    return [titleLabel.text isEqualToString:@"Garden Caesar Crunch"];
+  } timeout:2.0];
 
-    UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel"
-                                                                        inView:detailRootViewController.view];
-    XCTAssertNotNil(titleLabel);
-    XCTAssertEqualObjects(titleLabel.text, @"Garden Caesar Crunch");
-
-    [detailNavigationController dismissViewControllerAnimated:NO completion:nil];
-    [presentationExpectation fulfill];
-  });
-
-  [self waitForExpectations:@[ presentationExpectation ] timeout:1.0];
+  XCTAssertNotNil(detailNavigationController);
+  XCTAssertEqual(detailNavigationController.modalPresentationStyle, UIModalPresentationFullScreen);
+  XCTAssertNotNil(titleLabel);
+  [detailNavigationController dismissViewControllerAnimated:NO completion:nil];
 }
 
 - (void)testSavedFavoriteHeartActsLikeASavedActionButton {
@@ -375,16 +378,12 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   [favoriteButton sendActionsForControlEvents:UIControlEventTouchUpInside];
 
-  XCTestExpectation *transitionExpectation = [self expectationWithDescription:@"Saved favorite button transition"];
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+  [self waitForCondition:^BOOL {
     [savedView layoutIfNeeded];
-    XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView]);
-    XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView]);
-    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
-    [transitionExpectation fulfill];
-  });
-
-  [self waitForExpectations:@[ transitionExpectation ] timeout:1.0];
+    return [self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView] == nil &&
+           [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView] == nil &&
+           [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView] != nil;
+  } timeout:2.5];
 }
 
 - (void)testSavedTabRefreshesWhenStorePostsChangeNotification {
@@ -402,14 +401,10 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
                                                      error:&saveError]);
   XCTAssertNil(saveError);
 
-  XCTestExpectation *refreshExpectation = [self expectationWithDescription:@"Saved tab reacts to store notification"];
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+  [self waitForCondition:^BOOL {
     [savedView layoutIfNeeded];
-    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.chiliCrunchEggs" inView:savedView]);
-    [refreshExpectation fulfill];
-  });
-
-  [self waitForExpectations:@[ refreshExpectation ] timeout:1.0];
+    return [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.chiliCrunchEggs" inView:savedView] != nil;
+  } timeout:2.0];
 }
 
 - (void)testSavedTabReloadsFromStoreWhenItBecomesVisibleAgain {
@@ -567,6 +562,21 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
     XCTAssertEqualWithAccuracy(actualBlue, expectedBlue, 0.001);
     XCTAssertEqualWithAccuracy(actualAlpha, expectedAlpha, 0.001);
   }
+}
+
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
+  NSDate *timeoutDate = [NSDate dateWithTimeIntervalSinceNow:timeout];
+  while (!condition()) {
+    if ([timeoutDate timeIntervalSinceNow] <= 0.0) {
+      XCTFail(@"Condition not met before timeout");
+      return;
+    }
+    [self spinMainRunLoop];
+  }
+}
+
+- (void)spinMainRunLoop {
+  [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.08]];
 }
 
 - (void)assertItemAppearance:(UITabBarItemAppearance *)itemAppearance
