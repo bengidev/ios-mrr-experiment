@@ -8,6 +8,9 @@
 #import "../MRR Project/Features/Home/HomeRecipeListViewController.h"
 #import "../MRR Project/Features/Home/HomeViewController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingRecipeDetailViewController.h"
+#import "../MRR Project/Persistence/CoreData/MRRCoreDataStack.h"
+#import "../MRR Project/Persistence/SavedRecipes/MRRSavedRecipesStore.h"
+#import "../MRR Project/Persistence/SavedRecipes/Sync/MRRSavedRecipesCloudSyncing.h"
 
 @class HomeAsyncTestDataProvider;
 
@@ -40,6 +43,7 @@
 - (void)applyAdvancedFilters:(HomeAdvancedFilterSettings *)advancedFilters;
 - (BOOL)textFieldShouldReturn:(UITextField *)textField;
 - (void)executeSearchForQuery:(NSString *)query resultLimit:(NSUInteger)resultLimit presentingResultsList:(BOOL)presentResultsList;
+- (void)presentRecipeDetailForCard:(HomeRecipeCard *)recipeCard;
 
 @end
 
@@ -85,6 +89,10 @@
                                                               emptyMessage:(NSString *)emptyMessage
                                                                     window:(UIWindow * __strong *)window
                                                       navigationController:(UINavigationController * __strong *)navigationController;
+- (HomeViewController *)mountedHomeViewControllerWithSavedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                                                            syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine
+                                                                window:(UIWindow * __strong *)window
+                                                  navigationController:(UINavigationController * __strong *)navigationController;
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 - (void)spinMainRunLoop;
 
@@ -107,6 +115,21 @@
 @property(nonatomic, retain) NSMutableArray<NSDictionary<NSString *, id> *> *initialRequests;
 @property(nonatomic, retain) NSMutableArray<NSDictionary<NSString *, id> *> *searchRequests;
 @property(nonatomic, retain) NSMutableArray<NSString *> *detailRequests;
+
+@end
+
+@interface HomeSavedRecipesStoreStub : MRRSavedRecipesStore
+
+@property(nonatomic, strong) NSMutableDictionary<NSString *, MRRSavedRecipeSnapshot *> *snapshotsByRecipeID;
+@property(nonatomic, assign) NSUInteger saveInvocationCount;
+@property(nonatomic, assign) NSUInteger removeInvocationCount;
+
+@end
+
+@interface HomeSavedRecipesSyncEngineStub : NSObject <MRRSavedRecipesCloudSyncing>
+
+@property(nonatomic, assign) NSUInteger requestInvocationCount;
+@property(nonatomic, copy) NSString *lastRequestedUserID;
 
 @end
 
@@ -342,6 +365,75 @@
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
     completion(detail, usesLiveData);
   });
+}
+
+@end
+
+@implementation HomeSavedRecipesStoreStub
+
+- (instancetype)init {
+  NSError *error = nil;
+  MRRCoreDataStack *coreDataStack = [[MRRCoreDataStack alloc] initWithInMemoryStore:YES error:&error];
+  NSParameterAssert(coreDataStack != nil);
+
+  self = [super initWithCoreDataStack:coreDataStack];
+  if (self) {
+    _snapshotsByRecipeID = [NSMutableDictionary dictionary];
+  }
+  return self;
+}
+
+- (nullable MRRSavedRecipeSnapshot *)savedRecipeForUserID:(NSString *)userID recipeID:(NSString *)recipeID error:(NSError **)error {
+  #pragma unused(userID, error)
+  return [self.snapshotsByRecipeID objectForKey:recipeID];
+}
+
+- (BOOL)isRecipeSavedForUserID:(NSString *)userID recipeID:(NSString *)recipeID error:(NSError **)error {
+  return [self savedRecipeForUserID:userID recipeID:recipeID error:error] != nil;
+}
+
+- (BOOL)saveRecipeSnapshot:(MRRSavedRecipeSnapshot *)snapshot error:(NSError **)error {
+  #pragma unused(error)
+  self.saveInvocationCount += 1;
+  if (snapshot == nil) {
+    return NO;
+  }
+
+  [self.snapshotsByRecipeID setObject:snapshot forKey:snapshot.recipeID];
+  return YES;
+}
+
+- (BOOL)removeRecipeForUserID:(NSString *)userID recipeID:(NSString *)recipeID error:(NSError **)error {
+  #pragma unused(userID, error)
+  self.removeInvocationCount += 1;
+  [self.snapshotsByRecipeID removeObjectForKey:recipeID];
+  return YES;
+}
+
+@end
+
+@implementation HomeSavedRecipesSyncEngineStub
+
+- (void)startSyncForUserID:(NSString *)userID completion:(MRRSavedRecipesSyncCompletion)completion {
+  #pragma unused(userID)
+  if (completion != nil) {
+    completion(nil);
+  }
+}
+
+- (void)stopSync {
+}
+
+- (void)requestImmediateSyncForUserID:(NSString *)userID {
+  self.requestInvocationCount += 1;
+  self.lastRequestedUserID = userID;
+}
+
+- (void)flushPendingChangesForUserID:(NSString *)userID completion:(MRRSavedRecipesSyncCompletion)completion {
+  [self requestImmediateSyncForUserID:userID];
+  if (completion != nil) {
+    completion(nil);
+  }
 }
 
 @end
@@ -1347,6 +1439,55 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertEqual(closeButton.currentTitle.length, 0U);
 }
 
+- (void)testFavoriteSaveStartsOnNextRunLoopCycleSoButtonReleaseCanRender {
+  HomeSavedRecipesStoreStub *savedRecipesStore = [[HomeSavedRecipesStoreStub alloc] init];
+  HomeSavedRecipesSyncEngineStub *syncEngine = [[HomeSavedRecipesSyncEngineStub alloc] init];
+  UIWindow *window = nil;
+  HomeViewController *viewController = [self mountedHomeViewControllerWithSavedRecipesStore:savedRecipesStore
+                                                                                 syncEngine:syncEngine
+                                                                                     window:&window
+                                                                       navigationController:nil];
+
+  [self waitForCondition:^BOOL {
+    return !viewController.isLoadingContent;
+  } timeout:1.2];
+
+  HomeRecipeCard *recipeCard = viewController.filteredRecommendationRecipes.firstObject;
+  XCTAssertNotNil(recipeCard);
+
+  [viewController presentRecipeDetailForCard:recipeCard];
+  [self waitForCondition:^BOOL {
+    return viewController.presentedViewController != nil;
+  } timeout:1.2];
+
+  UINavigationController *presentedNavigationController = (UINavigationController *)viewController.presentedViewController;
+  XCTAssertTrue([presentedNavigationController isKindOfClass:[UINavigationController class]]);
+
+  OnboardingRecipeDetailViewController *detailViewController =
+      (OnboardingRecipeDetailViewController *)presentedNavigationController.topViewController;
+  [self waitForCondition:^BOOL {
+    return !detailViewController.isLoading;
+  } timeout:1.2];
+
+  UIButton *favoriteButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton" inView:detailViewController.view];
+  XCTAssertNotNil(favoriteButton);
+  XCTAssertTrue(favoriteButton.enabled);
+
+  [favoriteButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+
+  XCTAssertEqual(savedRecipesStore.saveInvocationCount, 0U);
+
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(savedRecipesStore.saveInvocationCount, 1U);
+  XCTAssertTrue(detailViewController.isFavoriteSelected);
+  XCTAssertEqual(syncEngine.requestInvocationCount, 1U);
+  XCTAssertEqualObjects(syncEngine.lastRequestedUserID, self.session.userID);
+
+  window.hidden = YES;
+}
+
 - (void)testHomeRecipeCardCellFallsBackToLocalAssetWhenRemoteImageURLIsInvalid {
   HomeRecipeCardCell *cell = [[HomeRecipeCardCell alloc] initWithFrame:CGRectMake(0.0, 0.0, 280.0, 320.0)];
   HomeRecipeCard *card =
@@ -1458,6 +1599,32 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   }
 
   return listViewController;
+}
+
+- (HomeViewController *)mountedHomeViewControllerWithSavedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                                                            syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine
+                                                                window:(UIWindow * __strong *)window
+                                                  navigationController:(UINavigationController * __strong *)navigationController {
+  HomeViewController *homeViewController = [[HomeViewController alloc] initWithSession:self.session
+                                                                           dataProvider:self.dataProvider
+                                                                      savedRecipesStore:savedRecipesStore
+                                                                            syncEngine:syncEngine];
+  UIWindow *mountedWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  UINavigationController *mountedNavigationController = [[UINavigationController alloc] initWithRootViewController:homeViewController];
+  mountedWindow.rootViewController = mountedNavigationController;
+  [mountedWindow makeKeyAndVisible];
+  [mountedNavigationController loadViewIfNeeded];
+  [homeViewController loadViewIfNeeded];
+  [homeViewController.view layoutIfNeeded];
+
+  if (window != nil) {
+    *window = mountedWindow;
+  }
+  if (navigationController != nil) {
+    *navigationController = mountedNavigationController;
+  }
+
+  return homeViewController;
 }
 
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
