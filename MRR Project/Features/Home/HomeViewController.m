@@ -2368,24 +2368,37 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   }
 
   viewController.favoriteButtonEnabled = NO;
-  NSError *persistenceError = nil;
-  BOOL didPersist = NO;
-  if (favorite) {
-    MRRSavedRecipeSnapshot *snapshot = [self savedRecipeSnapshotForRecipeCard:recipeCard detailViewController:viewController];
-    didPersist = snapshot != nil && [self.savedRecipesStore saveRecipeSnapshot:snapshot error:&persistenceError];
-  } else {
-    didPersist = [self.savedRecipesStore removeRecipeForUserID:self.session.userID recipeID:recipeCard.recipeID error:&persistenceError];
-  }
+  OnboardingRecipeDetailViewController *retainedViewController = [viewController retain];
+  HomeRecipeCard *retainedRecipeCard = [recipeCard retain];
+  HomeViewController *blockSelf = self;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSError *persistenceError = nil;
+    BOOL didPersist = NO;
+    if (favorite) {
+      MRRSavedRecipeSnapshot *snapshot = [blockSelf savedRecipeSnapshotForRecipeCard:retainedRecipeCard
+                                                                  detailViewController:retainedViewController];
+      didPersist = snapshot != nil && [blockSelf.savedRecipesStore saveRecipeSnapshot:snapshot error:&persistenceError];
+    } else {
+      didPersist = [blockSelf.savedRecipesStore removeRecipeForUserID:blockSelf.session.userID
+                                                             recipeID:retainedRecipeCard.recipeID
+                                                                error:&persistenceError];
+    }
 
-  if (!didPersist || persistenceError != nil) {
-    viewController.favoriteButtonEnabled = YES;
-    [self presentSavedRecipePersistenceError:persistenceError actionTitle:(favorite ? @"Couldn't save recipe" : @"Couldn't remove recipe")];
-    return;
-  }
+    if (!didPersist || persistenceError != nil) {
+      retainedViewController.favoriteButtonEnabled = YES;
+      [blockSelf presentSavedRecipePersistenceError:persistenceError
+                                        actionTitle:(favorite ? @"Couldn't save recipe" : @"Couldn't remove recipe")];
+      [retainedViewController release];
+      [retainedRecipeCard release];
+      return;
+    }
 
-  viewController.favoriteSelected = favorite;
-  viewController.favoriteButtonEnabled = YES;
-  [self.syncEngine requestImmediateSyncForUserID:self.session.userID];
+    retainedViewController.favoriteSelected = favorite;
+    retainedViewController.favoriteButtonEnabled = YES;
+    [blockSelf.syncEngine requestImmediateSyncForUserID:blockSelf.session.userID];
+    [retainedViewController release];
+    [retainedRecipeCard release];
+  });
 }
 
 @end
