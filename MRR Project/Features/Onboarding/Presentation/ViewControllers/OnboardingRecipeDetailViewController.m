@@ -6,6 +6,8 @@
 static CGFloat const MRRRecipeDetailHeaderHeight = 292.0;
 static CGFloat const MRRRecipeDetailButtonPressedScale = 0.97;
 static CGFloat const MRRRecipeDetailButtonPressedAlpha = 0.88;
+static NSTimeInterval const MRRRecipeDetailFavoriteButtonTransitionDuration = 0.22;
+static CGFloat const MRRRecipeDetailFavoriteButtonTransitionOffset = 6.0;
 
 static CGFloat MRRRecipeDetailFavoriteButtonMinimumWidth(UIFont *font, UIEdgeInsets contentInsets, BOOL includesSymbol) {
   UIFont *resolvedFont = font ?: [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
@@ -894,7 +896,6 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   if (self.favoriteButtonHostView == nil) {
     return;
   }
-  #pragma unused(animated)
 
   UIButton *previousButton = [self.favoriteButton retain];
 
@@ -908,8 +909,49 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   ]];
   self.favoriteButton = button;
   [self applyFavoriteButtonAppearanceToButton:button];
-  [previousButton removeFromSuperview];
-  [previousButton release];
+
+  BOOL shouldAnimateTransition = animated && previousButton != nil && self.favoriteButtonHostView.window != nil && [UIView areAnimationsEnabled];
+  if (!shouldAnimateTransition) {
+    [previousButton removeFromSuperview];
+    [previousButton release];
+    return;
+  }
+
+  button.alpha = 0.0;
+  if (UIAccessibilityIsReduceMotionEnabled()) {
+    [UIView animateWithDuration:MRRRecipeDetailFavoriteButtonTransitionDuration
+                          delay:0.0
+                        options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
+                     animations:^{
+                       previousButton.alpha = 0.0;
+                       button.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
+                     }
+                     completion:^(__unused BOOL finished) {
+                       [previousButton removeFromSuperview];
+                       [previousButton release];
+                     }];
+    return;
+  }
+
+  CGAffineTransform incomingTransform = CGAffineTransformMakeTranslation(0.0, MRRRecipeDetailFavoriteButtonTransitionOffset);
+  CGAffineTransform outgoingTransform = CGAffineTransformMakeTranslation(0.0, -MRRRecipeDetailFavoriteButtonTransitionOffset);
+  button.transform = incomingTransform;
+  [UIView animateWithDuration:MRRRecipeDetailFavoriteButtonTransitionDuration
+                        delay:0.0
+       usingSpringWithDamping:0.86
+        initialSpringVelocity:0.18
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
+                   animations:^{
+                     previousButton.alpha = 0.0;
+                     previousButton.transform = outgoingTransform;
+                     button.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
+                     button.transform = CGAffineTransformIdentity;
+                   }
+                   completion:^(__unused BOOL finished) {
+                     previousButton.transform = CGAffineTransformIdentity;
+                     [previousButton removeFromSuperview];
+                     [previousButton release];
+                   }];
 }
 
 - (void)applyFavoriteButtonInteractivityAnimated:(BOOL)animated {
