@@ -126,8 +126,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 - (UIView *)titleHeaderSkeletonCardView;
 - (nullable UIView *)favoriteHeaderButtonHostView;
 - (UIButton *)buildFavoriteHeaderButton;
-- (void)reloadFavoriteButtonIfNeeded;
-- (void)applyFavoriteButtonInteractivity;
+- (void)reloadFavoriteButtonIfNeededAnimated:(BOOL)animated;
+- (void)applyFavoriteButtonInteractivityAnimated:(BOOL)animated;
 - (void)applyFavoriteButtonAppearanceToButton:(UIButton *)button;
 - (UIView *)metadataChipWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UIView *)ingredientGridViewForIngredients:(NSArray<OnboardingRecipeIngredient *> *)ingredients;
@@ -331,7 +331,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   _favoriteSelected = favoriteSelected;
-  [self reloadFavoriteButtonIfNeeded];
+  [self reloadFavoriteButtonIfNeededAnimated:YES];
 }
 
 - (void)setFavoriteButtonEnabled:(BOOL)favoriteButtonEnabled {
@@ -340,7 +340,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   _favoriteButtonEnabled = favoriteButtonEnabled;
-  [self applyFavoriteButtonInteractivity];
+  [self applyFavoriteButtonInteractivityAnimated:YES];
 }
 
 #pragma mark - View Setup
@@ -862,7 +862,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *hostView = [[[UIView alloc] init] autorelease];
   hostView.translatesAutoresizingMaskIntoConstraints = NO;
   self.favoriteButtonHostView = hostView;
-  [self reloadFavoriteButtonIfNeeded];
+  [self reloadFavoriteButtonIfNeededAnimated:NO];
   return hostView;
 }
 
@@ -890,13 +890,13 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   return button;
 }
 
-- (void)reloadFavoriteButtonIfNeeded {
+- (void)reloadFavoriteButtonIfNeededAnimated:(BOOL)animated {
   if (self.favoriteButtonHostView == nil) {
     return;
   }
+  #pragma unused(animated)
 
-  [self.favoriteButton removeFromSuperview];
-  self.favoriteButton = nil;
+  UIButton *previousButton = [self.favoriteButton retain];
 
   UIButton *button = [self buildFavoriteHeaderButton];
   [self.favoriteButtonHostView addSubview:button];
@@ -908,13 +908,15 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   ]];
   self.favoriteButton = button;
   [self applyFavoriteButtonAppearanceToButton:button];
+  [previousButton removeFromSuperview];
+  [previousButton release];
 }
 
-- (void)applyFavoriteButtonInteractivity {
+- (void)applyFavoriteButtonInteractivityAnimated:(BOOL)animated {
   if (self.favoriteButton == nil) {
     return;
   }
-
+  #pragma unused(animated)
   self.favoriteButton.enabled = self.isFavoriteButtonEnabled;
   self.favoriteButton.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
   self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0) |
@@ -966,7 +968,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     button.titleEdgeInsets = UIEdgeInsetsZero;
   }
 
-  [self applyFavoriteButtonInteractivity];
+  [self applyFavoriteButtonInteractivityAnimated:NO];
 }
 
 - (UIView *)ingredientsSectionViewForIngredients:(NSArray<OnboardingRecipeIngredient *> *)ingredients {
