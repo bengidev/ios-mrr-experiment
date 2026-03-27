@@ -958,14 +958,27 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   if (self.favoriteButton == nil) {
     return;
   }
-  #pragma unused(animated)
+
+  CGFloat targetAlpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
   self.favoriteButton.enabled = self.isFavoriteButtonEnabled;
-  self.favoriteButton.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
   self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0) |
                                             (self.isFavoriteButtonEnabled ? 0 : UIAccessibilityTraitNotEnabled);
   self.favoriteButton.accessibilityLabel = self.isFavoriteSelected ? @"Remove recipe from saved recipes" : @"Save recipe";
   self.favoriteButton.accessibilityHint = self.isFavoriteButtonEnabled ? @"Double tap to update this recipe in your saved list."
                                                                        : @"Wait until the recipe finishes loading.";
+
+  if (!animated || self.favoriteButton.window == nil || ![UIView areAnimationsEnabled]) {
+    self.favoriteButton.alpha = targetAlpha;
+    return;
+  }
+
+  [UIView animateWithDuration:0.18
+                        delay:0.0
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseOut
+                   animations:^{
+                     self.favoriteButton.alpha = targetAlpha;
+                   }
+                   completion:nil];
 }
 
 - (void)applyFavoriteButtonAppearanceToButton:(UIButton *)button {
