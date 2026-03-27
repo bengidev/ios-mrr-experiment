@@ -7,6 +7,15 @@ static CGFloat const MRRRecipeDetailHeaderHeight = 292.0;
 static CGFloat const MRRRecipeDetailButtonPressedScale = 0.97;
 static CGFloat const MRRRecipeDetailButtonPressedAlpha = 0.88;
 
+static CGFloat MRRRecipeDetailFavoriteButtonMinimumWidth(UIFont *font, UIEdgeInsets contentInsets, BOOL includesSymbol) {
+  UIFont *resolvedFont = font ?: [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
+  CGFloat saveWidth = [@"Save" sizeWithAttributes:@{NSFontAttributeName : resolvedFont}].width;
+  CGFloat savedWidth = [@"Saved" sizeWithAttributes:@{NSFontAttributeName : resolvedFont}].width;
+  CGFloat symbolWidth = includesSymbol ? 15.0 : 0.0;
+  CGFloat symbolSpacing = includesSymbol ? 8.0 : 0.0;
+  return ceil(contentInsets.left + MAX(saveWidth, savedWidth) + symbolWidth + symbolSpacing + contentInsets.right + 2.0);
+}
+
 static UIColor *MRRDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
@@ -849,9 +858,19 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   button.accessibilityIdentifier = [self detailIdentifierForSuffix:@"favoriteButton"];
   button.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
   button.titleLabel.adjustsFontForContentSizeCategory = YES;
+  button.adjustsImageWhenDisabled = NO;
   button.contentEdgeInsets = UIEdgeInsetsMake(10.0, 14.0, 10.0, 14.0);
   button.layer.cornerRadius = 18.0;
   button.layer.borderWidth = 1.0;
+  BOOL includesSymbol = NO;
+  if (@available(iOS 13.0, *)) {
+    includesSymbol = YES;
+  }
+  [NSLayoutConstraint activateConstraints:@[
+    [button.widthAnchor constraintGreaterThanOrEqualToConstant:MRRRecipeDetailFavoriteButtonMinimumWidth(button.titleLabel.font,
+                                                                                                          button.contentEdgeInsets,
+                                                                                                          includesSymbol)]
+  ]];
   [button addTarget:self action:@selector(didTapFavoriteButton) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:button];
   self.favoriteButton = button;
@@ -874,15 +893,18 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   NSString *title = self.isFavoriteSelected ? @"Saved" : @"Save";
   [self.favoriteButton setTitle:title forState:UIControlStateNormal];
   [self.favoriteButton setTitle:title forState:UIControlStateHighlighted];
+  [self.favoriteButton setTitle:title forState:UIControlStateDisabled];
   [self.favoriteButton setTitleColor:foregroundColor forState:UIControlStateNormal];
   [self.favoriteButton setTitleColor:[foregroundColor colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
+  [self.favoriteButton setTitleColor:foregroundColor forState:UIControlStateDisabled];
   self.favoriteButton.backgroundColor = backgroundColor;
   self.favoriteButton.tintColor = foregroundColor;
   self.favoriteButton.layer.borderColor =
       (self.isFavoriteSelected ? [[UIColor whiteColor] colorWithAlphaComponent:0.20] : [accentColor colorWithAlphaComponent:0.24]).CGColor;
   self.favoriteButton.enabled = self.isFavoriteButtonEnabled;
   self.favoriteButton.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
-  self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0);
+  self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0) |
+                                            (self.isFavoriteButtonEnabled ? 0 : UIAccessibilityTraitNotEnabled);
   self.favoriteButton.accessibilityLabel = self.isFavoriteSelected ? @"Remove recipe from saved recipes" : @"Save recipe";
   self.favoriteButton.accessibilityHint = self.isFavoriteButtonEnabled ? @"Double tap to update this recipe in your saved list."
                                                                        : @"Wait until the recipe finishes loading.";
@@ -893,10 +915,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
         [UIImageSymbolConfiguration configurationWithPointSize:15.0 weight:UIImageSymbolWeightSemibold];
     UIImage *image = [UIImage systemImageNamed:systemName withConfiguration:configuration];
     [self.favoriteButton setImage:image forState:UIControlStateNormal];
+    [self.favoriteButton setImage:image forState:UIControlStateHighlighted];
+    [self.favoriteButton setImage:image forState:UIControlStateDisabled];
     self.favoriteButton.imageEdgeInsets = UIEdgeInsetsMake(0.0, -2.0, 0.0, 2.0);
     self.favoriteButton.titleEdgeInsets = UIEdgeInsetsMake(0.0, 4.0, 0.0, -4.0);
   } else {
     [self.favoriteButton setImage:nil forState:UIControlStateNormal];
+    [self.favoriteButton setImage:nil forState:UIControlStateHighlighted];
+    [self.favoriteButton setImage:nil forState:UIControlStateDisabled];
     self.favoriteButton.imageEdgeInsets = UIEdgeInsetsZero;
     self.favoriteButton.titleEdgeInsets = UIEdgeInsetsZero;
   }
