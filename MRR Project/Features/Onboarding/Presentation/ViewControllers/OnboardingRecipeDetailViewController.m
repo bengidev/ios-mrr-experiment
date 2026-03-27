@@ -67,6 +67,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 @property(nonatomic, retain) UIView *headerCardView;
 @property(nonatomic, retain) UILabel *subtitleLabel;
 @property(nonatomic, retain) UILabel *titleLabel;
+@property(nonatomic, retain) UIView *favoriteButtonHostView;
 @property(nonatomic, retain) UIButton *favoriteButton;
 @property(nonatomic, retain) UIView *summaryCardView;
 @property(nonatomic, retain) UILabel *summaryEyebrowLabel;
@@ -123,8 +124,11 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 - (nullable UIView *)sectionIconViewWithSystemName:(NSString *)systemName;
 - (UIView *)titleHeaderCardView;
 - (UIView *)titleHeaderSkeletonCardView;
-- (nullable UIButton *)favoriteHeaderButton;
-- (void)updateFavoriteButtonAppearance;
+- (nullable UIView *)favoriteHeaderButtonHostView;
+- (UIButton *)buildFavoriteHeaderButton;
+- (void)reloadFavoriteButtonIfNeeded;
+- (void)applyFavoriteButtonInteractivity;
+- (void)applyFavoriteButtonAppearanceToButton:(UIButton *)button;
 - (UIView *)metadataChipWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UIView *)ingredientGridViewForIngredients:(NSArray<OnboardingRecipeIngredient *> *)ingredients;
 - (UIView *)ingredientChipWithIngredient:(OnboardingRecipeIngredient *)ingredient accessibilityIdentifier:(NSString *)accessibilityIdentifier;
@@ -248,6 +252,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [_summaryLabel release];
   [_summaryEyebrowLabel release];
   [_summaryCardView release];
+  [_favoriteButtonHostView release];
   [_titleLabel release];
   [_subtitleLabel release];
   [_favoriteButton release];
@@ -326,7 +331,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   _favoriteSelected = favoriteSelected;
-  [self updateFavoriteButtonAppearance];
+  [self reloadFavoriteButtonIfNeeded];
 }
 
 - (void)setFavoriteButtonEnabled:(BOOL)favoriteButtonEnabled {
@@ -335,7 +340,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   _favoriteButtonEnabled = favoriteButtonEnabled;
-  [self updateFavoriteButtonAppearance];
+  [self applyFavoriteButtonInteractivity];
 }
 
 #pragma mark - View Setup
@@ -516,6 +521,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
   self.subtitleLabel = nil;
   self.titleLabel = nil;
+  self.favoriteButtonHostView = nil;
   self.favoriteButton = nil;
   self.headerCardView = nil;
   self.summaryCardView = nil;
@@ -742,16 +748,16 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   topRow.spacing = 10.0;
 
   UIView *debugBadgeView = [self debugOriginBadgeViewIfNeeded];
-  UIButton *favoriteButton = [self favoriteHeaderButton];
-  if (debugBadgeView != nil || favoriteButton != nil) {
+  UIView *favoriteButtonHostView = [self favoriteHeaderButtonHostView];
+  if (debugBadgeView != nil || favoriteButtonHostView != nil) {
     if (debugBadgeView != nil) {
       [topRow addArrangedSubview:debugBadgeView];
     }
 
     UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
     [topRow addArrangedSubview:flexibleSpacer];
-    if (favoriteButton != nil) {
-      [topRow addArrangedSubview:favoriteButton];
+    if (favoriteButtonHostView != nil) {
+      [topRow addArrangedSubview:favoriteButtonHostView];
     }
     [stackView addArrangedSubview:topRow];
   }
@@ -848,11 +854,19 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   return cardView;
 }
 
-- (UIButton *)favoriteHeaderButton {
+- (UIView *)favoriteHeaderButtonHostView {
   if (!self.showsFavoriteButton) {
     return nil;
   }
 
+  UIView *hostView = [[[UIView alloc] init] autorelease];
+  hostView.translatesAutoresizingMaskIntoConstraints = NO;
+  self.favoriteButtonHostView = hostView;
+  [self reloadFavoriteButtonIfNeeded];
+  return hostView;
+}
+
+- (UIButton *)buildFavoriteHeaderButton {
   UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
   button.translatesAutoresizingMaskIntoConstraints = NO;
   button.accessibilityIdentifier = [self detailIdentifierForSuffix:@"favoriteButton"];
@@ -873,13 +887,45 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   ]];
   [button addTarget:self action:@selector(didTapFavoriteButton) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:button];
-  self.favoriteButton = button;
-  [self updateFavoriteButtonAppearance];
   return button;
 }
 
-- (void)updateFavoriteButtonAppearance {
+- (void)reloadFavoriteButtonIfNeeded {
+  if (self.favoriteButtonHostView == nil) {
+    return;
+  }
+
+  [self.favoriteButton removeFromSuperview];
+  self.favoriteButton = nil;
+
+  UIButton *button = [self buildFavoriteHeaderButton];
+  [self.favoriteButtonHostView addSubview:button];
+  [NSLayoutConstraint activateConstraints:@[
+    [button.topAnchor constraintEqualToAnchor:self.favoriteButtonHostView.topAnchor],
+    [button.leadingAnchor constraintEqualToAnchor:self.favoriteButtonHostView.leadingAnchor],
+    [button.trailingAnchor constraintEqualToAnchor:self.favoriteButtonHostView.trailingAnchor],
+    [button.bottomAnchor constraintEqualToAnchor:self.favoriteButtonHostView.bottomAnchor]
+  ]];
+  self.favoriteButton = button;
+  [self applyFavoriteButtonAppearanceToButton:button];
+}
+
+- (void)applyFavoriteButtonInteractivity {
   if (self.favoriteButton == nil) {
+    return;
+  }
+
+  self.favoriteButton.enabled = self.isFavoriteButtonEnabled;
+  self.favoriteButton.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
+  self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0) |
+                                            (self.isFavoriteButtonEnabled ? 0 : UIAccessibilityTraitNotEnabled);
+  self.favoriteButton.accessibilityLabel = self.isFavoriteSelected ? @"Remove recipe from saved recipes" : @"Save recipe";
+  self.favoriteButton.accessibilityHint = self.isFavoriteButtonEnabled ? @"Double tap to update this recipe in your saved list."
+                                                                       : @"Wait until the recipe finishes loading.";
+}
+
+- (void)applyFavoriteButtonAppearanceToButton:(UIButton *)button {
+  if (button == nil) {
     return;
   }
 
@@ -891,41 +937,36 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
                                  : [MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
                                                   [UIColor colorWithWhite:0.18 alpha:1.0]) colorWithAlphaComponent:0.96];
   NSString *title = self.isFavoriteSelected ? @"Saved" : @"Save";
-  [self.favoriteButton setTitle:title forState:UIControlStateNormal];
-  [self.favoriteButton setTitle:title forState:UIControlStateHighlighted];
-  [self.favoriteButton setTitle:title forState:UIControlStateDisabled];
-  [self.favoriteButton setTitleColor:foregroundColor forState:UIControlStateNormal];
-  [self.favoriteButton setTitleColor:[foregroundColor colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
-  [self.favoriteButton setTitleColor:foregroundColor forState:UIControlStateDisabled];
-  self.favoriteButton.backgroundColor = backgroundColor;
-  self.favoriteButton.tintColor = foregroundColor;
-  self.favoriteButton.layer.borderColor =
+  [button setTitle:title forState:UIControlStateNormal];
+  [button setTitle:title forState:UIControlStateHighlighted];
+  [button setTitle:title forState:UIControlStateDisabled];
+  [button setTitleColor:foregroundColor forState:UIControlStateNormal];
+  [button setTitleColor:[foregroundColor colorWithAlphaComponent:0.82] forState:UIControlStateHighlighted];
+  [button setTitleColor:foregroundColor forState:UIControlStateDisabled];
+  button.backgroundColor = backgroundColor;
+  button.tintColor = foregroundColor;
+  button.layer.borderColor =
       (self.isFavoriteSelected ? [[UIColor whiteColor] colorWithAlphaComponent:0.20] : [accentColor colorWithAlphaComponent:0.24]).CGColor;
-  self.favoriteButton.enabled = self.isFavoriteButtonEnabled;
-  self.favoriteButton.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
-  self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0) |
-                                            (self.isFavoriteButtonEnabled ? 0 : UIAccessibilityTraitNotEnabled);
-  self.favoriteButton.accessibilityLabel = self.isFavoriteSelected ? @"Remove recipe from saved recipes" : @"Save recipe";
-  self.favoriteButton.accessibilityHint = self.isFavoriteButtonEnabled ? @"Double tap to update this recipe in your saved list."
-                                                                       : @"Wait until the recipe finishes loading.";
 
   if (@available(iOS 13.0, *)) {
     NSString *systemName = self.isFavoriteSelected ? @"heart.fill" : @"heart";
     UIImageSymbolConfiguration *configuration =
         [UIImageSymbolConfiguration configurationWithPointSize:15.0 weight:UIImageSymbolWeightSemibold];
     UIImage *image = [UIImage systemImageNamed:systemName withConfiguration:configuration];
-    [self.favoriteButton setImage:image forState:UIControlStateNormal];
-    [self.favoriteButton setImage:image forState:UIControlStateHighlighted];
-    [self.favoriteButton setImage:image forState:UIControlStateDisabled];
-    self.favoriteButton.imageEdgeInsets = UIEdgeInsetsMake(0.0, -2.0, 0.0, 2.0);
-    self.favoriteButton.titleEdgeInsets = UIEdgeInsetsMake(0.0, 4.0, 0.0, -4.0);
+    [button setImage:image forState:UIControlStateNormal];
+    [button setImage:image forState:UIControlStateHighlighted];
+    [button setImage:image forState:UIControlStateDisabled];
+    button.imageEdgeInsets = UIEdgeInsetsMake(0.0, -2.0, 0.0, 2.0);
+    button.titleEdgeInsets = UIEdgeInsetsMake(0.0, 4.0, 0.0, -4.0);
   } else {
-    [self.favoriteButton setImage:nil forState:UIControlStateNormal];
-    [self.favoriteButton setImage:nil forState:UIControlStateHighlighted];
-    [self.favoriteButton setImage:nil forState:UIControlStateDisabled];
-    self.favoriteButton.imageEdgeInsets = UIEdgeInsetsZero;
-    self.favoriteButton.titleEdgeInsets = UIEdgeInsetsZero;
+    [button setImage:nil forState:UIControlStateNormal];
+    [button setImage:nil forState:UIControlStateHighlighted];
+    [button setImage:nil forState:UIControlStateDisabled];
+    button.imageEdgeInsets = UIEdgeInsetsZero;
+    button.titleEdgeInsets = UIEdgeInsetsZero;
   }
+
+  [self applyFavoriteButtonInteractivity];
 }
 
 - (UIView *)ingredientsSectionViewForIngredients:(NSArray<OnboardingRecipeIngredient *> *)ingredients {
