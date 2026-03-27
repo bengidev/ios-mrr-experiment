@@ -92,6 +92,19 @@ static UIColor *MRRSecondaryTextColor(void) {
 
 static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor colorWithWhite:0.0 alpha:0.12]; }
 
+static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
+  if (block == nil) {
+    return;
+  }
+
+  if ([NSThread isMainThread]) {
+    block();
+    return;
+  }
+
+  dispatch_sync(dispatch_get_main_queue(), block);
+}
+
 @interface OnboardingViewController () <UICollectionViewDataSource,
                                         UICollectionViewDelegate,
                                         UICollectionViewDelegateFlowLayout,
@@ -256,6 +269,8 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 - (void)presentLoadedRecipeDetail:(OnboardingRecipeDetail *)detail
                     recipePreview:(OnboardingRecipePreview *)recipePreview
                       debugOrigin:(OnboardingRecipeDetailDebugOrigin)debugOrigin;
+- (void)dismissRecipeDetailContainerForViewController:(OnboardingRecipeDetailViewController *)viewController
+                                           completion:(void (^)(void))completion;
 - (void)pauseCarouselAutoscroll;
 - (void)resumeCarouselAutoscrollIfPossible;
 - (void)handleCarouselDisplayLink:(CADisplayLink *)displayLink;
@@ -2242,23 +2257,36 @@ static UIColor *MRROnboardingLoadingOverlayTintColor(void) { return [UIColor col
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
 
+- (void)dismissRecipeDetailContainerForViewController:(OnboardingRecipeDetailViewController *)viewController
+                                           completion:(void (^)(void))completion {
+  if (viewController == nil) {
+    return;
+  }
+
+  UIViewController *dismissTarget = viewController.navigationController ?: viewController;
+  BOOL shouldAnimate = [self shouldAnimateModalTransitions];
+  MRROnboardingPerformOnMainThread(^{
+    [dismissTarget dismissViewControllerAnimated:shouldAnimate completion:completion];
+  });
+}
+
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController {
   self.detailPresented = NO;
-  [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
-                           completion:^{
-                             self.viewVisible = YES;
-                             [self resumeCarouselAutoscrollIfPossible];
-                           }];
+  [self dismissRecipeDetailContainerForViewController:viewController
+                                           completion:^{
+                                             self.viewVisible = YES;
+                                             [self resumeCarouselAutoscrollIfPossible];
+                                           }];
 }
 
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController {
   self.detailPresented = NO;
   [self.stateController markOnboardingCompleted];
-  [self dismissViewControllerAnimated:[self shouldAnimateModalTransitions]
-                           completion:^{
-                             self.viewVisible = YES;
-                             [self resumeCarouselAutoscrollIfPossible];
-                           }];
+  [self dismissRecipeDetailContainerForViewController:viewController
+                                           completion:^{
+                                             self.viewVisible = YES;
+                                             [self resumeCarouselAutoscrollIfPossible];
+                                           }];
 }
 
 - (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
