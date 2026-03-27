@@ -1078,11 +1078,19 @@
   XCTAssertEqualWithAccuracy(favoriteButton.alpha, 0.58, 0.001);
 
   detailViewController.favoriteSelected = YES;
+  UIButton *rerenderedFavoriteButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton" inView:detailViewController.view];
+  XCTAssertNotNil(rerenderedFavoriteButton);
+  XCTAssertTrue(favoriteButton != rerenderedFavoriteButton);
+  XCTAssertFalse(rerenderedFavoriteButton.enabled);
+  XCTAssertEqualObjects([rerenderedFavoriteButton titleForState:UIControlStateNormal], @"Saved");
+  XCTAssertEqualObjects([rerenderedFavoriteButton titleForState:UIControlStateDisabled], @"Saved");
+
   detailViewController.favoriteButtonEnabled = YES;
   [detailViewController.view layoutIfNeeded];
 
-  XCTAssertEqualObjects([self displayedTitleForButton:favoriteButton], @"Saved");
-  XCTAssertEqualWithAccuracy(CGRectGetWidth(favoriteButton.bounds), initialWidth, 0.5);
+  XCTAssertEqualWithAccuracy(CGRectGetWidth(rerenderedFavoriteButton.bounds), initialWidth, 0.5);
+  XCTAssertTrue(rerenderedFavoriteButton.enabled);
 
   window.hidden = YES;
 }
