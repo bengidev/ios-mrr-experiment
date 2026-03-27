@@ -1049,6 +1049,44 @@
   [UIView setAnimationsEnabled:animationsWereEnabled];
 }
 
+- (void)testRecipeDetailFavoriteButtonKeepsStableWidthAcrossSavedStates {
+  OnboardingRecipePreview *preview = self.viewController.recipes.firstObject;
+  OnboardingRecipeDetailViewController *detailViewController =
+      [[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:preview recipeDetail:preview.fallbackDetail];
+  detailViewController.showsFavoriteButton = YES;
+
+  UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:detailViewController];
+  navigationController.modalPresentationStyle = UIModalPresentationFullScreen;
+
+  UIWindow *window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  window.rootViewController = navigationController;
+  [window makeKeyAndVisible];
+  [navigationController loadViewIfNeeded];
+  [detailViewController loadViewIfNeeded];
+  [detailViewController.view layoutIfNeeded];
+
+  UIButton *favoriteButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton" inView:detailViewController.view];
+  XCTAssertNotNil(favoriteButton);
+  XCTAssertEqualObjects([self displayedTitleForButton:favoriteButton], @"Save");
+  XCTAssertFalse(favoriteButton.adjustsImageWhenDisabled);
+
+  CGFloat initialWidth = CGRectGetWidth(favoriteButton.bounds);
+
+  detailViewController.favoriteButtonEnabled = NO;
+  [detailViewController.view layoutIfNeeded];
+  XCTAssertEqualWithAccuracy(favoriteButton.alpha, 0.58, 0.001);
+
+  detailViewController.favoriteSelected = YES;
+  detailViewController.favoriteButtonEnabled = YES;
+  [detailViewController.view layoutIfNeeded];
+
+  XCTAssertEqualObjects([self displayedTitleForButton:favoriteButton], @"Saved");
+  XCTAssertEqualWithAccuracy(CGRectGetWidth(favoriteButton.bounds), initialWidth, 0.5);
+
+  window.hidden = YES;
+}
+
 - (void)testRecipeDetailPresentationUsesSheetWrapperOnModernOS {
   if (@available(iOS 15.0, *)) {
     [self presentFirstRecipe];
