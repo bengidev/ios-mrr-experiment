@@ -5,7 +5,8 @@
 @interface MRRSyncingLogoutController ()
 
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
-@property(nonatomic, retain) id<MRRSavedRecipesCloudSyncing> syncEngine;
+@property(nonatomic, retain) id<MRRSavedRecipesCloudSyncing> savedRecipesSyncEngine;
+@property(nonatomic, retain, nullable) id<MRRUserRecipesCloudSyncing> userRecipesSyncEngine;
 
 @end
 
@@ -13,19 +14,29 @@
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                       syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
+  return [self initWithAuthenticationController:authenticationController
+                         savedRecipesSyncEngine:syncEngine
+                          userRecipesSyncEngine:nil];
+}
+
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
+                          savedRecipesSyncEngine:(id<MRRSavedRecipesCloudSyncing>)savedRecipesSyncEngine
+                           userRecipesSyncEngine:(id<MRRUserRecipesCloudSyncing>)userRecipesSyncEngine {
   NSParameterAssert(authenticationController != nil);
-  NSParameterAssert(syncEngine != nil);
+  NSParameterAssert(savedRecipesSyncEngine != nil);
 
   self = [super init];
   if (self) {
     _authenticationController = [authenticationController retain];
-    _syncEngine = [syncEngine retain];
+    _savedRecipesSyncEngine = [savedRecipesSyncEngine retain];
+    _userRecipesSyncEngine = [userRecipesSyncEngine retain];
   }
   return self;
 }
 
 - (void)dealloc {
-  [_syncEngine release];
+  [_userRecipesSyncEngine release];
+  [_savedRecipesSyncEngine release];
   [_authenticationController release];
   [super dealloc];
 }
@@ -40,7 +51,7 @@
     return;
   }
 
-  [self.syncEngine flushPendingChangesForUserID:session.userID completion:^(NSError *syncError) {
+  [self.savedRecipesSyncEngine flushPendingChangesForUserID:session.userID completion:^(NSError *syncError) {
     if (syncError != nil) {
       if (completion != nil) {
         completion(syncError);
@@ -48,11 +59,29 @@
       return;
     }
 
-    NSError *signOutError = nil;
-    BOOL didSignOut = [self.authenticationController signOut:&signOutError];
-    if (completion != nil) {
-      completion((didSignOut && signOutError == nil) ? nil : signOutError);
+    void (^completeSignOut)(void) = ^{
+      NSError *signOutError = nil;
+      BOOL didSignOut = [self.authenticationController signOut:&signOutError];
+      if (completion != nil) {
+        completion((didSignOut && signOutError == nil) ? nil : signOutError);
+      }
+    };
+
+    if (self.userRecipesSyncEngine == nil) {
+      completeSignOut();
+      return;
     }
+
+    [self.userRecipesSyncEngine flushPendingChangesForUserID:session.userID completion:^(NSError *userSyncError) {
+      if (userSyncError != nil) {
+        if (completion != nil) {
+          completion(userSyncError);
+        }
+        return;
+      }
+
+      completeSignOut();
+    }];
   }];
 }
 

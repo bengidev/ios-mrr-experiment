@@ -2,6 +2,7 @@
 
 #import "../../../Features/Authentication/MRRAuthenticationController.h"
 #import "MRRSavedRecipesCloudSyncing.h"
+#import "../../UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,6 +20,9 @@ typedef void (^MRRLogoutCompletion)(NSError *_Nullable error);
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                       syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine;
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
+                          savedRecipesSyncEngine:(id<MRRSavedRecipesCloudSyncing>)savedRecipesSyncEngine
+                           userRecipesSyncEngine:(nullable id<MRRUserRecipesCloudSyncing>)userRecipesSyncEngine;
 
 @end
 

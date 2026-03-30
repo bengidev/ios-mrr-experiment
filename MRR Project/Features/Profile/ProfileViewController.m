@@ -269,10 +269,10 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 - (void)updateLogoutUIForInProgress:(BOOL)inProgress {
   self.performingLogout = inProgress;
   self.logoutButton.enabled = !inProgress;
-  [self.logoutButton setTitle:(inProgress ? @"Syncing saved recipes..." : @"Log Out") forState:UIControlStateNormal];
-  [self.logoutButton setTitle:(inProgress ? @"Syncing saved recipes..." : @"Log Out") forState:UIControlStateDisabled];
+  [self.logoutButton setTitle:(inProgress ? @"Syncing your recipes..." : @"Log Out") forState:UIControlStateNormal];
+  [self.logoutButton setTitle:(inProgress ? @"Syncing your recipes..." : @"Log Out") forState:UIControlStateDisabled];
   self.statusLabel.text = inProgress
-                              ? @"Syncing saved recipes before logout so your favorites stay available after you sign back in."
+                              ? @"Syncing saved recipes and your created recipes before logout so everything stays available after you sign back in."
                               : @"Your authentication session is active and ready for future subscription wiring.";
 }
 
