@@ -14,6 +14,10 @@
 #import "../MRR Project/Features/Profile/ProfileViewController.h"
 #import "../MRR Project/Features/Saved/SavedCoordinator.h"
 #import "../MRR Project/Features/Saved/SavedViewController.h"
+#import "../MRR Project/Features/Yours/YoursCoordinator.h"
+#import "../MRR Project/Features/Yours/YoursViewController.h"
+#import "../MRR Project/Persistence/UserRecipes/MRRUserRecipesStore.h"
+#import "../MRR Project/Persistence/UserRecipes/Sync/MRRNoOpUserRecipesSyncEngine.h"
 
 static UIColor *MRRMainMenuTestDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -115,7 +119,9 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 @property(nonatomic, strong) MRRAuthSession *session;
 @property(nonatomic, strong) MRRCoreDataStack *coreDataStack;
 @property(nonatomic, strong) MRRSavedRecipesStore *savedRecipesStore;
+@property(nonatomic, strong) MRRUserRecipesStore *userRecipesStore;
 @property(nonatomic, strong) MRRNoOpSavedRecipesSyncEngine *syncEngine;
+@property(nonatomic, strong) MRRNoOpUserRecipesSyncEngine *userSyncEngine;
 @property(nonatomic, strong) MainMenuCoordinator *mainMenuCoordinator;
 @property(nonatomic, strong) MainMenuTabBarController *tabBarController;
 @property(nonatomic, strong) UIWindow *window;
@@ -153,12 +159,16 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertNil(coreDataError);
   XCTAssertNotNil(self.coreDataStack);
   self.savedRecipesStore = [[MRRSavedRecipesStore alloc] initWithCoreDataStack:self.coreDataStack];
+  self.userRecipesStore = [[MRRUserRecipesStore alloc] initWithCoreDataStack:self.coreDataStack];
   self.syncEngine = [[MRRNoOpSavedRecipesSyncEngine alloc] init];
+  self.userSyncEngine = [[MRRNoOpUserRecipesSyncEngine alloc] init];
   [self seedSavedRecipes];
   self.mainMenuCoordinator = [[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController
                                                                                    session:self.session
                                                                           savedRecipesStore:self.savedRecipesStore
                                                                                 syncEngine:self.syncEngine
+                                                                          userRecipesStore:self.userRecipesStore
+                                                                           userSyncEngine:self.userSyncEngine
                                                                            logoutController:nil];
   self.tabBarController = (MainMenuTabBarController *)[self.mainMenuCoordinator rootViewController];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
@@ -172,7 +182,9 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   self.window = nil;
   self.tabBarController = nil;
   self.mainMenuCoordinator = nil;
+  self.userSyncEngine = nil;
   self.syncEngine = nil;
+  self.userRecipesStore = nil;
   self.savedRecipesStore = nil;
   self.coreDataStack = nil;
   self.session = nil;
@@ -181,8 +193,8 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   [super tearDown];
 }
 
-- (void)testMainMenuCoordinatorBuildsThreeTabs {
-  XCTAssertEqual(self.tabBarController.viewControllers.count, 3);
+- (void)testMainMenuCoordinatorBuildsFourTabs {
+  XCTAssertEqual(self.tabBarController.viewControllers.count, 4);
   XCTAssertEqualObjects(self.tabBarController.tabBar.accessibilityIdentifier, @"mainMenu.tabBar");
 }
 
@@ -248,22 +260,31 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 }
 
 - (void)testProfileTabHostsProfileViewController {
-  UINavigationController *navigationController = [self navigationControllerAtIndex:2];
+  UINavigationController *navigationController = [self navigationControllerAtIndex:3];
   XCTAssertTrue([navigationController.topViewController isKindOfClass:[ProfileViewController class]]);
   XCTAssertEqualObjects(navigationController.tabBarItem.title, @"Profile");
+}
+
+- (void)testYoursTabHostsYoursViewController {
+  UINavigationController *navigationController = [self navigationControllerAtIndex:2];
+  XCTAssertTrue([navigationController.topViewController isKindOfClass:[YoursViewController class]]);
+  XCTAssertEqualObjects(navigationController.tabBarItem.title, @"Yours");
 }
 
 - (void)testMountedTabsExposeFeatureAccessibilityIdentifiers {
   UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
   UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
-  UINavigationController *profileNavigationController = [self navigationControllerAtIndex:2];
+  UINavigationController *yoursNavigationController = [self navigationControllerAtIndex:2];
+  UINavigationController *profileNavigationController = [self navigationControllerAtIndex:3];
 
   [homeNavigationController.topViewController loadViewIfNeeded];
   [savedNavigationController.topViewController loadViewIfNeeded];
+  [yoursNavigationController.topViewController loadViewIfNeeded];
   [profileNavigationController.topViewController loadViewIfNeeded];
 
   XCTAssertEqualObjects(homeNavigationController.topViewController.view.accessibilityIdentifier, @"home.view");
   XCTAssertEqualObjects(savedNavigationController.topViewController.view.accessibilityIdentifier, @"saved.view");
+  XCTAssertEqualObjects(yoursNavigationController.topViewController.view.accessibilityIdentifier, @"yours.view");
   XCTAssertEqualObjects(profileNavigationController.topViewController.view.accessibilityIdentifier, @"profile.view");
 }
 
@@ -285,6 +306,7 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 - (void)testFeatureCoordinatorsReturnStandaloneContentControllers {
   HomeCoordinator *homeCoordinator = [[HomeCoordinator alloc] init];
   SavedCoordinator *savedCoordinator = [[SavedCoordinator alloc] init];
+  YoursCoordinator *yoursCoordinator = [[YoursCoordinator alloc] init];
   ProfileCoordinator *profileCoordinator =
       [[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController session:self.session];
 
@@ -295,6 +317,10 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertTrue([[savedCoordinator rootViewController] isKindOfClass:[SavedViewController class]]);
   XCTAssertFalse([[savedCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
   XCTAssertEqualObjects([[savedCoordinator tabBarItem] title], @"Saved");
+
+  XCTAssertTrue([[yoursCoordinator rootViewController] isKindOfClass:[YoursViewController class]]);
+  XCTAssertFalse([[yoursCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
+  XCTAssertEqualObjects([[yoursCoordinator tabBarItem] title], @"Yours");
 
   XCTAssertTrue([[profileCoordinator rootViewController] isKindOfClass:[ProfileViewController class]]);
   XCTAssertFalse([[profileCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);

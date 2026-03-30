@@ -5,6 +5,8 @@
 #import "../MRR Project/Features/MainMenu/MainMenuTabBarController.h"
 #import "../MRR Project/Features/Onboarding/Data/OnboardingStateController.h"
 #import "../MRR Project/Features/Onboarding/Presentation/ViewControllers/OnboardingViewController.h"
+#import "../MRR Project/Persistence/SavedRecipes/Sync/MRRSavedRecipesCloudSyncing.h"
+#import "../MRR Project/Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
 
 @interface AppLaunchFlowAuthStateObservationSpy : NSObject <MRRAuthStateObservation>
 
@@ -23,6 +25,76 @@
 @interface AppDelegate (Testing)
 
 - (void)onboardingViewControllerDidAuthenticate:(OnboardingViewController *)viewController;
+
+@end
+
+@interface AppLaunchFlowSavedSyncEngineSpy : NSObject <MRRSavedRecipesCloudSyncing>
+
+@property(nonatomic, assign) NSInteger flushCount;
+@property(nonatomic, assign) NSInteger requestCount;
+@property(nonatomic, copy, nullable) NSString *lastUserID;
+
+@end
+
+@implementation AppLaunchFlowSavedSyncEngineSpy
+
+- (void)startSyncForUserID:(NSString *)userID completion:(MRRSavedRecipesSyncCompletion)completion {
+  self.lastUserID = userID;
+  if (completion != nil) {
+    completion(nil);
+  }
+}
+
+- (void)stopSync {
+}
+
+- (void)requestImmediateSyncForUserID:(NSString *)userID {
+  self.requestCount += 1;
+  self.lastUserID = userID;
+}
+
+- (void)flushPendingChangesForUserID:(NSString *)userID completion:(MRRSavedRecipesSyncCompletion)completion {
+  self.flushCount += 1;
+  self.lastUserID = userID;
+  if (completion != nil) {
+    completion(nil);
+  }
+}
+
+@end
+
+@interface AppLaunchFlowUserSyncEngineSpy : NSObject <MRRUserRecipesCloudSyncing>
+
+@property(nonatomic, assign) NSInteger flushCount;
+@property(nonatomic, assign) NSInteger requestCount;
+@property(nonatomic, copy, nullable) NSString *lastUserID;
+
+@end
+
+@implementation AppLaunchFlowUserSyncEngineSpy
+
+- (void)startSyncForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
+  self.lastUserID = userID;
+  if (completion != nil) {
+    completion(nil);
+  }
+}
+
+- (void)stopSync {
+}
+
+- (void)requestImmediateSyncForUserID:(NSString *)userID {
+  self.requestCount += 1;
+  self.lastUserID = userID;
+}
+
+- (void)flushPendingChangesForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
+  self.flushCount += 1;
+  self.lastUserID = userID;
+  if (completion != nil) {
+    completion(nil);
+  }
+}
 
 @end
 
@@ -157,6 +229,72 @@
   XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
 
   XCTAssertTrue([appDelegate.window.rootViewController isKindOfClass:[MainMenuTabBarController class]]);
+}
+
+- (void)testLoggedInLaunchBuildsFourTabs {
+  AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeEmail
+                                                                  emailVerified:NO];
+
+  AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+
+  MainMenuTabBarController *tabBarController = [self mainMenuTabBarControllerFromRootViewController:appDelegate.window.rootViewController];
+  XCTAssertEqual(tabBarController.viewControllers.count, 4);
+
+  NSArray<NSString *> *titles = [tabBarController.viewControllers valueForKeyPath:@"tabBarItem.title"];
+  XCTAssertEqualObjects(titles, (@[ @"Home", @"Saved", @"Yours", @"Profile" ]));
+}
+
+- (void)testApplicationDidBecomeActiveRequestsSavedAndUserRecipeSync {
+  AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeGoogle
+                                                                  emailVerified:YES];
+
+  AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+
+  AppLaunchFlowSavedSyncEngineSpy *savedSpy = [[AppLaunchFlowSavedSyncEngineSpy alloc] init];
+  AppLaunchFlowUserSyncEngineSpy *userSpy = [[AppLaunchFlowUserSyncEngineSpy alloc] init];
+  [appDelegate setValue:savedSpy forKey:@"savedRecipesSyncEngine"];
+  [appDelegate setValue:userSpy forKey:@"userRecipesSyncEngine"];
+
+  [appDelegate applicationDidBecomeActive:[UIApplication sharedApplication]];
+
+  XCTAssertEqual(savedSpy.requestCount, 1);
+  XCTAssertEqual(userSpy.requestCount, 1);
+  XCTAssertEqualObjects(savedSpy.lastUserID, @"firebase-uid");
+  XCTAssertEqualObjects(userSpy.lastUserID, @"firebase-uid");
+}
+
+- (void)testApplicationDidEnterBackgroundFlushesSavedAndUserRecipeSync {
+  AppLaunchFlowAuthenticationControllerSpy *authenticationController = [[AppLaunchFlowAuthenticationControllerSpy alloc] init];
+  authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                                          email:@"cook@example.com"
+                                                                    displayName:@"Test Cook"
+                                                                   providerType:MRRAuthProviderTypeGoogle
+                                                                  emailVerified:YES];
+
+  AppDelegate *appDelegate = [self makeAppDelegateWithAuthenticationController:authenticationController];
+  XCTAssertTrue([appDelegate application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:nil]);
+
+  AppLaunchFlowSavedSyncEngineSpy *savedSpy = [[AppLaunchFlowSavedSyncEngineSpy alloc] init];
+  AppLaunchFlowUserSyncEngineSpy *userSpy = [[AppLaunchFlowUserSyncEngineSpy alloc] init];
+  [appDelegate setValue:savedSpy forKey:@"savedRecipesSyncEngine"];
+  [appDelegate setValue:userSpy forKey:@"userRecipesSyncEngine"];
+
+  [appDelegate applicationDidEnterBackground:[UIApplication sharedApplication]];
+
+  XCTAssertEqual(savedSpy.flushCount, 1);
+  XCTAssertEqual(userSpy.flushCount, 1);
+  XCTAssertEqualObjects(savedSpy.lastUserID, @"firebase-uid");
+  XCTAssertEqualObjects(userSpy.lastUserID, @"firebase-uid");
 }
 
 - (void)testLegacyStoredLayoutScalingPreferenceDoesNotAffectLaunchFlow {
