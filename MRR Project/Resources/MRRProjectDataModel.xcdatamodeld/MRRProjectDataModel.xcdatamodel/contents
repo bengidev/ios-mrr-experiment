@@ -70,6 +70,66 @@
         <attribute name="value" optional="NO" attributeType="String"/>
         <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SavedRecipe" inverseName="tools" inverseEntity="SavedRecipe"/>
     </entity>
+    <entity name="UserRecipe" representedClassName="UserRecipe" syncable="YES" codeGenerationType="class">
+        <attribute name="assetName" optional="NO" attributeType="String"/>
+        <attribute name="calorieCount" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="heroImageURLString" optional="YES" attributeType="String"/>
+        <attribute name="localModifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="mealType" optional="NO" attributeType="String"/>
+        <attribute name="readyInMinutes" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="recipeID" optional="NO" attributeType="String"/>
+        <attribute name="remoteUpdatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="servings" optional="NO" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="subtitle" optional="NO" attributeType="String"/>
+        <attribute name="summaryText" optional="NO" attributeType="String"/>
+        <attribute name="title" optional="NO" attributeType="String"/>
+        <attribute name="userID" optional="NO" attributeType="String"/>
+        <relationship name="ingredients" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeIngredient" inverseName="recipe" inverseEntity="UserRecipeIngredient"/>
+        <relationship name="instructions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeInstruction" inverseName="recipe" inverseEntity="UserRecipeInstruction"/>
+        <relationship name="tags" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeTag" inverseName="recipe" inverseEntity="UserRecipeTag"/>
+        <relationship name="tools" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeTool" inverseName="recipe" inverseEntity="UserRecipeTool"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="userID"/>
+                <constraint value="recipeID"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="UserRecipeIngredient" representedClassName="UserRecipeIngredient" syncable="YES" codeGenerationType="class">
+        <attribute name="displayText" optional="NO" attributeType="String"/>
+        <attribute name="name" optional="NO" attributeType="String"/>
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserRecipe" inverseName="ingredients" inverseEntity="UserRecipe"/>
+    </entity>
+    <entity name="UserRecipeInstruction" representedClassName="UserRecipeInstruction" syncable="YES" codeGenerationType="class">
+        <attribute name="detailText" optional="NO" attributeType="String"/>
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="title" optional="NO" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserRecipe" inverseName="instructions" inverseEntity="UserRecipe"/>
+    </entity>
+    <entity name="UserRecipeSyncChange" representedClassName="UserRecipeSyncChange" syncable="YES" codeGenerationType="class">
+        <attribute name="operationType" optional="NO" attributeType="String"/>
+        <attribute name="queuedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="recipeID" optional="NO" attributeType="String"/>
+        <attribute name="userID" optional="NO" attributeType="String"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="userID"/>
+                <constraint value="recipeID"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="UserRecipeTag" representedClassName="UserRecipeTag" syncable="YES" codeGenerationType="class">
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="value" optional="NO" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserRecipe" inverseName="tags" inverseEntity="UserRecipe"/>
+    </entity>
+    <entity name="UserRecipeTool" representedClassName="UserRecipeTool" syncable="YES" codeGenerationType="class">
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="value" optional="NO" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserRecipe" inverseName="tools" inverseEntity="UserRecipe"/>
+    </entity>
     <elements>
         <element name="SavedRecipe" positionX="-63" positionY="-18" width="128" height="390"/>
         <element name="SavedRecipeIngredient" positionX="288" positionY="-153" width="128" height="103"/>
@@ -77,5 +137,11 @@
         <element name="SavedRecipeSyncChange" positionX="-63" positionY="438" width="128" height="103"/>
         <element name="SavedRecipeTag" positionX="288" positionY="115" width="128" height="88"/>
         <element name="SavedRecipeTool" positionX="288" positionY="220" width="128" height="88"/>
+        <element name="UserRecipe" positionX="661" positionY="-18" width="128" height="253"/>
+        <element name="UserRecipeIngredient" positionX="1012" positionY="-153" width="128" height="103"/>
+        <element name="UserRecipeInstruction" positionX="1012" positionY="-18" width="128" height="118"/>
+        <element name="UserRecipeSyncChange" positionX="661" positionY="438" width="128" height="103"/>
+        <element name="UserRecipeTag" positionX="1012" positionY="115" width="128" height="88"/>
+        <element name="UserRecipeTool" positionX="1012" positionY="220" width="128" height="88"/>
     </elements>
 </model>
