@@ -37,6 +37,7 @@ Carthage/Build/
 # SPM
 .build/
 .swiftpm/
+.spm/
 
 # Local repo guidance
 AGENTS.md
