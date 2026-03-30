@@ -7,8 +7,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class MRRAuthSession;
 @class MRRSavedRecipesStore;
+@class MRRUserRecipesStore;
 @protocol MRRLogoutCoordinating;
 @protocol MRRSavedRecipesCloudSyncing;
+@protocol MRRUserRecipesCloudSyncing;
 
 @interface MainMenuCoordinator : NSObject <MRRFeatureCoordinator>
 
@@ -18,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
                                          session:(MRRAuthSession *)session
                                 savedRecipesStore:(nullable MRRSavedRecipesStore *)savedRecipesStore
                                       syncEngine:(nullable id<MRRSavedRecipesCloudSyncing>)syncEngine
+                                 userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
+                                  userSyncEngine:(nullable id<MRRUserRecipesCloudSyncing>)userSyncEngine
                                  logoutController:(nullable id<MRRLogoutCoordinating>)logoutController;
 
 @end
