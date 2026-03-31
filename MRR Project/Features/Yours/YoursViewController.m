@@ -1,21 +1,19 @@
 #import "YoursViewController.h"
 
+#import "../../Persistence/UserRecipes/MRRUserRecipePhotoStorage.h"
 #import "../../Persistence/UserRecipes/MRRUserRecipesStore.h"
 #import "../../Persistence/UserRecipes/Models/MRRUserRecipeSnapshot.h"
 #import "../../Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
+#import "MRRYoursRecipeEditorViewController.h"
 
-static NSErrorDomain const MRRYoursViewControllerValidationErrorDomain = @"MRRYoursViewControllerValidationErrorDomain";
+static NSErrorDomain const MRRYoursViewControllerErrorDomain = @"MRRYoursViewControllerErrorDomain";
 
 static UIColor *MRRYoursDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
-      if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
-        return darkColor;
-      }
-      return lightColor;
+      return traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark ? darkColor : lightColor;
     }];
   }
-
   return lightColor;
 }
 
@@ -63,6 +61,7 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
 @property(nonatomic, retain, nullable) id<MRRUserRecipesCloudSyncing> syncEngine;
+@property(nonatomic, retain) id<MRRUserRecipePhotoStorage> photoStorage;
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *cardsStackView;
@@ -70,6 +69,10 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 @property(nonatomic, retain) UIButton *emptyStateButton;
 @property(nonatomic, copy) NSArray<MRRUserRecipeSnapshot *> *recipes;
 
+- (instancetype)initWithSessionUserID:(nullable NSString *)sessionUserID
+                     userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
+                           syncEngine:(nullable id<MRRUserRecipesCloudSyncing>)syncEngine
+                         photoStorage:(nullable id<MRRUserRecipePhotoStorage>)photoStorage;
 - (void)buildViewHierarchy;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
 - (UIButton *)actionButtonWithTitle:(NSString *)title filled:(BOOL)filled;
@@ -81,28 +84,9 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 - (nullable NSString *)recipeIdentifierFromButton:(UIButton *)button prefix:(NSString *)prefix;
 - (NSString *)metadataTextForRecipe:(MRRUserRecipeSnapshot *)recipe;
 - (NSString *)updatedTextForRecipe:(MRRUserRecipeSnapshot *)recipe;
-- (NSArray<NSString *> *)componentsFromDelimitedText:(NSString *)text;
-- (NSArray<MRRUserRecipeIngredientSnapshot *> *)ingredientSnapshotsFromText:(NSString *)text;
-- (NSArray<MRRUserRecipeInstructionSnapshot *> *)instructionSnapshotsFromText:(NSString *)text;
-- (NSInteger)integerValueFromText:(NSString *)text defaultValue:(NSInteger)defaultValue minimumValue:(NSInteger)minimumValue;
-- (NSString *)joinedIngredientTextForRecipe:(MRRUserRecipeSnapshot *)recipe;
-- (NSString *)joinedInstructionTextForRecipe:(MRRUserRecipeSnapshot *)recipe;
-- (void)presentRecipeFormForRecipe:(nullable MRRUserRecipeSnapshot *)recipe;
-- (void)presentRecipeFormForRecipe:(nullable MRRUserRecipeSnapshot *)recipe
-                    fieldOverrides:(nullable NSDictionary<NSString *, NSString *> *)fieldOverrides
-                 validationMessage:(nullable NSString *)validationMessage;
-- (void)presentValidationError:(NSError *)error title:(NSString *)title;
-- (BOOL)persistRecipeWithTitle:(NSString *)title
-                      subtitle:(NSString *)subtitle
-                       summary:(NSString *)summary
-                 mealTypeInput:(NSString *)mealTypeInput
-            readyInMinutesText:(NSString *)readyInMinutesText
-                  servingsText:(NSString *)servingsText
-               ingredientsText:(NSString *)ingredientsText
-              instructionsText:(NSString *)instructionsText
-                 existingRecipe:(nullable MRRUserRecipeSnapshot *)existingRecipe
-                          error:(NSError *_Nullable *_Nullable)error;
+- (void)presentEditorForRecipe:(nullable MRRUserRecipeSnapshot *)recipe;
 - (BOOL)deleteRecipeWithIdentifier:(NSString *)recipeIdentifier error:(NSError *_Nullable *_Nullable)error;
+- (void)presentValidationError:(NSError *)error title:(NSString *)title;
 - (void)handleAddButtonTapped:(id)sender;
 - (void)handleEditButtonTapped:(UIButton *)sender;
 - (void)handleDeleteButtonTapped:(UIButton *)sender;
@@ -119,14 +103,21 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 - (instancetype)initWithSessionUserID:(NSString *)sessionUserID
                      userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
                            syncEngine:(id<MRRUserRecipesCloudSyncing>)syncEngine {
+  return [self initWithSessionUserID:sessionUserID userRecipesStore:userRecipesStore syncEngine:syncEngine photoStorage:nil];
+}
+
+- (instancetype)initWithSessionUserID:(NSString *)sessionUserID
+                     userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
+                           syncEngine:(id<MRRUserRecipesCloudSyncing>)syncEngine
+                         photoStorage:(id<MRRUserRecipePhotoStorage>)photoStorage {
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
     _sessionUserID = [sessionUserID copy];
     _userRecipesStore = [userRecipesStore retain];
     _syncEngine = [syncEngine retain];
+    _photoStorage = [(photoStorage ?: [[[MRRLocalUserRecipePhotoStorage alloc] init] autorelease]) retain];
     _recipes = [[NSArray alloc] init];
   }
-
   return self;
 }
 
@@ -138,6 +129,7 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   [_cardsStackView release];
   [_contentView release];
   [_scrollView release];
+  [_photoStorage release];
   [_syncEngine release];
   [_userRecipesStore release];
   [_sessionUserID release];
@@ -184,13 +176,11 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
   scrollView.alwaysBounceVertical = YES;
   scrollView.showsVerticalScrollIndicator = NO;
-  scrollView.backgroundColor = [UIColor clearColor];
   [self.view addSubview:scrollView];
   self.scrollView = scrollView;
 
   UIView *contentView = [[[UIView alloc] init] autorelease];
   contentView.translatesAutoresizingMaskIntoConstraints = NO;
-  contentView.backgroundColor = [UIColor clearColor];
   [scrollView addSubview:contentView];
   self.contentView = contentView;
 
@@ -233,13 +223,12 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 - (UIButton *)actionButtonWithTitle:(NSString *)title filled:(BOOL)filled {
   UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
   button.translatesAutoresizingMaskIntoConstraints = NO;
+  [button setTitle:title forState:UIControlStateNormal];
   button.titleLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightSemibold];
   button.layer.cornerRadius = 12.0;
   button.contentEdgeInsets = UIEdgeInsetsMake(10.0, 14.0, 10.0, 14.0);
   button.backgroundColor = filled ? MRRYoursAccentColor() : MRRYoursMutedSurfaceColor();
-  UIColor *titleColor = filled ? [UIColor whiteColor] : MRRYoursPrimaryTextColor();
-  [button setTitle:title forState:UIControlStateNormal];
-  [button setTitleColor:titleColor forState:UIControlStateNormal];
+  [button setTitleColor:(filled ? [UIColor whiteColor] : MRRYoursPrimaryTextColor()) forState:UIControlStateNormal];
   [button.heightAnchor constraintGreaterThanOrEqualToConstant:42.0].active = YES;
   return button;
 }
@@ -294,7 +283,7 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   subtitleLabel.textAlignment = NSTextAlignmentCenter;
   subtitleLabel.numberOfLines = 0;
-  subtitleLabel.text = @"Create your first recipe and we'll keep it in Core Data and sync it to Firestore when available.";
+  subtitleLabel.text = @"Create your first recipe and we'll keep it in Core Data while syncing URL-based media metadata when available.";
   [containerView addSubview:subtitleLabel];
 
   UIButton *createButton = [self actionButtonWithTitle:@"Create Recipe" filled:YES];
@@ -443,156 +432,32 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   return [NSString stringWithFormat:@"Updated %@", [formatter stringFromDate:recipe.localModifiedAt]];
 }
 
-- (NSArray<NSString *> *)componentsFromDelimitedText:(NSString *)text {
-  NSString *resolvedText = text ?: @"";
-  NSCharacterSet *separatorCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@",;\n"];
-  NSMutableArray<NSString *> *components = [NSMutableArray array];
-  for (NSString *component in [resolvedText componentsSeparatedByCharactersInSet:separatorCharacterSet]) {
-    NSString *trimmedComponent = [component stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (trimmedComponent.length == 0) {
-      continue;
+- (void)presentEditorForRecipe:(MRRUserRecipeSnapshot *)recipe {
+  MRRYoursRecipeEditorViewController *editorViewController =
+      [[[MRRYoursRecipeEditorViewController alloc] initWithSessionUserID:self.sessionUserID
+                                                        userRecipesStore:self.userRecipesStore
+                                                              syncEngine:self.syncEngine
+                                                            photoStorage:self.photoStorage
+                                                          existingRecipe:recipe] autorelease];
+  [self.navigationController pushViewController:editorViewController animated:YES];
+}
+
+- (BOOL)deleteRecipeWithIdentifier:(NSString *)recipeIdentifier error:(NSError **)error {
+  if (self.userRecipesStore == nil || self.sessionUserID.length == 0 || recipeIdentifier.length == 0) {
+    if (error != NULL) {
+      *error = [NSError errorWithDomain:MRRYoursViewControllerErrorDomain
+                                   code:1
+                               userInfo:@{NSLocalizedDescriptionKey : @"Recipe could not be removed."}];
     }
-    [components addObject:trimmedComponent];
-  }
-  return components;
-}
-
-- (NSArray<MRRUserRecipeIngredientSnapshot *> *)ingredientSnapshotsFromText:(NSString *)text {
-  NSArray<NSString *> *components = [self componentsFromDelimitedText:text];
-  NSMutableArray<MRRUserRecipeIngredientSnapshot *> *snapshots = [NSMutableArray arrayWithCapacity:components.count];
-  for (NSUInteger index = 0; index < components.count; index += 1) {
-    NSString *component = components[index];
-    [snapshots addObject:[[[MRRUserRecipeIngredientSnapshot alloc] initWithName:component displayText:component orderIndex:(NSInteger)index] autorelease]];
-  }
-  return snapshots;
-}
-
-- (NSArray<MRRUserRecipeInstructionSnapshot *> *)instructionSnapshotsFromText:(NSString *)text {
-  NSArray<NSString *> *components = [self componentsFromDelimitedText:text];
-  NSMutableArray<MRRUserRecipeInstructionSnapshot *> *snapshots = [NSMutableArray arrayWithCapacity:components.count];
-  for (NSUInteger index = 0; index < components.count; index += 1) {
-    NSString *component = components[index];
-    NSString *title = [NSString stringWithFormat:@"Step %lu", (unsigned long)(index + 1)];
-    [snapshots addObject:[[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:title detailText:component orderIndex:(NSInteger)index] autorelease]];
-  }
-  return snapshots;
-}
-
-- (NSInteger)integerValueFromText:(NSString *)text defaultValue:(NSInteger)defaultValue minimumValue:(NSInteger)minimumValue {
-  NSInteger value = [[text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] integerValue];
-  if (value < minimumValue) {
-    return defaultValue;
-  }
-  return value;
-}
-
-- (NSString *)joinedIngredientTextForRecipe:(MRRUserRecipeSnapshot *)recipe {
-  NSMutableArray<NSString *> *values = [NSMutableArray arrayWithCapacity:recipe.ingredients.count];
-  for (MRRUserRecipeIngredientSnapshot *ingredient in recipe.ingredients) {
-    [values addObject:ingredient.displayText];
-  }
-  return [values componentsJoinedByString:@", "];
-}
-
-- (NSString *)joinedInstructionTextForRecipe:(MRRUserRecipeSnapshot *)recipe {
-  NSMutableArray<NSString *> *values = [NSMutableArray arrayWithCapacity:recipe.instructions.count];
-  for (MRRUserRecipeInstructionSnapshot *instruction in recipe.instructions) {
-    [values addObject:instruction.detailText];
-  }
-  return [values componentsJoinedByString:@"; "];
-}
-
-- (void)presentRecipeFormForRecipe:(MRRUserRecipeSnapshot *)recipe {
-  [self presentRecipeFormForRecipe:recipe fieldOverrides:nil validationMessage:nil];
-}
-
-- (void)presentRecipeFormForRecipe:(MRRUserRecipeSnapshot *)recipe
-                    fieldOverrides:(NSDictionary<NSString *, NSString *> *)fieldOverrides
-                 validationMessage:(NSString *)validationMessage {
-  NSString *title = recipe != nil ? @"Edit Recipe" : @"Create Recipe";
-  NSString *instructionsMessage = @"Ingredients and instructions can be separated with commas or semicolons.";
-  NSString *message = instructionsMessage;
-  if (validationMessage.length > 0) {
-    message = [NSString stringWithFormat:@"%@\n\n%@", validationMessage, instructionsMessage];
-  }
-  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title
-                                                                           message:message
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-  alertController.view.accessibilityIdentifier = recipe != nil ? @"yours.editAlert" : @"yours.createAlert";
-
-  NSString *titleText = fieldOverrides[@"title"] ?: (recipe.title ?: @"");
-  NSString *subtitleText = fieldOverrides[@"subtitle"] ?: (recipe.subtitle ?: @"");
-  NSString *summaryText = fieldOverrides[@"summary"] ?: (recipe.summaryText ?: @"");
-  NSString *mealTypeText = fieldOverrides[@"mealType"] ?: (recipe.mealType ?: @"");
-  NSString *readyInMinutesText = fieldOverrides[@"readyInMinutes"] ?: (recipe != nil ? [NSString stringWithFormat:@"%ld", (long)recipe.readyInMinutes] : @"30");
-  NSString *servingsText = fieldOverrides[@"servings"] ?: (recipe != nil ? [NSString stringWithFormat:@"%ld", (long)recipe.servings] : @"2");
-  NSString *ingredientsText = fieldOverrides[@"ingredients"] ?: (recipe != nil ? [self joinedIngredientTextForRecipe:recipe] : @"");
-  NSString *instructionsText = fieldOverrides[@"instructions"] ?: (recipe != nil ? [self joinedInstructionTextForRecipe:recipe] : @"");
-
-  NSArray<NSDictionary<NSString *, NSString *> *> *fieldConfigurations = @[
-    @{ @"placeholder" : @"Title", @"text" : titleText, @"identifier" : @"yours.form.titleField" },
-    @{ @"placeholder" : @"Subtitle", @"text" : subtitleText, @"identifier" : @"yours.form.subtitleField" },
-    @{ @"placeholder" : @"Summary", @"text" : summaryText, @"identifier" : @"yours.form.summaryField" },
-    @{ @"placeholder" : @"Meal type (breakfast/lunch/dinner/dessert/snack)", @"text" : mealTypeText, @"identifier" : @"yours.form.mealTypeField" },
-    @{ @"placeholder" : @"Ready time in minutes", @"text" : readyInMinutesText, @"identifier" : @"yours.form.readyInMinutesField" },
-    @{ @"placeholder" : @"Servings", @"text" : servingsText, @"identifier" : @"yours.form.servingsField" },
-    @{ @"placeholder" : @"Ingredients", @"text" : ingredientsText, @"identifier" : @"yours.form.ingredientsField" },
-    @{ @"placeholder" : @"Instructions", @"text" : instructionsText, @"identifier" : @"yours.form.instructionsField" }
-  ];
-
-  for (NSDictionary<NSString *, NSString *> *fieldConfiguration in fieldConfigurations) {
-    [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
-      textField.placeholder = fieldConfiguration[@"placeholder"];
-      textField.text = fieldConfiguration[@"text"];
-      textField.clearButtonMode = UITextFieldViewModeWhileEditing;
-      textField.accessibilityIdentifier = fieldConfiguration[@"identifier"];
-    }];
+    return NO;
   }
 
-  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-  [alertController addAction:[UIAlertAction actionWithTitle:@"Save"
-                                                      style:UIAlertActionStyleDefault
-                                                    handler:^(__unused UIAlertAction *action) {
-                                                      NSArray<UITextField *> *textFields = alertController.textFields ?: @[];
-                                                      NSDictionary<NSString *, NSString *> *fieldValues = @{
-                                                        @"title" : textFields.count > 0 ? (textFields[0].text ?: @"") : @"",
-                                                        @"subtitle" : textFields.count > 1 ? (textFields[1].text ?: @"") : @"",
-                                                        @"summary" : textFields.count > 2 ? (textFields[2].text ?: @"") : @"",
-                                                        @"mealType" : textFields.count > 3 ? (textFields[3].text ?: @"") : @"",
-                                                        @"readyInMinutes" : textFields.count > 4 ? (textFields[4].text ?: @"") : @"",
-                                                        @"servings" : textFields.count > 5 ? (textFields[5].text ?: @"") : @"",
-                                                        @"ingredients" : textFields.count > 6 ? (textFields[6].text ?: @"") : @"",
-                                                        @"instructions" : textFields.count > 7 ? (textFields[7].text ?: @"") : @""
-                                                      };
-                                                      NSError *error = nil;
-                                                      BOOL didPersist = [self persistRecipeWithTitle:fieldValues[@"title"]
-                                                                                           subtitle:fieldValues[@"subtitle"]
-                                                                                            summary:fieldValues[@"summary"]
-                                                                                      mealTypeInput:fieldValues[@"mealType"]
-                                                                                 readyInMinutesText:fieldValues[@"readyInMinutes"]
-                                                                                       servingsText:fieldValues[@"servings"]
-                                                                                    ingredientsText:fieldValues[@"ingredients"]
-                                                                                   instructionsText:fieldValues[@"instructions"]
-                                                                                      existingRecipe:recipe
-                                                                                               error:&error];
-                                                      if (!didPersist && error != nil) {
-                                                        NSString *validationMessage = error.localizedDescription.length > 0 ? error.localizedDescription : @"Please review your recipe and try again.";
-                                                        void (^reopenForm)(void) = ^{
-                                                          [self presentRecipeFormForRecipe:recipe
-                                                                            fieldOverrides:fieldValues
-                                                                         validationMessage:validationMessage];
-                                                        };
-                                                        UIViewController *presentedViewController = self.presentedViewController;
-                                                        if ([presentedViewController isKindOfClass:[UIAlertController class]]) {
-                                                          [presentedViewController dismissViewControllerAnimated:YES completion:reopenForm];
-                                                        } else {
-                                                          dispatch_async(dispatch_get_main_queue(), reopenForm);
-                                                        }
-                                                      }
-                                                    }]];
-
-  UIViewController *presenter = self.presentedViewController ?: self;
-  [presenter presentViewController:alertController animated:YES completion:nil];
+  BOOL didDelete = [self.userRecipesStore removeRecipeForUserID:self.sessionUserID recipeID:recipeIdentifier error:error];
+  if (didDelete) {
+    [self.photoStorage removeImagesForRecipeID:recipeIdentifier error:nil];
+    [self.syncEngine requestImmediateSyncForUserID:self.sessionUserID];
+  }
+  return didDelete;
 }
 
 - (void)presentValidationError:(NSError *)error title:(NSString *)title {
@@ -605,109 +470,9 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   [presenter presentViewController:alertController animated:YES completion:nil];
 }
 
-- (BOOL)persistRecipeWithTitle:(NSString *)title
-                      subtitle:(NSString *)subtitle
-                       summary:(NSString *)summary
-                 mealTypeInput:(NSString *)mealTypeInput
-            readyInMinutesText:(NSString *)readyInMinutesText
-                  servingsText:(NSString *)servingsText
-               ingredientsText:(NSString *)ingredientsText
-              instructionsText:(NSString *)instructionsText
-                 existingRecipe:(MRRUserRecipeSnapshot *)existingRecipe
-                          error:(NSError **)error {
-  if (self.userRecipesStore == nil || self.sessionUserID.length == 0) {
-    if (error != NULL) {
-      *error = [NSError errorWithDomain:MRRYoursViewControllerValidationErrorDomain
-                                   code:1
-                               userInfo:@{NSLocalizedDescriptionKey : @"Your account is not ready to save recipes yet."}];
-    }
-    return NO;
-  }
-
-  NSString *trimmedTitle = [title stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-  NSString *trimmedSummary = [summary stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-  if (trimmedTitle.length == 0) {
-    if (error != NULL) {
-      *error = [NSError errorWithDomain:MRRYoursViewControllerValidationErrorDomain
-                                   code:2
-                               userInfo:@{NSLocalizedDescriptionKey : @"Title is required."}];
-    }
-    return NO;
-  }
-
-  NSArray<MRRUserRecipeIngredientSnapshot *> *ingredients = [self ingredientSnapshotsFromText:ingredientsText];
-  if (ingredients.count == 0) {
-    if (error != NULL) {
-      *error = [NSError errorWithDomain:MRRYoursViewControllerValidationErrorDomain
-                                   code:3
-                               userInfo:@{NSLocalizedDescriptionKey : @"Add at least one ingredient."}];
-    }
-    return NO;
-  }
-
-  NSArray<MRRUserRecipeInstructionSnapshot *> *instructions = [self instructionSnapshotsFromText:instructionsText];
-  if (instructions.count == 0) {
-    if (error != NULL) {
-      *error = [NSError errorWithDomain:MRRYoursViewControllerValidationErrorDomain
-                                   code:4
-                               userInfo:@{NSLocalizedDescriptionKey : @"Add at least one instruction."}];
-    }
-    return NO;
-  }
-
-  NSInteger readyInMinutes = [self integerValueFromText:readyInMinutesText defaultValue:(existingRecipe != nil ? existingRecipe.readyInMinutes : 30) minimumValue:1];
-  NSInteger servings = [self integerValueFromText:servingsText defaultValue:(existingRecipe != nil ? existingRecipe.servings : 2) minimumValue:1];
-  NSInteger calorieCount = existingRecipe != nil ? existingRecipe.calorieCount : 0;
-  NSString *recipeID = existingRecipe != nil ? existingRecipe.recipeID : [NSUUID UUID].UUIDString;
-  NSDate *createdAt = existingRecipe != nil ? existingRecipe.createdAt : [NSDate date];
-  NSDate *remoteUpdatedAt = existingRecipe.remoteUpdatedAt;
-
-  MRRUserRecipeSnapshot *snapshot = [[[MRRUserRecipeSnapshot alloc] initWithUserID:self.sessionUserID
-                                                                          recipeID:recipeID
-                                                                             title:trimmedTitle
-                                                                          subtitle:subtitle ?: @""
-                                                                       summaryText:trimmedSummary
-                                                                          mealType:[MRRUserRecipeSnapshot normalizedMealTypeFromString:mealTypeInput]
-                                                                    readyInMinutes:readyInMinutes
-                                                                          servings:servings
-                                                                      calorieCount:calorieCount
-                                                                         assetName:[MRRUserRecipeSnapshot defaultAssetName]
-                                                                  heroImageURLString:nil
-                                                                       ingredients:ingredients
-                                                                      instructions:instructions
-                                                                             tools:@[]
-                                                                              tags:@[]
-                                                                         createdAt:createdAt
-                                                                   localModifiedAt:[NSDate date]
-                                                                   remoteUpdatedAt:remoteUpdatedAt] autorelease];
-
-  BOOL didSave = [self.userRecipesStore saveRecipeSnapshot:snapshot error:error];
-  if (didSave) {
-    [self.syncEngine requestImmediateSyncForUserID:self.sessionUserID];
-  }
-  return didSave;
-}
-
-- (BOOL)deleteRecipeWithIdentifier:(NSString *)recipeIdentifier error:(NSError **)error {
-  if (self.userRecipesStore == nil || self.sessionUserID.length == 0 || recipeIdentifier.length == 0) {
-    if (error != NULL) {
-      *error = [NSError errorWithDomain:MRRYoursViewControllerValidationErrorDomain
-                                   code:6
-                               userInfo:@{NSLocalizedDescriptionKey : @"Recipe could not be removed."}];
-    }
-    return NO;
-  }
-
-  BOOL didDelete = [self.userRecipesStore removeRecipeForUserID:self.sessionUserID recipeID:recipeIdentifier error:error];
-  if (didDelete) {
-    [self.syncEngine requestImmediateSyncForUserID:self.sessionUserID];
-  }
-  return didDelete;
-}
-
 - (void)handleAddButtonTapped:(id)sender {
   #pragma unused(sender)
-  [self presentRecipeFormForRecipe:nil];
+  [self presentEditorForRecipe:nil];
 }
 
 - (void)handleEditButtonTapped:(UIButton *)sender {
@@ -715,7 +480,7 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   if (recipe == nil) {
     return;
   }
-  [self presentRecipeFormForRecipe:recipe];
+  [self presentEditorForRecipe:recipe];
 }
 
 - (void)handleDeleteButtonTapped:(UIButton *)sender {
