@@ -18,6 +18,8 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose recipe photos from your library to personalize what you save in Yours.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 </dict>
