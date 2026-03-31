@@ -91,6 +91,100 @@
   XCTAssertEqualObjects(userRecipes.firstObject.title, @"Savory Oats Deluxe");
 }
 
+- (void)testSaveRecipeSnapshotPersistsOrderedPhotoGalleryAndLegacyHeroAlias {
+  NSArray<MRRUserRecipePhotoSnapshot *> *photos = @[
+    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-1"
+                                             orderIndex:0
+                                        remoteURLString:@"https://example.com/cover.jpg"
+                                      localRelativePath:nil],
+    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-2"
+                                             orderIndex:1
+                                        remoteURLString:nil
+                                      localRelativePath:@"recipe-photos/photo-2.jpg"]
+  ];
+
+  MRRUserRecipeSnapshot *snapshot =
+      [[MRRUserRecipeSnapshot alloc] initWithUserID:@"user-a"
+                                           recipeID:@"recipe-photo"
+                                              title:@"Photo Pasta"
+                                           subtitle:@"Gallery"
+                                        summaryText:@"Recipe with photo gallery."
+                                           mealType:MRRUserRecipeMealTypeDinner
+                                     readyInMinutes:20
+                                           servings:2
+                                       calorieCount:480
+                                          assetName:@"pasta-carbonara"
+                                 heroImageURLString:nil
+                                             photos:photos
+                                        ingredients:@[
+                                          [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Pasta" displayText:@"200g pasta" orderIndex:0]
+                                        ]
+                                       instructions:@[
+                                         [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1"
+                                                                                     detailText:@"Cook pasta."
+                                                                                     orderIndex:0]
+                                       ]
+                                              tools:@[]
+                                               tags:@[]
+                                          createdAt:[NSDate date]
+                                    localModifiedAt:[NSDate date]
+                                    remoteUpdatedAt:nil];
+
+  NSError *saveError = nil;
+  XCTAssertTrue([self.store saveRecipeSnapshot:snapshot error:&saveError]);
+  XCTAssertNil(saveError);
+
+  NSError *fetchError = nil;
+  MRRUserRecipeSnapshot *savedSnapshot = [self.store userRecipeForUserID:@"user-a" recipeID:@"recipe-photo" error:&fetchError];
+  XCTAssertNil(fetchError);
+  XCTAssertNotNil(savedSnapshot);
+  XCTAssertEqual(savedSnapshot.photos.count, 2);
+  XCTAssertEqualObjects(savedSnapshot.photos[0].photoID, @"photo-1");
+  XCTAssertEqualObjects(savedSnapshot.photos[0].remoteURLString, @"https://example.com/cover.jpg");
+  XCTAssertEqualObjects(savedSnapshot.photos[1].localRelativePath, @"recipe-photos/photo-2.jpg");
+  XCTAssertEqualObjects(savedSnapshot.heroImageURLString, @"https://example.com/cover.jpg");
+}
+
+- (void)testLegacyHeroImageFallsBackToSyntheticPhotoWhenNoPhotoChildrenExist {
+  MRRUserRecipeSnapshot *snapshot =
+      [[MRRUserRecipeSnapshot alloc] initWithUserID:@"user-a"
+                                           recipeID:@"recipe-legacy"
+                                              title:@"Legacy Soup"
+                                           subtitle:@"Classic"
+                                        summaryText:@"Legacy hero only."
+                                           mealType:MRRUserRecipeMealTypeLunch
+                                     readyInMinutes:15
+                                           servings:2
+                                       calorieCount:320
+                                          assetName:@"green-curry"
+                                 heroImageURLString:@"https://example.com/legacy.jpg"
+                                             photos:@[]
+                                        ingredients:@[
+                                          [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Broth" displayText:@"2 cups broth" orderIndex:0]
+                                        ]
+                                       instructions:@[
+                                         [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1"
+                                                                                     detailText:@"Heat broth."
+                                                                                     orderIndex:0]
+                                       ]
+                                              tools:@[]
+                                               tags:@[]
+                                          createdAt:[NSDate date]
+                                    localModifiedAt:[NSDate date]
+                                    remoteUpdatedAt:nil];
+
+  NSError *saveError = nil;
+  XCTAssertTrue([self.store saveRecipeSnapshot:snapshot error:&saveError]);
+  XCTAssertNil(saveError);
+
+  NSError *fetchError = nil;
+  MRRUserRecipeSnapshot *savedSnapshot = [self.store userRecipeForUserID:@"user-a" recipeID:@"recipe-legacy" error:&fetchError];
+  XCTAssertNil(fetchError);
+  XCTAssertEqual(savedSnapshot.photos.count, 1);
+  XCTAssertEqualObjects(savedSnapshot.photos.firstObject.remoteURLString, @"https://example.com/legacy.jpg");
+  XCTAssertEqualObjects(savedSnapshot.heroImageURLString, @"https://example.com/legacy.jpg");
+}
+
 - (void)testRemoveRecipeDeletesSnapshotAndQueuesDeleteSyncChange {
   MRRUserRecipeSnapshot *snapshot = [self snapshotWithUserID:@"user-a"
                                                      recipeID:@"recipe-1"
