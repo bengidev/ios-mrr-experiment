@@ -8,12 +8,14 @@ NSNotificationName const MRRUserRecipesStoreDidChangeNotification = @"MRRUserRec
 NSErrorDomain const MRRUserRecipesStoreErrorDomain = @"MRRUserRecipesStoreErrorDomain";
 
 static NSString *const MRRUserRecipeEntityName = @"UserRecipe";
+static NSString *const MRRUserRecipePhotoEntityName = @"UserRecipePhoto";
 static NSString *const MRRUserRecipeIngredientEntityName = @"UserRecipeIngredient";
 static NSString *const MRRUserRecipeInstructionEntityName = @"UserRecipeInstruction";
 static NSString *const MRRUserRecipeToolEntityName = @"UserRecipeTool";
 static NSString *const MRRUserRecipeTagEntityName = @"UserRecipeTag";
 static NSString *const MRRUserRecipeSyncChangeEntityName = @"UserRecipeSyncChange";
 
+static NSString *const MRRUserRecipeRelationshipPhotos = @"photos";
 static NSString *const MRRUserRecipeRelationshipIngredients = @"ingredients";
 static NSString *const MRRUserRecipeRelationshipInstructions = @"instructions";
 static NSString *const MRRUserRecipeRelationshipTools = @"tools";
@@ -353,6 +355,7 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
                                           calorieCount:snapshot.calorieCount
                                              assetName:snapshot.assetName
                                       heroImageURLString:snapshot.heroImageURLString
+                                               photos:snapshot.photos
                                            ingredients:snapshot.ingredients
                                           instructions:snapshot.instructions
                                                  tools:snapshot.tools
@@ -473,6 +476,17 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
   [managedObject setValue:snapshot.localModifiedAt forKey:@"localModifiedAt"];
   [managedObject setValue:snapshot.remoteUpdatedAt forKey:@"remoteUpdatedAt"];
 
+  [self replaceChildrenForRelationship:MRRUserRecipeRelationshipPhotos
+                              onRecipe:managedObject
+                                values:snapshot.photos
+                            entityName:MRRUserRecipePhotoEntityName
+                            applyBlock:^(NSManagedObject *childManagedObject, MRRUserRecipePhotoSnapshot *value) {
+                              [childManagedObject setValue:value.photoID forKey:@"photoID"];
+                              [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
+                              [childManagedObject setValue:value.localRelativePath forKey:@"localRelativePath"];
+                              [childManagedObject setValue:value.remoteURLString forKey:@"remoteURLString"];
+                            }
+                               context:context];
   [self replaceChildrenForRelationship:MRRUserRecipeRelationshipIngredients
                               onRecipe:managedObject
                                 values:snapshot.ingredients
@@ -548,6 +562,24 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
 }
 
 - (MRRUserRecipeSnapshot *)snapshotFromRecipeManagedObject:(NSManagedObject *)managedObject {
+  NSArray *photoObjects = [[[managedObject valueForKey:MRRUserRecipeRelationshipPhotos] allObjects]
+      sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
+  NSMutableArray<MRRUserRecipePhotoSnapshot *> *photos = [NSMutableArray arrayWithCapacity:photoObjects.count];
+  for (NSManagedObject *photoManagedObject in photoObjects) {
+    NSString *photoID = MRRUserRecipesStoreStringValue([photoManagedObject valueForKey:@"photoID"]);
+    NSString *remoteURLString = MRRUserRecipesStoreStringValue([photoManagedObject valueForKey:@"remoteURLString"]);
+    NSString *localRelativePath = MRRUserRecipesStoreStringValue([photoManagedObject valueForKey:@"localRelativePath"]);
+    if (photoID.length == 0 || (remoteURLString.length == 0 && localRelativePath.length == 0)) {
+      continue;
+    }
+    MRRUserRecipePhotoSnapshot *photo =
+        [[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:photoID
+                                                  orderIndex:MRRUserRecipesStoreIntegerValue([photoManagedObject valueForKey:@"orderIndex"])
+                                             remoteURLString:remoteURLString
+                                           localRelativePath:localRelativePath] autorelease];
+    [photos addObject:photo];
+  }
+
   NSArray *ingredientObjects = [[[managedObject valueForKey:MRRUserRecipeRelationshipIngredients] allObjects]
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRUserRecipeIngredientSnapshot *> *ingredients = [NSMutableArray arrayWithCapacity:ingredientObjects.count];
@@ -597,10 +629,11 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
                                             summaryText:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"summaryText"])
                                                mealType:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"mealType"])
                                          readyInMinutes:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"readyInMinutes"])
-                                               servings:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"servings"])
-                                           calorieCount:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"calorieCount"])
-                                              assetName:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"assetName"])
+                                              servings:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"servings"])
+                                          calorieCount:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"calorieCount"])
+                                             assetName:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"assetName"])
                                        heroImageURLString:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"heroImageURLString"])
+                                               photos:photos
                                             ingredients:ingredients
                                            instructions:instructions
                                                   tools:tools
@@ -622,7 +655,8 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
 }
 
 - (void)deleteChildrenForRecipeManagedObject:(NSManagedObject *)managedObject context:(NSManagedObjectContext *)context {
-  for (NSString *relationshipName in @[ MRRUserRecipeRelationshipIngredients, MRRUserRecipeRelationshipInstructions, MRRUserRecipeRelationshipTools,
+  for (NSString *relationshipName in @[ MRRUserRecipeRelationshipPhotos, MRRUserRecipeRelationshipIngredients,
+                                        MRRUserRecipeRelationshipInstructions, MRRUserRecipeRelationshipTools,
                                         MRRUserRecipeRelationshipTags ]) {
     NSMutableSet *relationshipSet = [managedObject mutableSetValueForKey:relationshipName];
     NSArray *children = [relationshipSet allObjects];
