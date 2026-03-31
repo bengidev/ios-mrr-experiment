@@ -71,6 +71,8 @@ static BOOL MRRManagedObjectContextHasPersistentChanges(NSManagedObjectContext *
     description.type = NSInMemoryStoreType;
     [description setURL:[NSURL fileURLWithPath:@"/dev/null"]];
   }
+  description.shouldMigrateStoreAutomatically = YES;
+  description.shouldInferMappingModelAutomatically = YES;
   persistentContainer.persistentStoreDescriptions = @[ description ];
 
   dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
