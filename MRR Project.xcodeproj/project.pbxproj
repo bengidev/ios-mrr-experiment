@@ -72,6 +72,10 @@
 		E20000000000000000000007 /* MRRUserRecipesSyncEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000010F /* MRRUserRecipesSyncEngine.m */; };
 		E20000000000000000000008 /* MRRUserRecipesStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000110 /* MRRUserRecipesStoreTests.m */; };
 		E20000000000000000000009 /* YoursViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000111 /* YoursViewControllerTests.m */; };
+		E2000000000000000000000A /* MRRYoursRecipeEditorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000113 /* MRRYoursRecipeEditorViewController.m */; };
+		E2000000000000000000000B /* MRRUserRecipePhotoStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000115 /* MRRUserRecipePhotoStorage.m */; };
+		E2000000000000000000000C /* MRRUserRecipePhotoStorageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000116 /* MRRUserRecipePhotoStorageTests.m */; };
+		E2000000000000000000000D /* MRRUserRecipesSyncEngineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000117 /* MRRUserRecipesSyncEngineTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -194,6 +198,12 @@
 		E2000000000000000000010F /* MRRUserRecipesSyncEngine.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipesSyncEngine.m; sourceTree = "<group>"; };
 		E20000000000000000000110 /* MRRUserRecipesStoreTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipesStoreTests.m; sourceTree = "<group>"; };
 		E20000000000000000000111 /* YoursViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YoursViewControllerTests.m; sourceTree = "<group>"; };
+		E20000000000000000000112 /* MRRYoursRecipeEditorViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRYoursRecipeEditorViewController.h; sourceTree = "<group>"; };
+		E20000000000000000000113 /* MRRYoursRecipeEditorViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRYoursRecipeEditorViewController.m; sourceTree = "<group>"; };
+		E20000000000000000000114 /* MRRUserRecipePhotoStorage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRUserRecipePhotoStorage.h; sourceTree = "<group>"; };
+		E20000000000000000000115 /* MRRUserRecipePhotoStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipePhotoStorage.m; sourceTree = "<group>"; };
+		E20000000000000000000116 /* MRRUserRecipePhotoStorageTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipePhotoStorageTests.m; sourceTree = "<group>"; };
+		E20000000000000000000117 /* MRRUserRecipesSyncEngineTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipesSyncEngineTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -262,6 +272,8 @@
 				C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */,
 				C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */,
 				E20000000000000000000110 /* MRRUserRecipesStoreTests.m */,
+				E20000000000000000000116 /* MRRUserRecipePhotoStorageTests.m */,
+				E20000000000000000000117 /* MRRUserRecipesSyncEngineTests.m */,
 				A00000000000000000000662 /* MRRLayoutScalingTests.m */,
 				A00000000000000000000674 /* MRRLiquidGlassStylingTests.m */,
 				A0000000000000000000066E /* OnboardingAuthFlowTests.m */,
@@ -502,6 +514,8 @@
 			children = (
 				E20000000000000000000103 /* YoursCoordinator.h */,
 				E20000000000000000000104 /* YoursCoordinator.m */,
+				E20000000000000000000112 /* MRRYoursRecipeEditorViewController.h */,
+				E20000000000000000000113 /* MRRYoursRecipeEditorViewController.m */,
 				E20000000000000000000101 /* YoursViewController.h */,
 				E20000000000000000000102 /* YoursViewController.m */,
 			);
@@ -524,6 +538,8 @@
 			children = (
 				E20000000000000000000203 /* Models */,
 				E20000000000000000000204 /* Sync */,
+				E20000000000000000000114 /* MRRUserRecipePhotoStorage.h */,
+				E20000000000000000000115 /* MRRUserRecipePhotoStorage.m */,
 				E20000000000000000000105 /* MRRUserRecipesStore.h */,
 				E20000000000000000000106 /* MRRUserRecipesStore.m */,
 			);
@@ -749,9 +765,11 @@
 				D10000000000000000000004 /* SavedViewController.m in Sources */,
 				E20000000000000000000005 /* MRRUserRecipeSyncChange.m in Sources */,
 				E20000000000000000000004 /* MRRUserRecipeSnapshot.m in Sources */,
+				E2000000000000000000000B /* MRRUserRecipePhotoStorage.m in Sources */,
 				E20000000000000000000007 /* MRRUserRecipesSyncEngine.m in Sources */,
 				E20000000000000000000003 /* MRRUserRecipesStore.m in Sources */,
 				E20000000000000000000006 /* MRRNoOpUserRecipesSyncEngine.m in Sources */,
+				E2000000000000000000000A /* MRRYoursRecipeEditorViewController.m in Sources */,
 				E20000000000000000000002 /* YoursCoordinator.m in Sources */,
 				E20000000000000000000001 /* YoursViewController.m in Sources */,
 			);
@@ -766,6 +784,8 @@
 				D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */,
 				C10000000000000000000009 /* MRRSavedRecipesStoreTests.m in Sources */,
 				E20000000000000000000008 /* MRRUserRecipesStoreTests.m in Sources */,
+				E2000000000000000000000C /* MRRUserRecipePhotoStorageTests.m in Sources */,
+				E2000000000000000000000D /* MRRUserRecipesSyncEngineTests.m in Sources */,
 				A00000000000000000000735 /* MRRLayoutScalingTests.m in Sources */,
 				A0000000000000000000073F /* MRRLiquidGlassStylingTests.m in Sources */,
 				C1000000000000000000000A /* MRRSyncingLogoutControllerTests.m in Sources */,
