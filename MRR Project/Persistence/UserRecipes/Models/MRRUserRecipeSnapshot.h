@@ -41,6 +41,20 @@ FOUNDATION_EXPORT NSString *const MRRUserRecipeMealTypeSnack;
 
 @end
 
+@interface MRRUserRecipePhotoSnapshot : NSObject
+
+@property(nonatomic, copy, readonly) NSString *photoID;
+@property(nonatomic, assign, readonly) NSInteger orderIndex;
+@property(nonatomic, copy, readonly, nullable) NSString *remoteURLString;
+@property(nonatomic, copy, readonly, nullable) NSString *localRelativePath;
+
+- (instancetype)initWithPhotoID:(NSString *)photoID
+                     orderIndex:(NSInteger)orderIndex
+                remoteURLString:(nullable NSString *)remoteURLString
+              localRelativePath:(nullable NSString *)localRelativePath;
+
+@end
+
 @interface MRRUserRecipeSnapshot : NSObject
 
 @property(nonatomic, copy, readonly) NSString *userID;
@@ -54,6 +68,7 @@ FOUNDATION_EXPORT NSString *const MRRUserRecipeMealTypeSnack;
 @property(nonatomic, assign, readonly) NSInteger calorieCount;
 @property(nonatomic, copy, readonly) NSString *assetName;
 @property(nonatomic, copy, readonly, nullable) NSString *heroImageURLString;
+@property(nonatomic, copy, readonly) NSArray<MRRUserRecipePhotoSnapshot *> *photos;
 @property(nonatomic, copy, readonly) NSArray<MRRUserRecipeIngredientSnapshot *> *ingredients;
 @property(nonatomic, copy, readonly) NSArray<MRRUserRecipeInstructionSnapshot *> *instructions;
 @property(nonatomic, copy, readonly) NSArray<MRRUserRecipeStringSnapshot *> *tools;
@@ -73,6 +88,7 @@ FOUNDATION_EXPORT NSString *const MRRUserRecipeMealTypeSnack;
                   calorieCount:(NSInteger)calorieCount
                      assetName:(NSString *)assetName
               heroImageURLString:(nullable NSString *)heroImageURLString
+                         photos:(NSArray<MRRUserRecipePhotoSnapshot *> *)photos
                    ingredients:(NSArray<MRRUserRecipeIngredientSnapshot *> *)ingredients
                   instructions:(NSArray<MRRUserRecipeInstructionSnapshot *> *)instructions
                          tools:(NSArray<MRRUserRecipeStringSnapshot *> *)tools
@@ -88,6 +104,8 @@ FOUNDATION_EXPORT NSString *const MRRUserRecipeMealTypeSnack;
                    localModifiedAt:(NSDate *)localModifiedAt;
 + (NSString *)normalizedMealTypeFromString:(NSString *)mealType;
 + (NSString *)defaultAssetName;
+- (nullable MRRUserRecipePhotoSnapshot *)coverPhotoSnapshot;
+- (NSArray<NSString *> *)remotePhotoURLStrings;
 - (OnboardingRecipeDetail *)recipeDetailRepresentation;
 - (NSString *)sectionIdentifier;
 - (NSString *)sectionTitle;
