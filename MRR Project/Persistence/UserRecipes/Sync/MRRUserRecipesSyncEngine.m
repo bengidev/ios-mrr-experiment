@@ -15,6 +15,7 @@ static NSString *const MRRUserRecipesFirestoreKeyIngredients = @"ingredients";
 static NSString *const MRRUserRecipesFirestoreKeyInstructions = @"instructions";
 static NSString *const MRRUserRecipesFirestoreKeyIsDeleted = @"isDeleted";
 static NSString *const MRRUserRecipesFirestoreKeyMealType = @"mealType";
+static NSString *const MRRUserRecipesFirestoreKeyPhotoURLStrings = @"photoURLStrings";
 static NSString *const MRRUserRecipesFirestoreKeyReadyInMinutes = @"readyInMinutes";
 static NSString *const MRRUserRecipesFirestoreKeyRecipeID = @"recipeID";
 static NSString *const MRRUserRecipesFirestoreKeyServings = @"servings";
@@ -61,6 +62,24 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRUserRecipesFirestoreStringPay
   return payload;
 }
 
+static NSString *MRRUserRecipesFirestoreStringValue(id candidate);
+
+static NSString *MRRUserRecipesTrimmedString(id candidate) {
+  return [MRRUserRecipesFirestoreStringValue(candidate) stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+static NSArray<NSString *> *MRRUserRecipesFirestorePhotoURLPayload(NSArray<MRRUserRecipePhotoSnapshot *> *photos) {
+  NSMutableArray<NSString *> *payload = [NSMutableArray array];
+  for (MRRUserRecipePhotoSnapshot *photo in photos ?: @[]) {
+    NSString *remoteURLString = MRRUserRecipesTrimmedString(photo.remoteURLString ?: @"");
+    if (remoteURLString.length == 0) {
+      continue;
+    }
+    [payload addObject:remoteURLString];
+  }
+  return payload;
+}
+
 static NSDate *MRRUserRecipesFirestoreDateValue(id candidate) {
   if ([candidate isKindOfClass:[NSDate class]]) {
     return (NSDate *)candidate;
@@ -94,9 +113,13 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 @property(nonatomic, retain) NSMutableArray *pendingCompletions;
 @property(nonatomic, assign) BOOL syncInFlight;
 
+- (instancetype)initWithStore:(MRRUserRecipesStore *)store firestore:(nullable FIRFirestore *)firestore;
 - (FIRCollectionReference *)userRecipesCollectionForUserID:(NSString *)userID;
 - (NSDictionary<NSString *, id> *)firestorePayloadForSnapshot:(MRRUserRecipeSnapshot *)snapshot updatedAt:(NSDate *)updatedAt;
 - (nullable MRRUserRecipeSnapshot *)snapshotFromDocument:(FIRDocumentSnapshot *)document userID:(NSString *)userID;
+- (nullable MRRUserRecipeSnapshot *)snapshotFromDictionary:(NSDictionary<NSString *, id> *)data
+                                                    userID:(NSString *)userID
+                                                documentID:(NSString *)documentID;
 - (void)drainNextPendingChangeForUserID:(NSString *)userID completion:(nullable MRRUserRecipesSyncCompletion)completion;
 - (void)completeQueuedCompletionsWithError:(nullable NSError *)error;
 - (void)handleRemoteSnapshot:(FIRQuerySnapshot *)snapshot userID:(NSString *)userID;
@@ -106,17 +129,23 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 @implementation MRRUserRecipesSyncEngine
 
 - (instancetype)initWithStore:(MRRUserRecipesStore *)store {
+  return [self initWithStore:store firestore:nil];
+}
+
+- (instancetype)initWithStore:(MRRUserRecipesStore *)store firestore:(FIRFirestore *)firestore {
   NSParameterAssert(store != nil);
 
   self = [super init];
   if (self) {
     _store = [store retain];
-    _firestore = [[FIRFirestore firestore] retain];
+    _firestore = [(firestore ?: [FIRFirestore firestore]) retain];
     _pendingCompletions = [[NSMutableArray alloc] init];
 
-    FIRFirestoreSettings *settings = [[[FIRFirestoreSettings alloc] init] autorelease];
-    settings.cacheSettings = [[[FIRMemoryCacheSettings alloc] init] autorelease];
-    _firestore.settings = settings;
+    if (_firestore != nil) {
+      FIRFirestoreSettings *settings = [[[FIRFirestoreSettings alloc] init] autorelease];
+      settings.cacheSettings = [[[FIRMemoryCacheSettings alloc] init] autorelease];
+      _firestore.settings = settings;
+    }
   }
   return self;
 }
@@ -219,7 +248,11 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   payload[MRRUserRecipesFirestoreKeyInstructions] = MRRUserRecipesFirestoreInstructionPayload(snapshot.instructions);
   payload[MRRUserRecipesFirestoreKeyTools] = MRRUserRecipesFirestoreStringPayload(snapshot.tools);
   payload[MRRUserRecipesFirestoreKeyTags] = MRRUserRecipesFirestoreStringPayload(snapshot.tags);
-  if (snapshot.heroImageURLString.length > 0) {
+  NSArray<NSString *> *photoURLStrings = MRRUserRecipesFirestorePhotoURLPayload(snapshot.photos);
+  if (photoURLStrings.count > 0) {
+    payload[MRRUserRecipesFirestoreKeyPhotoURLStrings] = photoURLStrings;
+    payload[MRRUserRecipesFirestoreKeyHeroImageURLString] = photoURLStrings.firstObject;
+  } else if (snapshot.heroImageURLString.length > 0) {
     payload[MRRUserRecipesFirestoreKeyHeroImageURLString] = snapshot.heroImageURLString;
   }
   return payload;
@@ -229,6 +262,29 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   NSDictionary *data = document.data;
   if (![data isKindOfClass:[NSDictionary class]]) {
     return nil;
+  }
+  return [self snapshotFromDictionary:data userID:userID documentID:document.documentID];
+}
+
+- (MRRUserRecipeSnapshot *)snapshotFromDictionary:(NSDictionary<NSString *, id> *)data
+                                           userID:(NSString *)userID
+                                       documentID:(NSString *)documentID {
+  NSArray *photoURLStringEntries = [data objectForKey:MRRUserRecipesFirestoreKeyPhotoURLStrings];
+  NSMutableArray<MRRUserRecipePhotoSnapshot *> *photos = [NSMutableArray array];
+  NSInteger photoOrderIndex = 0;
+  for (NSString *photoURLStringEntry in photoURLStringEntries ?: @[]) {
+    NSString *remoteURLString = MRRUserRecipesFirestoreStringValue(photoURLStringEntry);
+    if (remoteURLString.length == 0) {
+      continue;
+    }
+    NSString *photoIdentifier = [NSString stringWithFormat:@"%@.photo.%ld", documentID.length > 0 ? documentID : @"remote", (long)photoOrderIndex];
+    MRRUserRecipePhotoSnapshot *photoSnapshot =
+        [[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:photoIdentifier
+                                                  orderIndex:photoOrderIndex
+                                             remoteURLString:remoteURLString
+                                           localRelativePath:nil] autorelease];
+    [photos addObject:photoSnapshot];
+    photoOrderIndex += 1;
   }
 
   NSArray *ingredientEntries = [data objectForKey:MRRUserRecipesFirestoreKeyIngredients];
@@ -299,10 +355,14 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
     [tags addObject:snapshot];
   }
 
+  NSString *resolvedRecipeID = MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyRecipeID]).length > 0
+                                   ? MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyRecipeID])
+                                   : documentID;
+  NSString *resolvedHeroImageURLString = photos.count > 0 ? photos.firstObject.remoteURLString
+                                                          : MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyHeroImageURLString]);
+
   return [[[MRRUserRecipeSnapshot alloc] initWithUserID:userID
-                                               recipeID:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyRecipeID]).length > 0
-                                                          ? MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyRecipeID])
-                                                          : document.documentID
+                                               recipeID:resolvedRecipeID
                                                   title:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyTitle])
                                                subtitle:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeySubtitle])
                                             summaryText:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeySummaryText])
@@ -313,14 +373,15 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
                                               assetName:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyAssetName]).length > 0
                                                             ? MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyAssetName])
                                                             : [MRRUserRecipeSnapshot defaultAssetName]
-                                       heroImageURLString:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyHeroImageURLString])
+                                       heroImageURLString:resolvedHeroImageURLString
+                                                photos:photos
                                             ingredients:ingredients
                                            instructions:instructions
                                                   tools:tools
                                                    tags:tags
-                                              createdAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyCreatedAt]) ?: [NSDate date]
-                                        localModifiedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt]) ?: [NSDate date]
-                                        remoteUpdatedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt])] autorelease];
+                                            createdAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyCreatedAt]) ?: [NSDate date]
+                                            localModifiedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt]) ?: [NSDate date]
+                                            remoteUpdatedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt])] autorelease];
 }
 
 - (void)drainNextPendingChangeForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
