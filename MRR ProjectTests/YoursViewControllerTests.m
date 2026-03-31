@@ -1,25 +1,27 @@
 #import <XCTest/XCTest.h>
 
+#import "../MRR Project/Features/Yours/MRRYoursRecipeEditorViewController.h"
 #import "../MRR Project/Features/Yours/YoursViewController.h"
 #import "../MRR Project/Persistence/CoreData/MRRCoreDataStack.h"
+#import "../MRR Project/Persistence/UserRecipes/MRRUserRecipePhotoStorage.h"
 #import "../MRR Project/Persistence/UserRecipes/MRRUserRecipesStore.h"
 #import "../MRR Project/Persistence/UserRecipes/Models/MRRUserRecipeSnapshot.h"
 #import "../MRR Project/Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
 
 @interface YoursViewController (Testing)
 
+- (instancetype)initWithSessionUserID:(nullable NSString *)sessionUserID
+                     userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
+                           syncEngine:(nullable id<MRRUserRecipesCloudSyncing>)syncEngine
+                         photoStorage:(nullable id<MRRUserRecipePhotoStorage>)photoStorage;
 - (void)handleAddButtonTapped:(id)sender;
-- (BOOL)persistRecipeWithTitle:(NSString *)title
-                      subtitle:(NSString *)subtitle
-                       summary:(NSString *)summary
-                 mealTypeInput:(NSString *)mealTypeInput
-            readyInMinutesText:(NSString *)readyInMinutesText
-                  servingsText:(NSString *)servingsText
-               ingredientsText:(NSString *)ingredientsText
-              instructionsText:(NSString *)instructionsText
-                 existingRecipe:(nullable MRRUserRecipeSnapshot *)existingRecipe
-                          error:(NSError *_Nullable *_Nullable)error;
-- (BOOL)deleteRecipeWithIdentifier:(NSString *)recipeIdentifier error:(NSError *_Nullable *_Nullable)error;
+
+@end
+
+@interface MRRYoursRecipeEditorViewController (Testing)
+
+- (BOOL)appendPhotoWithImage:(UIImage *)image error:(NSError *_Nullable *_Nullable)error;
+- (void)handleSaveTapped:(id)sender;
 
 @end
 
@@ -61,16 +63,17 @@
 @property(nonatomic, strong) MRRCoreDataStack *coreDataStack;
 @property(nonatomic, strong) MRRUserRecipesStore *store;
 @property(nonatomic, strong) YoursSyncEngineSpy *syncEngine;
+@property(nonatomic, strong) MRRLocalUserRecipePhotoStorage *photoStorage;
+@property(nonatomic, strong) NSURL *photoBaseDirectoryURL;
 @property(nonatomic, strong) YoursViewController *viewController;
 @property(nonatomic, strong) UINavigationController *navigationController;
 @property(nonatomic, strong) UIWindow *window;
 
 - (NSArray<MRRUserRecipeSnapshot *> *)currentRecipes;
-- (UIAlertController *)presentedAlertController;
-- (void)invokeAlertActionWithTitle:(NSString *)title onAlert:(UIAlertController *)alertController;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
-- (UILabel *)findLabelWithText:(NSString *)text inView:(UIView *)view;
-- (MRRUserRecipeSnapshot *)createRecipeWithTitle:(NSString *)title;
+- (MRRYoursRecipeEditorViewController *)presentedEditor;
+- (void)populateRequiredFieldsInEditor:(MRRYoursRecipeEditorViewController *)editor title:(NSString *)title;
+- (UIImage *)sampleImageWithColor:(UIColor *)color;
 - (void)spinMainRunLoop;
 
 @end
@@ -87,9 +90,14 @@
 
   self.store = [[MRRUserRecipesStore alloc] initWithCoreDataStack:self.coreDataStack];
   self.syncEngine = [[YoursSyncEngineSpy alloc] init];
+  self.photoBaseDirectoryURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]
+                                          isDirectory:YES];
+  self.photoStorage = [[MRRLocalUserRecipePhotoStorage alloc] initWithBaseDirectoryURL:self.photoBaseDirectoryURL
+                                                                            fileManager:[NSFileManager defaultManager]];
   self.viewController = [[YoursViewController alloc] initWithSessionUserID:@"user-yours"
                                                           userRecipesStore:self.store
-                                                                syncEngine:self.syncEngine];
+                                                                syncEngine:self.syncEngine
+                                                              photoStorage:self.photoStorage];
   self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.viewController];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.navigationController;
@@ -100,12 +108,13 @@
 }
 
 - (void)tearDown {
-  [self.viewController dismissViewControllerAnimated:NO completion:nil];
-  [self spinMainRunLoop];
   self.window.hidden = YES;
   self.window = nil;
   self.navigationController = nil;
   self.viewController = nil;
+  self.photoStorage = nil;
+  [[NSFileManager defaultManager] removeItemAtURL:self.photoBaseDirectoryURL error:nil];
+  self.photoBaseDirectoryURL = nil;
   self.syncEngine = nil;
   self.store = nil;
   self.coreDataStack = nil;
@@ -124,113 +133,67 @@
   XCTAssertNotNil(emptyStateButton);
 }
 
-- (void)testAddButtonPresentsCreateAlert {
+- (void)testAddButtonPushesFullScreenEditor {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
 
-  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
-  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"yours.createAlert");
+  UIViewController *topViewController = self.navigationController.topViewController;
+  XCTAssertTrue([topViewController isKindOfClass:[MRRYoursRecipeEditorViewController class]]);
+  XCTAssertEqualObjects(topViewController.view.accessibilityIdentifier, @"yours.editor.view");
 }
 
-- (void)testCreatingRecipeShowsCardAndRequestsSync {
+- (void)testSavingRecipeFromEditorPersistsRecipeAndRequestsSync {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
 
-  UIAlertController *alertController = [self presentedAlertController];
-  XCTAssertNotNil(alertController);
-
-  NSArray<UITextField *> *textFields = alertController.textFields;
-  textFields[0].text = @"Nasi Goreng Rumahan";
-  textFields[1].text = @"Cepat dan gurih";
-  textFields[2].text = @"Versi sederhana untuk makan malam.";
-  textFields[3].text = @"dinner";
-  textFields[4].text = @"25";
-  textFields[5].text = @"3";
-  textFields[6].text = @"Nasi putih, telur, bawang putih";
-  textFields[7].text = @"Tumis bumbu; Masukkan telur; Aduk dengan nasi";
-  [self invokeAlertActionWithTitle:@"Save" onAlert:alertController];
-  [self.viewController dismissViewControllerAnimated:NO completion:nil];
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  [self populateRequiredFieldsInEditor:editor title:@"Nasi Goreng Rumahan"];
+  [editor handleSaveTapped:nil];
   [self spinMainRunLoop];
-
-  [self spinMainRunLoop];
-  [self.viewController.view layoutIfNeeded];
 
   NSArray<MRRUserRecipeSnapshot *> *recipes = [self currentRecipes];
   XCTAssertEqual(recipes.count, 1);
-  MRRUserRecipeSnapshot *recipe = recipes.firstObject;
-  XCTAssertEqualObjects(recipe.title, @"Nasi Goreng Rumahan");
+  XCTAssertEqualObjects(recipes.firstObject.title, @"Nasi Goreng Rumahan");
+  XCTAssertEqual(recipes.firstObject.calorieCount, 350);
   XCTAssertEqual(self.syncEngine.requestCount, 1);
   XCTAssertEqualObjects(self.syncEngine.lastRequestedUserID, @"user-yours");
-  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"yours.emptyStateLabel" inView:self.viewController.view]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:[@"yours.recipeCard." stringByAppendingString:recipe.recipeID]
-                                                     inView:self.viewController.view]);
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[YoursViewController class]]);
 }
 
-- (void)testCreatingRecipeAllowsEmptySummary {
+- (void)testValidationFailureKeepsEditorOpenAndPreservesDraft {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
 
-  UIAlertController *alertController = [self presentedAlertController];
-  XCTAssertNotNil(alertController);
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  UITextField *titleField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editor.view];
+  UITextField *ingredientField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
+  UITextField *stepField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
 
-  NSArray<UITextField *> *textFields = alertController.textFields;
-  textFields[0].text = @"Telur Dadar Keju";
-  textFields[1].text = @"Padat dan praktis";
-  textFields[2].text = @"";
-  textFields[3].text = @"breakfast";
-  textFields[4].text = @"10";
-  textFields[5].text = @"1";
-  textFields[6].text = @"Telur, keju, garam";
-  textFields[7].text = @"Kocok telur; Masak di pan";
-  [self invokeAlertActionWithTitle:@"Save" onAlert:alertController];
-  [self.viewController dismissViewControllerAnimated:NO completion:nil];
+  titleField.text = @"Roti Bakar";
+  ingredientField.text = @"";
+  stepField.text = @"Oles mentega";
+  [editor handleSaveTapped:nil];
   [self spinMainRunLoop];
 
-  [self spinMainRunLoop];
-
-  NSArray<MRRUserRecipeSnapshot *> *recipes = [self currentRecipes];
-  XCTAssertEqual(recipes.count, 1);
-  XCTAssertEqualObjects(recipes.firstObject.title, @"Telur Dadar Keju");
-  XCTAssertEqualObjects(recipes.firstObject.summaryText, @"");
+  UILabel *errorLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"yours.editor.errorLabel" inView:editor.view];
+  XCTAssertFalse(errorLabel.hidden);
+  XCTAssertEqualObjects(titleField.text, @"Roti Bakar");
+  XCTAssertEqualObjects(stepField.text, @"Oles mentega");
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[MRRYoursRecipeEditorViewController class]]);
 }
 
-- (void)testValidationFailureRepresentsFormWithPreservedInput {
+- (void)testEditingRecipeUpdatesExistingCard {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
-
-  UIAlertController *alertController = [self presentedAlertController];
-  XCTAssertNotNil(alertController);
-
-  NSArray<UITextField *> *textFields = alertController.textFields;
-  textFields[0].text = @"Roti Bakar Cokelat";
-  textFields[1].text = @"Manis cepat";
-  textFields[2].text = @"Cocok untuk sarapan.";
-  textFields[3].text = @"breakfast";
-  textFields[4].text = @"8";
-  textFields[5].text = @"1";
-  textFields[6].text = @"";
-  textFields[7].text = @"Oles cokelat; Panggang roti";
-  [self invokeAlertActionWithTitle:@"Save" onAlert:alertController];
-
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  [self populateRequiredFieldsInEditor:editor title:@"Pasta Lemon"];
+  [editor handleSaveTapped:nil];
   [self spinMainRunLoop];
 
-  UIAlertController *reopenedAlert = [self presentedAlertController];
-  XCTAssertNotNil(reopenedAlert);
-  XCTAssertEqualObjects(reopenedAlert.view.accessibilityIdentifier, @"yours.createAlert");
-
-  NSArray<UITextField *> *reopenedFields = reopenedAlert.textFields;
-  XCTAssertEqualObjects(reopenedFields[0].text, @"Roti Bakar Cokelat");
-  XCTAssertEqualObjects(reopenedFields[1].text, @"Manis cepat");
-  XCTAssertEqualObjects(reopenedFields[2].text, @"Cocok untuk sarapan.");
-  XCTAssertEqualObjects(reopenedFields[3].text, @"breakfast");
-  XCTAssertEqualObjects(reopenedFields[4].text, @"8");
-  XCTAssertEqualObjects(reopenedFields[5].text, @"1");
-  XCTAssertEqualObjects(reopenedFields[6].text, @"");
-  XCTAssertEqualObjects(reopenedFields[7].text, @"Oles cokelat; Panggang roti");
-}
-
-- (void)testEditButtonPresentsAlertAndUpdatingRecipeRefreshesCard {
-  MRRUserRecipeSnapshot *recipe = [self createRecipeWithTitle:@"Pasta Lemon"];
+  MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
   UIButton *editButton =
       (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.editButton." stringByAppendingString:recipe.recipeID]
                                                      inView:self.viewController.view];
@@ -239,35 +202,45 @@
   [editButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
-  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
-  XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"yours.editAlert");
-
-  UIAlertController *alertController = [self presentedAlertController];
-  NSArray<UITextField *> *textFields = alertController.textFields;
-  textFields[0].text = @"Pasta Lemon Creamy";
-  textFields[1].text = @"Lebih rich";
-  textFields[2].text = @"Versi creamy untuk makan siang.";
-  textFields[3].text = @"lunch";
-  textFields[4].text = @"30";
-  textFields[5].text = @"2";
-  textFields[6].text = @"Pasta, lemon, cream";
-  textFields[7].text = @"Rebus pasta; Buat saus; Campur rata";
-  [self invokeAlertActionWithTitle:@"Save" onAlert:alertController];
-  [self.viewController dismissViewControllerAnimated:NO completion:nil];
+  MRRYoursRecipeEditorViewController *editEditor = [self presentedEditor];
+  UITextField *titleField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editEditor.view];
+  titleField.text = @"Pasta Lemon Creamy";
+  [editEditor handleSaveTapped:nil];
   [self spinMainRunLoop];
 
-  [self spinMainRunLoop];
-  [self.viewController.view layoutIfNeeded];
+  XCTAssertEqualObjects([self currentRecipes].firstObject.title, @"Pasta Lemon Creamy");
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:[@"yours.recipeCard." stringByAppendingString:recipe.recipeID]
+                                                     inView:self.viewController.view]);
+}
 
-  NSArray<MRRUserRecipeSnapshot *> *recipes = [self currentRecipes];
-  XCTAssertEqual(recipes.count, 1);
-  MRRUserRecipeSnapshot *updatedRecipe = recipes.firstObject;
-  XCTAssertEqualObjects(updatedRecipe.title, @"Pasta Lemon Creamy");
-  XCTAssertNotNil([self findLabelWithText:@"Pasta Lemon Creamy" inView:self.viewController.view]);
+- (void)testAddingLocalPhotoStoresGalleryMetadataWithoutRemoteHeroURL {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  NSError *photoError = nil;
+  XCTAssertTrue([editor appendPhotoWithImage:[self sampleImageWithColor:[UIColor redColor]] error:&photoError]);
+  XCTAssertNil(photoError);
+  [self populateRequiredFieldsInEditor:editor title:@"Ayam Bakar"];
+  [editor handleSaveTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
+  XCTAssertEqual(recipe.photos.count, 1);
+  XCTAssertTrue(recipe.photos.firstObject.localRelativePath.length > 0);
+  XCTAssertEqual(recipe.heroImageURLString.length, 0);
 }
 
 - (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
-  MRRUserRecipeSnapshot *recipe = [self createRecipeWithTitle:@"Soto Ayam Kilat"];
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  [self populateRequiredFieldsInEditor:editor title:@"Soto Ayam Kilat"];
+  [editor handleSaveTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
   UIButton *deleteButton =
       (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.deleteButton." stringByAppendingString:recipe.recipeID]
                                                      inView:self.viewController.view];
@@ -278,18 +251,42 @@
 
   XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
   XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"yours.deleteAlert");
-  [self invokeAlertActionWithTitle:@"Delete" onAlert:[self presentedAlertController]];
-  [self.viewController dismissViewControllerAnimated:NO completion:nil];
-  [self spinMainRunLoop];
+}
 
-  [self spinMainRunLoop];
-  [self.viewController.view layoutIfNeeded];
+- (MRRYoursRecipeEditorViewController *)presentedEditor {
+  XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[MRRYoursRecipeEditorViewController class]]);
+  MRRYoursRecipeEditorViewController *editor = (MRRYoursRecipeEditorViewController *)self.navigationController.topViewController;
+  [editor loadViewIfNeeded];
+  [editor.view layoutIfNeeded];
+  return editor;
+}
 
-  XCTAssertEqual([self currentRecipes].count, 0);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"yours.emptyStateLabel" inView:self.viewController.view]);
-  XCTAssertNil([self findViewWithAccessibilityIdentifier:[@"yours.recipeCard." stringByAppendingString:recipe.recipeID]
-                                                  inView:self.viewController.view]);
-  XCTAssertEqual(self.syncEngine.requestCount, 2);
+- (void)populateRequiredFieldsInEditor:(MRRYoursRecipeEditorViewController *)editor title:(NSString *)title {
+  UITextField *titleField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editor.view];
+  UITextField *subtitleField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.subtitleField" inView:editor.view];
+  UITextView *summaryTextView =
+      (UITextView *)[self findViewWithAccessibilityIdentifier:@"yours.editor.summaryTextView" inView:editor.view];
+  UITextField *readyField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.readyField" inView:editor.view];
+  UITextField *servingsField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.servingsField" inView:editor.view];
+  UITextField *caloriesField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.caloriesField" inView:editor.view];
+  UITextField *ingredientField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
+  UITextField *stepField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+
+  titleField.text = title;
+  subtitleField.text = @"Subtitle";
+  summaryTextView.text = @"Versi sederhana untuk makan malam.";
+  readyField.text = @"25";
+  servingsField.text = @"3";
+  caloriesField.text = @"350";
+  ingredientField.text = @"Nasi putih, telur, bawang putih";
+  stepField.text = @"Tumis bumbu lalu aduk dengan nasi";
 }
 
 - (NSArray<MRRUserRecipeSnapshot *> *)currentRecipes {
@@ -299,76 +296,26 @@
   return recipes ?: @[];
 }
 
-- (UIAlertController *)presentedAlertController {
-  XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
-  return (UIAlertController *)self.viewController.presentedViewController;
-}
-
-- (void)invokeAlertActionWithTitle:(NSString *)title onAlert:(UIAlertController *)alertController {
-  UIAlertAction *targetAction = nil;
-  for (UIAlertAction *action in alertController.actions) {
-    if ([action.title isEqualToString:title]) {
-      targetAction = action;
-      break;
-    }
-  }
-
-  XCTAssertNotNil(targetAction);
-
-  void (^handler)(UIAlertAction *) = [targetAction valueForKey:@"handler"];
-  #pragma unused(alertController)
-  if (handler != nil) {
-    handler(targetAction);
-  }
-  [self spinMainRunLoop];
-}
-
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
   if ([view.accessibilityIdentifier isEqualToString:identifier]) {
     return view;
   }
-
   for (UIView *subview in view.subviews) {
     UIView *match = [self findViewWithAccessibilityIdentifier:identifier inView:subview];
     if (match != nil) {
       return match;
     }
   }
-
   return nil;
 }
 
-- (UILabel *)findLabelWithText:(NSString *)text inView:(UIView *)view {
-  if ([view isKindOfClass:[UILabel class]] && [((UILabel *)view).text isEqualToString:text]) {
-    return (UILabel *)view;
-  }
-
-  for (UIView *subview in view.subviews) {
-    UILabel *match = [self findLabelWithText:text inView:subview];
-    if (match != nil) {
-      return match;
-    }
-  }
-
-  return nil;
-}
-
-- (MRRUserRecipeSnapshot *)createRecipeWithTitle:(NSString *)title {
-  NSError *error = nil;
-  BOOL didCreate = [self.viewController persistRecipeWithTitle:title
-                                                      subtitle:@"Subtitle"
-                                                       summary:@"Ringkas dan enak."
-                                                 mealTypeInput:@"breakfast"
-                                            readyInMinutesText:@"15"
-                                                  servingsText:@"2"
-                                               ingredientsText:@"Bahan satu, Bahan dua"
-                                              instructionsText:@"Langkah satu; Langkah dua"
-                                                 existingRecipe:nil
-                                                          error:&error];
-  XCTAssertTrue(didCreate);
-  XCTAssertNil(error);
-  [self spinMainRunLoop];
-  return [self currentRecipes].firstObject;
+- (UIImage *)sampleImageWithColor:(UIColor *)color {
+  UIGraphicsBeginImageContextWithOptions(CGSizeMake(24.0, 24.0), YES, 1.0);
+  [color setFill];
+  UIRectFill(CGRectMake(0.0, 0.0, 24.0, 24.0));
+  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+  return image;
 }
 
 - (void)spinMainRunLoop {
