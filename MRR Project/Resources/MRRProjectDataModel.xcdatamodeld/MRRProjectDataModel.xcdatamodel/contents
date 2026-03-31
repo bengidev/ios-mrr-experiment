@@ -85,6 +85,7 @@
         <attribute name="summaryText" optional="NO" attributeType="String"/>
         <attribute name="title" optional="NO" attributeType="String"/>
         <attribute name="userID" optional="NO" attributeType="String"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipePhoto" inverseName="recipe" inverseEntity="UserRecipePhoto"/>
         <relationship name="ingredients" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeIngredient" inverseName="recipe" inverseEntity="UserRecipeIngredient"/>
         <relationship name="instructions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeInstruction" inverseName="recipe" inverseEntity="UserRecipeInstruction"/>
         <relationship name="tags" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserRecipeTag" inverseName="recipe" inverseEntity="UserRecipeTag"/>
@@ -95,6 +96,13 @@
                 <constraint value="recipeID"/>
             </uniquenessConstraint>
         </uniquenessConstraints>
+    </entity>
+    <entity name="UserRecipePhoto" representedClassName="UserRecipePhoto" syncable="YES" codeGenerationType="class">
+        <attribute name="localRelativePath" optional="YES" attributeType="String"/>
+        <attribute name="orderIndex" optional="NO" attributeType="Integer 32" defaultValueString="0"/>
+        <attribute name="photoID" optional="NO" attributeType="String"/>
+        <attribute name="remoteURLString" optional="YES" attributeType="String"/>
+        <relationship name="recipe" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserRecipe" inverseName="photos" inverseEntity="UserRecipe"/>
     </entity>
     <entity name="UserRecipeIngredient" representedClassName="UserRecipeIngredient" syncable="YES" codeGenerationType="class">
         <attribute name="displayText" optional="NO" attributeType="String"/>
@@ -138,6 +146,7 @@
         <element name="SavedRecipeTag" positionX="288" positionY="115" width="128" height="88"/>
         <element name="SavedRecipeTool" positionX="288" positionY="220" width="128" height="88"/>
         <element name="UserRecipe" positionX="661" positionY="-18" width="128" height="253"/>
+        <element name="UserRecipePhoto" positionX="1012" positionY="-270" width="128" height="103"/>
         <element name="UserRecipeIngredient" positionX="1012" positionY="-153" width="128" height="103"/>
         <element name="UserRecipeInstruction" positionX="1012" positionY="-18" width="128" height="118"/>
         <element name="UserRecipeSyncChange" positionX="661" positionY="438" width="128" height="103"/>
