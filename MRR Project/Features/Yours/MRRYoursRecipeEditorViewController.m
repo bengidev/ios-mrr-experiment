@@ -30,10 +30,6 @@ static UIColor *MRRYoursEditorCanvasColor(void) {
                                   [UIColor colorWithRed:0.10 green:0.11 blue:0.12 alpha:1.0]);
 }
 
-static UIColor *MRRYoursEditorSurfaceColor(void) {
-  return MRRYoursEditorNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0]);
-}
-
 static UIColor *MRRYoursEditorMutedSurfaceColor(void) {
   return MRRYoursEditorNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
 }
@@ -761,14 +757,16 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 - (UIView *)sectionCardViewWithTitle:(NSString *)title accentColor:(UIColor *)accentColor accessibilityIdentifier:(NSString *)accessibilityIdentifier {
   UIView *containerView = [[[UIView alloc] init] autorelease];
   containerView.translatesAutoresizingMaskIntoConstraints = NO;
-  containerView.backgroundColor = MRRYoursEditorSurfaceColor();
+  [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:containerView];
   containerView.layer.cornerRadius = 28.0;
-  containerView.layer.borderWidth = 1.0;
   containerView.layer.borderColor = [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.62].CGColor;
   containerView.accessibilityIdentifier = accessibilityIdentifier;
 
   UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightBold] color:accentColor];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  containerView.layer.shadowOpacity = 0.06f;
+  containerView.layer.shadowRadius = 18.0f;
+  containerView.layer.shadowOffset = CGSizeMake(0.0, 10.0);
   titleLabel.text = [title uppercaseString];
   [containerView addSubview:titleLabel];
 
