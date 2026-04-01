@@ -52,10 +52,6 @@ static UIColor *MRRYoursEditorAccentColor(void) {
                                   [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
 }
 
-static UIColor *MRRYoursEditorSuccessColor(void) {
-  return [UIColor colorWithRed:0.31 green:0.77 blue:0.43 alpha:1.0];
-}
-
 static UIColor *MRRYoursEditorAccentFillColor(CGFloat alpha) {
   return [MRRYoursEditorAccentColor() colorWithAlphaComponent:alpha];
 }
