@@ -118,28 +118,27 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
 @property(nonatomic, retain, nullable) id<MRRUserRecipesCloudSyncing> syncEngine;
-@property(nonatomic, retain, nullable) UIColor *previousNavigationBarTintColor;
 @property(nonatomic, retain) id<MRRUserRecipePhotoStorage> photoStorage;
 @property(nonatomic, retain, nullable) MRRUserRecipeSnapshot *existingRecipe;
-@property(nonatomic, assign) CGFloat lastLaidOutWidth;
-@property(nonatomic, retain, nullable) UIColor *previousNavigationBarTintColor;
 @property(nonatomic, copy) NSString *draftRecipeID;
 @property(nonatomic, assign) BOOL creatingRecipe;
 @property(nonatomic, assign) BOOL didPersistRecipe;
 @property(nonatomic, assign) NSInteger selectedPhotoIndex;
 @property(nonatomic, assign) NSUInteger coverImageRequestToken;
+@property(nonatomic, assign) CGFloat lastLaidOutWidth;
+@property(nonatomic, retain, nullable) UIColor *previousNavigationBarTintColor;
 
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *contentStackView;
 @property(nonatomic, retain) UIButton *bottomSaveButton;
 @property(nonatomic, retain) UIBarButtonItem *saveBarButtonItem;
-@property(nonatomic, retain) UIStackView *photoActionsStackView;
 
 @property(nonatomic, retain) UIView *photoSectionView;
 @property(nonatomic, retain) UIImageView *coverImageView;
 @property(nonatomic, retain) UILabel *photoHelperLabel;
 @property(nonatomic, retain) UIStackView *photoThumbnailsStackView;
+@property(nonatomic, retain) UIStackView *photoActionsStackView;
 @property(nonatomic, retain) UIButton *addPhotoButton;
 @property(nonatomic, retain) UIButton *setCoverButton;
 @property(nonatomic, retain) UIButton *removePhotoButton;
@@ -176,15 +175,15 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, retain) NSMutableSet<NSString *> *createdLocalRelativePaths;
 
 - (void)buildViewHierarchy;
-- (void)rebuildChipRowsIfNeeded;
-- (void)rebuildChipRowsInStackView:(UIStackView *)stackView buttons:(NSArray<UIButton *> *)buttons;
-- (void)clearArrangedSubviewsFromStackView:(UIStackView *)stackView;
-- (CGFloat)availableChipRowWidthForStackView:(UIStackView *)stackView;
 - (UIView *)sectionCardViewWithTitle:(NSString *)title accentColor:(UIColor *)accentColor accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
 - (UITextField *)styledTextFieldWithPlaceholder:(NSString *)placeholder keyboardType:(UIKeyboardType)keyboardType identifier:(NSString *)identifier;
 - (UITextView *)styledTextViewWithIdentifier:(NSString *)identifier;
 - (UIButton *)chipButtonWithTitle:(NSString *)title tintColor:(UIColor *)tintColor;
+- (void)rebuildChipRowsIfNeeded;
+- (void)rebuildChipRowsInStackView:(UIStackView *)stackView buttons:(NSArray<UIButton *> *)buttons;
+- (void)clearArrangedSubviewsFromStackView:(UIStackView *)stackView;
+- (CGFloat)availableChipRowWidthForStackView:(UIStackView *)stackView;
 - (void)reloadPhotoUI;
 - (void)reloadMealTypeSelection;
 - (void)reloadTagSelection;
@@ -304,10 +303,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [_addPhotoButton release];
   [_photoThumbnailsStackView release];
   [_photoHelperLabel release];
-  [_photoActionsStackView release];
   [_coverImageView release];
-  [_previousNavigationBarTintColor release];
   [_photoSectionView release];
+  [_photoActionsStackView release];
+  [_previousNavigationBarTintColor release];
   [_saveBarButtonItem release];
   [_bottomSaveButton release];
   [_contentStackView release];
@@ -373,16 +372,15 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   self.bottomSaveButton.accessibilityIdentifier = @"yours.editor.saveButton";
   self.view.accessibilityIdentifier = @"yours.editor.view";
-
   self.scrollView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+  [super viewWillAppear:animated];
   if (self.navigationController) {
     self.previousNavigationBarTintColor = self.navigationController.navigationBar.tintColor;
     self.navigationController.navigationBar.tintColor = MRRYoursEditorAccentColor();
   }
-  [super viewWillAppear:animated];
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(handleKeyboardWillChangeFrame:)
                                                name:UIKeyboardWillChangeFrameNotification
@@ -390,16 +388,16 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+  [super viewWillDisappear:animated];
   if (self.navigationController) {
+    self.navigationController.navigationBar.tintColor = self.previousNavigationBarTintColor;
+  }
+  [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillChangeFrameNotification object:nil];
+}
+
 - (void)viewDidLayoutSubviews {
   [super viewDidLayoutSubviews];
   [self rebuildChipRowsIfNeeded];
-}
-
-    self.navigationController.navigationBar.tintColor = self.previousNavigationBarTintColor;
-  }
-  [super viewWillDisappear:animated];
-  [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillChangeFrameNotification object:nil];
 }
 
 - (void)buildViewHierarchy {
@@ -512,8 +510,6 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   removePhotoButton.accessibilityIdentifier = @"yours.editor.removePhotoButton";
   self.removePhotoButton = removePhotoButton;
 
-  [NSLayoutConstraint activateConstraints:@[
-    [photoHeroLabel.topAnchor constraintEqualToAnchor:photoSectionView.topAnchor constant:MRRYoursRecipeEditorSectionContentTopInset],
   UIStackView *photoActionsStackView = [[[UIStackView alloc] init] autorelease];
   photoActionsStackView.translatesAutoresizingMaskIntoConstraints = NO;
   photoActionsStackView.axis = UILayoutConstraintAxisVertical;
@@ -525,6 +521,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [photoSectionView addSubview:photoActionsStackView];
   self.photoActionsStackView = photoActionsStackView;
 
+  [NSLayoutConstraint activateConstraints:@[
+    [photoHeroLabel.topAnchor constraintEqualToAnchor:photoSectionView.topAnchor constant:MRRYoursRecipeEditorSectionContentTopInset],
     [photoHeroLabel.leadingAnchor constraintEqualToAnchor:photoSectionView.leadingAnchor constant:22.0],
     [photoHeroLabel.trailingAnchor constraintEqualToAnchor:photoSectionView.trailingAnchor constant:-22.0],
 
@@ -543,7 +541,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [photoActionsStackView.bottomAnchor constraintEqualToAnchor:photoSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *basicInfoSectionView = [self sectionCardViewWithTitle:@"Basic Info" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.basicInfoSection"];
+  UIView *basicInfoSectionView = [self sectionCardViewWithTitle:@"Basic Info"
+                                                    accentColor:MRRYoursEditorAccentColor()
+                                         accessibilityIdentifier:@"yours.editor.basicInfoSection"];
   self.basicInfoSectionView = basicInfoSectionView;
   [self.contentStackView addArrangedSubview:basicInfoSectionView];
 
@@ -590,7 +590,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [basicInfoErrorLabel.bottomAnchor constraintEqualToAnchor:basicInfoSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *categorySectionView = [self sectionCardViewWithTitle:@"Category" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.categorySection"];
+  UIView *categorySectionView = [self sectionCardViewWithTitle:@"Category"
+                                                   accentColor:MRRYoursEditorAccentColor()
+                                        accessibilityIdentifier:@"yours.editor.categorySection"];
   [self.contentStackView addArrangedSubview:categorySectionView];
 
   UIStackView *mealTypeButtonsStackView = [[[UIStackView alloc] init] autorelease];
@@ -642,7 +644,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [tagsHintLabel.bottomAnchor constraintEqualToAnchor:categorySectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *detailsSectionView = [self sectionCardViewWithTitle:@"Details & Nutrition" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.detailsSection"];
+  UIView *detailsSectionView = [self sectionCardViewWithTitle:@"Details & Nutrition"
+                                                  accentColor:MRRYoursEditorAccentColor()
+                                       accessibilityIdentifier:@"yours.editor.detailsSection"];
   [self.contentStackView addArrangedSubview:detailsSectionView];
 
   UITextField *cookTimeField = [self styledTextFieldWithPlaceholder:@"Cook time (min)" keyboardType:UIKeyboardTypeNumberPad identifier:@"yours.editor.readyField"];
@@ -673,7 +677,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [caloriesField.bottomAnchor constraintEqualToAnchor:detailsSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *ingredientsSectionView = [self sectionCardViewWithTitle:@"Ingredients" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.ingredientsSection"];
+  UIView *ingredientsSectionView = [self sectionCardViewWithTitle:@"Ingredients"
+                                                      accentColor:MRRYoursEditorAccentColor()
+                                           accessibilityIdentifier:@"yours.editor.ingredientsSection"];
   self.ingredientsSectionView = ingredientsSectionView;
   [self.contentStackView addArrangedSubview:ingredientsSectionView];
 
@@ -711,7 +717,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [ingredientsErrorLabel.bottomAnchor constraintEqualToAnchor:ingredientsSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *stepsSectionView = [self sectionCardViewWithTitle:@"Cooking Steps" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.stepsSection"];
+  UIView *stepsSectionView = [self sectionCardViewWithTitle:@"Cooking Steps"
+                                                accentColor:MRRYoursEditorAccentColor()
+                                     accessibilityIdentifier:@"yours.editor.stepsSection"];
   self.stepsSectionView = stepsSectionView;
   [self.contentStackView addArrangedSubview:stepsSectionView];
 
@@ -756,13 +764,13 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:containerView];
   containerView.layer.cornerRadius = 28.0;
   containerView.layer.borderColor = [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.62].CGColor;
+  containerView.layer.shadowOpacity = 0.06f;
+  containerView.layer.shadowRadius = 18.0f;
+  containerView.layer.shadowOffset = CGSizeMake(0.0, 10.0);
   containerView.accessibilityIdentifier = accessibilityIdentifier;
 
   UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightBold] color:accentColor];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-  containerView.layer.shadowOpacity = 0.06f;
-  containerView.layer.shadowRadius = 18.0f;
-  containerView.layer.shadowOffset = CGSizeMake(0.0, 10.0);
   titleLabel.text = [title uppercaseString];
   [containerView addSubview:titleLabel];
 
@@ -850,10 +858,6 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   button.layer.borderColor = (selected ? tintColor : MRRYoursEditorAccentFillColor(0.18)).CGColor;
 }
 
-- (void)reloadPhotoUI {
-  while (self.photoThumbnailsStackView.arrangedSubviews.count > 0) {
-    UIView *subview = self.photoThumbnailsStackView.arrangedSubviews.firstObject;
-    [self.photoThumbnailsStackView removeArrangedSubview:subview];
 - (void)rebuildChipRowsIfNeeded {
   CGFloat currentWidth = CGRectGetWidth(self.view.bounds);
   if (fabs(currentWidth - self.lastLaidOutWidth) < 0.5) {
@@ -941,6 +945,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   return MAX(viewportWidth - 84.0, 220.0);
 }
 
+- (void)reloadPhotoUI {
+  while (self.photoThumbnailsStackView.arrangedSubviews.count > 0) {
+    UIView *subview = self.photoThumbnailsStackView.arrangedSubviews.firstObject;
+    [self.photoThumbnailsStackView removeArrangedSubview:subview];
     [subview removeFromSuperview];
   }
 
