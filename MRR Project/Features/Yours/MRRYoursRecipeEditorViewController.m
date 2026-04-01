@@ -55,8 +55,8 @@ static UIColor *MRRYoursEditorSuccessColor(void) {
   return [UIColor colorWithRed:0.31 green:0.77 blue:0.43 alpha:1.0];
 }
 
-static UIColor *MRRYoursEditorInfoBlueColor(void) {
-  return [UIColor colorWithRed:0.26 green:0.50 blue:0.95 alpha:1.0];
+static UIColor *MRRYoursEditorAccentFillColor(CGFloat alpha) {
+  return [MRRYoursEditorAccentColor() colorWithAlphaComponent:alpha];
 }
 
 static UIColor *MRRYoursEditorErrorColor(void) {
@@ -835,8 +835,12 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   button.layer.cornerRadius = 18.0;
   button.layer.borderWidth = 1.0;
   button.layer.borderColor = [tintColor colorWithAlphaComponent:0.14].CGColor;
-  button.titleLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightSemibold];
-  button.contentEdgeInsets = UIEdgeInsetsMake(12.0, 12.0, 12.0, 12.0);
+  button.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
+  button.titleLabel.numberOfLines = 1;
+  button.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+  button.contentEdgeInsets = UIEdgeInsetsMake(10.0, 14.0, 10.0, 14.0);
+  [button setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+  [button setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
   [button setTitle:title forState:UIControlStateNormal];
   [button.heightAnchor constraintGreaterThanOrEqualToConstant:42.0].active = YES;
   [self applySelectedState:NO toChipButton:button tintColor:tintColor];
@@ -845,9 +849,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
 - (void)applySelectedState:(BOOL)selected toChipButton:(UIButton *)button tintColor:(UIColor *)tintColor {
   button.selected = selected;
-  button.backgroundColor = selected ? tintColor : [MRRYoursEditorMutedSurfaceColor() colorWithAlphaComponent:0.86];
+  button.backgroundColor = selected ? tintColor : [MRRYoursEditorMutedSurfaceColor() colorWithAlphaComponent:0.88];
   [button setTitleColor:(selected ? [UIColor whiteColor] : MRRYoursEditorPrimaryTextColor()) forState:UIControlStateNormal];
-  button.layer.borderColor = (selected ? tintColor : [tintColor colorWithAlphaComponent:0.14]).CGColor;
+  button.layer.borderColor = (selected ? tintColor : MRRYoursEditorAccentFillColor(0.18)).CGColor;
 }
 
 - (void)reloadPhotoUI {
