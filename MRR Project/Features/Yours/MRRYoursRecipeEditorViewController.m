@@ -125,6 +125,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
 @property(nonatomic, retain, nullable) id<MRRUserRecipesCloudSyncing> syncEngine;
+@property(nonatomic, retain, nullable) UIColor *previousNavigationBarTintColor;
 @property(nonatomic, retain) id<MRRUserRecipePhotoStorage> photoStorage;
 @property(nonatomic, retain, nullable) MRRUserRecipeSnapshot *existingRecipe;
 @property(nonatomic, copy) NSString *draftRecipeID;
@@ -304,6 +305,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [_photoThumbnailsStackView release];
   [_photoHelperLabel release];
   [_coverImageView release];
+  [_previousNavigationBarTintColor release];
   [_photoSectionView release];
   [_saveBarButtonItem release];
   [_bottomSaveButton release];
@@ -323,6 +325,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [super viewDidLoad];
 
   self.view.backgroundColor = MRRYoursEditorCanvasColor();
+  self.view.tintColor = MRRYoursEditorAccentColor();
   self.title = self.creatingRecipe ? @"New Recipe" : @"Edit Recipe";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
@@ -330,6 +333,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   UIBarButtonItem *saveBarButtonItem =
       [[[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStyleDone target:self action:@selector(handleSaveTapped:)] autorelease];
+  saveBarButtonItem.tintColor = MRRYoursEditorAccentColor();
   self.navigationItem.rightBarButtonItem = saveBarButtonItem;
   self.saveBarButtonItem = saveBarButtonItem;
 
@@ -373,6 +377,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+  if (self.navigationController) {
+    self.previousNavigationBarTintColor = self.navigationController.navigationBar.tintColor;
+    self.navigationController.navigationBar.tintColor = MRRYoursEditorAccentColor();
+  }
   [super viewWillAppear:animated];
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(handleKeyboardWillChangeFrame:)
@@ -381,6 +389,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+  if (self.navigationController) {
+    self.navigationController.navigationBar.tintColor = self.previousNavigationBarTintColor;
+  }
   [super viewWillDisappear:animated];
   [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillChangeFrameNotification object:nil];
 }
