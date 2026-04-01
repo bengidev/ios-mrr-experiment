@@ -448,12 +448,14 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [contentStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-24.0]
   ]];
 
-  UIView *photoSectionView = [self sectionCardViewWithTitle:@"Photo Gallery" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.photoSection"];
+  UIView *photoSectionView = [self sectionCardViewWithTitle:@"Photos"
+                                                accentColor:MRRYoursEditorAccentColor()
+                                     accessibilityIdentifier:@"yours.editor.photoSection"];
   self.photoSectionView = photoSectionView;
   [self.contentStackView addArrangedSubview:photoSectionView];
 
   UILabel *photoHeroLabel = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium] color:MRRYoursEditorSecondaryTextColor()];
-  photoHeroLabel.text = @"The first photo becomes your cover. Firestore stores only remote URLs for now.";
+  photoHeroLabel.text = @"Add up to 5 photos. The first photo becomes your cover.";
   photoHeroLabel.numberOfLines = 0;
   [photoSectionView addSubview:photoHeroLabel];
   self.photoHelperLabel = photoHeroLabel;
@@ -473,8 +475,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   UIStackView *photoThumbnailsStackView = [[[UIStackView alloc] init] autorelease];
   photoThumbnailsStackView.translatesAutoresizingMaskIntoConstraints = NO;
   photoThumbnailsStackView.axis = UILayoutConstraintAxisHorizontal;
-  photoThumbnailsStackView.spacing = 10.0;
-  photoThumbnailsStackView.distribution = UIStackViewDistributionFillProportionally;
+  photoThumbnailsStackView.spacing = 8.0;
+  photoThumbnailsStackView.alignment = UIStackViewAlignmentLeading;
+  photoThumbnailsStackView.distribution = UIStackViewDistributionFill;
+  photoThumbnailsStackView.accessibilityIdentifier = @"yours.editor.photoThumbnails";
   [photoSectionView addSubview:photoThumbnailsStackView];
   self.photoThumbnailsStackView = photoThumbnailsStackView;
 
@@ -483,7 +487,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [addPhotoButton setTitle:@"Add Photo" forState:UIControlStateNormal];
   [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRolePrimary toButton:addPhotoButton];
   [addPhotoButton addTarget:self action:@selector(handleAddPhotoTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [photoSectionView addSubview:addPhotoButton];
+  addPhotoButton.accessibilityIdentifier = @"yours.editor.addPhotoButton";
   self.addPhotoButton = addPhotoButton;
 
   UIButton *setCoverButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -491,15 +495,15 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [setCoverButton setTitle:@"Set as Cover" forState:UIControlStateNormal];
   [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRoleSecondary toButton:setCoverButton];
   [setCoverButton addTarget:self action:@selector(handleSetCoverTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [photoSectionView addSubview:setCoverButton];
+  setCoverButton.accessibilityIdentifier = @"yours.editor.setCoverButton";
   self.setCoverButton = setCoverButton;
 
   UIButton *removePhotoButton = [UIButton buttonWithType:UIButtonTypeSystem];
   removePhotoButton.translatesAutoresizingMaskIntoConstraints = NO;
-  [removePhotoButton setTitle:@"Remove Selected" forState:UIControlStateNormal];
+  [removePhotoButton setTitle:@"Remove Photo" forState:UIControlStateNormal];
   [MRRLiquidGlassStyling applyButtonRole:MRRGlassButtonRoleSecondary toButton:removePhotoButton];
   [removePhotoButton addTarget:self action:@selector(handleRemovePhotoTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [photoSectionView addSubview:removePhotoButton];
+  removePhotoButton.accessibilityIdentifier = @"yours.editor.removePhotoButton";
   self.removePhotoButton = removePhotoButton;
 
   [NSLayoutConstraint activateConstraints:@[
