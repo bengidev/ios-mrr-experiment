@@ -582,7 +582,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [basicInfoErrorLabel.bottomAnchor constraintEqualToAnchor:basicInfoSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *categorySectionView = [self sectionCardViewWithTitle:@"Category" accentColor:MRRYoursEditorInfoBlueColor() accessibilityIdentifier:@"yours.editor.categorySection"];
+  UIView *categorySectionView = [self sectionCardViewWithTitle:@"Category" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.categorySection"];
   [self.contentStackView addArrangedSubview:categorySectionView];
 
   UIStackView *mealTypeButtonsStackView = [[[UIStackView alloc] init] autorelease];
@@ -601,7 +601,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     rowStack.distribution = UIStackViewDistributionFillEqually;
     [mealTypeButtonsStackView addArrangedSubview:rowStack];
     for (NSString *mealType in mealRow) {
-      UIButton *button = [self chipButtonWithTitle:mealType.capitalizedString tintColor:MRRYoursEditorInfoBlueColor()];
+      UIButton *button = [self chipButtonWithTitle:mealType.capitalizedString tintColor:MRRYoursEditorAccentColor()];
       button.accessibilityIdentifier = [@"yours.editor.mealType." stringByAppendingString:mealType];
       [button addTarget:self action:@selector(handleMealTypeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
       [rowStack addArrangedSubview:button];
@@ -618,7 +618,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   self.tagButtonsStackView = tagButtonsStackView;
 
   for (NSString *tagValue in MRRYoursEditorSuggestionTags()) {
-    UIButton *button = [self chipButtonWithTitle:tagValue tintColor:MRRYoursEditorSuccessColor()];
+    UIButton *button = [self chipButtonWithTitle:tagValue tintColor:MRRYoursEditorAccentColor()];
     button.accessibilityIdentifier = [@"yours.editor.tag." stringByAppendingString:tagValue];
     [button addTarget:self action:@selector(handleTagButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [tagButtonsStackView addArrangedSubview:button];
@@ -646,7 +646,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [tagsHintLabel.bottomAnchor constraintEqualToAnchor:categorySectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *detailsSectionView = [self sectionCardViewWithTitle:@"Details & Nutrition" accentColor:MRRYoursEditorSuccessColor() accessibilityIdentifier:@"yours.editor.detailsSection"];
+  UIView *detailsSectionView = [self sectionCardViewWithTitle:@"Details & Nutrition" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.detailsSection"];
   [self.contentStackView addArrangedSubview:detailsSectionView];
 
   UITextField *cookTimeField = [self styledTextFieldWithPlaceholder:@"Cook time (min)" keyboardType:UIKeyboardTypeNumberPad identifier:@"yours.editor.readyField"];
@@ -677,7 +677,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [caloriesField.bottomAnchor constraintEqualToAnchor:detailsSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *ingredientsSectionView = [self sectionCardViewWithTitle:@"Ingredients" accentColor:MRRYoursEditorSuccessColor() accessibilityIdentifier:@"yours.editor.ingredientsSection"];
+  UIView *ingredientsSectionView = [self sectionCardViewWithTitle:@"Ingredients" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.ingredientsSection"];
   self.ingredientsSectionView = ingredientsSectionView;
   [self.contentStackView addArrangedSubview:ingredientsSectionView];
 
@@ -715,7 +715,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [ingredientsErrorLabel.bottomAnchor constraintEqualToAnchor:ingredientsSectionView.bottomAnchor constant:-22.0]
   ]];
 
-  UIView *stepsSectionView = [self sectionCardViewWithTitle:@"Cooking Steps" accentColor:MRRYoursEditorInfoBlueColor() accessibilityIdentifier:@"yours.editor.stepsSection"];
+  UIView *stepsSectionView = [self sectionCardViewWithTitle:@"Cooking Steps" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.stepsSection"];
   self.stepsSectionView = stepsSectionView;
   [self.contentStackView addArrangedSubview:stepsSectionView];
 
@@ -961,14 +961,14 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 - (void)reloadMealTypeSelection {
   for (NSString *mealType in MRRYoursEditorMealTypes()) {
     UIButton *button = [self.mealTypeButtonsByIdentifier objectForKey:mealType];
-    [self applySelectedState:[self.selectedMealType isEqualToString:mealType] toChipButton:button tintColor:MRRYoursEditorInfoBlueColor()];
+    [self applySelectedState:[self.selectedMealType isEqualToString:mealType] toChipButton:button tintColor:MRRYoursEditorAccentColor()];
   }
 }
 
 - (void)reloadTagSelection {
   for (NSString *tagValue in MRRYoursEditorSuggestionTags()) {
     UIButton *button = [self.tagButtonsByValue objectForKey:tagValue];
-    [self applySelectedState:button.selected toChipButton:button tintColor:MRRYoursEditorSuccessColor()];
+    [self applySelectedState:button.selected toChipButton:button tintColor:MRRYoursEditorAccentColor()];
   }
 }
 
@@ -987,7 +987,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     rowView.layer.cornerRadius = 18.0;
 
     UILabel *badgeLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightBold] color:[UIColor whiteColor]];
-    badgeLabel.backgroundColor = MRRYoursEditorSuccessColor();
+    badgeLabel.backgroundColor = MRRYoursEditorAccentColor();
     badgeLabel.textAlignment = NSTextAlignmentCenter;
     badgeLabel.text = [NSString stringWithFormat:@"%lu", (unsigned long)(index + 1)];
     badgeLabel.layer.cornerRadius = 14.0;
@@ -1042,7 +1042,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     rowView.layer.cornerRadius = 18.0;
 
     UILabel *badgeLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightBold] color:[UIColor whiteColor]];
-    badgeLabel.backgroundColor = MRRYoursEditorInfoBlueColor();
+    badgeLabel.backgroundColor = MRRYoursEditorAccentColor();
     badgeLabel.textAlignment = NSTextAlignmentCenter;
     badgeLabel.text = [NSString stringWithFormat:@"%lu", (unsigned long)(index + 1)];
     badgeLabel.layer.cornerRadius = 14.0;
