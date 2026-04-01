@@ -10,6 +10,7 @@ static NSErrorDomain const MRRYoursRecipeEditorValidationErrorDomain = @"MRRYour
 static NSInteger const MRRYoursRecipeEditorMaximumPhotoCount = 5;
 static CGFloat const MRRYoursRecipeEditorKeyboardGap = 18.0;
 static CGFloat const MRRYoursRecipeEditorSectionContentTopInset = 58.0;
+static CGFloat const MRRYoursRecipeEditorChipSpacing = 10.0;
 
 static UIColor *MRRYoursEditorDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -124,6 +125,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, retain, nullable) UIColor *previousNavigationBarTintColor;
 @property(nonatomic, retain) id<MRRUserRecipePhotoStorage> photoStorage;
 @property(nonatomic, retain, nullable) MRRUserRecipeSnapshot *existingRecipe;
+@property(nonatomic, assign) CGFloat lastLaidOutWidth;
+@property(nonatomic, retain, nullable) UIColor *previousNavigationBarTintColor;
 @property(nonatomic, copy) NSString *draftRecipeID;
 @property(nonatomic, assign) BOOL creatingRecipe;
 @property(nonatomic, assign) BOOL didPersistRecipe;
@@ -134,8 +137,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *contentStackView;
 @property(nonatomic, retain) UIButton *bottomSaveButton;
-@property(nonatomic, retain) UIStackView *photoActionsStackView;
 @property(nonatomic, retain) UIBarButtonItem *saveBarButtonItem;
+@property(nonatomic, retain) UIStackView *photoActionsStackView;
 
 @property(nonatomic, retain) UIView *photoSectionView;
 @property(nonatomic, retain) UIImageView *coverImageView;
@@ -177,6 +180,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, retain) NSMutableSet<NSString *> *createdLocalRelativePaths;
 
 - (void)buildViewHierarchy;
+- (void)rebuildChipRowsIfNeeded;
+- (void)rebuildChipRowsInStackView:(UIStackView *)stackView buttons:(NSArray<UIButton *> *)buttons;
+- (void)clearArrangedSubviewsFromStackView:(UIStackView *)stackView;
+- (CGFloat)availableChipRowWidthForStackView:(UIStackView *)stackView;
 - (UIView *)sectionCardViewWithTitle:(NSString *)title accentColor:(UIColor *)accentColor accessibilityIdentifier:(NSString *)accessibilityIdentifier;
 - (UILabel *)labelWithFont:(UIFont *)font color:(UIColor *)color;
 - (UITextField *)styledTextFieldWithPlaceholder:(NSString *)placeholder keyboardType:(UIKeyboardType)keyboardType identifier:(NSString *)identifier;
@@ -388,6 +395,11 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
 - (void)viewWillDisappear:(BOOL)animated {
   if (self.navigationController) {
+- (void)viewDidLayoutSubviews {
+  [super viewDidLayoutSubviews];
+  [self rebuildChipRowsIfNeeded];
+}
+
     self.navigationController.navigationBar.tintColor = self.previousNavigationBarTintColor;
   }
   [super viewWillDisappear:animated];
@@ -592,28 +604,17 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [categorySectionView addSubview:mealTypeButtonsStackView];
   self.mealTypeButtonsStackView = mealTypeButtonsStackView;
 
-  NSArray<NSArray<NSString *> *> *mealRows = @[ @[ MRRUserRecipeMealTypeBreakfast, MRRUserRecipeMealTypeLunch, MRRUserRecipeMealTypeDinner ],
-                                               @[ MRRUserRecipeMealTypeDessert, MRRUserRecipeMealTypeSnack ] ];
-  for (NSArray<NSString *> *mealRow in mealRows) {
-    UIStackView *rowStack = [[[UIStackView alloc] init] autorelease];
-    rowStack.axis = UILayoutConstraintAxisHorizontal;
-    rowStack.spacing = 10.0;
-    rowStack.distribution = UIStackViewDistributionFillEqually;
-    [mealTypeButtonsStackView addArrangedSubview:rowStack];
-    for (NSString *mealType in mealRow) {
-      UIButton *button = [self chipButtonWithTitle:mealType.capitalizedString tintColor:MRRYoursEditorAccentColor()];
-      button.accessibilityIdentifier = [@"yours.editor.mealType." stringByAppendingString:mealType];
-      [button addTarget:self action:@selector(handleMealTypeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-      [rowStack addArrangedSubview:button];
-      [self.mealTypeButtonsByIdentifier setObject:button forKey:mealType];
-    }
+  for (NSString *mealType in MRRYoursEditorMealTypes()) {
+    UIButton *button = [self chipButtonWithTitle:mealType.capitalizedString tintColor:MRRYoursEditorAccentColor()];
+    button.accessibilityIdentifier = [@"yours.editor.mealType." stringByAppendingString:mealType];
+    [button addTarget:self action:@selector(handleMealTypeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [self.mealTypeButtonsByIdentifier setObject:button forKey:mealType];
   }
 
   UIStackView *tagButtonsStackView = [[[UIStackView alloc] init] autorelease];
   tagButtonsStackView.translatesAutoresizingMaskIntoConstraints = NO;
-  tagButtonsStackView.axis = UILayoutConstraintAxisHorizontal;
+  tagButtonsStackView.axis = UILayoutConstraintAxisVertical;
   tagButtonsStackView.spacing = 10.0;
-  tagButtonsStackView.distribution = UIStackViewDistributionFillEqually;
   [categorySectionView addSubview:tagButtonsStackView];
   self.tagButtonsStackView = tagButtonsStackView;
 
@@ -621,7 +622,6 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     UIButton *button = [self chipButtonWithTitle:tagValue tintColor:MRRYoursEditorAccentColor()];
     button.accessibilityIdentifier = [@"yours.editor.tag." stringByAppendingString:tagValue];
     [button addTarget:self action:@selector(handleTagButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [tagButtonsStackView addArrangedSubview:button];
     [self.tagButtonsByValue setObject:button forKey:tagValue];
   }
 
@@ -858,6 +858,93 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   while (self.photoThumbnailsStackView.arrangedSubviews.count > 0) {
     UIView *subview = self.photoThumbnailsStackView.arrangedSubviews.firstObject;
     [self.photoThumbnailsStackView removeArrangedSubview:subview];
+- (void)rebuildChipRowsIfNeeded {
+  CGFloat currentWidth = CGRectGetWidth(self.view.bounds);
+  if (fabs(currentWidth - self.lastLaidOutWidth) < 0.5) {
+    return;
+  }
+  self.lastLaidOutWidth = currentWidth;
+
+  NSMutableArray<UIButton *> *mealTypeButtons = [NSMutableArray array];
+  for (NSString *mealType in MRRYoursEditorMealTypes()) {
+    UIButton *button = [self.mealTypeButtonsByIdentifier objectForKey:mealType];
+    if (button) {
+      [mealTypeButtons addObject:button];
+    }
+  }
+
+  NSMutableArray<UIButton *> *tagButtons = [NSMutableArray array];
+  for (NSString *tagValue in MRRYoursEditorSuggestionTags()) {
+    UIButton *button = [self.tagButtonsByValue objectForKey:tagValue];
+    if (button) {
+      [tagButtons addObject:button];
+    }
+  }
+
+  [self rebuildChipRowsInStackView:self.mealTypeButtonsStackView buttons:mealTypeButtons];
+  [self rebuildChipRowsInStackView:self.tagButtonsStackView buttons:tagButtons];
+}
+
+- (void)rebuildChipRowsInStackView:(UIStackView *)stackView buttons:(NSArray<UIButton *> *)buttons {
+  [self clearArrangedSubviewsFromStackView:stackView];
+
+  CGFloat availableWidth = [self availableChipRowWidthForStackView:stackView];
+  UIStackView *currentRow = nil;
+  CGFloat currentRowWidth = 0.0;
+  for (id candidate in buttons) {
+    if ([candidate isKindOfClass:[UIButton class]] == NO) {
+      continue;
+    }
+    UIButton *button = (UIButton *)candidate;
+    UIFont *buttonFont = button.titleLabel.font ?: [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
+    CGFloat titleWidth = ceil([button.currentTitle sizeWithAttributes:@{NSFontAttributeName : buttonFont}].width);
+    CGFloat buttonWidth = MAX(titleWidth + button.contentEdgeInsets.left + button.contentEdgeInsets.right + 2.0, 88.0);
+    CGFloat projectedWidth = currentRowWidth > 0.0 ? currentRowWidth + MRRYoursRecipeEditorChipSpacing + buttonWidth : buttonWidth;
+    if (currentRow == nil || projectedWidth > availableWidth) {
+      if (currentRow) {
+        UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
+        [currentRow addArrangedSubview:flexibleSpacer];
+      }
+      currentRow = [[[UIStackView alloc] init] autorelease];
+      currentRow.axis = UILayoutConstraintAxisHorizontal;
+      currentRow.alignment = UIStackViewAlignmentCenter;
+      currentRow.spacing = MRRYoursRecipeEditorChipSpacing;
+      currentRow.distribution = UIStackViewDistributionFill;
+      [stackView addArrangedSubview:currentRow];
+      currentRowWidth = 0.0;
+      projectedWidth = buttonWidth;
+    }
+    [currentRow addArrangedSubview:button];
+    currentRowWidth = projectedWidth;
+  }
+
+  if (currentRow) {
+    UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
+    [currentRow addArrangedSubview:flexibleSpacer];
+  }
+}
+
+- (void)clearArrangedSubviewsFromStackView:(UIStackView *)stackView {
+  while (stackView.arrangedSubviews.count > 0) {
+    UIView *subview = stackView.arrangedSubviews.firstObject;
+    [stackView removeArrangedSubview:subview];
+    [subview removeFromSuperview];
+  }
+}
+
+- (CGFloat)availableChipRowWidthForStackView:(UIStackView *)stackView {
+  CGFloat stackWidth = CGRectGetWidth(stackView.bounds);
+  if (stackWidth > 0.0) {
+    return MAX(stackWidth, 220.0);
+  }
+
+  CGFloat viewportWidth = CGRectGetWidth(self.view.bounds);
+  if (viewportWidth <= 0.0) {
+    viewportWidth = CGRectGetWidth([UIScreen mainScreen].bounds);
+  }
+  return MAX(viewportWidth - 84.0, 220.0);
+}
+
     [subview removeFromSuperview];
   }
 
