@@ -628,7 +628,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   UILabel *tagsHintLabel = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium] color:MRRYoursEditorSecondaryTextColor()];
   tagsHintLabel.translatesAutoresizingMaskIntoConstraints = NO;
   tagsHintLabel.numberOfLines = 0;
-  tagsHintLabel.text = @"Extra chips are stored as tags while the main category stays aligned with the rest of the app.";
+  tagsHintLabel.text = @"Extra chips save as tags.";
   [categorySectionView addSubview:tagsHintLabel];
 
   [NSLayoutConstraint activateConstraints:@[
