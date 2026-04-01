@@ -762,7 +762,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   containerView.layer.borderColor = [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.62].CGColor;
   containerView.accessibilityIdentifier = accessibilityIdentifier;
 
-  UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightBold] color:accentColor];
+  UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightBold] color:accentColor];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   containerView.layer.shadowOpacity = 0.06f;
   containerView.layer.shadowRadius = 18.0f;
@@ -781,8 +781,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [titleLabel.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-22.0],
 
     [dividerView.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:14.0],
-    [dividerView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor],
-    [dividerView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor],
+    [dividerView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:22.0],
+    [dividerView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-22.0],
     [dividerView.heightAnchor constraintEqualToConstant:1.0]
   ]];
   return containerView;
