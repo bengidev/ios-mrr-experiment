@@ -138,6 +138,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *contentStackView;
 @property(nonatomic, retain) UIButton *bottomSaveButton;
+@property(nonatomic, retain) UIStackView *photoActionsStackView;
 @property(nonatomic, retain) UIBarButtonItem *saveBarButtonItem;
 
 @property(nonatomic, retain) UIView *photoSectionView;
@@ -304,6 +305,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [_addPhotoButton release];
   [_photoThumbnailsStackView release];
   [_photoHelperLabel release];
+  [_photoActionsStackView release];
   [_coverImageView release];
   [_previousNavigationBarTintColor release];
   [_photoSectionView release];
@@ -508,6 +510,17 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   [NSLayoutConstraint activateConstraints:@[
     [photoHeroLabel.topAnchor constraintEqualToAnchor:photoSectionView.topAnchor constant:MRRYoursRecipeEditorSectionContentTopInset],
+  UIStackView *photoActionsStackView = [[[UIStackView alloc] init] autorelease];
+  photoActionsStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  photoActionsStackView.axis = UILayoutConstraintAxisVertical;
+  photoActionsStackView.spacing = 10.0;
+  photoActionsStackView.accessibilityIdentifier = @"yours.editor.photoActionsStack";
+  [photoActionsStackView addArrangedSubview:addPhotoButton];
+  [photoActionsStackView addArrangedSubview:setCoverButton];
+  [photoActionsStackView addArrangedSubview:removePhotoButton];
+  [photoSectionView addSubview:photoActionsStackView];
+  self.photoActionsStackView = photoActionsStackView;
+
     [photoHeroLabel.leadingAnchor constraintEqualToAnchor:photoSectionView.leadingAnchor constant:22.0],
     [photoHeroLabel.trailingAnchor constraintEqualToAnchor:photoSectionView.trailingAnchor constant:-22.0],
 
@@ -520,15 +533,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
     [photoThumbnailsStackView.trailingAnchor constraintLessThanOrEqualToAnchor:photoHeroLabel.trailingAnchor],
 
-    [addPhotoButton.topAnchor constraintEqualToAnchor:photoThumbnailsStackView.bottomAnchor constant:16.0],
-    [addPhotoButton.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
-
-    [setCoverButton.centerYAnchor constraintEqualToAnchor:addPhotoButton.centerYAnchor],
-    [setCoverButton.leadingAnchor constraintEqualToAnchor:addPhotoButton.trailingAnchor constant:12.0],
-
-    [removePhotoButton.topAnchor constraintEqualToAnchor:addPhotoButton.bottomAnchor constant:12.0],
-    [removePhotoButton.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
-    [removePhotoButton.bottomAnchor constraintEqualToAnchor:photoSectionView.bottomAnchor constant:-22.0]
+    [photoActionsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsStackView.bottomAnchor constant:16.0],
+    [photoActionsStackView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
+    [photoActionsStackView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
+    [photoActionsStackView.bottomAnchor constraintEqualToAnchor:photoSectionView.bottomAnchor constant:-22.0]
   ]];
 
   UIView *basicInfoSectionView = [self sectionCardViewWithTitle:@"Basic Info" accentColor:MRRYoursEditorAccentColor() accessibilityIdentifier:@"yours.editor.basicInfoSection"];
