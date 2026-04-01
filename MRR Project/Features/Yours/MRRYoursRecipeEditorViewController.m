@@ -969,10 +969,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   self.selectedPhotoIndex = MAX(0, MIN(self.selectedPhotoIndex, (NSInteger)self.photoDrafts.count - 1));
   self.photoHelperLabel.text = self.photoDrafts.count > 0
-                                   ? [NSString stringWithFormat:@"%lu of %ld photos. Cover uses the first slot in your gallery.",
+                                   ? [NSString stringWithFormat:@"Photo %lu of %ld selected. The first photo is your cover.",
                                                                   (unsigned long)(self.selectedPhotoIndex + 1),
                                                                   (long)self.photoDrafts.count]
-                                   : @"Add up to 5 photos. Local photos stay on this device until remote URLs exist.";
+                                   : @"Add up to 5 photos. The first photo becomes your cover.";
   self.setCoverButton.enabled = self.photoDrafts.count > 1 && self.selectedPhotoIndex > 0;
   self.removePhotoButton.enabled = self.photoDrafts.count > 0;
   self.addPhotoButton.enabled = self.photoDrafts.count < MRRYoursRecipeEditorMaximumPhotoCount;
