@@ -234,6 +234,48 @@
   XCTAssertEqual(recipe.heroImageURLString.length, 0);
 }
 
+- (void)testCompactLayoutKeepsChipAndPhotoActionTitlesReadable {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  [self layoutWindowForSize:CGSizeMake(320.0, 568.0)];
+  [editor.view layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  UIView *categorySection = [self findViewWithAccessibilityIdentifier:@"yours.editor.categorySection" inView:editor.view];
+  UIButton *mainCourseButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.tag.Main Course" inView:editor.view];
+  UIView *photoSection = [self findViewWithAccessibilityIdentifier:@"yours.editor.photoSection" inView:editor.view];
+  UIButton *setCoverButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.setCoverButton" inView:editor.view];
+  UIButton *removePhotoButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removePhotoButton" inView:editor.view];
+
+  XCTAssertNotNil(categorySection);
+  XCTAssertNotNil(mainCourseButton);
+  XCTAssertNotNil(photoSection);
+  XCTAssertNotNil(setCoverButton);
+  XCTAssertNotNil(removePhotoButton);
+
+  CGRect mainCourseFrame = [self frameForView:mainCourseButton insideView:categorySection];
+  CGRect setCoverFrame = [self frameForView:setCoverButton insideView:photoSection];
+  CGRect removePhotoFrame = [self frameForView:removePhotoButton insideView:photoSection];
+
+  XCTAssertLessThanOrEqual(CGRectGetMaxX(mainCourseFrame), CGRectGetWidth(categorySection.bounds) + 0.5);
+  XCTAssertLessThanOrEqual(CGRectGetMaxX(setCoverFrame), CGRectGetWidth(photoSection.bounds) + 0.5);
+  XCTAssertLessThanOrEqual(CGRectGetMaxX(removePhotoFrame), CGRectGetWidth(photoSection.bounds) + 0.5);
+
+  UIFont *mainCourseFont = mainCourseButton.titleLabel.font ?: [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
+  CGFloat mainCourseTitleWidth = ceil([mainCourseButton.currentTitle sizeWithAttributes:@{NSFontAttributeName : mainCourseFont}].width);
+  XCTAssertGreaterThanOrEqual(CGRectGetWidth(mainCourseButton.titleLabel.frame) + 0.5, mainCourseTitleWidth);
+
+  UIFont *setCoverFont = setCoverButton.titleLabel.font ?: [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
+  CGFloat setCoverTitleWidth = ceil([setCoverButton.currentTitle sizeWithAttributes:@{NSFontAttributeName : setCoverFont}].width);
+  XCTAssertGreaterThanOrEqual(CGRectGetWidth(setCoverButton.titleLabel.frame) + 0.5, setCoverTitleWidth);
+
+  UIFont *removePhotoFont = removePhotoButton.titleLabel.font ?: [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
+  CGFloat removePhotoTitleWidth = ceil([removePhotoButton.currentTitle sizeWithAttributes:@{NSFontAttributeName : removePhotoFont}].width);
+  XCTAssertGreaterThanOrEqual(CGRectGetWidth(removePhotoButton.titleLabel.frame) + 0.5, removePhotoTitleWidth);
+}
+
 - (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
@@ -311,20 +353,6 @@
   return nil;
 }
 
-- (UIImage *)sampleImageWithColor:(UIColor *)color {
-  UIGraphicsBeginImageContextWithOptions(CGSizeMake(24.0, 24.0), YES, 1.0);
-  [color setFill];
-  UIRectFill(CGRectMake(0.0, 0.0, 24.0, 24.0));
-  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-  UIGraphicsEndImageContext();
-  return image;
-}
-
-- (void)spinMainRunLoop {
-  [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];
-}
-
-@end
 - (CGRect)frameForView:(UIView *)view insideView:(UIView *)containerView {
   return [view convertRect:view.bounds toView:containerView];
 }
@@ -340,3 +368,17 @@
   [self.navigationController.topViewController.view layoutIfNeeded];
 }
 
+- (UIImage *)sampleImageWithColor:(UIColor *)color {
+  UIGraphicsBeginImageContextWithOptions(CGSizeMake(24.0, 24.0), YES, 1.0);
+  [color setFill];
+  UIRectFill(CGRectMake(0.0, 0.0, 24.0, 24.0));
+  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+  return image;
+}
+
+- (void)spinMainRunLoop {
+  [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];
+}
+
+@end
