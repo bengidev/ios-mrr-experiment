@@ -71,7 +71,9 @@
 
 - (NSArray<MRRUserRecipeSnapshot *> *)currentRecipes;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
+- (CGRect)frameForView:(UIView *)view insideView:(UIView *)containerView;
 - (MRRYoursRecipeEditorViewController *)presentedEditor;
+- (void)layoutWindowForSize:(CGSize)size;
 - (void)populateRequiredFieldsInEditor:(MRRYoursRecipeEditorViewController *)editor title:(NSString *)title;
 - (UIImage *)sampleImageWithColor:(UIColor *)color;
 - (void)spinMainRunLoop;
@@ -323,3 +325,18 @@
 }
 
 @end
+- (CGRect)frameForView:(UIView *)view insideView:(UIView *)containerView {
+  return [view convertRect:view.bounds toView:containerView];
+}
+
+- (void)layoutWindowForSize:(CGSize)size {
+  self.window.frame = CGRectMake(0.0, 0.0, size.width, size.height);
+  self.window.bounds = CGRectMake(0.0, 0.0, size.width, size.height);
+  [self.window setNeedsLayout];
+  [self.window layoutIfNeeded];
+  [self.navigationController.view setNeedsLayout];
+  [self.navigationController.view layoutIfNeeded];
+  [self.navigationController.topViewController.view setNeedsLayout];
+  [self.navigationController.topViewController.view layoutIfNeeded];
+}
+
