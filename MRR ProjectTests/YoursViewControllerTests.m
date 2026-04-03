@@ -314,6 +314,33 @@
   XCTAssertLessThanOrEqual(CGRectGetWidth(removeStepButton.bounds), 44.0);
 }
 
+- (void)testCompactLayoutKeepsStepRowsVisiblyTighter {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  [editor handleStepAddTapped:nil];
+  [self spinMainRunLoop];
+
+  [self layoutWindowForSize:CGSizeMake(320.0, 568.0)];
+  [editor.view layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  UITextField *firstStepField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+  UITextField *secondStepField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.1" inView:editor.view];
+
+  XCTAssertNotNil(firstStepField);
+  XCTAssertNotNil(secondStepField);
+
+  CGRect firstFrame = [self frameForView:firstStepField insideView:editor.view];
+  CGRect secondFrame = [self frameForView:secondStepField insideView:editor.view];
+  CGFloat visibleGap = CGRectGetMinY(secondFrame) - CGRectGetMaxY(firstFrame);
+
+  XCTAssertLessThanOrEqual(visibleGap, 14.5);
+}
+
 - (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
