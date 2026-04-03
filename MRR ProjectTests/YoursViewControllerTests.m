@@ -276,6 +276,28 @@
   XCTAssertGreaterThanOrEqual(CGRectGetWidth(removePhotoButton.titleLabel.frame) + 0.5, removePhotoTitleWidth);
 }
 
+- (void)testCompactLayoutKeepsIngredientAndStepPlaceholdersReadable {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  [self layoutWindowForSize:CGSizeMake(320.0, 568.0)];
+  [editor.view layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  UITextField *ingredientField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
+  UITextField *stepField =
+      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+  UIButton *removeIngredientButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removeIngredientButton.0" inView:editor.view];
+  UIButton *removeStepButton =
+      (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removeStepButton.0" inView:editor.view];
+
+  XCTAssertNotNil(ingredientField);
+  XCTAssertNotNil(stepField);
+  XCTAssertNotNil(removeIngredientButton);
+  XCTAssertNotNil(removeStepButton);
 - (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
