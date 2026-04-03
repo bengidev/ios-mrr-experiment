@@ -11,6 +11,8 @@ static NSInteger const MRRYoursRecipeEditorMaximumPhotoCount = 5;
 static CGFloat const MRRYoursRecipeEditorKeyboardGap = 18.0;
 static CGFloat const MRRYoursRecipeEditorSectionContentTopInset = 58.0;
 static CGFloat const MRRYoursRecipeEditorChipSpacing = 10.0;
+static CGFloat const MRRYoursRecipeEditorRowsSpacing = 6.0;
+static CGFloat const MRRYoursRecipeEditorRowVerticalInset = 4.0;
 
 static UIColor *MRRYoursEditorDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
