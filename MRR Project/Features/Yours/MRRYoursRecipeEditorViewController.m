@@ -1178,6 +1178,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     UITextField *textField = [self styledTextFieldWithPlaceholder:[NSString stringWithFormat:@"Step %lu", (unsigned long)(index + 1)] keyboardType:UIKeyboardTypeDefault identifier:[NSString stringWithFormat:@"yours.editor.stepField.%lu", (unsigned long)index]];
     textField.text = resolvedValues[index];
     [rowView addSubview:textField];
+    [textField setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
 
     UIButton *removeButton = [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeStepButton.%lu", (unsigned long)index]
                                                   accessibilityLabel:[NSString stringWithFormat:@"Delete step %lu", (unsigned long)(index + 1)]];
