@@ -689,7 +689,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   UIStackView *ingredientsRowsStackView = [[[UIStackView alloc] init] autorelease];
   ingredientsRowsStackView.translatesAutoresizingMaskIntoConstraints = NO;
   ingredientsRowsStackView.axis = UILayoutConstraintAxisVertical;
-  ingredientsRowsStackView.spacing = 12.0;
+  ingredientsRowsStackView.spacing = MRRYoursRecipeEditorRowsSpacing;
   [ingredientsSectionView addSubview:ingredientsRowsStackView];
   self.ingredientsRowsStackView = ingredientsRowsStackView;
 
@@ -729,7 +729,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   UIStackView *stepsRowsStackView = [[[UIStackView alloc] init] autorelease];
   stepsRowsStackView.translatesAutoresizingMaskIntoConstraints = NO;
   stepsRowsStackView.axis = UILayoutConstraintAxisVertical;
-  stepsRowsStackView.spacing = 12.0;
+  stepsRowsStackView.spacing = MRRYoursRecipeEditorRowsSpacing;
   [stepsSectionView addSubview:stepsRowsStackView];
   self.stepsRowsStackView = stepsRowsStackView;
 
