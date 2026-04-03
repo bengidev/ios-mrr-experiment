@@ -310,8 +310,10 @@
   XCTAssertGreaterThanOrEqual(stepVisibleWidth + 0.5, stepPlaceholderWidth);
 
   XCTAssertLessThanOrEqual(CGRectGetWidth(removeIngredientButton.bounds), 44.0);
-- (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
   XCTAssertLessThanOrEqual(CGRectGetWidth(removeStepButton.bounds), 44.0);
+}
+
+- (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
