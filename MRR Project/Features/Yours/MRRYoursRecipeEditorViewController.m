@@ -858,6 +858,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   button.translatesAutoresizingMaskIntoConstraints = NO;
   button.accessibilityIdentifier = identifier;
   button.accessibilityLabel = accessibilityLabel;
+  button.accessibilityHint = @"Removes this item.";
   button.tintColor = MRRYoursEditorErrorColor();
   button.backgroundColor = [MRRYoursEditorErrorColor() colorWithAlphaComponent:0.10];
   button.layer.cornerRadius = 14.0;
