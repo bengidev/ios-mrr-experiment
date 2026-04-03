@@ -852,7 +852,6 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   return button;
 }
 
-
 - (UIButton *)compactRemoveButtonWithIdentifier:(NSString *)identifier accessibilityLabel:(NSString *)accessibilityLabel {
   UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
   button.translatesAutoresizingMaskIntoConstraints = NO;
@@ -877,13 +876,16 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
       [button.widthAnchor constraintEqualToConstant:28.0].active = YES;
       [button.heightAnchor constraintEqualToConstant:28.0].active = YES;
       return button;
-  }
     }
+  }
+
   [button setTitle:@"Delete" forState:UIControlStateNormal];
   [button setTitleColor:MRRYoursEditorErrorColor() forState:UIControlStateNormal];
   button.titleLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
   [button.widthAnchor constraintGreaterThanOrEqualToConstant:44.0].active = YES;
+  return button;
 }
+
 - (void)applySelectedState:(BOOL)selected toChipButton:(UIButton *)button tintColor:(UIColor *)tintColor {
   button.selected = selected;
   button.backgroundColor = selected ? tintColor : [MRRYoursEditorMutedSurfaceColor() colorWithAlphaComponent:0.88];
