@@ -1126,13 +1126,12 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
     UITextField *textField = [self styledTextFieldWithPlaceholder:@"e.g. 2 cups flour" keyboardType:UIKeyboardTypeDefault identifier:[NSString stringWithFormat:@"yours.editor.ingredientField.%lu", (unsigned long)index]];
     textField.text = resolvedValues[index];
+    [textField setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [rowView addSubview:textField];
 
-    [textField setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     UIButton *removeButton = [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeIngredientButton.%lu", (unsigned long)index]
                                                   accessibilityLabel:[NSString stringWithFormat:@"Delete ingredient %lu", (unsigned long)(index + 1)]];
     removeButton.tag = (NSInteger)index;
-    removeButton.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
     [removeButton addTarget:self action:@selector(handleRemoveIngredientTapped:) forControlEvents:UIControlEventTouchUpInside];
     [rowView addSubview:removeButton];
 
