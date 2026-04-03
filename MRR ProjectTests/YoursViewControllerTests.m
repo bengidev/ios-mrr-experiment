@@ -298,6 +298,16 @@
   XCTAssertNotNil(stepField);
   XCTAssertNotNil(removeIngredientButton);
   XCTAssertNotNil(removeStepButton);
+
+  UIFont *ingredientFont = ingredientField.font ?: [UIFont systemFontOfSize:17.0 weight:UIFontWeightMedium];
+  CGFloat ingredientPlaceholderWidth = ceil([ingredientField.placeholder sizeWithAttributes:@{NSFontAttributeName : ingredientFont}].width);
+  CGFloat ingredientVisibleWidth = CGRectGetWidth([ingredientField placeholderRectForBounds:ingredientField.bounds]);
+  XCTAssertGreaterThanOrEqual(ingredientVisibleWidth + 0.5, ingredientPlaceholderWidth);
+
+  UIFont *stepFont = stepField.font ?: [UIFont systemFontOfSize:17.0 weight:UIFontWeightMedium];
+  CGFloat stepPlaceholderWidth = ceil([stepField.placeholder sizeWithAttributes:@{NSFontAttributeName : stepFont}].width);
+  CGFloat stepVisibleWidth = CGRectGetWidth([stepField placeholderRectForBounds:stepField.bounds]);
+  XCTAssertGreaterThanOrEqual(stepVisibleWidth + 0.5, stepPlaceholderWidth);
 - (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
