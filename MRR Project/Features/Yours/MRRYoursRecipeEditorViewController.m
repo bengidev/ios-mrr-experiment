@@ -852,6 +852,25 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   return button;
 }
 
+
+- (UIButton *)compactRemoveButtonWithIdentifier:(NSString *)identifier accessibilityLabel:(NSString *)accessibilityLabel {
+  UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+  button.translatesAutoresizingMaskIntoConstraints = NO;
+  button.accessibilityIdentifier = identifier;
+  button.accessibilityLabel = accessibilityLabel;
+  button.tintColor = MRRYoursEditorErrorColor();
+  button.backgroundColor = [MRRYoursEditorErrorColor() colorWithAlphaComponent:0.10];
+  button.layer.cornerRadius = 14.0;
+  button.layer.borderWidth = 1.0;
+  button.layer.borderColor = [MRRYoursEditorErrorColor() colorWithAlphaComponent:0.18].CGColor;
+  button.contentEdgeInsets = UIEdgeInsetsMake(6.0, 6.0, 6.0, 6.0);
+  [button setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+  [button setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+  [button setTitle:@"Delete" forState:UIControlStateNormal];
+  [button setTitleColor:MRRYoursEditorErrorColor() forState:UIControlStateNormal];
+  button.titleLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
+  [button.widthAnchor constraintGreaterThanOrEqualToConstant:44.0].active = YES;
+}
 - (void)applySelectedState:(BOOL)selected toChipButton:(UIButton *)button tintColor:(UIColor *)tintColor {
   button.selected = selected;
   button.backgroundColor = selected ? tintColor : [MRRYoursEditorMutedSurfaceColor() colorWithAlphaComponent:0.88];
