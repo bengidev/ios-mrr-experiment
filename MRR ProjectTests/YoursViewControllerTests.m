@@ -308,7 +308,10 @@
   CGFloat stepPlaceholderWidth = ceil([stepField.placeholder sizeWithAttributes:@{NSFontAttributeName : stepFont}].width);
   CGFloat stepVisibleWidth = CGRectGetWidth([stepField placeholderRectForBounds:stepField.bounds]);
   XCTAssertGreaterThanOrEqual(stepVisibleWidth + 0.5, stepPlaceholderWidth);
+
+  XCTAssertLessThanOrEqual(CGRectGetWidth(removeIngredientButton.bounds), 44.0);
 - (void)testDeleteButtonPresentsAlertAndDeletingLastRecipeRestoresEmptyState {
+  XCTAssertLessThanOrEqual(CGRectGetWidth(removeStepButton.bounds), 44.0);
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
