@@ -22,6 +22,7 @@
 
 - (BOOL)appendPhotoWithImage:(UIImage *)image error:(NSError *_Nullable *_Nullable)error;
 - (void)handleSaveTapped:(id)sender;
+- (void)handleStepAddTapped:(id)sender;
 
 @end
 
