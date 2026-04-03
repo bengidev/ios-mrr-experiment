@@ -180,6 +180,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 - (UITextField *)styledTextFieldWithPlaceholder:(NSString *)placeholder keyboardType:(UIKeyboardType)keyboardType identifier:(NSString *)identifier;
 - (UITextView *)styledTextViewWithIdentifier:(NSString *)identifier;
 - (UIButton *)chipButtonWithTitle:(NSString *)title tintColor:(UIColor *)tintColor;
+- (UIButton *)compactRemoveButtonWithIdentifier:(NSString *)identifier accessibilityLabel:(NSString *)accessibilityLabel;
 - (void)rebuildChipRowsIfNeeded;
 - (void)rebuildChipRowsInStackView:(UIStackView *)stackView buttons:(NSArray<UIButton *> *)buttons;
 - (void)clearArrangedSubviewsFromStackView:(UIStackView *)stackView;
