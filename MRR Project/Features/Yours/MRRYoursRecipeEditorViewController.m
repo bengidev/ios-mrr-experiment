@@ -867,6 +867,18 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   button.contentEdgeInsets = UIEdgeInsetsMake(6.0, 6.0, 6.0, 6.0);
   [button setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
   [button setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+
+  if (@available(iOS 13.0, *)) {
+    UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:14.0 weight:UIImageSymbolWeightBold];
+    UIImage *image = [UIImage systemImageNamed:@"xmark"];
+    if (image != nil) {
+      [button setPreferredSymbolConfiguration:configuration forImageInState:UIControlStateNormal];
+      [button setImage:image forState:UIControlStateNormal];
+      [button.widthAnchor constraintEqualToConstant:28.0].active = YES;
+      [button.heightAnchor constraintEqualToConstant:28.0].active = YES;
+      return button;
+  }
+    }
   [button setTitle:@"Delete" forState:UIControlStateNormal];
   [button setTitleColor:MRRYoursEditorErrorColor() forState:UIControlStateNormal];
   button.titleLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
