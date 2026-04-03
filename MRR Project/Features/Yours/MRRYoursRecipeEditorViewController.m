@@ -1126,11 +1126,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     textField.text = resolvedValues[index];
     [rowView addSubview:textField];
 
-    UIButton *removeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    removeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    UIButton *removeButton = [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeIngredientButton.%lu", (unsigned long)index]
+                                                  accessibilityLabel:[NSString stringWithFormat:@"Delete ingredient %lu", (unsigned long)(index + 1)]];
     removeButton.tag = (NSInteger)index;
-    [removeButton setTitle:@"Delete" forState:UIControlStateNormal];
-    [removeButton setTitleColor:MRRYoursEditorErrorColor() forState:UIControlStateNormal];
     removeButton.titleLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightSemibold];
     [removeButton addTarget:self action:@selector(handleRemoveIngredientTapped:) forControlEvents:UIControlEventTouchUpInside];
     [rowView addSubview:removeButton];
@@ -1148,8 +1146,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
       [textField.heightAnchor constraintEqualToConstant:44.0],
 
       [removeButton.trailingAnchor constraintEqualToAnchor:rowView.trailingAnchor constant:-12.0],
-      [removeButton.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor],
-      [removeButton.widthAnchor constraintGreaterThanOrEqualToConstant:54.0]
+      [removeButton.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor]
     ]];
     [self.ingredientsRowsStackView addArrangedSubview:rowView];
   }
