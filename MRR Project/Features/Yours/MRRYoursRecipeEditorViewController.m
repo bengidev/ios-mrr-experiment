@@ -1143,8 +1143,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
       [badgeLabel.widthAnchor constraintEqualToConstant:28.0],
       [badgeLabel.heightAnchor constraintEqualToConstant:28.0],
 
-      [textField.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:10.0],
-      [textField.bottomAnchor constraintEqualToAnchor:rowView.bottomAnchor constant:-10.0],
+      [textField.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:MRRYoursRecipeEditorRowVerticalInset],
+      [textField.bottomAnchor constraintEqualToAnchor:rowView.bottomAnchor constant:-MRRYoursRecipeEditorRowVerticalInset],
       [textField.leadingAnchor constraintEqualToAnchor:badgeLabel.trailingAnchor constant:10.0],
       [textField.trailingAnchor constraintEqualToAnchor:removeButton.leadingAnchor constant:-8.0],
       [textField.heightAnchor constraintEqualToConstant:44.0],
@@ -1195,8 +1195,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
       [badgeLabel.widthAnchor constraintEqualToConstant:28.0],
       [badgeLabel.heightAnchor constraintEqualToConstant:28.0],
 
-      [textField.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:10.0],
-      [textField.bottomAnchor constraintEqualToAnchor:rowView.bottomAnchor constant:-10.0],
+      [textField.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:MRRYoursRecipeEditorRowVerticalInset],
+      [textField.bottomAnchor constraintEqualToAnchor:rowView.bottomAnchor constant:-MRRYoursRecipeEditorRowVerticalInset],
       [textField.leadingAnchor constraintEqualToAnchor:badgeLabel.trailingAnchor constant:10.0],
       [textField.trailingAnchor constraintEqualToAnchor:removeButton.leadingAnchor constant:-8.0],
       [textField.heightAnchor constraintEqualToConstant:44.0],
