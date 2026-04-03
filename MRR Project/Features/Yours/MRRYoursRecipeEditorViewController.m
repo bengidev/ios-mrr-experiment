@@ -1126,6 +1126,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     textField.text = resolvedValues[index];
     [rowView addSubview:textField];
 
+    [textField setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     UIButton *removeButton = [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeIngredientButton.%lu", (unsigned long)index]
                                                   accessibilityLabel:[NSString stringWithFormat:@"Delete ingredient %lu", (unsigned long)(index + 1)]];
     removeButton.tag = (NSInteger)index;
