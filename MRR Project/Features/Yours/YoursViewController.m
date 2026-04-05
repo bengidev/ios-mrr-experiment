@@ -194,8 +194,7 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 
   UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
   [NSLayoutConstraint activateConstraints:@[
-    [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
-    [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor], [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
     [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
 
@@ -433,12 +432,11 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 }
 
 - (void)presentEditorForRecipe:(MRRUserRecipeSnapshot *)recipe {
-  MRRYoursRecipeEditorViewController *editorViewController =
-      [[[MRRYoursRecipeEditorViewController alloc] initWithSessionUserID:self.sessionUserID
-                                                        userRecipesStore:self.userRecipesStore
-                                                              syncEngine:self.syncEngine
-                                                            photoStorage:self.photoStorage
-                                                          existingRecipe:recipe] autorelease];
+  MRRYoursRecipeEditorViewController *editorViewController = [[[MRRYoursRecipeEditorViewController alloc] initWithSessionUserID:self.sessionUserID
+                                                                                                               userRecipesStore:self.userRecipesStore
+                                                                                                                     syncEngine:self.syncEngine
+                                                                                                                   photoStorage:self.photoStorage
+                                                                                                                 existingRecipe:recipe] autorelease];
   [self.navigationController pushViewController:editorViewController animated:YES];
 }
 
@@ -462,16 +460,14 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
 
 - (void)presentValidationError:(NSError *)error title:(NSString *)title {
   NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription : @"Please try again in a moment.";
-  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title
-                                                                           message:message
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
   UIViewController *presenter = self.presentedViewController ?: self;
   [presenter presentViewController:alertController animated:YES completion:nil];
 }
 
 - (void)handleAddButtonTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   [self presentEditorForRecipe:nil];
 }
 

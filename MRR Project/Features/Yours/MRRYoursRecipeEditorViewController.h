@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
                      userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
                            syncEngine:(nullable id<MRRUserRecipesCloudSyncing>)syncEngine
                          photoStorage:(nullable id<MRRUserRecipePhotoStorage>)photoStorage
-                        existingRecipe:(nullable MRRUserRecipeSnapshot *)existingRecipe;
+                       existingRecipe:(nullable MRRUserRecipeSnapshot *)existingRecipe;
 
 @end
 

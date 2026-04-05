@@ -21,8 +21,8 @@
 }
 
 - (instancetype)initWithSessionUserID:(NSString *)sessionUserID
-                      userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
-                            syncEngine:(id<MRRUserRecipesCloudSyncing>)syncEngine {
+                     userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
+                           syncEngine:(id<MRRUserRecipesCloudSyncing>)syncEngine {
   self = [super init];
   if (self) {
     _sessionUserID = [sessionUserID copy];
