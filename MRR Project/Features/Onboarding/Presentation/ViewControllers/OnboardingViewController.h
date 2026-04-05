@@ -19,10 +19,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController;
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
-                authenticationController:(id<MRRAuthenticationController>)authenticationController;
+               authenticationController:(id<MRRAuthenticationController>)authenticationController;
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
                authenticationController:(id<MRRAuthenticationController>)authenticationController
-                           recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog;
+                          recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog;
 
 @end
 

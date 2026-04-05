@@ -163,8 +163,8 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   self.textBackdropView.backgroundColor = MRRHighlightedTextBackdropColor();
   self.isAccessibilityElement = YES;
   self.accessibilityTraits = UIAccessibilityTraitButton;
-  self.accessibilityLabel = [NSString stringWithFormat:@"%@, %@, %@", recipePreview.title, recipePreview.fallbackDetail.durationText,
-                                                       recipePreview.fallbackDetail.calorieText];
+  self.accessibilityLabel = [NSString
+      stringWithFormat:@"%@, %@, %@", recipePreview.title, recipePreview.fallbackDetail.durationText, recipePreview.fallbackDetail.calorieText];
   self.accessibilityHint = @"Opens recipe details.";
   [self applyAccessibilityIdentifiersForRecipePreview:recipePreview];
   [self updateTextOverlayVisibility];
@@ -212,10 +212,8 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   textBackdropMaskLayer.startPoint = CGPointMake(0.5, 0.0);
   textBackdropMaskLayer.endPoint = CGPointMake(0.5, 1.0);
   textBackdropMaskLayer.colors = @[
-    (id)[UIColor colorWithWhite:1.0 alpha:0.0].CGColor,
-    (id)[UIColor colorWithWhite:1.0 alpha:0.78].CGColor,
-    (id)[UIColor colorWithWhite:1.0 alpha:1.0].CGColor,
-    (id)[UIColor colorWithWhite:1.0 alpha:1.0].CGColor
+    (id)[UIColor colorWithWhite:1.0 alpha:0.0].CGColor, (id)[UIColor colorWithWhite:1.0 alpha:0.78].CGColor,
+    (id)[UIColor colorWithWhite:1.0 alpha:1.0].CGColor, (id)[UIColor colorWithWhite:1.0 alpha:1.0].CGColor
   ];
   textBackdropMaskLayer.locations = @[ @0.0, @0.16, @0.28, @1.0 ];
   textBackdropMaskLayer.frame = textBackdropView.bounds;
@@ -343,8 +341,7 @@ static CGFloat const MRRPureCarouselCardBaseHeight = 196.0;
   gradientLayer.startPoint = CGPointMake(0.0, 0.5);
   gradientLayer.endPoint = CGPointMake(1.0, 0.5);
   gradientLayer.colors = @[
-    (id)[[UIColor whiteColor] colorWithAlphaComponent:0.04].CGColor,
-    (id)[[UIColor whiteColor] colorWithAlphaComponent:0.34].CGColor,
+    (id)[[UIColor whiteColor] colorWithAlphaComponent:0.04].CGColor, (id)[[UIColor whiteColor] colorWithAlphaComponent:0.34].CGColor,
     (id)[[UIColor whiteColor] colorWithAlphaComponent:0.08].CGColor
   ];
   gradientLayer.locations = @[ @0.0, @0.48, @1.0 ];

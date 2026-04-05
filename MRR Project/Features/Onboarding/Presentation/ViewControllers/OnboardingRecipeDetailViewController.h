@@ -16,8 +16,7 @@ typedef NS_ENUM(NSInteger, OnboardingRecipeDetailDebugOrigin) {
 
 - (void)recipeDetailViewControllerDidClose:(OnboardingRecipeDetailViewController *)viewController;
 - (void)recipeDetailViewControllerDidStartCooking:(OnboardingRecipeDetailViewController *)viewController;
-- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
-          didRequestFavoriteState:(BOOL)favorite;
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController didRequestFavoriteState:(BOOL)favorite;
 
 @end
 

@@ -23,8 +23,8 @@ typedef NS_ENUM(NSInteger, MRREmailAuthenticationMode) {
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                             mode:(MRREmailAuthenticationMode)mode
-                                   prefilledEmail:(nullable NSString *)prefilledEmail
-                                  pendingLinkFlow:(BOOL)pendingLinkFlow;
+                                  prefilledEmail:(nullable NSString *)prefilledEmail
+                                 pendingLinkFlow:(BOOL)pendingLinkFlow;
 
 @end
 

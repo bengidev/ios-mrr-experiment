@@ -236,9 +236,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 - (CGFloat)loopSpanWidthForCollectionView:(UICollectionView *)collectionView;
 - (void)recenterContinuousCarouselOffsetIfNeededForCollectionView:(UICollectionView *)collectionView;
 - (CGFloat)carouselAutoscrollPointsPerSecondForCollectionView:(UICollectionView *)collectionView;
-- (void)advanceCarouselCollectionView:(UICollectionView *)collectionView
-                            direction:(CGFloat)direction
-                            deltaTime:(CFTimeInterval)deltaTime;
+- (void)advanceCarouselCollectionView:(UICollectionView *)collectionView direction:(CGFloat)direction deltaTime:(CFTimeInterval)deltaTime;
 - (CGFloat)layoutViewportHeight;
 - (CGFloat)layoutViewportWidth;
 - (NSAttributedString *)titleAttributedTextWithFontSize:(CGFloat)fontSize kerning:(CGFloat)kerning;
@@ -269,8 +267,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 - (void)presentLoadedRecipeDetail:(OnboardingRecipeDetail *)detail
                     recipePreview:(OnboardingRecipePreview *)recipePreview
                       debugOrigin:(OnboardingRecipeDetailDebugOrigin)debugOrigin;
-- (void)dismissRecipeDetailContainerForViewController:(OnboardingRecipeDetailViewController *)viewController
-                                           completion:(void (^)(void))completion;
+- (void)dismissRecipeDetailContainerForViewController:(OnboardingRecipeDetailViewController *)viewController completion:(void (^)(void))completion;
 - (void)pauseCarouselAutoscroll;
 - (void)resumeCarouselAutoscrollIfPossible;
 - (void)handleCarouselDisplayLink:(CADisplayLink *)displayLink;
@@ -286,30 +283,24 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
       [[[OnboardingStateController alloc] initWithUserDefaults:[NSUserDefaults standardUserDefaults]] autorelease];
   id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
   id<MRROnboardingRecipeCataloging> recipeCatalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
-  return [self initWithStateController:stateController
-              authenticationController:authenticationController
-                          recipeCatalog:recipeCatalog];
+  return [self initWithStateController:stateController authenticationController:authenticationController recipeCatalog:recipeCatalog];
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController {
   id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
   id<MRROnboardingRecipeCataloging> recipeCatalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
-  return [self initWithStateController:stateController
-              authenticationController:authenticationController
-                          recipeCatalog:recipeCatalog];
+  return [self initWithStateController:stateController authenticationController:authenticationController recipeCatalog:recipeCatalog];
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
                authenticationController:(id<MRRAuthenticationController>)authenticationController {
   id<MRROnboardingRecipeCataloging> recipeCatalog = [[[OnboardingRecipeCatalog alloc] init] autorelease];
-  return [self initWithStateController:stateController
-              authenticationController:authenticationController
-                          recipeCatalog:recipeCatalog];
+  return [self initWithStateController:stateController authenticationController:authenticationController recipeCatalog:recipeCatalog];
 }
 
 - (instancetype)initWithStateController:(OnboardingStateController *)stateController
                authenticationController:(id<MRRAuthenticationController>)authenticationController
-                           recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog {
+                          recipeCatalog:(id<MRROnboardingRecipeCataloging>)recipeCatalog {
   NSParameterAssert(stateController != nil);
   NSParameterAssert(authenticationController != nil);
   NSParameterAssert(recipeCatalog != nil);
@@ -502,10 +493,8 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   self.primaryCarouselLeadingConstraint = [collectionView.leadingAnchor constraintEqualToAnchor:primaryCarouselRowView.leadingAnchor];
   self.primaryCarouselTrailingConstraint = [collectionView.trailingAnchor constraintEqualToAnchor:primaryCarouselRowView.trailingAnchor];
   [NSLayoutConstraint activateConstraints:@[
-    [collectionView.topAnchor constraintEqualToAnchor:primaryCarouselRowView.topAnchor],
-    self.primaryCarouselLeadingConstraint,
-    self.primaryCarouselTrailingConstraint,
-    [collectionView.bottomAnchor constraintEqualToAnchor:primaryCarouselRowView.bottomAnchor]
+    [collectionView.topAnchor constraintEqualToAnchor:primaryCarouselRowView.topAnchor], self.primaryCarouselLeadingConstraint,
+    self.primaryCarouselTrailingConstraint, [collectionView.bottomAnchor constraintEqualToAnchor:primaryCarouselRowView.bottomAnchor]
   ]];
 
   UIView *secondaryCarouselRowView = [[[UIView alloc] init] autorelease];
@@ -515,16 +504,15 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   secondaryCarouselRowView.accessibilityIdentifier = @"onboarding.heroCarouselSecondaryRowView";
   [carouselRowsStackView addArrangedSubview:secondaryCarouselRowView];
 
-  UICollectionView *secondaryCollectionView = [self buildCarouselCollectionViewWithAccessibilityIdentifier:@"onboarding.carouselCollectionView.secondary"];
+  UICollectionView *secondaryCollectionView =
+      [self buildCarouselCollectionViewWithAccessibilityIdentifier:@"onboarding.carouselCollectionView.secondary"];
   [secondaryCarouselRowView addSubview:secondaryCollectionView];
   self.secondaryCarouselCollectionView = secondaryCollectionView;
   self.secondaryCarouselLeadingConstraint = [secondaryCollectionView.leadingAnchor constraintEqualToAnchor:secondaryCarouselRowView.leadingAnchor];
   self.secondaryCarouselTrailingConstraint = [secondaryCollectionView.trailingAnchor constraintEqualToAnchor:secondaryCarouselRowView.trailingAnchor];
   [NSLayoutConstraint activateConstraints:@[
-    [secondaryCollectionView.topAnchor constraintEqualToAnchor:secondaryCarouselRowView.topAnchor],
-    self.secondaryCarouselLeadingConstraint,
-    self.secondaryCarouselTrailingConstraint,
-    [secondaryCollectionView.bottomAnchor constraintEqualToAnchor:secondaryCarouselRowView.bottomAnchor]
+    [secondaryCollectionView.topAnchor constraintEqualToAnchor:secondaryCarouselRowView.topAnchor], self.secondaryCarouselLeadingConstraint,
+    self.secondaryCarouselTrailingConstraint, [secondaryCollectionView.bottomAnchor constraintEqualToAnchor:secondaryCarouselRowView.bottomAnchor]
   ]];
 
   [NSLayoutConstraint activateConstraints:@[
@@ -972,32 +960,32 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   CGFloat fallbackDiameter = 18.0;
 
   switch (iconStyle) {
-  case MRROnboardingAuthButtonIconStyleEmail:
-    if (@available(iOS 13.0, *)) {
-      return [self symbolButtonIconNamed:@"envelope.fill" pointSize:symbolPointSize tintColor:nil];
-    }
-    return [self monogramButtonIconWithText:@"@"
-                            backgroundColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.10]
-                            foregroundColor:MRRPrimaryTextColor()
-                                   diameter:fallbackDiameter];
-  case MRROnboardingAuthButtonIconStyleGoogle:
-    if (@available(iOS 13.0, *)) {
-      return [self symbolButtonIconNamed:@"g.circle.fill"
-                               pointSize:symbolPointSize
-                               tintColor:[UIColor colorWithRed:0.26 green:0.52 blue:0.96 alpha:1.0]];
-    }
-    return [self monogramButtonIconWithText:@"G"
-                            backgroundColor:[UIColor colorWithRed:0.26 green:0.52 blue:0.96 alpha:1.0]
-                            foregroundColor:[UIColor whiteColor]
-                                   diameter:fallbackDiameter];
-  case MRROnboardingAuthButtonIconStyleApple:
-    if (@available(iOS 13.0, *)) {
-      return [self symbolButtonIconNamed:@"apple.logo" pointSize:symbolPointSize tintColor:nil];
-    }
-    return [self monogramButtonIconWithText:@"A"
-                            backgroundColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.12]
-                            foregroundColor:MRRPrimaryTextColor()
-                                   diameter:fallbackDiameter];
+    case MRROnboardingAuthButtonIconStyleEmail:
+      if (@available(iOS 13.0, *)) {
+        return [self symbolButtonIconNamed:@"envelope.fill" pointSize:symbolPointSize tintColor:nil];
+      }
+      return [self monogramButtonIconWithText:@"@"
+                              backgroundColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.10]
+                              foregroundColor:MRRPrimaryTextColor()
+                                     diameter:fallbackDiameter];
+    case MRROnboardingAuthButtonIconStyleGoogle:
+      if (@available(iOS 13.0, *)) {
+        return [self symbolButtonIconNamed:@"g.circle.fill"
+                                 pointSize:symbolPointSize
+                                 tintColor:[UIColor colorWithRed:0.26 green:0.52 blue:0.96 alpha:1.0]];
+      }
+      return [self monogramButtonIconWithText:@"G"
+                              backgroundColor:[UIColor colorWithRed:0.26 green:0.52 blue:0.96 alpha:1.0]
+                              foregroundColor:[UIColor whiteColor]
+                                     diameter:fallbackDiameter];
+    case MRROnboardingAuthButtonIconStyleApple:
+      if (@available(iOS 13.0, *)) {
+        return [self symbolButtonIconNamed:@"apple.logo" pointSize:symbolPointSize tintColor:nil];
+      }
+      return [self monogramButtonIconWithText:@"A"
+                              backgroundColor:[MRRPrimaryTextColor() colorWithAlphaComponent:0.12]
+                              foregroundColor:MRRPrimaryTextColor()
+                                     diameter:fallbackDiameter];
   }
 
   return nil;
@@ -1005,8 +993,8 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 
 - (UIImage *)symbolButtonIconNamed:(NSString *)systemName pointSize:(CGFloat)pointSize tintColor:(UIColor *)tintColor {
   if (@available(iOS 13.0, *)) {
-    UIImageSymbolConfiguration *symbolConfiguration =
-        [UIImageSymbolConfiguration configurationWithPointSize:pointSize weight:UIImageSymbolWeightSemibold];
+    UIImageSymbolConfiguration *symbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:pointSize
+                                                                                                      weight:UIImageSymbolWeightSemibold];
     UIImage *symbolImage = [UIImage systemImageNamed:systemName withConfiguration:symbolConfiguration];
     if (tintColor != nil) {
       return [symbolImage imageWithTintColor:tintColor renderingMode:UIImageRenderingModeAlwaysOriginal];
@@ -1032,15 +1020,9 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   }
 
   UIFont *font = [UIFont systemFontOfSize:diameter * 0.72 weight:UIFontWeightBold];
-  CGSize textSize = [text sizeWithAttributes:@{
-    NSFontAttributeName : font
-  }];
+  CGSize textSize = [text sizeWithAttributes:@{NSFontAttributeName : font}];
   CGRect textRect = CGRectMake((diameter - textSize.width) / 2.0, (diameter - textSize.height) / 2.0, textSize.width, textSize.height);
-  [text drawInRect:textRect
-    withAttributes:@{
-      NSFontAttributeName : font,
-      NSForegroundColorAttributeName : foregroundColor
-    }];
+  [text drawInRect:textRect withAttributes:@{NSFontAttributeName : font, NSForegroundColorAttributeName : foregroundColor}];
 
   UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();
@@ -1369,12 +1351,10 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   if (@available(iOS 15.0, *)) {
     UIButtonConfiguration *signinConfiguration = self.signinLabel.configuration;
     if (signinConfiguration != nil) {
-      signinConfiguration.attributedTitle =
-          [[[NSAttributedString alloc] initWithString:@"Sign in"
-                                           attributes:@{
-                                             NSFontAttributeName : [UIFont boldSystemFontOfSize:signinFontSize],
-                                             NSForegroundColorAttributeName : self.view.tintColor
-                                           }] autorelease];
+      signinConfiguration.attributedTitle = [[[NSAttributedString alloc]
+          initWithString:@"Sign in"
+              attributes:@{NSFontAttributeName : [UIFont boldSystemFontOfSize:signinFontSize], NSForegroundColorAttributeName : self.view.tintColor}]
+          autorelease];
       self.signinLabel.configuration = signinConfiguration;
     }
   } else {
@@ -1389,11 +1369,9 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
       UIButtonConfiguration *configuration = button.configuration;
       if (configuration != nil) {
         NSString *currentTitle = configuration.title ?: @"";
-        configuration.attributedTitle = [[[NSAttributedString alloc] initWithString:currentTitle
-                                                                         attributes:@{
-                                                                           NSFontAttributeName : buttonTitleFont,
-                                                                           NSForegroundColorAttributeName : MRRPrimaryTextColor()
-                                                                         }] autorelease];
+        configuration.attributedTitle = [[[NSAttributedString alloc]
+            initWithString:currentTitle
+                attributes:@{NSFontAttributeName : buttonTitleFont, NSForegroundColorAttributeName : MRRPrimaryTextColor()}] autorelease];
         button.configuration = configuration;
       }
     } else {
@@ -1429,8 +1407,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
                                                                  lineSpacing:desiredLineSpacing];
     CGFloat desiredInteritemSpacing = MAX((carouselHeight / 2.0) + MRRCarouselSingleRowSpacingPadding, 1000.0);
     if (initialCarouselItemSize.width > 0.0 && initialCarouselItemSize.height > 0.0 &&
-        (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 ||
-         fabs(layout.itemSize.height - initialCarouselItemSize.height) >= 0.5 ||
+        (fabs(layout.itemSize.width - initialCarouselItemSize.width) >= 0.5 || fabs(layout.itemSize.height - initialCarouselItemSize.height) >= 0.5 ||
          fabs(layout.minimumInteritemSpacing - desiredInteritemSpacing) >= 0.5)) {
       layout.itemSize = initialCarouselItemSize;
       layout.minimumInteritemSpacing = desiredInteritemSpacing;
@@ -1453,8 +1430,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 }
 
 - (BOOL)isCarouselCollectionView:(UICollectionView *)collectionView {
-  return collectionView != nil &&
-         (collectionView == self.carouselCollectionView || collectionView == self.secondaryCarouselCollectionView);
+  return collectionView != nil && (collectionView == self.carouselCollectionView || collectionView == self.secondaryCarouselCollectionView);
 }
 
 - (BOOL)isPrimaryCarouselCollectionView:(UICollectionView *)collectionView {
@@ -1656,9 +1632,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   return MAX(width * 0.11, 18.0);
 }
 
-- (void)advanceCarouselCollectionView:(UICollectionView *)collectionView
-                            direction:(CGFloat)direction
-                            deltaTime:(CFTimeInterval)deltaTime {
+- (void)advanceCarouselCollectionView:(UICollectionView *)collectionView direction:(CGFloat)direction deltaTime:(CFTimeInterval)deltaTime {
   if (![self isCarouselCollectionView:collectionView] || deltaTime <= 0.0 || [self isCarouselCollectionViewInteracting:collectionView]) {
     return;
   }
@@ -1815,8 +1789,8 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   }
 
   [collectionView layoutIfNeeded];
-  CGFloat visibleMidX = offsetX + [self visibleCarouselViewportMidXForCollectionView:collectionView] -
-                        [self carouselPhaseOffsetForCollectionView:collectionView];
+  CGFloat visibleMidX =
+      offsetX + [self visibleCarouselViewportMidXForCollectionView:collectionView] - [self carouselPhaseOffsetForCollectionView:collectionView];
   NSInteger nearestIndex = 0;
   CGFloat nearestDistance = CGFLOAT_MAX;
 
@@ -1946,8 +1920,8 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
     }
 
     CGSize lastBoundsSize = [self lastPositionedCarouselBoundsSizeForCollectionView:collectionView];
-    BOOL boundsChangedSinceLastPositioning = fabs(lastBoundsSize.width - carouselBoundsSize.width) >= 0.5 ||
-                                             fabs(lastBoundsSize.height - carouselBoundsSize.height) >= 0.5;
+    BOOL boundsChangedSinceLastPositioning =
+        fabs(lastBoundsSize.width - carouselBoundsSize.width) >= 0.5 || fabs(lastBoundsSize.height - carouselBoundsSize.height) >= 0.5;
     shouldApplyInitialPosition = shouldApplyInitialPosition || boundsChangedSinceLastPositioning;
   }
 
@@ -1980,7 +1954,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 
   [collectionView setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:itemIndex inCollectionView:collectionView],
                                                collectionView.contentOffset.y)
-                           animated:animated];
+                          animated:animated];
   [self setCurrentCarouselItemIndex:itemIndex forCollectionView:collectionView];
   if ([self isPrimaryCarouselCollectionView:collectionView]) {
     [self updatePageControl];
@@ -2032,10 +2006,9 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
   }
 
   [self setCurrentCarouselItemIndex:recenteredItemIndex forCollectionView:collectionView];
-  [collectionView
-      setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:recenteredItemIndex inCollectionView:collectionView],
-                                   collectionView.contentOffset.y)
-              animated:NO];
+  [collectionView setContentOffset:CGPointMake([self contentOffsetXForCarouselItemIndex:recenteredItemIndex inCollectionView:collectionView],
+                                               collectionView.contentOffset.y)
+                          animated:NO];
   if ([self isPrimaryCarouselCollectionView:collectionView]) {
     [self updatePageControl];
   }
@@ -2056,9 +2029,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 
   MRROnboardingRecipeFlowLog(@"Presenting curated recipe detail for \"%@\".", recipePreview.title);
   [self pauseCarouselAutoscroll];
-  [self presentLoadedRecipeDetail:recipePreview.fallbackDetail
-                    recipePreview:recipePreview
-                      debugOrigin:OnboardingRecipeDetailDebugOriginUnknown];
+  [self presentLoadedRecipeDetail:recipePreview.fallbackDetail recipePreview:recipePreview debugOrigin:OnboardingRecipeDetailDebugOriginUnknown];
 }
 
 - (void)presentRecipeDetailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
@@ -2257,8 +2228,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
 
-- (void)dismissRecipeDetailContainerForViewController:(OnboardingRecipeDetailViewController *)viewController
-                                           completion:(void (^)(void))completion {
+- (void)dismissRecipeDetailContainerForViewController:(OnboardingRecipeDetailViewController *)viewController completion:(void (^)(void))completion {
   if (viewController == nil) {
     return;
   }
@@ -2289,8 +2259,7 @@ static void MRROnboardingPerformOnMainThread(void (^block)(void)) {
                                            }];
 }
 
-- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
-          didRequestFavoriteState:(BOOL)favorite {
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController didRequestFavoriteState:(BOOL)favorite {
 }
 
 #pragma mark - UIAdaptivePresentationControllerDelegate
