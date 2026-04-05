@@ -137,6 +137,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 @property(nonatomic, retain) UIView *photoSectionView;
 @property(nonatomic, retain) UIImageView *coverImageView;
 @property(nonatomic, retain) UILabel *photoHelperLabel;
+@property(nonatomic, retain) UIScrollView *photoThumbnailsScrollView;
 @property(nonatomic, retain) UIStackView *photoThumbnailsStackView;
 @property(nonatomic, retain) UIStackView *photoActionsStackView;
 @property(nonatomic, retain) UIButton *addPhotoButton;
@@ -235,8 +236,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     _photoStorage = [(photoStorage ?: [[[MRRLocalUserRecipePhotoStorage alloc] init] autorelease]) retain];
     _existingRecipe = [existingRecipe retain];
     _creatingRecipe = existingRecipe == nil;
-    _draftRecipeID = [(existingRecipe.recipeID.length > 0 ? existingRecipe.recipeID : [NSUUID UUID].UUIDString) copy];
-    _selectedMealType = [(existingRecipe.mealType.length > 0 ? existingRecipe.mealType : MRRUserRecipeMealTypeSnack) copy];
+    _draftRecipeID = [(existingRecipe != nil && existingRecipe.recipeID.length > 0 ? existingRecipe.recipeID : [NSUUID UUID].UUIDString) copy];
+    _selectedMealType = [(existingRecipe != nil && existingRecipe.mealType.length > 0 ? existingRecipe.mealType : MRRUserRecipeMealTypeSnack) copy];
     _mealTypeButtonsByIdentifier = [[NSMutableDictionary alloc] init];
     _tagButtonsByValue = [[NSMutableDictionary alloc] init];
     _photoDrafts = [[NSMutableArray alloc] init];
