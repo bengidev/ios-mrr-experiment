@@ -1331,9 +1331,28 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
   // Calculate next selected index
   NSInteger nextSelectedIndex = MAX(0, MIN(removedIndex, (NSInteger)self.photoDrafts.count - 2));
-  [self.photoDrafts removeObjectAtIndex:removedIndex];
-  self.selectedPhotoIndex = nextSelectedIndex;
-  [self reloadPhotoUI];
+
+  // Animate thumbnail removal
+  if (thumbnailToRemove != nil) {
+    [UIView animateWithDuration:0.25
+        delay:0.0
+        options:UIViewAnimationOptionCurveEaseInOut
+        animations:^{
+        }
+        completion:^(BOOL finished) {
+#pragma unused(finished)
+          // Remove from data model after animation
+          [self.photoDrafts removeObjectAtIndex:removedIndex];
+          self.selectedPhotoIndex = nextSelectedIndex;
+          [self reloadPhotoUI];
+        }];
+  } else {
+    // No thumbnail to animate, remove immediately
+    [self.photoDrafts removeObjectAtIndex:removedIndex];
+    self.selectedPhotoIndex = nextSelectedIndex;
+    [self reloadPhotoUI];
+    return;
+  }
 }
 
 - (void)handleMealTypeButtonTapped:(UIButton *)sender {
