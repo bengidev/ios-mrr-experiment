@@ -1646,8 +1646,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
           readyInMinutes:readyInMinutes
                 servings:servings
             calorieCount:MAX(0, calorieCount)
-               assetName:(self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName])
-      heroImageURLString:self.existingRecipe.heroImageURLString
+               assetName:(self.existingRecipe != nil && self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName])
+      heroImageURLString:(self.existingRecipe != nil ? self.existingRecipe.heroImageURLString : nil)
                   photos:photos
              ingredients:ingredients
             instructions:steps
