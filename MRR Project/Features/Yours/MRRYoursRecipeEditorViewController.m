@@ -1338,6 +1338,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
         delay:0.0
         options:UIViewAnimationOptionCurveEaseInOut
         animations:^{
+          thumbnailToRemove.transform = CGAffineTransformMakeScale(0.6, 0.6);
+          thumbnailToRemove.alpha = 0.0;
         }
         completion:^(BOOL finished) {
 #pragma unused(finished)
