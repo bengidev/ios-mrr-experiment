@@ -33,10 +33,9 @@ typedef NS_ENUM(NSInteger, HomeSearchState) {
 @class HomeSection;
 
 typedef void (^HomeInitialSectionsCompletion)(NSArray<HomeSection *> *sections,
-                                              NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier,
-                                              BOOL usesLiveData);
+                                              NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier, BOOL usesLiveData);
 typedef void (^HomeRecipeSearchCompletion)(NSArray<HomeRecipeCard *> *recipes, BOOL usesLiveData);
-typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail * _Nullable recipeDetail, BOOL usesLiveData);
+typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail *_Nullable recipeDetail, BOOL usesLiveData);
 
 @interface HomeCategory : NSObject
 
@@ -62,8 +61,8 @@ typedef void (^HomeRecipeDetailCompletion)(OnboardingRecipeDetail * _Nullable re
 - (instancetype)initWithCuisine:(nullable NSString *)cuisine
                            diet:(nullable NSString *)diet
                    intolerances:(nullable NSString *)intolerances
-               includeIngredients:(nullable NSString *)includeIngredients
-               excludeIngredients:(nullable NSString *)excludeIngredients
+             includeIngredients:(nullable NSString *)includeIngredients
+             excludeIngredients:(nullable NSString *)excludeIngredients
                       equipment:(nullable NSString *)equipment
                    maxReadyTime:(NSInteger)maxReadyTime;
 - (BOOL)hasActiveFilters;

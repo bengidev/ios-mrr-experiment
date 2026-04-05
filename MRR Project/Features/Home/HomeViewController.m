@@ -196,7 +196,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 - (void)handleInitialLoadTimer:(NSTimer *)timer;
 - (void)loadContentFromProviderShowingLoadingState:(BOOL)showLoadingState animated:(BOOL)animated;
 - (void)refreshVisibleContentForCurrentFilter;
-- (HomeSection * _Nullable)sectionWithIdentifier:(NSString *)identifier inSections:(NSArray<HomeSection *> *)sections;
+- (HomeSection *_Nullable)sectionWithIdentifier:(NSString *)identifier inSections:(NSArray<HomeSection *> *)sections;
 - (NSArray<HomeRecipeCard *> *)sortedRecipesFromRecipes:(NSArray<HomeRecipeCard *> *)recipes;
 - (NSArray<HomeRecipeCard *> *)recommendationRecipesForCurrentSelection;
 - (NSString *)currentSearchQuery;
@@ -259,10 +259,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 @implementation HomeViewController
 
 - (instancetype)init {
-  return [self initWithSession:nil
-                  dataProvider:[[[HomeCompositeDataProvider alloc] init] autorelease]
-              savedRecipesStore:nil
-                    syncEngine:nil];
+  return [self initWithSession:nil dataProvider:[[[HomeCompositeDataProvider alloc] init] autorelease] savedRecipesStore:nil syncEngine:nil];
 }
 
 - (instancetype)initWithSession:(MRRAuthSession *)session dataProvider:(id<HomeDataProviding>)dataProvider {
@@ -271,7 +268,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (instancetype)initWithSession:(MRRAuthSession *)session
                    dataProvider:(id<HomeDataProviding>)dataProvider
-               savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+              savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                      syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
   NSParameterAssert(dataProvider != nil);
 
@@ -417,9 +414,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   refreshControl.accessibilityLabel = @"Refresh recipes";
   refreshControl.tintColor = MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
-  [refreshControl addTarget:self
-                     action:@selector(handleContentRefreshControlValueChanged:)
-           forControlEvents:UIControlEventValueChanged];
+  [refreshControl addTarget:self action:@selector(handleContentRefreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
   if (@available(iOS 10.0, *)) {
     scrollView.refreshControl = refreshControl;
   } else {
@@ -477,14 +472,15 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   avatarButton.layer.cornerRadius = 28.0;
   avatarButton.layer.borderWidth = 1.0;
   avatarButton.layer.borderColor = [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
-                                                      [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.08].CGColor;
+                                                      [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.08]
+                                       .CGColor;
   avatarButton.backgroundColor = MRRHomeNamedColor(@"HomeAvatarSurfaceColor", [UIColor colorWithRed:0.91 green:0.97 blue:0.93 alpha:1.0],
                                                    [UIColor colorWithRed:0.16 green:0.19 blue:0.18 alpha:1.0]);
   avatarButton.titleLabel.font = [UIFont systemFontOfSize:18.0 weight:UIFontWeightBold];
   [avatarButton setTitle:[self avatarInitialsText] forState:UIControlStateNormal];
   [avatarButton setTitleColor:MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                 [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0])
-                    forState:UIControlStateNormal];
+                     forState:UIControlStateNormal];
   avatarButton.accessibilityLabel = @"Open profile";
   avatarButton.accessibilityHint = @"Switches to the Profile tab.";
   [avatarButton addTarget:self action:@selector(handleAvatarButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
@@ -502,10 +498,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
     [avatarButton.leadingAnchor constraintGreaterThanOrEqualToAnchor:greetingLabel.trailingAnchor constant:12.0],
     [avatarButton.trailingAnchor constraintEqualToAnchor:headerTopRowView.trailingAnchor],
-    [avatarButton.topAnchor constraintEqualToAnchor:headerTopRowView.topAnchor],
-    [avatarButton.widthAnchor constraintEqualToConstant:56.0],
-    [avatarButton.heightAnchor constraintEqualToConstant:56.0],
-    [headerTopRowView.bottomAnchor constraintEqualToAnchor:avatarButton.bottomAnchor],
+    [avatarButton.topAnchor constraintEqualToAnchor:headerTopRowView.topAnchor], [avatarButton.widthAnchor constraintEqualToConstant:56.0],
+    [avatarButton.heightAnchor constraintEqualToConstant:56.0], [headerTopRowView.bottomAnchor constraintEqualToAnchor:avatarButton.bottomAnchor],
 
     [headlineLabel.topAnchor constraintEqualToAnchor:headerTopRowView.bottomAnchor constant:12.0],
     [headlineLabel.leadingAnchor constraintEqualToAnchor:headerRowView.leadingAnchor],
@@ -519,7 +513,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   searchContainerView.layer.cornerRadius = 28.0;
   searchContainerView.layer.borderWidth = 1.0;
   searchContainerView.layer.borderColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.92 green:0.91 blue:0.88 alpha:1.0],
-                                                            [UIColor colorWithRed:0.24 green:0.24 blue:0.22 alpha:1.0]).CGColor;
+                                                            [UIColor colorWithRed:0.24 green:0.24 blue:0.22 alpha:1.0])
+                                              .CGColor;
   searchContainerView.layer.shadowColor = [UIColor blackColor].CGColor;
   searchContainerView.layer.shadowOpacity = 0.04f;
   searchContainerView.layer.shadowRadius = 12.0f;
@@ -542,12 +537,13 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   searchTextField.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightRegular];
   searchTextField.textColor = MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
                                                 [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0]);
-  searchTextField.attributedPlaceholder = [[[NSAttributedString alloc] initWithString:@"Search any recipes"
-                                                                           attributes:@{
-                                                                             NSForegroundColorAttributeName :
-                                                                                 MRRHomeNamedColor(@"HomeSearchPlaceholderColor", [UIColor colorWithRed:0.60 green:0.56 blue:0.51 alpha:1.0],
-                                                                                                   [UIColor colorWithRed:0.58 green:0.60 blue:0.60 alpha:1.0])
-                                                                           }] autorelease];
+  searchTextField.attributedPlaceholder = [[[NSAttributedString alloc]
+      initWithString:@"Search any recipes"
+          attributes:@{
+            NSForegroundColorAttributeName :
+                MRRHomeNamedColor(@"HomeSearchPlaceholderColor", [UIColor colorWithRed:0.60 green:0.56 blue:0.51 alpha:1.0],
+                                  [UIColor colorWithRed:0.58 green:0.60 blue:0.60 alpha:1.0])
+          }] autorelease];
   searchTextField.clearButtonMode = UITextFieldViewModeWhileEditing;
   searchTextField.returnKeyType = UIReturnKeySearch;
   searchTextField.accessibilityIdentifier = @"home.searchTextField";
@@ -602,8 +598,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
     [searchAdornmentView.leadingAnchor constraintEqualToAnchor:searchContainerView.leadingAnchor constant:18.0],
     [searchAdornmentView.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor],
-    [searchAdornmentView.widthAnchor constraintEqualToConstant:18.0],
-    [searchAdornmentView.heightAnchor constraintEqualToConstant:18.0],
+    [searchAdornmentView.widthAnchor constraintEqualToConstant:18.0], [searchAdornmentView.heightAnchor constraintEqualToConstant:18.0],
 
     [searchTextField.leadingAnchor constraintEqualToAnchor:searchAdornmentView.trailingAnchor constant:12.0],
     [searchTextField.topAnchor constraintEqualToAnchor:searchContainerView.topAnchor constant:10.0],
@@ -616,8 +611,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
     [filterButton.leadingAnchor constraintEqualToAnchor:dividerView.trailingAnchor constant:6.0],
     [filterButton.trailingAnchor constraintEqualToAnchor:searchContainerView.trailingAnchor constant:-8.0],
-    [filterButton.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor],
-    [filterButton.widthAnchor constraintEqualToConstant:44.0],
+    [filterButton.centerYAnchor constraintEqualToAnchor:searchContainerView.centerYAnchor], [filterButton.widthAnchor constraintEqualToConstant:44.0],
     [filterButton.heightAnchor constraintEqualToConstant:44.0],
 
     [filterLoadingIndicator.centerXAnchor constraintEqualToAnchor:filterButton.centerXAnchor],
@@ -670,10 +664,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   loadingStateView.accessibilityIdentifier = @"home.loadingStateView";
   loadingStateView.layer.cornerRadius = 30.0;
   loadingStateView.layer.borderWidth = 1.0;
-  loadingStateView.layer.borderColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
-                                                         [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
-  loadingStateView.backgroundColor = MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
-                                                       [UIColor colorWithWhite:0.14 alpha:1.0]);
+  loadingStateView.layer.borderColor =
+      MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0], [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
+  loadingStateView.backgroundColor =
+      MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0]);
   [contentStackView addArrangedSubview:loadingStateView];
   self.loadingStateView = loadingStateView;
 
@@ -699,8 +693,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   loadingStateLabel.translatesAutoresizingMaskIntoConstraints = NO;
   loadingStateLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
   loadingStateLabel.adjustsFontForContentSizeCategory = YES;
-  loadingStateLabel.textColor = MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
-                                                  [UIColor colorWithWhite:0.74 alpha:1.0]);
+  loadingStateLabel.textColor =
+      MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0], [UIColor colorWithWhite:0.74 alpha:1.0]);
   loadingStateLabel.numberOfLines = 0;
   loadingStateLabel.textAlignment = NSTextAlignmentCenter;
   loadingStateLabel.text = @"Curating today's recipes...";
@@ -744,10 +738,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   refreshStateView.accessibilityIdentifier = @"home.refreshStateView";
   refreshStateView.layer.cornerRadius = 28.0;
   refreshStateView.layer.borderWidth = 1.0;
-  refreshStateView.layer.borderColor = MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
-                                                         [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
-  refreshStateView.backgroundColor = MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
-                                                       [UIColor colorWithWhite:0.14 alpha:1.0]);
+  refreshStateView.layer.borderColor =
+      MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0], [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
+  refreshStateView.backgroundColor =
+      MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0]);
   [contentStackView addArrangedSubview:refreshStateView];
   self.refreshStateView = refreshStateView;
 
@@ -761,8 +755,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   refreshStateLabel.translatesAutoresizingMaskIntoConstraints = NO;
   refreshStateLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
   refreshStateLabel.adjustsFontForContentSizeCategory = YES;
-  refreshStateLabel.textColor = MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
-                                                  [UIColor colorWithWhite:0.74 alpha:1.0]);
+  refreshStateLabel.textColor =
+      MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0], [UIColor colorWithWhite:0.74 alpha:1.0]);
   refreshStateLabel.numberOfLines = 0;
   refreshStateLabel.textAlignment = NSTextAlignmentCenter;
   refreshStateLabel.text = @"Refreshing recipes...";
@@ -807,8 +801,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   searchStatusLabel.translatesAutoresizingMaskIntoConstraints = NO;
   searchStatusLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium];
   searchStatusLabel.adjustsFontForContentSizeCategory = YES;
-  searchStatusLabel.textColor = MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
-                                                  [UIColor colorWithWhite:0.74 alpha:1.0]);
+  searchStatusLabel.textColor =
+      MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0], [UIColor colorWithWhite:0.74 alpha:1.0]);
   searchStatusLabel.numberOfLines = 0;
   searchStatusLabel.accessibilityIdentifier = @"home.searchResults.statusLabel";
   searchStatusLabel.hidden = YES;
@@ -978,8 +972,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium];
   label.adjustsFontForContentSizeCategory = YES;
-  label.textColor = MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
-                                      [UIColor colorWithWhite:0.74 alpha:1.0]);
+  label.textColor = MRRHomeNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0], [UIColor colorWithWhite:0.74 alpha:1.0]);
   label.numberOfLines = 0;
   label.textAlignment = NSTextAlignmentCenter;
   label.accessibilityIdentifier = accessibilityIdentifier;
@@ -997,14 +990,13 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   barView.accessibilityIdentifier = accessibilityIdentifier;
   barView.layer.cornerRadius = 14.0;
   barView.clipsToBounds = YES;
-  barView.backgroundColor = MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
-                                              [UIColor colorWithWhite:0.18 alpha:1.0]);
+  barView.backgroundColor =
+      MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
   [wrapperView addSubview:barView];
   [placeholderViews addObject:barView];
 
   [NSLayoutConstraint activateConstraints:@[
-    [wrapperView.heightAnchor constraintEqualToConstant:58.0],
-    [barView.topAnchor constraintEqualToAnchor:wrapperView.topAnchor],
+    [wrapperView.heightAnchor constraintEqualToConstant:58.0], [barView.topAnchor constraintEqualToAnchor:wrapperView.topAnchor],
     [barView.bottomAnchor constraintEqualToAnchor:wrapperView.bottomAnchor],
     [barView.centerXAnchor constraintEqualToAnchor:wrapperView.centerXAnchor],
     [barView.widthAnchor constraintEqualToAnchor:wrapperView.widthAnchor multiplier:widthMultiplier]
@@ -1015,8 +1007,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (UIView *)searchAdornmentView {
   if (@available(iOS 13.0, *)) {
-    UIImageView *imageView =
-        [[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"magnifyingglass"]] autorelease];
+    UIImageView *imageView = [[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"magnifyingglass"]] autorelease];
     imageView.tintColor = MRRHomeNamedColor(@"HomeSearchPlaceholderColor", [UIColor colorWithRed:0.60 green:0.56 blue:0.51 alpha:1.0],
                                             [UIColor colorWithRed:0.58 green:0.60 blue:0.60 alpha:1.0]);
     imageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -1029,7 +1020,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   lensView.layer.cornerRadius = 6.0;
   lensView.layer.borderWidth = 1.8;
   lensView.layer.borderColor = MRRHomeNamedColor(@"HomeSearchPlaceholderColor", [UIColor colorWithRed:0.60 green:0.56 blue:0.51 alpha:1.0],
-                                                 [UIColor colorWithRed:0.58 green:0.60 blue:0.60 alpha:1.0]).CGColor;
+                                                 [UIColor colorWithRed:0.58 green:0.60 blue:0.60 alpha:1.0])
+                                   .CGColor;
   [containerView addSubview:lensView];
 
   UIView *handleView = [[[UIView alloc] init] autorelease];
@@ -1041,13 +1033,11 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [containerView addSubview:handleView];
 
   [NSLayoutConstraint activateConstraints:@[
-    [lensView.widthAnchor constraintEqualToConstant:12.0],
-    [lensView.heightAnchor constraintEqualToConstant:12.0],
+    [lensView.widthAnchor constraintEqualToConstant:12.0], [lensView.heightAnchor constraintEqualToConstant:12.0],
     [lensView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor],
     [lensView.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:1.0],
 
-    [handleView.widthAnchor constraintEqualToConstant:8.0],
-    [handleView.heightAnchor constraintEqualToConstant:2.4],
+    [handleView.widthAnchor constraintEqualToConstant:8.0], [handleView.heightAnchor constraintEqualToConstant:2.4],
     [handleView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-1.0],
     [handleView.bottomAnchor constraintEqualToAnchor:containerView.bottomAnchor constant:-2.0]
   ]];
@@ -1062,13 +1052,12 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   UIView *barView = [[[UIView alloc] init] autorelease];
   barView.translatesAutoresizingMaskIntoConstraints = NO;
   barView.layer.cornerRadius = 14.0;
-  barView.backgroundColor = MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
-                                              [UIColor colorWithWhite:0.18 alpha:1.0]);
+  barView.backgroundColor =
+      MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
   [wrapperView addSubview:barView];
 
   [NSLayoutConstraint activateConstraints:@[
-    [wrapperView.heightAnchor constraintEqualToConstant:58.0],
-    [barView.topAnchor constraintEqualToAnchor:wrapperView.topAnchor],
+    [wrapperView.heightAnchor constraintEqualToConstant:58.0], [barView.topAnchor constraintEqualToAnchor:wrapperView.topAnchor],
     [barView.bottomAnchor constraintEqualToAnchor:wrapperView.bottomAnchor],
     [barView.centerXAnchor constraintEqualToAnchor:wrapperView.centerXAnchor],
     [barView.widthAnchor constraintEqualToAnchor:wrapperView.widthAnchor multiplier:widthMultiplier]
@@ -1113,32 +1102,33 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   self.contentRequestToken += 1;
   NSUInteger requestToken = self.contentRequestToken;
-  [self.dataProvider loadInitialSectionsForFilterOption:self.currentFilterOption
-                                        advancedFilters:self.advancedFilterSettings
-                                             completion:^(NSArray<HomeSection *> *sections,
-                                                          NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier,
-                                                          BOOL usesLiveData) {
-    if (requestToken != self.contentRequestToken) {
-      return;
-    }
+  [self.dataProvider
+      loadInitialSectionsForFilterOption:self.currentFilterOption
+                         advancedFilters:self.advancedFilterSettings
+                              completion:^(NSArray<HomeSection *> *sections,
+                                           NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier, BOOL usesLiveData) {
+                                if (requestToken != self.contentRequestToken) {
+                                  return;
+                                }
 
-    HomeSection *recommendationSection = [self sectionWithIdentifier:HomeSectionIdentifierRecommendation inSections:sections];
-    HomeSection *weeklySection = [self sectionWithIdentifier:HomeSectionIdentifierWeekly inSections:sections];
+                                HomeSection *recommendationSection = [self sectionWithIdentifier:HomeSectionIdentifierRecommendation
+                                                                                      inSections:sections];
+                                HomeSection *weeklySection = [self sectionWithIdentifier:HomeSectionIdentifierWeekly inSections:sections];
 
-    self.recommendationBaseRecipes = recommendationSection != nil ? recommendationSection.recipes : @[];
-    self.weeklyBaseRecipes = weeklySection != nil ? weeklySection.recipes : @[];
-    self.recipesByCategoryIdentifier = recipesByCategoryIdentifier ?: @{};
-    self.displayingLiveContent = usesLiveData;
-    if (showLoadingState) {
-      self.loadingContent = NO;
-      self.searchTextField.enabled = YES;
-      self.searchState = HomeSearchStateIdle;
-    }
-    self.applyingFilter = NO;
-    [self updateFilterLoadingState];
-    [self endContentRefreshIfNeeded];
-    [self applyCurrentPresentationStateAnimated:animated];
-  }];
+                                self.recommendationBaseRecipes = recommendationSection != nil ? recommendationSection.recipes : @[];
+                                self.weeklyBaseRecipes = weeklySection != nil ? weeklySection.recipes : @[];
+                                self.recipesByCategoryIdentifier = recipesByCategoryIdentifier ?: @{};
+                                self.displayingLiveContent = usesLiveData;
+                                if (showLoadingState) {
+                                  self.loadingContent = NO;
+                                  self.searchTextField.enabled = YES;
+                                  self.searchState = HomeSearchStateIdle;
+                                }
+                                self.applyingFilter = NO;
+                                [self updateFilterLoadingState];
+                                [self endContentRefreshIfNeeded];
+                                [self applyCurrentPresentationStateAnimated:animated];
+                              }];
 }
 
 - (void)refreshVisibleContentForCurrentFilter {
@@ -1233,16 +1223,16 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     self.currentSearchResults = [self sortedRecipesFromRecipes:(self.allSearchResults ?: @[])];
   }
 
-  NSString *recommendationTitle = self.selectedCategory != nil ? [NSString stringWithFormat:@"%@ Picks", self.selectedCategory.title] : @"Recommendation";
+  NSString *recommendationTitle =
+      self.selectedCategory != nil ? [NSString stringWithFormat:@"%@ Picks", self.selectedCategory.title] : @"Recommendation";
   [self.recommendationHeaderView configureWithTitle:recommendationTitle
                                    identifierPrefix:@"home.recommendationHeader"
-                                       showsSeeAll:self.filteredRecommendationRecipes.count > 0];
+                                        showsSeeAll:self.filteredRecommendationRecipes.count > 0];
 
-  self.searchResultsHeaderView.seeAllButton.hidden = !(self.currentSearchResults.count > 0 &&
-                                                       self.searchState == HomeSearchStateResults);
-  self.recommendationEmptyStateLabel.text = self.selectedCategory != nil
-                                                ? [NSString stringWithFormat:@"No %@ recipes yet. Try another category.", self.selectedCategory.title.lowercaseString]
-                                                : @"No recommendations are available right now.";
+  self.searchResultsHeaderView.seeAllButton.hidden = !(self.currentSearchResults.count > 0 && self.searchState == HomeSearchStateResults);
+  self.recommendationEmptyStateLabel.text = self.selectedCategory != nil ? [NSString stringWithFormat:@"No %@ recipes yet. Try another category.",
+                                                                                                      self.selectedCategory.title.lowercaseString]
+                                                                         : @"No recommendations are available right now.";
 
   [self reloadCollectionContentAnimated:animated];
   [self updateActiveFiltersSummary];
@@ -1348,10 +1338,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   self.recommendationSectionView.hidden = self.isLoadingContent || isShowingSearchResults || isShowingRefreshState;
   self.weeklySectionView.hidden = self.isLoadingContent || isShowingSearchResults || isShowingRefreshState;
 
-  self.recommendationEmptyStateLabel.hidden = self.filteredRecommendationRecipes.count > 0 || self.isLoadingContent ||
-                                              isShowingSearchResults || isShowingRefreshState;
-  self.recommendationCollectionView.hidden = self.filteredRecommendationRecipes.count == 0 || self.isLoadingContent ||
-                                             isShowingSearchResults || isShowingRefreshState;
+  self.recommendationEmptyStateLabel.hidden =
+      self.filteredRecommendationRecipes.count > 0 || self.isLoadingContent || isShowingSearchResults || isShowingRefreshState;
+  self.recommendationCollectionView.hidden =
+      self.filteredRecommendationRecipes.count == 0 || self.isLoadingContent || isShowingSearchResults || isShowingRefreshState;
 }
 
 - (void)updateRefreshStateVisibility {
@@ -1376,17 +1366,15 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   self.clearFiltersButton.enabled = !self.isApplyingFilter;
   self.filterButton.imageView.alpha = self.isApplyingFilter ? 0.0 : 1.0;
   self.filterButton.titleLabel.alpha = self.isApplyingFilter ? 0.0 : 1.0;
-  self.filterButton.backgroundColor = hasAdvancedFilters
-                                          ? [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
-                                                               [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.12]
-                                          : [UIColor clearColor];
-  self.filterButton.accessibilityHint = self.isApplyingFilter ? @"Applying the selected sort order and filters."
-                                                              : @"Adjust sort order and advanced recipe filters.";
-  self.filterButton.accessibilityValue = self.isApplyingFilter ? @"Loading"
-                                                               : (hasAdvancedFilters
-                                                                      ? [NSString stringWithFormat:@"%lu filters active",
-                                                                                                     (unsigned long)summaryTokens.count]
-                                                                      : nil);
+  self.filterButton.backgroundColor =
+      hasAdvancedFilters ? [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
+                                              [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.12]
+                         : [UIColor clearColor];
+  self.filterButton.accessibilityHint =
+      self.isApplyingFilter ? @"Applying the selected sort order and filters." : @"Adjust sort order and advanced recipe filters.";
+  self.filterButton.accessibilityValue =
+      self.isApplyingFilter ? @"Loading"
+                            : (hasAdvancedFilters ? [NSString stringWithFormat:@"%lu filters active", (unsigned long)summaryTokens.count] : nil);
   if (self.isApplyingFilter) {
     [self.filterLoadingIndicator startAnimating];
   } else {
@@ -1426,8 +1414,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   clearButton.layer.borderWidth = 1.0;
   clearButton.layer.borderColor = [MRRHomeNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.92 green:0.91 blue:0.88 alpha:1.0],
                                                      [UIColor colorWithRed:0.24 green:0.24 blue:0.22 alpha:1.0]) CGColor];
-  clearButton.backgroundColor = MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
-                                                  [UIColor colorWithWhite:0.14 alpha:1.0]);
+  clearButton.backgroundColor =
+      MRRHomeNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0]);
   [clearButton setTitle:@"Clear" forState:UIControlStateNormal];
   [clearButton setTitleColor:MRRHomeNamedColor(@"HomeHeroPrimaryTextColor", [UIColor colorWithRed:0.12 green:0.11 blue:0.10 alpha:1.0],
                                                [UIColor colorWithRed:0.96 green:0.95 blue:0.93 alpha:1.0])
@@ -1458,10 +1446,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     return;
   }
 
-  UIColor *baseColor = MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
-                                         [UIColor colorWithWhite:0.18 alpha:1.0]);
-  UIColor *highlightColor = MRRHomeDynamicColor([UIColor colorWithWhite:1.0 alpha:0.88],
-                                                [UIColor colorWithWhite:0.28 alpha:0.90]);
+  UIColor *baseColor = MRRHomeNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
+  UIColor *highlightColor = MRRHomeDynamicColor([UIColor colorWithWhite:1.0 alpha:0.88], [UIColor colorWithWhite:0.28 alpha:0.90]);
   NSMutableArray<CAGradientLayer *> *shimmerLayers = [NSMutableArray arrayWithCapacity:self.refreshPlaceholderViews.count];
 
   for (UIView *placeholderView in self.refreshPlaceholderViews) {
@@ -1516,11 +1502,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
   self.hasAnimatedEntrance = YES;
   NSArray<UIView *> *viewsToAnimate = @[
-    self.searchContainerView,
-    self.activeFiltersContainerView,
-    self.categoriesSectionView,
-    self.recommendationSectionView,
-    self.weeklySectionView
+    self.searchContainerView, self.activeFiltersContainerView, self.categoriesSectionView, self.recommendationSectionView, self.weeklySectionView
   ];
   CGFloat delay = 0.0;
   for (UIView *view in viewsToAnimate) {
@@ -1641,15 +1623,13 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)handleFilterButtonTapped:(id)sender {
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:@"Filters & Sort"
-                                          message:[self filterActionSheetMessage]
-                                   preferredStyle:UIAlertControllerStyleActionSheet];
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Filters & Sort"
+                                                                           message:[self filterActionSheetMessage]
+                                                                    preferredStyle:UIAlertControllerStyleActionSheet];
   alertController.view.accessibilityIdentifier = @"home.filterActionSheet";
 
-  NSArray<NSNumber *> *filterOptions = @[
-    @(HomeFilterOptionFeatured), @(HomeFilterOptionFastest), @(HomeFilterOptionPopular), @(HomeFilterOptionLowCalorie)
-  ];
+  NSArray<NSNumber *> *filterOptions =
+      @[ @(HomeFilterOptionFeatured), @(HomeFilterOptionFastest), @(HomeFilterOptionPopular), @(HomeFilterOptionLowCalorie) ];
 
   for (NSNumber *filterValue in filterOptions) {
     HomeFilterOption filterOption = (HomeFilterOption)filterValue.integerValue;
@@ -1694,7 +1674,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)handleContentRefreshControlValueChanged:(UIRefreshControl *)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   [self.initialLoadTimer invalidate];
   self.initialLoadTimer = nil;
   [self dismissKeyboard];
@@ -1725,10 +1705,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)presentAdvancedFiltersAlert {
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:@"Advanced Filters"
-                                          message:@"Refine Home and search using Spoonacular filters."
-                                   preferredStyle:UIAlertControllerStyleAlert];
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Advanced Filters"
+                                                                           message:@"Refine Home and search using Spoonacular filters."
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = @"home.advancedFilters.alert";
 
   NSArray<NSDictionary<NSString *, id> *> *fieldConfigurations = @[
@@ -1749,7 +1728,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     },
     @{
       @"placeholder" : @"Max ready time (minutes)",
-      @"text" : self.advancedFilterSettings.maxReadyTime > 0 ? [NSString stringWithFormat:@"%ld", (long)self.advancedFilterSettings.maxReadyTime] : @"",
+      @"text" : self.advancedFilterSettings.maxReadyTime > 0 ? [NSString stringWithFormat:@"%ld", (long)self.advancedFilterSettings.maxReadyTime]
+                                                             : @"",
       @"identifier" : @"home.advancedFilters.maxReadyTimeField",
       @"keyboardType" : @(UIKeyboardTypeNumberPad)
     },
@@ -1801,14 +1781,14 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                                                       NSString *excludeIngredients = textFields.count > 5 ? textFields[5].text : @"";
                                                       NSString *equipment = textFields.count > 6 ? textFields[6].text : @"";
 
-                                                      HomeAdvancedFilterSettings *advancedFilters =
-                                                          [[[HomeAdvancedFilterSettings alloc] initWithCuisine:cuisine
-                                                                                                          diet:diet
-                                                                                                  intolerances:intolerances
-                                                                                            includeIngredients:includeIngredients
-                                                                                            excludeIngredients:excludeIngredients
-                                                                                                     equipment:equipment
-                                                                                                  maxReadyTime:[self integerValueFromTextFieldString:maxReadyTimeText]] autorelease];
+                                                      HomeAdvancedFilterSettings *advancedFilters = [[[HomeAdvancedFilterSettings alloc]
+                                                             initWithCuisine:cuisine
+                                                                        diet:diet
+                                                                intolerances:intolerances
+                                                          includeIngredients:includeIngredients
+                                                          excludeIngredients:excludeIngredients
+                                                                   equipment:equipment
+                                                                maxReadyTime:[self integerValueFromTextFieldString:maxReadyTimeText]] autorelease];
                                                       [self applyAdvancedFilters:advancedFilters];
                                                     }]];
 
@@ -1849,7 +1829,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (NSString *)filterActionSheetMessage {
-  NSMutableArray<NSString *> *lines = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"Sort: %@", [self displayTitleForFilterOption:self.currentFilterOption]]];
+  NSMutableArray<NSString *> *lines =
+      [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"Sort: %@", [self displayTitleForFilterOption:self.currentFilterOption]]];
   NSArray<NSString *> *summaryTokens = [self.advancedFilterSettings summaryTokens];
   if (summaryTokens.count > 0) {
     [lines addObject:[NSString stringWithFormat:@"Active filters: %@", [summaryTokens componentsJoinedByString:@"  •  "]]];
@@ -1866,7 +1847,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   containerView.layer.cornerRadius = 16.0;
   containerView.layer.borderWidth = 1.0;
   containerView.layer.borderColor = [[MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
-                                                        [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.16] CGColor];
+                                                        [UIColor colorWithRed:0.42 green:0.84 blue:0.66
+                                                                        alpha:1.0]) colorWithAlphaComponent:0.16] CGColor];
   containerView.backgroundColor = [MRRHomeNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                      [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]) colorWithAlphaComponent:0.10];
 
@@ -1904,7 +1886,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     case MRRHomeSectionActionTagSearchResults:
       [self executeSearchForQuery:(self.lastCompletedSearchQuery ?: [self currentSearchQuery])
                       resultLimit:MRRHomeSearchRequestLimit
-             presentingResultsList:YES];
+            presentingResultsList:YES];
       break;
     case MRRHomeSectionActionTagRecommendation:
       [self presentRecipeListWithTitle:self.recommendationHeaderView.titleLabel.text
@@ -1912,16 +1894,15 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
                           emptyMessage:@"There are no recipes in this category yet."];
       break;
     case MRRHomeSectionActionTagWeekly:
-      [self presentRecipeListWithTitle:@"Recipes Of The Week"
-                               recipes:self.weeklyRecipes
-                          emptyMessage:@"Weekly highlights will show up here soon."];
+      [self presentRecipeListWithTitle:@"Recipes Of The Week" recipes:self.weeklyRecipes emptyMessage:@"Weekly highlights will show up here soon."];
       break;
   }
 }
 
 - (void)presentRecipeListWithTitle:(NSString *)title recipes:(NSArray<HomeRecipeCard *> *)recipes emptyMessage:(NSString *)emptyMessage {
-  HomeRecipeListViewController *viewController =
-      [[[HomeRecipeListViewController alloc] initWithScreenTitle:title recipes:recipes emptyMessage:emptyMessage] autorelease];
+  HomeRecipeListViewController *viewController = [[[HomeRecipeListViewController alloc] initWithScreenTitle:title
+                                                                                                    recipes:recipes
+                                                                                               emptyMessage:emptyMessage] autorelease];
   viewController.delegate = self;
   [self.navigationController pushViewController:viewController animated:YES];
 }
@@ -1932,8 +1913,8 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   }
 
   OnboardingRecipePreview *preview = [self previewForRecipeCard:recipeCard];
-  OnboardingRecipeDetailViewController *detailViewController =
-      [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:preview loading:YES] autorelease];
+  OnboardingRecipeDetailViewController *detailViewController = [[[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:preview
+                                                                                                                            loading:YES] autorelease];
   detailViewController.delegate = self;
   [self.recipeCardsByDetailController setObject:recipeCard forKey:[NSValue valueWithNonretainedObject:detailViewController]];
   [self configureFavoriteStateForDetailViewController:detailViewController recipeCard:recipeCard enabled:NO];
@@ -1942,16 +1923,20 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   OnboardingRecipeDetailViewController *retainedDetailViewController = [detailViewController retain];
   HomeRecipeCard *retainedRecipeCard = [recipeCard retain];
   OnboardingRecipePreview *retainedPreview = [preview retain];
-  [self.dataProvider loadRecipeDetailForRecipeCard:recipeCard completion:^(OnboardingRecipeDetail *detail, BOOL usesLiveData) {
-    OnboardingRecipeDetail *resolvedDetail = detail ?: retainedPreview.fallbackDetail;
-    OnboardingRecipeDetailDebugOrigin debugOrigin =
-        detail != nil && usesLiveData ? OnboardingRecipeDetailDebugOriginLive : OnboardingRecipeDetailDebugOriginFallback;
-    [retainedDetailViewController updateWithRecipeDetail:resolvedDetail debugOrigin:debugOrigin];
-    [self configureFavoriteStateForDetailViewController:retainedDetailViewController recipeCard:retainedRecipeCard enabled:YES];
-    [retainedDetailViewController release];
-    [retainedRecipeCard release];
-    [retainedPreview release];
-  }];
+  [self.dataProvider loadRecipeDetailForRecipeCard:recipeCard
+                                        completion:^(OnboardingRecipeDetail *detail, BOOL usesLiveData) {
+                                          OnboardingRecipeDetail *resolvedDetail = detail ?: retainedPreview.fallbackDetail;
+                                          OnboardingRecipeDetailDebugOrigin debugOrigin = detail != nil && usesLiveData
+                                                                                              ? OnboardingRecipeDetailDebugOriginLive
+                                                                                              : OnboardingRecipeDetailDebugOriginFallback;
+                                          [retainedDetailViewController updateWithRecipeDetail:resolvedDetail debugOrigin:debugOrigin];
+                                          [self configureFavoriteStateForDetailViewController:retainedDetailViewController
+                                                                                   recipeCard:retainedRecipeCard
+                                                                                      enabled:YES];
+                                          [retainedDetailViewController release];
+                                          [retainedRecipeCard release];
+                                          [retainedPreview release];
+                                        }];
 }
 
 - (OnboardingRecipePreview *)previewForRecipeCard:(HomeRecipeCard *)recipeCard {
@@ -1967,8 +1952,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
       [[[OnboardingRecipeIngredient alloc] initWithName:@"Ingredients"
                                             displayText:@"Open the recipe to load the latest ingredient list."] autorelease];
   OnboardingRecipeInstruction *instruction =
-      [[[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1"
-                                               detailText:@"Recipe details are loading from the source."] autorelease];
+      [[[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Recipe details are loading from the source."] autorelease];
   NSArray<NSString *> *tags = recipeCard.tags.count > 0 ? recipeCard.tags : @[ MRRHomeMealTypeDisplayName(recipeCard.mealType) ];
   NSString *summaryText = recipeCard.summaryText.length > 0 ? recipeCard.summaryText : @"Recipe details are loading.";
   return [[[OnboardingRecipeDetail alloc] initWithTitle:recipeCard.title
@@ -2011,15 +1995,16 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (MRRSavedRecipeSnapshot *)savedRecipeSnapshotForRecipeCard:(HomeRecipeCard *)recipeCard
-                                         detailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
+                                        detailViewController:(OnboardingRecipeDetailViewController *)detailViewController {
   if (![self favoriteFeatureAvailable] || recipeCard == nil) {
     return nil;
   }
 
   OnboardingRecipeDetail *detail = detailViewController.recipeDetail ?: detailViewController.recipePreview.fallbackDetail;
   NSError *existingError = nil;
-  MRRSavedRecipeSnapshot *existingSnapshot =
-      [self.savedRecipesStore savedRecipeForUserID:self.session.userID recipeID:recipeCard.recipeID error:&existingError];
+  MRRSavedRecipeSnapshot *existingSnapshot = [self.savedRecipesStore savedRecipeForUserID:self.session.userID
+                                                                                 recipeID:recipeCard.recipeID
+                                                                                    error:&existingError];
   NSDate *savedAt = existingSnapshot != nil ? existingSnapshot.savedAt : [NSDate date];
   return [MRRSavedRecipeSnapshot snapshotWithUserID:self.session.userID
                                          recipeCard:recipeCard
@@ -2029,10 +2014,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 }
 
 - (void)presentSavedRecipePersistenceError:(NSError *)error actionTitle:(NSString *)actionTitle {
-  NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription
-                                                            : @"Please try again in a moment.";
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:actionTitle message:message preferredStyle:UIAlertControllerStyleAlert];
+  NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription : @"Please try again in a moment.";
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:actionTitle
+                                                                           message:message
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
   UIViewController *presenter = self.presentedViewController ?: [self preferredPresenterViewController];
   [presenter presentViewController:alertController animated:YES completion:nil];
@@ -2078,31 +2063,29 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   sourceView.hidden = YES;
 
   [UIView animateWithDuration:0.08
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.016, 1.016);
-                     CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -4.0);
-                     snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
-                   }
-                   completion:^(__unused BOOL finished) {
-                     completion();
-                     [UIView animateWithDuration:0.12
-                                           delay:0.0
-                                         options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                                                 UIViewAnimationOptionCurveEaseOut
-                                      animations:^{
-                                        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.03, 1.03);
-                                        CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -8.0);
-                                        snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
-                                        snapshotView.alpha = 0.0;
-                                      }
-                                      completion:^(__unused BOOL fadeFinished) {
-                                        sourceView.hidden = NO;
-                                        [snapshotView removeFromSuperview];
-                                      }];
-                   }];
+      delay:0.0
+      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+      animations:^{
+        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.016, 1.016);
+        CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -4.0);
+        snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
+      }
+      completion:^(__unused BOOL finished) {
+        completion();
+        [UIView animateWithDuration:0.12
+            delay:0.0
+            options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+            animations:^{
+              CGAffineTransform scaleTransform = CGAffineTransformMakeScale(1.03, 1.03);
+              CGAffineTransform liftTransform = CGAffineTransformMakeTranslation(0.0, -8.0);
+              snapshotView.transform = CGAffineTransformConcat(scaleTransform, liftTransform);
+              snapshotView.alpha = 0.0;
+            }
+            completion:^(__unused BOOL fadeFinished) {
+              sourceView.hidden = NO;
+              [snapshotView removeFromSuperview];
+            }];
+      }];
 }
 
 - (UIViewController *)preferredPresenterViewController {
@@ -2227,8 +2210,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
   if (collectionView == self.categoryCollectionView) {
-    HomeCategoryCell *cell =
-        [collectionView dequeueReusableCellWithReuseIdentifier:MRRHomeCategoryCellReuseIdentifier forIndexPath:indexPath];
+    HomeCategoryCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:MRRHomeCategoryCellReuseIdentifier forIndexPath:indexPath];
     if (indexPath.item < self.categories.count) {
       HomeCategory *category = self.categories[indexPath.item];
       BOOL selected = [self.selectedCategory.identifier isEqualToString:category.identifier];
@@ -2237,10 +2219,10 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     return cell;
   }
 
-  HomeRecipeCardCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:(collectionView == self.searchResultsCollectionView
-                                                                                     ? MRRHomeSearchResultsCellReuseIdentifier
-                                                                                     : MRRHomeRecipeCardCellReuseIdentifier)
-                                                                       forIndexPath:indexPath];
+  HomeRecipeCardCell *cell = [collectionView
+      dequeueReusableCellWithReuseIdentifier:(collectionView == self.searchResultsCollectionView ? MRRHomeSearchResultsCellReuseIdentifier
+                                                                                                 : MRRHomeRecipeCardCellReuseIdentifier)
+                                forIndexPath:indexPath];
   NSArray<HomeRecipeCard *> *recipes = @[];
   HomeRecipeCardCellStyle style = HomeRecipeCardCellStyleRail;
   if (collectionView == self.recommendationCollectionView) {
@@ -2278,28 +2260,33 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     return;
   }
 
-  NSArray<HomeRecipeCard *> *recipes = collectionView == self.recommendationCollectionView ? self.filteredRecommendationRecipes
-                                                                                           : (collectionView == self.weeklyCollectionView ? self.weeklyRecipes
-                                                                                                                                           : self.currentSearchResults);
+  NSArray<HomeRecipeCard *> *recipes = collectionView == self.recommendationCollectionView
+                                           ? self.filteredRecommendationRecipes
+                                           : (collectionView == self.weeklyCollectionView ? self.weeklyRecipes : self.currentSearchResults);
   if (indexPath.item >= recipes.count) {
     return;
   }
 
   UICollectionViewCell *selectedCell = [collectionView cellForItemAtIndexPath:indexPath];
   UIView *sourceView = selectedCell.contentView ?: selectedCell;
-  [self animateRecipeSelectionFromSourceView:sourceView completion:^{
-    [self presentRecipeDetailForCard:recipes[indexPath.item]];
-  }];
+  [self animateRecipeSelectionFromSourceView:sourceView
+                                  completion:^{
+                                    [self presentRecipeDetailForCard:recipes[indexPath.item]];
+                                  }];
 }
 
 #pragma mark - UICollectionViewDelegateFlowLayout
 
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+- (CGSize)collectionView:(UICollectionView *)collectionView
+                    layout:(UICollectionViewLayout *)collectionViewLayout
+    sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
   CGSize viewportSize = self.view.bounds.size;
   UIEdgeInsets contentInsets = collectionView.adjustedContentInset;
   UIEdgeInsets sectionInsets = [self collectionView:collectionView layout:collectionViewLayout insetForSectionAtIndex:indexPath.section];
-  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - contentInsets.left - contentInsets.right - sectionInsets.left - sectionInsets.right;
-  CGFloat availableHeight = CGRectGetHeight(collectionView.bounds) - contentInsets.top - contentInsets.bottom - sectionInsets.top - sectionInsets.bottom;
+  CGFloat availableWidth =
+      CGRectGetWidth(collectionView.bounds) - contentInsets.left - contentInsets.right - sectionInsets.left - sectionInsets.right;
+  CGFloat availableHeight =
+      CGRectGetHeight(collectionView.bounds) - contentInsets.top - contentInsets.bottom - sectionInsets.top - sectionInsets.bottom;
 
   if (collectionView == self.categoryCollectionView) {
     CGFloat width = MRRLayoutClampedFloat(MRRLayoutScaledValue(92.0, viewportSize, MRRLayoutScaleAxisWidth), 82.0, 98.0);
@@ -2318,7 +2305,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   return CGSizeMake(width, MAX(height, 1.0));
 }
 
-- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView
+                        layout:(UICollectionViewLayout *)collectionViewLayout
+        insetForSectionAtIndex:(NSInteger)section {
   if (collectionView == self.categoryCollectionView) {
     return UIEdgeInsetsZero;
   }
@@ -2328,7 +2317,9 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   return UIEdgeInsetsMake(0.0, 0.0, 2.0, 0.0);
 }
 
-- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
+- (CGFloat)collectionView:(UICollectionView *)collectionView
+                                 layout:(UICollectionViewLayout *)collectionViewLayout
+    minimumLineSpacingForSectionAtIndex:(NSInteger)section {
   if (collectionView == self.categoryCollectionView) {
     return 10.0;
   }
@@ -2341,11 +2332,12 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 #pragma mark - HomeRecipeListViewControllerDelegate
 
 - (void)homeRecipeListViewController:(HomeRecipeListViewController *)viewController
-                  didSelectRecipeCard:(HomeRecipeCard *)recipeCard
-                            sourceView:(UIView *)sourceView {
-  [self animateRecipeSelectionFromSourceView:sourceView completion:^{
-    [self presentRecipeDetailForCard:recipeCard];
-  }];
+                 didSelectRecipeCard:(HomeRecipeCard *)recipeCard
+                          sourceView:(UIView *)sourceView {
+  [self animateRecipeSelectionFromSourceView:sourceView
+                                  completion:^{
+                                    [self presentRecipeDetailForCard:recipeCard];
+                                  }];
 }
 
 #pragma mark - OnboardingRecipeDetailViewControllerDelegate
@@ -2360,8 +2352,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
   [self dismissPresentedRecipeDetailIfNeeded];
 }
 
-- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
-          didRequestFavoriteState:(BOOL)favorite {
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController didRequestFavoriteState:(BOOL)favorite {
   HomeRecipeCard *recipeCard = [self recipeCardForDetailViewController:viewController];
   if (![self favoriteFeatureAvailable] || recipeCard == nil) {
     return;
@@ -2375,8 +2366,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
     NSError *persistenceError = nil;
     BOOL didPersist = NO;
     if (favorite) {
-      MRRSavedRecipeSnapshot *snapshot = [blockSelf savedRecipeSnapshotForRecipeCard:retainedRecipeCard
-                                                                  detailViewController:retainedViewController];
+      MRRSavedRecipeSnapshot *snapshot = [blockSelf savedRecipeSnapshotForRecipeCard:retainedRecipeCard detailViewController:retainedViewController];
       didPersist = snapshot != nil && [blockSelf.savedRecipesStore saveRecipeSnapshot:snapshot error:&persistenceError];
     } else {
       didPersist = [blockSelf.savedRecipesStore removeRecipeForUserID:blockSelf.session.userID
@@ -2386,8 +2376,7 @@ static NSString *MRRHomeMealTypeDisplayName(NSString *mealTypeIdentifier) {
 
     if (!didPersist || persistenceError != nil) {
       retainedViewController.favoriteButtonEnabled = YES;
-      [blockSelf presentSavedRecipePersistenceError:persistenceError
-                                        actionTitle:(favorite ? @"Couldn't save recipe" : @"Couldn't remove recipe")];
+      [blockSelf presentSavedRecipePersistenceError:persistenceError actionTitle:(favorite ? @"Couldn't save recipe" : @"Couldn't remove recipe")];
       [retainedViewController release];
       [retainedRecipeCard release];
       return;

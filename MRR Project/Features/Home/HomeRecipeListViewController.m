@@ -28,8 +28,7 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
     NSString *symbolName = expanded ? @"chevron.up" : @"chevron.down";
     UIImage *image = [UIImage systemImageNamed:symbolName];
     if (image != nil) {
-      UIImageSymbolConfiguration *configuration =
-          [UIImageSymbolConfiguration configurationWithPointSize:12.0 weight:UIFontWeightSemibold];
+      UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:12.0 weight:UIFontWeightSemibold];
       return [image imageWithConfiguration:configuration];
     }
   }
@@ -108,8 +107,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
   }
   self.view.accessibilityIdentifier = @"home.recipeList.view";
-  self.view.backgroundColor = MRRHomeListNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0],
-                                                    [UIColor colorWithWhite:0.10 alpha:1.0]);
+  self.view.backgroundColor =
+      MRRHomeListNamedColor(@"BackgroundColor", [UIColor colorWithWhite:0.98 alpha:1.0], [UIColor colorWithWhite:0.10 alpha:1.0]);
 
   UIStackView *contentStackView = [[[UIStackView alloc] init] autorelease];
   contentStackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -134,10 +133,10 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   introCardSurfaceView.translatesAutoresizingMaskIntoConstraints = NO;
   introCardSurfaceView.layer.cornerRadius = 30.0;
   introCardSurfaceView.layer.borderWidth = 1.0;
-  introCardSurfaceView.layer.borderColor = MRRHomeListNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
-                                                                 [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
-  introCardSurfaceView.backgroundColor = MRRHomeListNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
-                                                               [UIColor colorWithWhite:0.14 alpha:1.0]);
+  introCardSurfaceView.layer.borderColor =
+      MRRHomeListNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0], [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
+  introCardSurfaceView.backgroundColor =
+      MRRHomeListNamedColor(@"HomeSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0]);
   introCardSurfaceView.clipsToBounds = YES;
   [introCardView addSubview:introCardSurfaceView];
   self.introCardSurfaceView = introCardSurfaceView;
@@ -156,10 +155,10 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   compactDropdownButton.hidden = YES;
   compactDropdownButton.layer.cornerRadius = 18.0;
   compactDropdownButton.layer.borderWidth = 1.0;
-  compactDropdownButton.layer.borderColor = MRRHomeListNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0],
-                                                                  [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
-  compactDropdownButton.backgroundColor = MRRHomeListNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
-                                                                [UIColor colorWithWhite:0.18 alpha:1.0]);
+  compactDropdownButton.layer.borderColor =
+      MRRHomeListNamedColor(@"HomeBorderColor", [UIColor colorWithWhite:0.90 alpha:1.0], [UIColor colorWithWhite:0.24 alpha:1.0]).CGColor;
+  compactDropdownButton.backgroundColor =
+      MRRHomeListNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
   compactDropdownButton.contentEdgeInsets = UIEdgeInsetsMake(12.0, 14.0, 12.0, 14.0);
   compactDropdownButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
   compactDropdownButton.titleLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightSemibold];
@@ -168,13 +167,11 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   compactDropdownButton.titleLabel.minimumScaleFactor = 0.8;
   compactDropdownButton.tintColor = MRRHomeListNamedColor(@"HomeAccentColor", [UIColor colorWithRed:0.13 green:0.60 blue:0.45 alpha:1.0],
                                                           [UIColor colorWithRed:0.42 green:0.84 blue:0.66 alpha:1.0]);
-  [compactDropdownButton setTitleColor:MRRHomeListNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
-                                                             [UIColor colorWithWhite:0.96 alpha:1.0])
-                              forState:UIControlStateNormal];
+  [compactDropdownButton
+      setTitleColor:MRRHomeListNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])
+           forState:UIControlStateNormal];
   compactDropdownButton.accessibilityIdentifier = @"home.recipeList.dropdownButton";
-  [compactDropdownButton addTarget:self
-                            action:@selector(handleCompactDropdownButtonTapped:)
-                  forControlEvents:UIControlEventTouchUpInside];
+  [compactDropdownButton addTarget:self action:@selector(handleCompactDropdownButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
   [introStateStackView addArrangedSubview:compactDropdownButton];
   self.compactDropdownButton = compactDropdownButton;
 
@@ -207,8 +204,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   UIView *countBadgeView = [[[UIView alloc] init] autorelease];
   countBadgeView.translatesAutoresizingMaskIntoConstraints = NO;
   countBadgeView.layer.cornerRadius = 14.0;
-  countBadgeView.backgroundColor = MRRHomeListNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0],
-                                                         [UIColor colorWithWhite:0.18 alpha:1.0]);
+  countBadgeView.backgroundColor =
+      MRRHomeListNamedColor(@"HomeMutedSurfaceColor", [UIColor colorWithWhite:0.95 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
   countBadgeView.accessibilityIdentifier = @"home.recipeList.countBadgeView";
   [topRowStackView addArrangedSubview:countBadgeView];
   self.countBadgeView = countBadgeView;
@@ -217,8 +214,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   countBadgeLabel.translatesAutoresizingMaskIntoConstraints = NO;
   countBadgeLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
   countBadgeLabel.adjustsFontForContentSizeCategory = YES;
-  countBadgeLabel.textColor = MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0],
-                                                    [UIColor colorWithWhite:0.72 alpha:1.0]);
+  countBadgeLabel.textColor =
+      MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0], [UIColor colorWithWhite:0.72 alpha:1.0]);
   countBadgeLabel.textAlignment = NSTextAlignmentCenter;
   countBadgeLabel.text = [NSString stringWithFormat:@"%lu items", (unsigned long)self.recipes.count];
   countBadgeLabel.accessibilityIdentifier = @"home.recipeList.countBadgeLabel";
@@ -229,8 +226,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   introTitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   introTitleLabel.font = [UIFont systemFontOfSize:30.0 weight:UIFontWeightBold];
   introTitleLabel.adjustsFontForContentSizeCategory = YES;
-  introTitleLabel.textColor = MRRHomeListNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
-                                                    [UIColor colorWithWhite:0.96 alpha:1.0]);
+  introTitleLabel.textColor =
+      MRRHomeListNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0]);
   introTitleLabel.numberOfLines = 0;
   introTitleLabel.text = self.screenTitle;
   introTitleLabel.accessibilityIdentifier = @"home.recipeList.titleLabel";
@@ -241,8 +238,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   introSummaryLabel.translatesAutoresizingMaskIntoConstraints = NO;
   introSummaryLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium];
   introSummaryLabel.adjustsFontForContentSizeCategory = YES;
-  introSummaryLabel.textColor = MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
-                                                      [UIColor colorWithWhite:0.74 alpha:1.0]);
+  introSummaryLabel.textColor =
+      MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0], [UIColor colorWithWhite:0.74 alpha:1.0]);
   introSummaryLabel.numberOfLines = 0;
   introSummaryLabel.text = [self introSummaryText];
   introSummaryLabel.accessibilityIdentifier = @"home.recipeList.summaryLabel";
@@ -295,8 +292,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   emptyStateLabel.adjustsFontForContentSizeCategory = YES;
   emptyStateLabel.numberOfLines = 0;
   emptyStateLabel.textAlignment = NSTextAlignmentCenter;
-  emptyStateLabel.textColor = MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0],
-                                                    [UIColor colorWithWhite:0.74 alpha:1.0]);
+  emptyStateLabel.textColor =
+      MRRHomeListNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.46 alpha:1.0], [UIColor colorWithWhite:0.74 alpha:1.0]);
   emptyStateLabel.text = self.emptyMessage;
   emptyStateLabel.hidden = self.recipes.count > 0;
   emptyStateLabel.accessibilityIdentifier = @"home.recipeList.emptyStateLabel";
@@ -334,18 +331,20 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
 }
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-  HomeRecipeCardCell *cell =
-      [collectionView dequeueReusableCellWithReuseIdentifier:MRRHomeRecipeListCellReuseIdentifier forIndexPath:indexPath];
+  HomeRecipeCardCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:MRRHomeRecipeListCellReuseIdentifier forIndexPath:indexPath];
   if (indexPath.item < self.recipes.count) {
     [cell configureWithRecipeCard:self.recipes[indexPath.item] style:HomeRecipeCardCellStyleList];
   }
   return cell;
 }
 
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+- (CGSize)collectionView:(UICollectionView *)collectionView
+                    layout:(UICollectionViewLayout *)collectionViewLayout
+    sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
   UIEdgeInsets contentInsets = collectionView.adjustedContentInset;
   UIEdgeInsets sectionInsets = [self collectionView:collectionView layout:collectionViewLayout insetForSectionAtIndex:indexPath.section];
-  CGFloat availableWidth = CGRectGetWidth(collectionView.bounds) - contentInsets.left - contentInsets.right - sectionInsets.left - sectionInsets.right;
+  CGFloat availableWidth =
+      CGRectGetWidth(collectionView.bounds) - contentInsets.left - contentInsets.right - sectionInsets.left - sectionInsets.right;
   CGFloat targetWidth = availableWidth > 1.0 ? floor(availableWidth - 1.0) : 220.0;
 
   if (indexPath.item >= self.recipes.count) {
@@ -363,15 +362,16 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   [sizingCell setNeedsLayout];
   [sizingCell layoutIfNeeded];
 
-  CGSize fittingSize = [sizingCell.contentView
-      systemLayoutSizeFittingSize:CGSizeMake(targetWidth, UILayoutFittingCompressedSize.height)
-    withHorizontalFittingPriority:UILayoutPriorityRequired
-          verticalFittingPriority:UILayoutPriorityFittingSizeLevel];
+  CGSize fittingSize = [sizingCell.contentView systemLayoutSizeFittingSize:CGSizeMake(targetWidth, UILayoutFittingCompressedSize.height)
+                                             withHorizontalFittingPriority:UILayoutPriorityRequired
+                                                   verticalFittingPriority:UILayoutPriorityFittingSizeLevel];
   CGFloat height = ceil(MAX(fittingSize.height, 340.0));
   return CGSizeMake(targetWidth, height);
 }
 
-- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView
+                        layout:(UICollectionViewLayout *)collectionViewLayout
+        insetForSectionAtIndex:(NSInteger)section {
   return UIEdgeInsetsMake(0.0, 16.0, 28.0, 16.0);
 }
 
@@ -429,7 +429,8 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   [self.compactDropdownButton setTitle:[self compactDropdownSummaryText] forState:UIControlStateNormal];
   [self.compactDropdownButton setImage:MRRHomeListChevronImage(showsExpandedIntro) forState:UIControlStateNormal];
   self.compactDropdownButton.accessibilityLabel =
-      showsCompactButton ? [NSString stringWithFormat:@"%@, %@", self.screenTitle, (showsExpandedIntro ? @"Collapse summary" : @"Expand summary")] : nil;
+      showsCompactButton ? [NSString stringWithFormat:@"%@, %@", self.screenTitle, (showsExpandedIntro ? @"Collapse summary" : @"Expand summary")]
+                         : nil;
   self.compactDropdownButton.accessibilityHint = showsCompactButton ? @"Double tap to toggle the list summary." : nil;
   [self.compactDropdownButton.layer removeAllAnimations];
   [self.expandedIntroStackView.layer removeAllAnimations];
@@ -471,36 +472,33 @@ static UIImage *MRRHomeListChevronImage(BOOL expanded) {
   }
 
   [UIView animateWithDuration:MRRHomeRecipeListTransitionDuration
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseInOut
-                   animations:^{
-                     self.introCardView.layer.cornerRadius = cornerRadius;
-                     self.introCardSurfaceView.layer.cornerRadius = cornerRadius;
-                     self.introCardView.layer.shadowRadius = shadowRadius;
-                     self.introCardView.layer.shadowOffset = shadowOffset;
-                     if (showsCompactButton) {
-                       self.compactDropdownButton.alpha = 1.0;
-                       self.compactDropdownButton.transform = CGAffineTransformIdentity;
-                     }
-                     if (showsExpandedIntro) {
-                       self.expandedIntroStackView.alpha = 1.0;
-                       self.expandedIntroStackView.transform = CGAffineTransformIdentity;
-                     }
-                     [self.view layoutIfNeeded];
-                     self.introCardView.layer.shadowPath =
-                         [UIBezierPath bezierPathWithRoundedRect:self.introCardView.bounds cornerRadius:cornerRadius].CGPath;
-                   }
-                   completion:^(BOOL finished) {
-                     self.compactDropdownButton.alpha = 1.0;
-                     self.expandedIntroStackView.alpha = 1.0;
-                     self.compactDropdownButton.transform = CGAffineTransformIdentity;
-                     self.expandedIntroStackView.transform = CGAffineTransformIdentity;
-                     self.compactDropdownButton.hidden = !showsCompactButton;
-                     self.expandedIntroStackView.hidden = !showsExpandedIntro;
-                     self.introCardView.layer.shadowPath =
-                         [UIBezierPath bezierPathWithRoundedRect:self.introCardView.bounds cornerRadius:cornerRadius].CGPath;
-                   }];
+      delay:0.0
+      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseInOut
+      animations:^{
+        self.introCardView.layer.cornerRadius = cornerRadius;
+        self.introCardSurfaceView.layer.cornerRadius = cornerRadius;
+        self.introCardView.layer.shadowRadius = shadowRadius;
+        self.introCardView.layer.shadowOffset = shadowOffset;
+        if (showsCompactButton) {
+          self.compactDropdownButton.alpha = 1.0;
+          self.compactDropdownButton.transform = CGAffineTransformIdentity;
+        }
+        if (showsExpandedIntro) {
+          self.expandedIntroStackView.alpha = 1.0;
+          self.expandedIntroStackView.transform = CGAffineTransformIdentity;
+        }
+        [self.view layoutIfNeeded];
+        self.introCardView.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.introCardView.bounds cornerRadius:cornerRadius].CGPath;
+      }
+      completion:^(BOOL finished) {
+        self.compactDropdownButton.alpha = 1.0;
+        self.expandedIntroStackView.alpha = 1.0;
+        self.compactDropdownButton.transform = CGAffineTransformIdentity;
+        self.expandedIntroStackView.transform = CGAffineTransformIdentity;
+        self.compactDropdownButton.hidden = !showsCompactButton;
+        self.expandedIntroStackView.hidden = !showsExpandedIntro;
+        self.introCardView.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.introCardView.bounds cornerRadius:cornerRadius].CGPath;
+      }];
 }
 
 - (void)updateIntroPresentationForScrollOffset:(CGFloat)scrollOffset animated:(BOOL)animated {
