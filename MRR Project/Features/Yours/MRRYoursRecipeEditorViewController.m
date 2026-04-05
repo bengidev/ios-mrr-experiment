@@ -54,26 +54,21 @@ static UIColor *MRRYoursEditorAccentColor(void) {
                                   [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
 }
 
-static UIColor *MRRYoursEditorAccentFillColor(CGFloat alpha) {
-  return [MRRYoursEditorAccentColor() colorWithAlphaComponent:alpha];
-}
+static UIColor *MRRYoursEditorAccentFillColor(CGFloat alpha) { return [MRRYoursEditorAccentColor() colorWithAlphaComponent:alpha]; }
 
-static UIColor *MRRYoursEditorErrorColor(void) {
-  return [UIColor colorWithRed:0.79 green:0.21 blue:0.17 alpha:1.0];
-}
+static UIColor *MRRYoursEditorErrorColor(void) { return [UIColor colorWithRed:0.79 green:0.21 blue:0.17 alpha:1.0]; }
 
 static NSString *MRRYoursEditorTrimmedString(NSString *string) {
   return [string stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 }
 
 static NSArray<NSString *> *MRRYoursEditorMealTypes(void) {
-  return @[ MRRUserRecipeMealTypeBreakfast, MRRUserRecipeMealTypeLunch, MRRUserRecipeMealTypeDinner, MRRUserRecipeMealTypeDessert,
-            MRRUserRecipeMealTypeSnack ];
+  return @[
+    MRRUserRecipeMealTypeBreakfast, MRRUserRecipeMealTypeLunch, MRRUserRecipeMealTypeDinner, MRRUserRecipeMealTypeDessert, MRRUserRecipeMealTypeSnack
+  ];
 }
 
-static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
-  return @[ @"Salad", @"Main Course", @"Drink" ];
-}
+static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Salad", @"Main Course", @"Drink" ]; }
 
 @interface MRRYoursRecipePhotoDraft : NSObject
 
@@ -115,7 +110,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
 @end
 
-@interface MRRYoursRecipeEditorViewController () <UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITextFieldDelegate, UITextViewDelegate>
+@interface MRRYoursRecipeEditorViewController () <UIImagePickerControllerDelegate,
+                                                  UINavigationControllerDelegate,
+                                                  UITextFieldDelegate,
+                                                  UITextViewDelegate>
 
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
@@ -228,7 +226,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
                      userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
                            syncEngine:(id<MRRUserRecipesCloudSyncing>)syncEngine
                          photoStorage:(id<MRRUserRecipePhotoStorage>)photoStorage
-                        existingRecipe:(MRRUserRecipeSnapshot *)existingRecipe {
+                       existingRecipe:(MRRUserRecipeSnapshot *)existingRecipe {
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
     _sessionUserID = [sessionUserID copy];
@@ -263,11 +261,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
           previewImage = [UIImage imageWithContentsOfFile:fileURL.path];
         }
       }
-      MRRYoursRecipePhotoDraft *draft =
-          [[[MRRYoursRecipePhotoDraft alloc] initWithPhotoID:photoSnapshot.photoID
-                                              remoteURLString:photoSnapshot.remoteURLString
-                                            localRelativePath:photoSnapshot.localRelativePath
-                                                 previewImage:previewImage] autorelease];
+      MRRYoursRecipePhotoDraft *draft = [[[MRRYoursRecipePhotoDraft alloc] initWithPhotoID:photoSnapshot.photoID
+                                                                           remoteURLString:photoSnapshot.remoteURLString
+                                                                         localRelativePath:photoSnapshot.localRelativePath
+                                                                              previewImage:previewImage] autorelease];
       [self.photoDrafts addObject:draft];
     }
   }
@@ -334,8 +331,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
   }
 
-  UIBarButtonItem *saveBarButtonItem =
-      [[[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStyleDone target:self action:@selector(handleSaveTapped:)] autorelease];
+  UIBarButtonItem *saveBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Save"
+                                                                         style:UIBarButtonItemStyleDone
+                                                                        target:self
+                                                                        action:@selector(handleSaveTapped:)] autorelease];
   saveBarButtonItem.tintColor = MRRYoursEditorAccentColor();
   self.navigationItem.rightBarButtonItem = saveBarButtonItem;
   self.saveBarButtonItem = saveBarButtonItem;
@@ -345,8 +344,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   self.titleField.text = self.existingRecipe.title ?: @"";
   self.subtitleField.text = self.existingRecipe.subtitle ?: @"";
   self.summaryTextView.text = self.existingRecipe.summaryText.length > 0 ? self.existingRecipe.summaryText : @"";
-  self.summaryTextView.textColor =
-      (MRRYoursEditorTrimmedString(self.summaryTextView.text ?: @"").length > 0) ? MRRYoursEditorPrimaryTextColor() : MRRYoursEditorSecondaryTextColor();
+  self.summaryTextView.textColor = (MRRYoursEditorTrimmedString(self.summaryTextView.text ?: @"").length > 0) ? MRRYoursEditorPrimaryTextColor()
+                                                                                                              : MRRYoursEditorSecondaryTextColor();
   self.cookTimeField.text = self.existingRecipe != nil ? [NSString stringWithFormat:@"%ld", (long)self.existingRecipe.readyInMinutes] : @"30";
   self.servingsField.text = self.existingRecipe != nil ? [NSString stringWithFormat:@"%ld", (long)self.existingRecipe.servings] : @"2";
   self.caloriesField.text = self.existingRecipe != nil && self.existingRecipe.calorieCount > 0
@@ -438,8 +437,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     [bottomSaveButton.bottomAnchor constraintEqualToAnchor:safeArea.bottomAnchor constant:-12.0],
     [bottomSaveButton.heightAnchor constraintEqualToConstant:56.0],
 
-    [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
-    [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor], [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
     [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     [scrollView.bottomAnchor constraintEqualToAnchor:bottomSaveButton.topAnchor constant:-12.0],
 
@@ -457,7 +455,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   UIView *photoSectionView = [self sectionCardViewWithTitle:@"Photos"
                                                 accentColor:MRRYoursEditorAccentColor()
-                                     accessibilityIdentifier:@"yours.editor.photoSection"];
+                                    accessibilityIdentifier:@"yours.editor.photoSection"];
   self.photoSectionView = photoSectionView;
   [self.contentStackView addArrangedSubview:photoSectionView];
 
@@ -546,15 +544,19 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   UIView *basicInfoSectionView = [self sectionCardViewWithTitle:@"Basic Info"
                                                     accentColor:MRRYoursEditorAccentColor()
-                                         accessibilityIdentifier:@"yours.editor.basicInfoSection"];
+                                        accessibilityIdentifier:@"yours.editor.basicInfoSection"];
   self.basicInfoSectionView = basicInfoSectionView;
   [self.contentStackView addArrangedSubview:basicInfoSectionView];
 
-  UITextField *titleField = [self styledTextFieldWithPlaceholder:@"Recipe name" keyboardType:UIKeyboardTypeDefault identifier:@"yours.editor.titleField"];
+  UITextField *titleField = [self styledTextFieldWithPlaceholder:@"Recipe name"
+                                                    keyboardType:UIKeyboardTypeDefault
+                                                      identifier:@"yours.editor.titleField"];
   self.titleField = titleField;
   [basicInfoSectionView addSubview:titleField];
 
-  UITextField *subtitleField = [self styledTextFieldWithPlaceholder:@"Short subtitle" keyboardType:UIKeyboardTypeDefault identifier:@"yours.editor.subtitleField"];
+  UITextField *subtitleField = [self styledTextFieldWithPlaceholder:@"Short subtitle"
+                                                       keyboardType:UIKeyboardTypeDefault
+                                                         identifier:@"yours.editor.subtitleField"];
   self.subtitleField = subtitleField;
   [basicInfoSectionView addSubview:subtitleField];
 
@@ -579,8 +581,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
     [subtitleField.topAnchor constraintEqualToAnchor:titleField.bottomAnchor constant:12.0],
     [subtitleField.leadingAnchor constraintEqualToAnchor:titleField.leadingAnchor],
-    [subtitleField.trailingAnchor constraintEqualToAnchor:titleField.trailingAnchor],
-    [subtitleField.heightAnchor constraintEqualToConstant:52.0],
+    [subtitleField.trailingAnchor constraintEqualToAnchor:titleField.trailingAnchor], [subtitleField.heightAnchor constraintEqualToConstant:52.0],
 
     [summaryTextView.topAnchor constraintEqualToAnchor:subtitleField.bottomAnchor constant:12.0],
     [summaryTextView.leadingAnchor constraintEqualToAnchor:titleField.leadingAnchor],
@@ -595,7 +596,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   UIView *categorySectionView = [self sectionCardViewWithTitle:@"Category"
                                                    accentColor:MRRYoursEditorAccentColor()
-                                        accessibilityIdentifier:@"yours.editor.categorySection"];
+                                       accessibilityIdentifier:@"yours.editor.categorySection"];
   [self.contentStackView addArrangedSubview:categorySectionView];
 
   UIStackView *mealTypeButtonsStackView = [[[UIStackView alloc] init] autorelease];
@@ -649,12 +650,18 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   UIView *detailsSectionView = [self sectionCardViewWithTitle:@"Details & Nutrition"
                                                   accentColor:MRRYoursEditorAccentColor()
-                                       accessibilityIdentifier:@"yours.editor.detailsSection"];
+                                      accessibilityIdentifier:@"yours.editor.detailsSection"];
   [self.contentStackView addArrangedSubview:detailsSectionView];
 
-  UITextField *cookTimeField = [self styledTextFieldWithPlaceholder:@"Cook time (min)" keyboardType:UIKeyboardTypeNumberPad identifier:@"yours.editor.readyField"];
-  UITextField *servingsField = [self styledTextFieldWithPlaceholder:@"Servings" keyboardType:UIKeyboardTypeNumberPad identifier:@"yours.editor.servingsField"];
-  UITextField *caloriesField = [self styledTextFieldWithPlaceholder:@"Calories" keyboardType:UIKeyboardTypeNumberPad identifier:@"yours.editor.caloriesField"];
+  UITextField *cookTimeField = [self styledTextFieldWithPlaceholder:@"Cook time (min)"
+                                                       keyboardType:UIKeyboardTypeNumberPad
+                                                         identifier:@"yours.editor.readyField"];
+  UITextField *servingsField = [self styledTextFieldWithPlaceholder:@"Servings"
+                                                       keyboardType:UIKeyboardTypeNumberPad
+                                                         identifier:@"yours.editor.servingsField"];
+  UITextField *caloriesField = [self styledTextFieldWithPlaceholder:@"Calories"
+                                                       keyboardType:UIKeyboardTypeNumberPad
+                                                         identifier:@"yours.editor.caloriesField"];
   self.cookTimeField = cookTimeField;
   self.servingsField = servingsField;
   self.caloriesField = caloriesField;
@@ -670,19 +677,17 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
     [servingsField.topAnchor constraintEqualToAnchor:cookTimeField.bottomAnchor constant:12.0],
     [servingsField.leadingAnchor constraintEqualToAnchor:cookTimeField.leadingAnchor],
-    [servingsField.trailingAnchor constraintEqualToAnchor:cookTimeField.trailingAnchor],
-    [servingsField.heightAnchor constraintEqualToConstant:52.0],
+    [servingsField.trailingAnchor constraintEqualToAnchor:cookTimeField.trailingAnchor], [servingsField.heightAnchor constraintEqualToConstant:52.0],
 
     [caloriesField.topAnchor constraintEqualToAnchor:servingsField.bottomAnchor constant:12.0],
     [caloriesField.leadingAnchor constraintEqualToAnchor:cookTimeField.leadingAnchor],
-    [caloriesField.trailingAnchor constraintEqualToAnchor:cookTimeField.trailingAnchor],
-    [caloriesField.heightAnchor constraintEqualToConstant:52.0],
+    [caloriesField.trailingAnchor constraintEqualToAnchor:cookTimeField.trailingAnchor], [caloriesField.heightAnchor constraintEqualToConstant:52.0],
     [caloriesField.bottomAnchor constraintEqualToAnchor:detailsSectionView.bottomAnchor constant:-22.0]
   ]];
 
   UIView *ingredientsSectionView = [self sectionCardViewWithTitle:@"Ingredients"
                                                       accentColor:MRRYoursEditorAccentColor()
-                                           accessibilityIdentifier:@"yours.editor.ingredientsSection"];
+                                          accessibilityIdentifier:@"yours.editor.ingredientsSection"];
   self.ingredientsSectionView = ingredientsSectionView;
   [self.contentStackView addArrangedSubview:ingredientsSectionView];
 
@@ -722,7 +727,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 
   UIView *stepsSectionView = [self sectionCardViewWithTitle:@"Cooking Steps"
                                                 accentColor:MRRYoursEditorAccentColor()
-                                     accessibilityIdentifier:@"yours.editor.stepsSection"];
+                                    accessibilityIdentifier:@"yours.editor.stepsSection"];
   self.stepsSectionView = stepsSectionView;
   [self.contentStackView addArrangedSubview:stepsSectionView];
 
@@ -761,7 +766,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   ]];
 }
 
-- (UIView *)sectionCardViewWithTitle:(NSString *)title accentColor:(UIColor *)accentColor accessibilityIdentifier:(NSString *)accessibilityIdentifier {
+- (UIView *)sectionCardViewWithTitle:(NSString *)title
+                         accentColor:(UIColor *)accentColor
+             accessibilityIdentifier:(NSString *)accessibilityIdentifier {
   UIView *containerView = [[[UIView alloc] init] autorelease];
   containerView.translatesAutoresizingMaskIntoConstraints = NO;
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleElevatedCard toView:containerView];
@@ -997,7 +1004,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     thumbnailButton.layer.cornerRadius = 16.0;
     thumbnailButton.clipsToBounds = YES;
     thumbnailButton.layer.borderWidth = 2.0;
-    thumbnailButton.layer.borderColor = ((NSInteger)index == self.selectedPhotoIndex ? MRRYoursEditorAccentColor() : [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.45]).CGColor;
+    thumbnailButton.layer.borderColor =
+        ((NSInteger)index == self.selectedPhotoIndex ? MRRYoursEditorAccentColor() : [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.45])
+            .CGColor;
     thumbnailButton.backgroundColor = [MRRYoursEditorMutedSurfaceColor() colorWithAlphaComponent:0.85];
     thumbnailButton.titleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightBold];
     [thumbnailButton setTitle:[NSString stringWithFormat:@"%lu", (unsigned long)(index + 1)] forState:UIControlStateNormal];
@@ -1016,8 +1025,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   self.selectedPhotoIndex = MAX(0, MIN(self.selectedPhotoIndex, (NSInteger)self.photoDrafts.count - 1));
   self.photoHelperLabel.text = self.photoDrafts.count > 0
                                    ? [NSString stringWithFormat:@"Photo %lu of %ld selected. The first photo is your cover.",
-                                                                  (unsigned long)(self.selectedPhotoIndex + 1),
-                                                                  (long)self.photoDrafts.count]
+                                                                (unsigned long)(self.selectedPhotoIndex + 1), (long)self.photoDrafts.count]
                                    : @"Add up to 5 photos. The first photo becomes your cover.";
   self.setCoverButton.enabled = self.photoDrafts.count > 1 && self.selectedPhotoIndex > 0;
   self.removePhotoButton.enabled = self.photoDrafts.count > 0;
@@ -1034,7 +1042,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     return;
   }
 
-  self.coverImageView.image = [UIImage imageNamed:self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
+  self.coverImageView.image =
+      [UIImage imageNamed:self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
   NSString *remoteURLString = MRRYoursEditorTrimmedString(selectedDraft.remoteURLString ?: @"");
   if (remoteURLString.length == 0) {
     return;
@@ -1049,25 +1058,25 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   NSUInteger requestToken = self.coverImageRequestToken;
   __block MRRYoursRecipeEditorViewController *blockSelf = self;
   NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:imageURL
-                                                          completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                                                            #pragma unused(response)
-                                                            if (error != nil || data.length == 0) {
-                                                              return;
-                                                            }
-                                                            UIImage *image = [[[UIImage alloc] initWithData:data] autorelease];
-                                                            if (image == nil) {
-                                                              return;
-                                                            }
-                                                            dispatch_async(dispatch_get_main_queue(), ^{
-                                                              MRRYoursRecipeEditorViewController *strongSelf = blockSelf;
-                                                              if (strongSelf == nil || requestToken != strongSelf.coverImageRequestToken) {
-                                                                return;
-                                                              }
-                                                              selectedDraft.previewImage = image;
-                                                              strongSelf.coverImageView.image = image;
-                                                              [strongSelf reloadPhotoUI];
-                                                            });
-                                                          }];
+                                                           completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+#pragma unused(response)
+                                                             if (error != nil || data.length == 0) {
+                                                               return;
+                                                             }
+                                                             UIImage *image = [[[UIImage alloc] initWithData:data] autorelease];
+                                                             if (image == nil) {
+                                                               return;
+                                                             }
+                                                             dispatch_async(dispatch_get_main_queue(), ^{
+                                                               MRRYoursRecipeEditorViewController *strongSelf = blockSelf;
+                                                               if (strongSelf == nil || requestToken != strongSelf.coverImageRequestToken) {
+                                                                 return;
+                                                               }
+                                                               selectedDraft.previewImage = image;
+                                                               strongSelf.coverImageView.image = image;
+                                                               [strongSelf reloadPhotoUI];
+                                                             });
+                                                           }];
   [task resume];
 }
 
@@ -1127,21 +1136,24 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     badgeLabel.clipsToBounds = YES;
     [rowView addSubview:badgeLabel];
 
-    UITextField *textField = [self styledTextFieldWithPlaceholder:@"e.g. 2 cups flour" keyboardType:UIKeyboardTypeDefault identifier:[NSString stringWithFormat:@"yours.editor.ingredientField.%lu", (unsigned long)index]];
+    UITextField *textField =
+        [self styledTextFieldWithPlaceholder:@"e.g. 2 cups flour"
+                                keyboardType:UIKeyboardTypeDefault
+                                  identifier:[NSString stringWithFormat:@"yours.editor.ingredientField.%lu", (unsigned long)index]];
     textField.text = resolvedValues[index];
     [textField setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [rowView addSubview:textField];
 
-    UIButton *removeButton = [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeIngredientButton.%lu", (unsigned long)index]
-                                                  accessibilityLabel:[NSString stringWithFormat:@"Delete ingredient %lu", (unsigned long)(index + 1)]];
+    UIButton *removeButton =
+        [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeIngredientButton.%lu", (unsigned long)index]
+                             accessibilityLabel:[NSString stringWithFormat:@"Delete ingredient %lu", (unsigned long)(index + 1)]];
     removeButton.tag = (NSInteger)index;
     [removeButton addTarget:self action:@selector(handleRemoveIngredientTapped:) forControlEvents:UIControlEventTouchUpInside];
     [rowView addSubview:removeButton];
 
     [NSLayoutConstraint activateConstraints:@[
       [badgeLabel.leadingAnchor constraintEqualToAnchor:rowView.leadingAnchor constant:12.0],
-      [badgeLabel.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor],
-      [badgeLabel.widthAnchor constraintEqualToConstant:28.0],
+      [badgeLabel.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor], [badgeLabel.widthAnchor constraintEqualToConstant:28.0],
       [badgeLabel.heightAnchor constraintEqualToConstant:28.0],
 
       [textField.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:MRRYoursRecipeEditorRowVerticalInset],
@@ -1179,21 +1191,23 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     badgeLabel.clipsToBounds = YES;
     [rowView addSubview:badgeLabel];
 
-    UITextField *textField = [self styledTextFieldWithPlaceholder:[NSString stringWithFormat:@"Step %lu", (unsigned long)(index + 1)] keyboardType:UIKeyboardTypeDefault identifier:[NSString stringWithFormat:@"yours.editor.stepField.%lu", (unsigned long)index]];
+    UITextField *textField = [self styledTextFieldWithPlaceholder:[NSString stringWithFormat:@"Step %lu", (unsigned long)(index + 1)]
+                                                     keyboardType:UIKeyboardTypeDefault
+                                                       identifier:[NSString stringWithFormat:@"yours.editor.stepField.%lu", (unsigned long)index]];
     textField.text = resolvedValues[index];
     [textField setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [rowView addSubview:textField];
 
-    UIButton *removeButton = [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeStepButton.%lu", (unsigned long)index]
-                                                  accessibilityLabel:[NSString stringWithFormat:@"Delete step %lu", (unsigned long)(index + 1)]];
+    UIButton *removeButton =
+        [self compactRemoveButtonWithIdentifier:[NSString stringWithFormat:@"yours.editor.removeStepButton.%lu", (unsigned long)index]
+                             accessibilityLabel:[NSString stringWithFormat:@"Delete step %lu", (unsigned long)(index + 1)]];
     removeButton.tag = (NSInteger)index;
     [removeButton addTarget:self action:@selector(handleRemoveStepTapped:) forControlEvents:UIControlEventTouchUpInside];
     [rowView addSubview:removeButton];
 
     [NSLayoutConstraint activateConstraints:@[
       [badgeLabel.leadingAnchor constraintEqualToAnchor:rowView.leadingAnchor constant:12.0],
-      [badgeLabel.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor],
-      [badgeLabel.widthAnchor constraintEqualToConstant:28.0],
+      [badgeLabel.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor], [badgeLabel.widthAnchor constraintEqualToConstant:28.0],
       [badgeLabel.heightAnchor constraintEqualToConstant:28.0],
 
       [textField.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:MRRYoursRecipeEditorRowVerticalInset],
@@ -1246,18 +1260,43 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     return NO;
   }
 
+  NSInteger previousIndex = self.selectedPhotoIndex;
   MRRYoursRecipePhotoDraft *draft = [[[MRRYoursRecipePhotoDraft alloc] initWithPhotoID:[NSUUID UUID].UUIDString
-                                                                         remoteURLString:nil
-                                                                       localRelativePath:nil
-                                                                            previewImage:image] autorelease];
+                                                                       remoteURLString:nil
+                                                                     localRelativePath:nil
+                                                                          previewImage:image] autorelease];
   [self.photoDrafts addObject:draft];
   self.selectedPhotoIndex = (NSInteger)self.photoDrafts.count - 1;
+
+  // Rebuild thumbnails first
   [self reloadPhotoUI];
+
+  // Then animate to the new photo
+  [self animatePhotoSelectionFromIndex:previousIndex toIndex:self.selectedPhotoIndex];
+
+  // Animate the new thumbnail appearing
+  if (self.photoThumbnailsStackView.arrangedSubviews.count > 0) {
+    UIButton *newThumbnailButton = [self.photoThumbnailsStackView.arrangedSubviews lastObject];
+    newThumbnailButton.transform = CGAffineTransformMakeScale(0.8, 0.8);
+    newThumbnailButton.alpha = 0.0;
+
+    [UIView animateWithDuration:0.3
+                          delay:0.0
+         usingSpringWithDamping:0.7
+          initialSpringVelocity:0.5
+                        options:0
+                     animations:^{
+                       newThumbnailButton.transform = CGAffineTransformIdentity;
+                       newThumbnailButton.alpha = 1.0;
+                     }
+                     completion:nil];
+  }
+
   return YES;
 }
 
 - (void)handleSetCoverTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   if (self.selectedPhotoIndex <= 0 || self.selectedPhotoIndex >= (NSInteger)self.photoDrafts.count) {
     return;
   }
@@ -1269,7 +1308,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)handleRemovePhotoTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   if (self.selectedPhotoIndex < 0 || self.selectedPhotoIndex >= (NSInteger)self.photoDrafts.count) {
     return;
   }
@@ -1298,7 +1337,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)handleIngredientAddTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   NSMutableArray<NSString *> *values = [[self currentTextsFromRowsStackView:self.ingredientsRowsStackView] mutableCopy];
   [values addObject:@""];
   [self reloadIngredientRowsWithValues:values];
@@ -1306,7 +1345,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)handleStepAddTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   NSMutableArray<NSString *> *values = [[self currentTextsFromRowsStackView:self.stepsRowsStackView] mutableCopy];
   [values addObject:@""];
   [self reloadStepRowsWithValues:values];
@@ -1332,8 +1371,99 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)handleThumbnailTapped:(UIButton *)sender {
-  self.selectedPhotoIndex = sender.tag;
-  [self reloadPhotoUI];
+  NSInteger previousIndex = self.selectedPhotoIndex;
+  NSInteger newIndex = sender.tag;
+
+  if (previousIndex == newIndex) {
+    return;
+  }
+
+  self.selectedPhotoIndex = newIndex;
+  [self animatePhotoSelectionFromIndex:previousIndex toIndex:newIndex];
+}
+
+- (void)animatePhotoSelectionFromIndex:(NSInteger)previousIndex toIndex:(NSInteger)newIndex {
+  // Animate cover image crossfade
+  UIImage *previousImage = self.coverImageView.image;
+  MRRYoursRecipePhotoDraft *newDraft = (newIndex >= 0 && newIndex < (NSInteger)self.photoDrafts.count) ? self.photoDrafts[newIndex] : nil;
+  UIImage *newImage = [self displayImageForPhotoDraft:newDraft];
+
+  if (newImage == nil) {
+    newImage =
+        [UIImage imageNamed:self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
+  }
+
+  // Crossfade animation for cover image
+  [UIView transitionWithView:self.coverImageView
+                    duration:0.28
+                     options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionCurveEaseInOut
+                  animations:^{
+                    self.coverImageView.image = newImage;
+                  }
+                  completion:nil];
+
+  // Animate thumbnail selection border changes
+  for (UIView *subview in self.photoThumbnailsStackView.arrangedSubviews) {
+    if (![subview isKindOfClass:[UIButton class]]) continue;
+    UIButton *thumbnailButton = (UIButton *)subview;
+    NSInteger buttonIndex = thumbnailButton.tag;
+
+    BOOL isNowSelected = (buttonIndex == newIndex);
+    BOOL wasSelected = (buttonIndex == previousIndex);
+
+    if (isNowSelected || wasSelected) {
+      UIColor *targetColor = isNowSelected ? MRRYoursEditorAccentColor() : [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.45];
+
+      [UIView animateWithDuration:0.22
+          delay:0.0
+          options:UIViewAnimationOptionCurveEaseInOut
+          animations:^{
+            thumbnailButton.layer.borderColor = targetColor.CGColor;
+
+            // Scale animation for selected thumbnail
+            if (isNowSelected) {
+              thumbnailButton.transform = CGAffineTransformMakeScale(1.08, 1.08);
+            } else if (wasSelected) {
+              thumbnailButton.transform = CGAffineTransformIdentity;
+            }
+          }
+          completion:^(BOOL finished) {
+#pragma unused(finished)
+            // Spring bounce back to normal scale for selected item
+            if (isNowSelected) {
+              [UIView animateWithDuration:0.18
+                                    delay:0.0
+                   usingSpringWithDamping:0.65
+                    initialSpringVelocity:0.4
+                                  options:0
+                               animations:^{
+                                 thumbnailButton.transform = CGAffineTransformIdentity;
+                               }
+                               completion:nil];
+            }
+          }];
+    }
+  }
+
+  // Update helper label with fade animation
+  NSString *newHelperText = self.photoDrafts.count > 0 ? [NSString stringWithFormat:@"Photo %lu of %ld selected. The first photo is your cover.",
+                                                                                    (unsigned long)(newIndex + 1), (long)self.photoDrafts.count]
+                                                       : @"Add up to 5 photos. The first photo becomes your cover.";
+
+  [UIView transitionWithView:self.photoHelperLabel
+                    duration:0.18
+                     options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionCurveEaseInOut
+                  animations:^{
+                    self.photoHelperLabel.text = newHelperText;
+                  }
+                  completion:nil];
+
+  // Update button states with animation
+  [UIView animateWithDuration:0.15
+                   animations:^{
+                     self.setCoverButton.enabled = self.photoDrafts.count > 1 && newIndex > 0;
+                     self.removePhotoButton.enabled = self.photoDrafts.count > 0;
+                   }];
 }
 
 - (void)presentPhotoPickerFromSourceView:(UIView *)sourceView {
@@ -1359,7 +1489,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
 }
 
 - (void)handleSaveTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
   [self.view endEditing:YES];
   [self clearValidationErrors];
 
@@ -1432,27 +1562,26 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
                                                      fallback:(self.existingRecipe != nil ? self.existingRecipe.calorieCount : 0)
                                                  minimumValue:0];
 
-  MRRUserRecipeSnapshot *snapshot =
-      [[[MRRUserRecipeSnapshot alloc] initWithUserID:self.sessionUserID
-                                           recipeID:self.draftRecipeID
-                                              title:trimmedTitle
-                                           subtitle:MRRYoursEditorTrimmedString(self.subtitleField.text ?: @"")
-                                        summaryText:[MRRYoursEditorTrimmedString(self.summaryTextView.text ?: @"") isEqualToString:@"Describe your recipe briefly..."] ? @""
-                                                                                                                               : MRRYoursEditorTrimmedString(self.summaryTextView.text ?: @"")
-                                           mealType:(self.selectedMealType.length > 0 ? self.selectedMealType : MRRUserRecipeMealTypeSnack)
-                                     readyInMinutes:readyInMinutes
-                                           servings:servings
-                                       calorieCount:MAX(0, calorieCount)
-                                          assetName:(self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName])
-                                   heroImageURLString:self.existingRecipe.heroImageURLString
-                                              photos:photos
-                                        ingredients:ingredients
-                                       instructions:steps
-                                              tools:(self.preservedTools ?: @[])
-                                               tags:[self tagSnapshotsForCurrentSelection]
-                                          createdAt:(self.existingRecipe.createdAt ?: [NSDate date])
-                                    localModifiedAt:[NSDate date]
-                                    remoteUpdatedAt:self.existingRecipe.remoteUpdatedAt] autorelease];
+  MRRUserRecipeSnapshot *snapshot = [[[MRRUserRecipeSnapshot alloc]
+          initWithUserID:self.sessionUserID
+                recipeID:self.draftRecipeID
+                   title:trimmedTitle
+                subtitle:MRRYoursEditorTrimmedString(self.subtitleField.text ?: @"")
+             summaryText:[MRRYoursEditorTrimmedString(self.summaryTextView.text ?: @"") isEqualToString:@"Describe your recipe briefly..."]
+                             ? @""
+                             : MRRYoursEditorTrimmedString(self.summaryTextView.text ?: @"")
+                mealType:(self.selectedMealType.length > 0 ? self.selectedMealType : MRRUserRecipeMealTypeSnack)
+          readyInMinutes:readyInMinutes
+                servings:servings
+            calorieCount:MAX(0, calorieCount)
+               assetName:(self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName])
+      heroImageURLString:self.existingRecipe.heroImageURLString
+                  photos:photos
+             ingredients:ingredients
+            instructions:steps
+                   tools:(self.preservedTools ?: @[])tags:[self tagSnapshotsForCurrentSelection]
+               createdAt:(self.existingRecipe.createdAt ?: [NSDate date])localModifiedAt:[NSDate date]
+         remoteUpdatedAt:self.existingRecipe.remoteUpdatedAt] autorelease];
 
   BOOL didSave = [self.userRecipesStore saveRecipeSnapshot:snapshot error:error];
   if (!didSave) {
@@ -1474,10 +1603,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     MRRYoursRecipePhotoDraft *draft = self.photoDrafts[index];
     NSString *localRelativePath = draft.localRelativePath;
     if (draft.previewImage != nil && localRelativePath.length == 0) {
-      NSString *createdRelativePath = [self.photoStorage storeImage:draft.previewImage
-                                                           recipeID:self.draftRecipeID
-                                                            photoID:draft.photoID
-                                                              error:error];
+      NSString *createdRelativePath = [self.photoStorage storeImage:draft.previewImage recipeID:self.draftRecipeID photoID:draft.photoID error:error];
       if (createdRelativePath.length == 0) {
         return nil;
       }
@@ -1488,11 +1614,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     if (draft.remoteURLString.length == 0 && localRelativePath.length == 0) {
       continue;
     }
-    MRRUserRecipePhotoSnapshot *snapshot =
-        [[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:draft.photoID
-                                                  orderIndex:(NSInteger)index
-                                             remoteURLString:draft.remoteURLString
-                                           localRelativePath:localRelativePath] autorelease];
+    MRRUserRecipePhotoSnapshot *snapshot = [[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:draft.photoID
+                                                                                     orderIndex:(NSInteger)index
+                                                                                remoteURLString:draft.remoteURLString
+                                                                              localRelativePath:localRelativePath] autorelease];
     [snapshots addObject:snapshot];
   }
   return snapshots;
@@ -1507,8 +1632,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     if (trimmedValue.length == 0) {
       continue;
     }
-    MRRUserRecipeIngredientSnapshot *snapshot =
-        [[[MRRUserRecipeIngredientSnapshot alloc] initWithName:trimmedValue displayText:trimmedValue orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRUserRecipeIngredientSnapshot *snapshot = [[[MRRUserRecipeIngredientSnapshot alloc] initWithName:trimmedValue
+                                                                                           displayText:trimmedValue
+                                                                                            orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -1525,8 +1651,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
       continue;
     }
     NSString *title = [NSString stringWithFormat:@"Step %lu", (unsigned long)(orderIndex + 1)];
-    MRRUserRecipeInstructionSnapshot *snapshot =
-        [[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:title detailText:trimmedValue orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRUserRecipeInstructionSnapshot *snapshot = [[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:title
+                                                                                               detailText:trimmedValue
+                                                                                               orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -1622,7 +1749,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
   [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey, id> *)info {
+- (void)imagePickerController:(UIImagePickerController *)picker
+    didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey, id> *)info {
   UIImage *selectedImage = info[UIImagePickerControllerOriginalImage];
   if ([selectedImage isKindOfClass:[UIImage class]]) {
     [self appendPhotoWithImage:selectedImage error:nil];
