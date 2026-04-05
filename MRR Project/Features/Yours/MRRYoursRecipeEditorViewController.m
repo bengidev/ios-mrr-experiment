@@ -1312,12 +1312,14 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   if (self.selectedPhotoIndex < 0 || self.selectedPhotoIndex >= (NSInteger)self.photoDrafts.count) {
     return;
   }
-  MRRYoursRecipePhotoDraft *draft = [self.photoDrafts objectAtIndex:self.selectedPhotoIndex];
+  NSInteger removedIndex = self.selectedPhotoIndex;
+  MRRYoursRecipePhotoDraft *draft = [self.photoDrafts objectAtIndex:removedIndex];
   if (draft.localRelativePath.length > 0) {
     [self.removedLocalRelativePaths addObject:draft.localRelativePath];
   }
-  [self.photoDrafts removeObjectAtIndex:self.selectedPhotoIndex];
-  self.selectedPhotoIndex = MAX(0, MIN(self.selectedPhotoIndex, (NSInteger)self.photoDrafts.count - 1));
+  NSInteger nextSelectedIndex = MAX(0, MIN(removedIndex, (NSInteger)self.photoDrafts.count - 2));
+  [self.photoDrafts removeObjectAtIndex:removedIndex];
+  self.selectedPhotoIndex = nextSelectedIndex;
   [self reloadPhotoUI];
 }
 
