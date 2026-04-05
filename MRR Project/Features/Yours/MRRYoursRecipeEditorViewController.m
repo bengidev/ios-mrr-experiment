@@ -541,11 +541,18 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     [coverImageView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
     [coverImageView.heightAnchor constraintEqualToConstant:208.0],
 
-    [photoThumbnailsStackView.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:14.0],
-    [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
-    [photoThumbnailsStackView.trailingAnchor constraintLessThanOrEqualToAnchor:photoHeroLabel.trailingAnchor],
+    [photoThumbnailsScrollView.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:14.0],
+    [photoThumbnailsScrollView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
+    [photoThumbnailsScrollView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
+    [photoThumbnailsScrollView.heightAnchor constraintEqualToConstant:62.0],
 
-    [photoActionsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsStackView.bottomAnchor constant:16.0],
+    [photoThumbnailsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.topAnchor],
+    [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.leadingAnchor],
+    [photoThumbnailsStackView.trailingAnchor constraintLessThanOrEqualToAnchor:photoThumbnailsScrollView.trailingAnchor],
+    [photoThumbnailsStackView.bottomAnchor constraintEqualToAnchor:photoThumbnailsScrollView.bottomAnchor],
+    [photoThumbnailsStackView.heightAnchor constraintEqualToConstant:62.0],
+
+    [photoActionsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.bottomAnchor constant:16.0],
     [photoActionsStackView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
     [photoActionsStackView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
     [photoActionsStackView.bottomAnchor constraintEqualToAnchor:photoSectionView.bottomAnchor constant:-22.0]
