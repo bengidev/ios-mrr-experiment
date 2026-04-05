@@ -1666,7 +1666,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   }
   [self.removedLocalRelativePaths removeAllObjects];
   [self.createdLocalRelativePaths removeAllObjects];
-  [self.syncEngine requestImmediateSyncForUserID:self.sessionUserID];
+  if (self.syncEngine != nil && self.sessionUserID.length > 0) {
+    [self.syncEngine requestImmediateSyncForUserID:self.sessionUserID];
+  }
   return YES;
 }
 
