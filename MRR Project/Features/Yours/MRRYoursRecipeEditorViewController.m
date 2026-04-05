@@ -1355,6 +1355,26 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     [self reloadPhotoUI];
     return;
   }
+
+  // Animate cover image crossfade if there are remaining photos
+  if (self.photoDrafts.count > 1) {
+    MRRYoursRecipePhotoDraft *nextDraft = (nextSelectedIndex >= 0 && nextSelectedIndex < (NSInteger)self.photoDrafts.count - 1)
+                                              ? self.photoDrafts[nextSelectedIndex >= removedIndex ? nextSelectedIndex + 1 : nextSelectedIndex]
+                                              : nil;
+    UIImage *nextImage = [self displayImageForPhotoDraft:nextDraft];
+    if (nextImage == nil) {
+      nextImage =
+          [UIImage imageNamed:self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
+    }
+
+    [UIView transitionWithView:self.coverImageView
+                      duration:0.28
+                       options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionCurveEaseInOut
+                    animations:^{
+                      self.coverImageView.image = nextImage;
+                    }
+                    completion:nil];
+  }
 }
 
 - (void)handleMealTypeButtonTapped:(UIButton *)sender {
