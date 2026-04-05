@@ -64,8 +64,8 @@ static BOOL MRRManagedObjectContextHasPersistentChanges(NSManagedObjectContext *
     return nil;
   }
 
-  NSPersistentContainer *persistentContainer =
-      [[[NSPersistentContainer alloc] initWithName:MRRCoreDataModelName managedObjectModel:managedObjectModel] autorelease];
+  NSPersistentContainer *persistentContainer = [[[NSPersistentContainer alloc] initWithName:MRRCoreDataModelName
+                                                                         managedObjectModel:managedObjectModel] autorelease];
   NSPersistentStoreDescription *description = [[[NSPersistentStoreDescription alloc] init] autorelease];
   if (inMemoryStore) {
     description.type = NSInMemoryStoreType;
@@ -78,7 +78,7 @@ static BOOL MRRManagedObjectContextHasPersistentChanges(NSManagedObjectContext *
   dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
   __block NSError *loadError = nil;
   [persistentContainer loadPersistentStoresWithCompletionHandler:^(NSPersistentStoreDescription *loadedDescription, NSError *loadedError) {
-    #pragma unused(loadedDescription)
+#pragma unused(loadedDescription)
     if (loadedError != nil) {
       loadError = [loadedError retain];
     }
@@ -93,10 +93,7 @@ static BOOL MRRManagedObjectContextHasPersistentChanges(NSManagedObjectContext *
     if (error != NULL) {
       *error = [NSError errorWithDomain:MRRCoreDataStackErrorDomain
                                    code:MRRCoreDataStackErrorCodeStoreLoadFailed
-                               userInfo:@{
-                                 NSLocalizedDescriptionKey : @"Persistent store Core Data gagal dimuat.",
-                                 NSUnderlyingErrorKey : loadError
-                               }];
+                               userInfo:@{NSLocalizedDescriptionKey : @"Persistent store Core Data gagal dimuat.", NSUnderlyingErrorKey : loadError}];
     }
     [loadError release];
     [self release];

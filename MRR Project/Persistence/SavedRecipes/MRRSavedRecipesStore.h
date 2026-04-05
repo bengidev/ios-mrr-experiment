@@ -25,9 +25,7 @@ FOUNDATION_EXPORT NSErrorDomain const MRRSavedRecipesStoreErrorDomain;
                                        recipeID:(NSString *)recipeID
                                 remoteUpdatedAt:(nullable NSDate *)remoteUpdatedAt
                                           error:(NSError *_Nullable *_Nullable)error;
-- (BOOL)applyRemoteSnapshot:(MRRSavedRecipeSnapshot *)snapshot
-            remoteUpdatedAt:(NSDate *)remoteUpdatedAt
-                      error:(NSError *_Nullable *_Nullable)error;
+- (BOOL)applyRemoteSnapshot:(MRRSavedRecipeSnapshot *)snapshot remoteUpdatedAt:(NSDate *)remoteUpdatedAt error:(NSError *_Nullable *_Nullable)error;
 - (BOOL)applyRemoteDeletionForUserID:(NSString *)userID
                             recipeID:(NSString *)recipeID
                      remoteUpdatedAt:(NSDate *)remoteUpdatedAt

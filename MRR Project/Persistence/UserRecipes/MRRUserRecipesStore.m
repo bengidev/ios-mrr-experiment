@@ -66,8 +66,8 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
 - (BOOL)upsertRecipeManagedObject:(NSManagedObject *)managedObject
                      withSnapshot:(MRRUserRecipeSnapshot *)snapshot
                           context:(NSManagedObjectContext *)context
-                      queueForSync:(BOOL)queueForSync
-                             error:(NSError *_Nullable *_Nullable)error;
+                     queueForSync:(BOOL)queueForSync
+                            error:(NSError *_Nullable *_Nullable)error;
 - (void)replaceChildrenForRelationship:(NSString *)relationshipName
                               onRecipe:(NSManagedObject *)recipeManagedObject
                                 values:(NSArray *)values
@@ -129,7 +129,10 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
   __block MRRUserRecipeSnapshot *snapshot = nil;
   __block NSError *fetchError = nil;
   [self.coreDataStack.viewContext performBlockAndWait:^{
-    NSManagedObject *managedObject = [self recipeManagedObjectForUserID:userID recipeID:recipeID context:self.coreDataStack.viewContext error:&fetchError];
+    NSManagedObject *managedObject = [self recipeManagedObjectForUserID:userID
+                                                               recipeID:recipeID
+                                                                context:self.coreDataStack.viewContext
+                                                                  error:&fetchError];
     if (fetchError != nil) {
       [fetchError retain];
       return;
@@ -257,8 +260,10 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
   __block NSError *fetchError = nil;
   __block BOOL found = NO;
   [self.coreDataStack.viewContext performBlockAndWait:^{
-    NSManagedObject *managedObject =
-        [self syncChangeManagedObjectForUserID:userID recipeID:recipeID context:self.coreDataStack.viewContext error:&fetchError];
+    NSManagedObject *managedObject = [self syncChangeManagedObjectForUserID:userID
+                                                                   recipeID:recipeID
+                                                                    context:self.coreDataStack.viewContext
+                                                                      error:&fetchError];
     if (fetchError != nil) {
       [fetchError retain];
       return;
@@ -343,26 +348,25 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
       managedObject = [NSEntityDescription insertNewObjectForEntityForName:MRRUserRecipeEntityName inManagedObjectContext:context];
     }
 
-    MRRUserRecipeSnapshot *snapshotWithRemoteDate =
-        [[[MRRUserRecipeSnapshot alloc] initWithUserID:snapshot.userID
-                                              recipeID:snapshot.recipeID
-                                                 title:snapshot.title
-                                              subtitle:snapshot.subtitle
-                                           summaryText:snapshot.summaryText
-                                              mealType:snapshot.mealType
-                                        readyInMinutes:snapshot.readyInMinutes
-                                              servings:snapshot.servings
-                                          calorieCount:snapshot.calorieCount
-                                             assetName:snapshot.assetName
-                                      heroImageURLString:snapshot.heroImageURLString
-                                               photos:snapshot.photos
-                                           ingredients:snapshot.ingredients
-                                          instructions:snapshot.instructions
-                                                 tools:snapshot.tools
-                                                  tags:snapshot.tags
-                                             createdAt:snapshot.createdAt
-                                       localModifiedAt:remoteUpdatedAt
-                                       remoteUpdatedAt:remoteUpdatedAt] autorelease];
+    MRRUserRecipeSnapshot *snapshotWithRemoteDate = [[[MRRUserRecipeSnapshot alloc] initWithUserID:snapshot.userID
+                                                                                          recipeID:snapshot.recipeID
+                                                                                             title:snapshot.title
+                                                                                          subtitle:snapshot.subtitle
+                                                                                       summaryText:snapshot.summaryText
+                                                                                          mealType:snapshot.mealType
+                                                                                    readyInMinutes:snapshot.readyInMinutes
+                                                                                          servings:snapshot.servings
+                                                                                      calorieCount:snapshot.calorieCount
+                                                                                         assetName:snapshot.assetName
+                                                                                heroImageURLString:snapshot.heroImageURLString
+                                                                                            photos:snapshot.photos
+                                                                                       ingredients:snapshot.ingredients
+                                                                                      instructions:snapshot.instructions
+                                                                                             tools:snapshot.tools
+                                                                                              tags:snapshot.tags
+                                                                                         createdAt:snapshot.createdAt
+                                                                                   localModifiedAt:remoteUpdatedAt
+                                                                                   remoteUpdatedAt:remoteUpdatedAt] autorelease];
     didSave = [self upsertRecipeManagedObject:managedObject withSnapshot:snapshotWithRemoteDate context:context queueForSync:NO error:&saveError];
     if (saveError != nil) {
       [saveError retain];
@@ -459,8 +463,8 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
 - (BOOL)upsertRecipeManagedObject:(NSManagedObject *)managedObject
                      withSnapshot:(MRRUserRecipeSnapshot *)snapshot
                           context:(NSManagedObjectContext *)context
-                      queueForSync:(BOOL)queueForSync
-                             error:(NSError **)error {
+                     queueForSync:(BOOL)queueForSync
+                            error:(NSError **)error {
   [managedObject setValue:snapshot.userID forKey:@"userID"];
   [managedObject setValue:snapshot.recipeID forKey:@"recipeID"];
   [managedObject setValue:snapshot.title forKey:@"title"];
@@ -584,10 +588,10 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRUserRecipeIngredientSnapshot *> *ingredients = [NSMutableArray arrayWithCapacity:ingredientObjects.count];
   for (NSManagedObject *ingredientManagedObject in ingredientObjects) {
-    MRRUserRecipeIngredientSnapshot *ingredient =
-        [[[MRRUserRecipeIngredientSnapshot alloc] initWithName:MRRUserRecipesStoreStringValue([ingredientManagedObject valueForKey:@"name"])
-                                                   displayText:MRRUserRecipesStoreStringValue([ingredientManagedObject valueForKey:@"displayText"])
-                                                    orderIndex:MRRUserRecipesStoreIntegerValue([ingredientManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRUserRecipeIngredientSnapshot *ingredient = [[[MRRUserRecipeIngredientSnapshot alloc]
+        initWithName:MRRUserRecipesStoreStringValue([ingredientManagedObject valueForKey:@"name"])
+         displayText:MRRUserRecipesStoreStringValue([ingredientManagedObject valueForKey:@"displayText"])
+          orderIndex:MRRUserRecipesStoreIntegerValue([ingredientManagedObject valueForKey:@"orderIndex"])] autorelease];
     [ingredients addObject:ingredient];
   }
 
@@ -595,10 +599,10 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRUserRecipeInstructionSnapshot *> *instructions = [NSMutableArray arrayWithCapacity:instructionObjects.count];
   for (NSManagedObject *instructionManagedObject in instructionObjects) {
-    MRRUserRecipeInstructionSnapshot *instruction =
-        [[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:MRRUserRecipesStoreStringValue([instructionManagedObject valueForKey:@"title"])
-                                                      detailText:MRRUserRecipesStoreStringValue([instructionManagedObject valueForKey:@"detailText"])
-                                                      orderIndex:MRRUserRecipesStoreIntegerValue([instructionManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRUserRecipeInstructionSnapshot *instruction = [[[MRRUserRecipeInstructionSnapshot alloc]
+        initWithTitle:MRRUserRecipesStoreStringValue([instructionManagedObject valueForKey:@"title"])
+           detailText:MRRUserRecipesStoreStringValue([instructionManagedObject valueForKey:@"detailText"])
+           orderIndex:MRRUserRecipesStoreIntegerValue([instructionManagedObject valueForKey:@"orderIndex"])] autorelease];
     [instructions addObject:instruction];
   }
 
@@ -606,9 +610,9 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRUserRecipeStringSnapshot *> *tools = [NSMutableArray arrayWithCapacity:toolObjects.count];
   for (NSManagedObject *toolManagedObject in toolObjects) {
-    MRRUserRecipeStringSnapshot *tool =
-        [[[MRRUserRecipeStringSnapshot alloc] initWithValue:MRRUserRecipesStoreStringValue([toolManagedObject valueForKey:@"value"])
-                                                 orderIndex:MRRUserRecipesStoreIntegerValue([toolManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRUserRecipeStringSnapshot *tool = [[[MRRUserRecipeStringSnapshot alloc]
+        initWithValue:MRRUserRecipesStoreStringValue([toolManagedObject valueForKey:@"value"])
+           orderIndex:MRRUserRecipesStoreIntegerValue([toolManagedObject valueForKey:@"orderIndex"])] autorelease];
     [tools addObject:tool];
   }
 
@@ -616,9 +620,9 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRUserRecipeStringSnapshot *> *tags = [NSMutableArray arrayWithCapacity:tagObjects.count];
   for (NSManagedObject *tagManagedObject in tagObjects) {
-    MRRUserRecipeStringSnapshot *tag =
-        [[[MRRUserRecipeStringSnapshot alloc] initWithValue:MRRUserRecipesStoreStringValue([tagManagedObject valueForKey:@"value"])
-                                                 orderIndex:MRRUserRecipesStoreIntegerValue([tagManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRUserRecipeStringSnapshot *tag = [[[MRRUserRecipeStringSnapshot alloc]
+        initWithValue:MRRUserRecipesStoreStringValue([tagManagedObject valueForKey:@"value"])
+           orderIndex:MRRUserRecipesStoreIntegerValue([tagManagedObject valueForKey:@"orderIndex"])] autorelease];
     [tags addObject:tag];
   }
 
@@ -629,11 +633,11 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
                                             summaryText:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"summaryText"])
                                                mealType:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"mealType"])
                                          readyInMinutes:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"readyInMinutes"])
-                                              servings:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"servings"])
-                                          calorieCount:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"calorieCount"])
-                                             assetName:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"assetName"])
-                                       heroImageURLString:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"heroImageURLString"])
-                                               photos:photos
+                                               servings:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"servings"])
+                                           calorieCount:MRRUserRecipesStoreIntegerValue([managedObject valueForKey:@"calorieCount"])
+                                              assetName:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"assetName"])
+                                     heroImageURLString:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"heroImageURLString"])
+                                                 photos:photos
                                             ingredients:ingredients
                                            instructions:instructions
                                                   tools:tools
@@ -645,19 +649,21 @@ static NSInteger MRRUserRecipesStoreIntegerValue(id candidate) {
 
 - (MRRUserRecipeSyncChange *)syncChangeFromManagedObject:(NSManagedObject *)managedObject {
   NSString *operationString = MRRUserRecipesStoreStringValue([managedObject valueForKey:@"operationType"]);
-  MRRUserRecipeSyncChangeOperation operation =
-      [operationString isEqualToString:MRRUserRecipeSyncOperationDelete] ? MRRUserRecipeSyncChangeOperationDelete
-                                                                         : MRRUserRecipeSyncChangeOperationUpsert;
+  MRRUserRecipeSyncChangeOperation operation = [operationString isEqualToString:MRRUserRecipeSyncOperationDelete]
+                                                   ? MRRUserRecipeSyncChangeOperationDelete
+                                                   : MRRUserRecipeSyncChangeOperationUpsert;
   return [[[MRRUserRecipeSyncChange alloc] initWithUserID:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"userID"])
                                                  recipeID:MRRUserRecipesStoreStringValue([managedObject valueForKey:@"recipeID"])
                                                 operation:operation
-                                                 queuedAt:MRRUserRecipesStoreDateValue([managedObject valueForKey:@"queuedAt"]) ?: [NSDate date]] autorelease];
+                                                 queuedAt:MRRUserRecipesStoreDateValue([managedObject valueForKey:@"queuedAt"]) ?: [NSDate date]]
+      autorelease];
 }
 
 - (void)deleteChildrenForRecipeManagedObject:(NSManagedObject *)managedObject context:(NSManagedObjectContext *)context {
-  for (NSString *relationshipName in @[ MRRUserRecipeRelationshipPhotos, MRRUserRecipeRelationshipIngredients,
-                                        MRRUserRecipeRelationshipInstructions, MRRUserRecipeRelationshipTools,
-                                        MRRUserRecipeRelationshipTags ]) {
+  for (NSString *relationshipName in @[
+         MRRUserRecipeRelationshipPhotos, MRRUserRecipeRelationshipIngredients, MRRUserRecipeRelationshipInstructions, MRRUserRecipeRelationshipTools,
+         MRRUserRecipeRelationshipTags
+       ]) {
     NSMutableSet *relationshipSet = [managedObject mutableSetValueForKey:relationshipName];
     NSArray *children = [relationshipSet allObjects];
     for (NSManagedObject *childManagedObject in children) {

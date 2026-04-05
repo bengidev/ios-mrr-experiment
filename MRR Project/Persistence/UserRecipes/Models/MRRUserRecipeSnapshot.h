@@ -87,8 +87,8 @@ FOUNDATION_EXPORT NSString *const MRRUserRecipeMealTypeSnack;
                       servings:(NSInteger)servings
                   calorieCount:(NSInteger)calorieCount
                      assetName:(NSString *)assetName
-              heroImageURLString:(nullable NSString *)heroImageURLString
-                         photos:(NSArray<MRRUserRecipePhotoSnapshot *> *)photos
+            heroImageURLString:(nullable NSString *)heroImageURLString
+                        photos:(NSArray<MRRUserRecipePhotoSnapshot *> *)photos
                    ingredients:(NSArray<MRRUserRecipeIngredientSnapshot *> *)ingredients
                   instructions:(NSArray<MRRUserRecipeInstructionSnapshot *> *)instructions
                          tools:(NSArray<MRRUserRecipeStringSnapshot *> *)tools

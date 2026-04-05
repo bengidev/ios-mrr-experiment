@@ -14,9 +14,7 @@
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                       syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
-  return [self initWithAuthenticationController:authenticationController
-                         savedRecipesSyncEngine:syncEngine
-                          userRecipesSyncEngine:nil];
+  return [self initWithAuthenticationController:authenticationController savedRecipesSyncEngine:syncEngine userRecipesSyncEngine:nil];
 }
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
@@ -51,38 +49,40 @@
     return;
   }
 
-  [self.savedRecipesSyncEngine flushPendingChangesForUserID:session.userID completion:^(NSError *syncError) {
-    if (syncError != nil) {
-      if (completion != nil) {
-        completion(syncError);
-      }
-      return;
-    }
+  [self.savedRecipesSyncEngine flushPendingChangesForUserID:session.userID
+                                                 completion:^(NSError *syncError) {
+                                                   if (syncError != nil) {
+                                                     if (completion != nil) {
+                                                       completion(syncError);
+                                                     }
+                                                     return;
+                                                   }
 
-    void (^completeSignOut)(void) = ^{
-      NSError *signOutError = nil;
-      BOOL didSignOut = [self.authenticationController signOut:&signOutError];
-      if (completion != nil) {
-        completion((didSignOut && signOutError == nil) ? nil : signOutError);
-      }
-    };
+                                                   void (^completeSignOut)(void) = ^{
+                                                     NSError *signOutError = nil;
+                                                     BOOL didSignOut = [self.authenticationController signOut:&signOutError];
+                                                     if (completion != nil) {
+                                                       completion((didSignOut && signOutError == nil) ? nil : signOutError);
+                                                     }
+                                                   };
 
-    if (self.userRecipesSyncEngine == nil) {
-      completeSignOut();
-      return;
-    }
+                                                   if (self.userRecipesSyncEngine == nil) {
+                                                     completeSignOut();
+                                                     return;
+                                                   }
 
-    [self.userRecipesSyncEngine flushPendingChangesForUserID:session.userID completion:^(NSError *userSyncError) {
-      if (userSyncError != nil) {
-        if (completion != nil) {
-          completion(userSyncError);
-        }
-        return;
-      }
+                                                   [self.userRecipesSyncEngine flushPendingChangesForUserID:session.userID
+                                                                                                 completion:^(NSError *userSyncError) {
+                                                                                                   if (userSyncError != nil) {
+                                                                                                     if (completion != nil) {
+                                                                                                       completion(userSyncError);
+                                                                                                     }
+                                                                                                     return;
+                                                                                                   }
 
-      completeSignOut();
-    }];
-  }];
+                                                                                                   completeSignOut();
+                                                                                                 }];
+                                                 }];
 }
 
 @end

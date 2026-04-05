@@ -23,10 +23,8 @@ static NSString *MRRResolvedUserRecipeMealType(NSString *mealType) {
     [trimmedMealType release];
     return [MRRUserRecipeMealTypeSnack retain];
   }
-  if ([trimmedMealType isEqualToString:MRRUserRecipeMealTypeBreakfast] ||
-      [trimmedMealType isEqualToString:MRRUserRecipeMealTypeLunch] ||
-      [trimmedMealType isEqualToString:MRRUserRecipeMealTypeDinner] ||
-      [trimmedMealType isEqualToString:MRRUserRecipeMealTypeDessert] ||
+  if ([trimmedMealType isEqualToString:MRRUserRecipeMealTypeBreakfast] || [trimmedMealType isEqualToString:MRRUserRecipeMealTypeLunch] ||
+      [trimmedMealType isEqualToString:MRRUserRecipeMealTypeDinner] || [trimmedMealType isEqualToString:MRRUserRecipeMealTypeDessert] ||
       [trimmedMealType isEqualToString:MRRUserRecipeMealTypeSnack]) {
     return trimmedMealType;
   }
@@ -60,8 +58,9 @@ static NSArray<MRRUserRecipeIngredientSnapshot *> *MRRUserRecipeIngredientSnapsh
     if (displayText.length == 0) {
       continue;
     }
-    MRRUserRecipeIngredientSnapshot *snapshot =
-        [[[MRRUserRecipeIngredientSnapshot alloc] initWithName:name ?: displayText displayText:displayText orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRUserRecipeIngredientSnapshot *snapshot = [[[MRRUserRecipeIngredientSnapshot alloc] initWithName:name ?: displayText
+                                                                                           displayText:displayText
+                                                                                            orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -80,10 +79,9 @@ static NSArray<MRRUserRecipeInstructionSnapshot *> *MRRUserRecipeInstructionSnap
     if (title.length == 0) {
       title = [NSString stringWithFormat:@"Step %lu", (unsigned long)(orderIndex + 1)];
     }
-    MRRUserRecipeInstructionSnapshot *snapshot =
-        [[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:title
-                                                      detailText:detailText
-                                                      orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRUserRecipeInstructionSnapshot *snapshot = [[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:title
+                                                                                               detailText:detailText
+                                                                                               orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -98,7 +96,8 @@ static NSArray<MRRUserRecipeStringSnapshot *> *MRRUserRecipeStringSnapshotsFromV
     if (trimmedValue.length == 0) {
       continue;
     }
-    MRRUserRecipeStringSnapshot *snapshot = [[[MRRUserRecipeStringSnapshot alloc] initWithValue:trimmedValue orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRUserRecipeStringSnapshot *snapshot = [[[MRRUserRecipeStringSnapshot alloc] initWithValue:trimmedValue
+                                                                                     orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -240,8 +239,7 @@ static NSArray<MRRUserRecipeStringSnapshot *> *MRRUserRecipeStringSnapshotsFromV
 @end
 
 static NSArray<MRRUserRecipePhotoSnapshot *> *MRRUserRecipeNormalizedPhotos(NSArray<MRRUserRecipePhotoSnapshot *> *photos,
-                                                                            NSString *legacyHeroImageURLString,
-                                                                            NSString *recipeID) {
+                                                                            NSString *legacyHeroImageURLString, NSString *recipeID) {
   NSMutableArray<MRRUserRecipePhotoSnapshot *> *normalizedPhotos = [NSMutableArray array];
   NSInteger normalizedOrderIndex = 0;
   for (MRRUserRecipePhotoSnapshot *photo in photos ?: @[]) {
@@ -255,25 +253,24 @@ static NSArray<MRRUserRecipePhotoSnapshot *> *MRRUserRecipeNormalizedPhotos(NSAr
       continue;
     }
     [normalizedPhotos addObject:[[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:resolvedPhotoID
-                                                                           orderIndex:normalizedOrderIndex
-                                                                      remoteURLString:resolvedRemoteURLString
-                                                                    localRelativePath:resolvedLocalRelativePath] autorelease]];
+                                                                          orderIndex:normalizedOrderIndex
+                                                                     remoteURLString:resolvedRemoteURLString
+                                                                   localRelativePath:resolvedLocalRelativePath] autorelease]];
     normalizedOrderIndex += 1;
   }
 
   NSString *resolvedLegacyHeroImageURLString = MRRTrimmedUserRecipeString(legacyHeroImageURLString ?: @"");
   if (normalizedPhotos.count == 0 && resolvedLegacyHeroImageURLString.length > 0) {
     [normalizedPhotos addObject:[[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:MRRUserRecipeLegacyPhotoIdentifier(recipeID)
-                                                                           orderIndex:0
-                                                                      remoteURLString:resolvedLegacyHeroImageURLString
-                                                                    localRelativePath:nil] autorelease]];
+                                                                          orderIndex:0
+                                                                     remoteURLString:resolvedLegacyHeroImageURLString
+                                                                   localRelativePath:nil] autorelease]];
   }
 
   return normalizedPhotos;
 }
 
-static NSString *MRRUserRecipeResolvedHeroImageURLString(NSArray<MRRUserRecipePhotoSnapshot *> *photos,
-                                                         NSString *legacyHeroImageURLString) {
+static NSString *MRRUserRecipeResolvedHeroImageURLString(NSArray<MRRUserRecipePhotoSnapshot *> *photos, NSString *legacyHeroImageURLString) {
   MRRUserRecipePhotoSnapshot *coverPhoto = photos.count > 0 ? photos.firstObject : nil;
   NSString *resolvedCoverRemoteURLString = MRRTrimmedUserRecipeString(coverPhoto.remoteURLString ?: @"");
   if (resolvedCoverRemoteURLString.length > 0) {
@@ -319,8 +316,8 @@ static NSString *MRRUserRecipeResolvedHeroImageURLString(NSArray<MRRUserRecipePh
                       servings:(NSInteger)servings
                   calorieCount:(NSInteger)calorieCount
                      assetName:(NSString *)assetName
-              heroImageURLString:(NSString *)heroImageURLString
-                         photos:(NSArray<MRRUserRecipePhotoSnapshot *> *)photos
+            heroImageURLString:(NSString *)heroImageURLString
+                        photos:(NSArray<MRRUserRecipePhotoSnapshot *> *)photos
                    ingredients:(NSArray<MRRUserRecipeIngredientSnapshot *> *)ingredients
                   instructions:(NSArray<MRRUserRecipeInstructionSnapshot *> *)instructions
                          tools:(NSArray<MRRUserRecipeStringSnapshot *> *)tools
@@ -395,7 +392,7 @@ static NSString *MRRUserRecipeResolvedHeroImageURLString(NSArray<MRRUserRecipePh
                               servings:MAX(1, recipeCard.servings)
                           calorieCount:MAX(0, recipeCard.calorieCount)
                              assetName:recipeDetail.assetName.length > 0 ? recipeDetail.assetName : recipeCard.assetName
-                      heroImageURLString:recipeDetail.heroImageURLString.length > 0 ? recipeDetail.heroImageURLString : recipeCard.imageURLString
+                    heroImageURLString:recipeDetail.heroImageURLString.length > 0 ? recipeDetail.heroImageURLString : recipeCard.imageURLString
                                 photos:@[]
                            ingredients:MRRUserRecipeIngredientSnapshotsFromDetail(recipeDetail)
                           instructions:MRRUserRecipeInstructionSnapshotsFromDetail(recipeDetail)
@@ -434,15 +431,15 @@ static NSString *MRRUserRecipeResolvedHeroImageURLString(NSArray<MRRUserRecipePh
 - (OnboardingRecipeDetail *)recipeDetailRepresentation {
   NSMutableArray<OnboardingRecipeIngredient *> *ingredients = [NSMutableArray array];
   for (MRRUserRecipeIngredientSnapshot *ingredientSnapshot in self.ingredients) {
-    OnboardingRecipeIngredient *ingredient =
-        [[[OnboardingRecipeIngredient alloc] initWithName:ingredientSnapshot.name displayText:ingredientSnapshot.displayText] autorelease];
+    OnboardingRecipeIngredient *ingredient = [[[OnboardingRecipeIngredient alloc] initWithName:ingredientSnapshot.name
+                                                                                   displayText:ingredientSnapshot.displayText] autorelease];
     [ingredients addObject:ingredient];
   }
 
   NSMutableArray<OnboardingRecipeInstruction *> *instructions = [NSMutableArray array];
   for (MRRUserRecipeInstructionSnapshot *instructionSnapshot in self.instructions) {
-    OnboardingRecipeInstruction *instruction =
-        [[[OnboardingRecipeInstruction alloc] initWithTitle:instructionSnapshot.title detailText:instructionSnapshot.detailText] autorelease];
+    OnboardingRecipeInstruction *instruction = [[[OnboardingRecipeInstruction alloc] initWithTitle:instructionSnapshot.title
+                                                                                        detailText:instructionSnapshot.detailText] autorelease];
     [instructions addObject:instruction];
   }
 

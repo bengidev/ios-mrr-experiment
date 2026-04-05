@@ -43,8 +43,7 @@ static NSString *MRRUserRecipePhotoStorageTrimmedString(NSString *value) {
     return self.baseDirectoryURL;
   }
 
-  NSURL *applicationSupportURL =
-      [[self.fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] firstObject];
+  NSURL *applicationSupportURL = [[self.fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] firstObject];
   if (applicationSupportURL == nil) {
     return nil;
   }
@@ -75,10 +74,7 @@ static NSString *MRRUserRecipePhotoStorageTrimmedString(NSString *value) {
     return NO;
   }
 
-  return [self.fileManager createDirectoryAtURL:baseDirectoryURL
-                    withIntermediateDirectories:YES
-                                     attributes:nil
-                                          error:error];
+  return [self.fileManager createDirectoryAtURL:baseDirectoryURL withIntermediateDirectories:YES attributes:nil error:error];
 }
 
 - (NSString *)storeImage:(UIImage *)image recipeID:(NSString *)recipeID photoID:(NSString *)photoID error:(NSError **)error {
@@ -94,12 +90,15 @@ static NSString *MRRUserRecipePhotoStorageTrimmedString(NSString *value) {
   }
 
   NSError *directoryError = nil;
-  if (![self ensureBaseDirectoryExists:&directoryError] ||
-      ![self.fileManager createDirectoryAtURL:recipeDirectoryURL withIntermediateDirectories:YES attributes:nil error:&directoryError]) {
+  if (![self ensureBaseDirectoryExists:&directoryError] || ![self.fileManager createDirectoryAtURL:recipeDirectoryURL
+                                                                       withIntermediateDirectories:YES
+                                                                                        attributes:nil
+                                                                                             error:&directoryError]) {
     if (error != NULL) {
-      *error = directoryError ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
-                                                     code:MRRUserRecipePhotoStorageErrorCodeDirectoryCreationFailed
-                                                 userInfo:@{NSLocalizedDescriptionKey : @"Photo directory could not be created."}];
+      *error = directoryError
+                   ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
+                                          code:MRRUserRecipePhotoStorageErrorCodeDirectoryCreationFailed
+                                      userInfo:@{NSLocalizedDescriptionKey : @"Photo directory could not be created."}];
     }
     return nil;
   }
@@ -118,9 +117,10 @@ static NSString *MRRUserRecipePhotoStorageTrimmedString(NSString *value) {
   NSError *writeError = nil;
   if (![imageData writeToURL:fileURL options:NSDataWritingAtomic error:&writeError]) {
     if (error != NULL) {
-      *error = writeError ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
-                                                 code:MRRUserRecipePhotoStorageErrorCodeFileWriteFailed
-                                             userInfo:@{NSLocalizedDescriptionKey : @"Photo could not be written."}];
+      *error = writeError
+                   ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
+                                          code:MRRUserRecipePhotoStorageErrorCodeFileWriteFailed
+                                      userInfo:@{NSLocalizedDescriptionKey : @"Photo could not be written."}];
     }
     return nil;
   }
@@ -168,9 +168,10 @@ static NSString *MRRUserRecipePhotoStorageTrimmedString(NSString *value) {
   NSError *removeError = nil;
   if (![self.fileManager removeItemAtURL:fileURL error:&removeError]) {
     if (error != NULL) {
-      *error = removeError ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
-                                                  code:MRRUserRecipePhotoStorageErrorCodeFileDeleteFailed
-                                              userInfo:@{NSLocalizedDescriptionKey : @"Photo file could not be removed."}];
+      *error = removeError
+                   ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
+                                          code:MRRUserRecipePhotoStorageErrorCodeFileDeleteFailed
+                                      userInfo:@{NSLocalizedDescriptionKey : @"Photo file could not be removed."}];
     }
     return NO;
   }
@@ -186,9 +187,10 @@ static NSString *MRRUserRecipePhotoStorageTrimmedString(NSString *value) {
   NSError *removeError = nil;
   if (![self.fileManager removeItemAtURL:recipeDirectoryURL error:&removeError]) {
     if (error != NULL) {
-      *error = removeError ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
-                                                  code:MRRUserRecipePhotoStorageErrorCodeFileDeleteFailed
-                                              userInfo:@{NSLocalizedDescriptionKey : @"Recipe photo directory could not be removed."}];
+      *error = removeError
+                   ?: [NSError errorWithDomain:MRRUserRecipePhotoStorageErrorDomain
+                                          code:MRRUserRecipePhotoStorageErrorCodeFileDeleteFailed
+                                      userInfo:@{NSLocalizedDescriptionKey : @"Recipe photo directory could not be removed."}];
     }
     return NO;
   }
