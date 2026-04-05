@@ -33,24 +33,23 @@
 
 @implementation MainMenuCoordinator
 
-- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
-                                         session:(MRRAuthSession *)session {
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController session:(MRRAuthSession *)session {
   return [self initWithAuthenticationController:authenticationController
                                         session:session
-                               savedRecipesStore:nil
+                              savedRecipesStore:nil
                                      syncEngine:nil
-                                userRecipesStore:nil
+                               userRecipesStore:nil
                                  userSyncEngine:nil
-                                logoutController:nil];
+                               logoutController:nil];
 }
 
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                          session:(MRRAuthSession *)session
-                                savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                               savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                                       syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine
-                                 userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
+                                userRecipesStore:(MRRUserRecipesStore *)userRecipesStore
                                   userSyncEngine:(id<MRRUserRecipesCloudSyncing>)userSyncEngine
-                                 logoutController:(id<MRRLogoutCoordinating>)logoutController {
+                                logoutController:(id<MRRLogoutCoordinating>)logoutController {
   NSParameterAssert(authenticationController != nil);
   NSParameterAssert(session != nil);
 
@@ -88,18 +87,17 @@
   if (self.tabBarController == nil) {
     self.homeCoordinator = [[[HomeCoordinator alloc] initWithSession:self.session
                                                         dataProvider:nil
-                                                    savedRecipesStore:self.savedRecipesStore
+                                                   savedRecipesStore:self.savedRecipesStore
                                                           syncEngine:self.syncEngine] autorelease];
     self.savedCoordinator = [[[SavedCoordinator alloc] initWithSessionUserID:self.session.userID
-                                                            savedRecipesStore:self.savedRecipesStore
+                                                           savedRecipesStore:self.savedRecipesStore
                                                                   syncEngine:self.syncEngine] autorelease];
     self.yoursCoordinator = [[[YoursCoordinator alloc] initWithSessionUserID:self.session.userID
-                                                             userRecipesStore:self.userRecipesStore
-                                                                   syncEngine:self.userSyncEngine] autorelease];
-    self.profileCoordinator =
-        [[[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController
-                                                             session:self.session
-                                                    logoutController:self.logoutController] autorelease];
+                                                            userRecipesStore:self.userRecipesStore
+                                                                  syncEngine:self.userSyncEngine] autorelease];
+    self.profileCoordinator = [[[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController
+                                                                                    session:self.session
+                                                                           logoutController:self.logoutController] autorelease];
 
     NSArray<UIViewController *> *tabViewControllers = @[
       [self navigationControllerForTabFeatureCoordinator:self.homeCoordinator],

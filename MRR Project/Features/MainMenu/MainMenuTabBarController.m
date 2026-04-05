@@ -25,8 +25,7 @@ static UIColor *MRRMainMenuSelectedTabColor(void) {
 }
 
 static UIColor *MRRMainMenuUnselectedTabColor(void) {
-  return MRRMainMenuNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                               [UIColor colorWithWhite:0.63 alpha:1.0]);
+  return MRRMainMenuNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.63 alpha:1.0]);
 }
 
 static UIColor *MRRMainMenuTabBarBackgroundColor(void) {
@@ -37,9 +36,8 @@ static NSDictionary<NSAttributedStringKey, id> *MRRMainMenuTitleAttributes(UICol
   return @{NSForegroundColorAttributeName : titleColor};
 }
 
-static void MRRMainMenuApplyItemAppearance(UITabBarItemAppearance *itemAppearance,
-                                           UIColor *selectedIconColor,
-                                           UIColor *unselectedColor) API_AVAILABLE(ios(13.0)) {
+static void MRRMainMenuApplyItemAppearance(UITabBarItemAppearance *itemAppearance, UIColor *selectedIconColor, UIColor *unselectedColor)
+    API_AVAILABLE(ios(13.0)) {
   itemAppearance.normal.iconColor = unselectedColor;
   itemAppearance.normal.titleTextAttributes = MRRMainMenuTitleAttributes(unselectedColor);
   itemAppearance.normal.titlePositionAdjustment = UIOffsetZero;
