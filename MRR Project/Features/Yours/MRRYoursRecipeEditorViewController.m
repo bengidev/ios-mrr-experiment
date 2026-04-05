@@ -995,6 +995,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) {
     thumbnailButton.translatesAutoresizingMaskIntoConstraints = NO;
     thumbnailButton.tag = (NSInteger)index;
     thumbnailButton.layer.cornerRadius = 16.0;
+    thumbnailButton.clipsToBounds = YES;
     thumbnailButton.layer.borderWidth = 2.0;
     thumbnailButton.layer.borderColor = ((NSInteger)index == self.selectedPhotoIndex ? MRRYoursEditorAccentColor() : [MRRYoursEditorBorderColor() colorWithAlphaComponent:0.45]).CGColor;
     thumbnailButton.backgroundColor = [MRRYoursEditorMutedSurfaceColor() colorWithAlphaComponent:0.85];
