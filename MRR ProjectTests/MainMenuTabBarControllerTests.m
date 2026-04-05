@@ -303,6 +303,21 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertEqualObjects(homeNavigationController.topViewController.title, @"Home");
 }
 
+- (void)testSavedViewControllerSetsTitleDuringInitialization {
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  XCTAssertEqualObjects(savedNavigationController.topViewController.title, @"Saved");
+}
+
+- (void)testSavedTabShowsNavigationBarHeader {
+  self.tabBarController.selectedIndex = 1;
+
+  UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
+  [savedNavigationController.topViewController loadViewIfNeeded];
+
+  XCTAssertFalse(savedNavigationController.isNavigationBarHidden);
+  XCTAssertEqualObjects(savedNavigationController.topViewController.navigationItem.title, @"Saved");
+}
+
 - (void)testFeatureCoordinatorsReturnStandaloneContentControllers {
   HomeCoordinator *homeCoordinator = [[HomeCoordinator alloc] init];
   SavedCoordinator *savedCoordinator = [[SavedCoordinator alloc] init];
