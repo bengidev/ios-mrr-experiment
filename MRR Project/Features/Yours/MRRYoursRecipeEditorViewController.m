@@ -303,6 +303,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [_setCoverButton release];
   [_addPhotoButton release];
   [_photoThumbnailsStackView release];
+  [_photoThumbnailsScrollView release];
   [_photoHelperLabel release];
   [_coverImageView release];
   [_photoSectionView release];
