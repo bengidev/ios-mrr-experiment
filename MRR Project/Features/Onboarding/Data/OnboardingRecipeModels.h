@@ -57,7 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithTitle:(NSString *)title
                      subtitle:(NSString *)subtitle
                     assetName:(NSString *)assetName
-             heroImageURLString:(nullable NSString *)heroImageURLString
+           heroImageURLString:(nullable NSString *)heroImageURLString
                  durationText:(NSString *)durationText
                   calorieText:(NSString *)calorieText
                  servingsText:(NSString *)servingsText

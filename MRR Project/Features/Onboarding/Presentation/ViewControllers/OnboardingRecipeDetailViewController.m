@@ -39,11 +39,11 @@ static UIColor *MRRNamedColor(NSString *name, UIColor *lightColor, UIColor *dark
 static UIView *MRRSkeletonBlockView(CGFloat height, NSString *accessibilityIdentifier) {
   UIView *view = [[[UIView alloc] init] autorelease];
   view.translatesAutoresizingMaskIntoConstraints = NO;
-  view.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.78 alpha:1.0],
-                                        [UIColor colorWithWhite:0.28 alpha:1.0]) colorWithAlphaComponent:0.32];
+  view.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.78 alpha:1.0], [UIColor colorWithWhite:0.28 alpha:1.0])
+      colorWithAlphaComponent:0.32];
   view.layer.cornerRadius = height / 2.0;
   view.accessibilityIdentifier = accessibilityIdentifier;
-  [NSLayoutConstraint activateConstraints:@[[view.heightAnchor constraintEqualToConstant:height]]];
+  [NSLayoutConstraint activateConstraints:@[ [view.heightAnchor constraintEqualToConstant:height] ]];
   return view;
 }
 
@@ -451,14 +451,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:12.0];
     self.closeButtonTrailingConstraint = [self.closeButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-14.0];
     [constraints addObjectsFromArray:@[
-      [scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-      [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+      [scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor], [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
       [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-      [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-      self.closeButtonTopConstraint,
-      self.closeButtonTrailingConstraint,
-      self.closeButtonWidthConstraint,
-      self.closeButtonHeightConstraint
+      [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor], self.closeButtonTopConstraint, self.closeButtonTrailingConstraint,
+      self.closeButtonWidthConstraint, self.closeButtonHeightConstraint
     ]];
   } else {
     self.closeButtonTopConstraint = [self.closeButton.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor constant:18.0];
@@ -468,18 +464,12 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     self.cardTrailingConstraint = [self.cardView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-18.0];
     self.cardBottomConstraint = [self.cardView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12.0];
     [constraints addObjectsFromArray:@[
-      self.cardTopConstraint,
-      self.cardLeadingConstraint,
-      self.cardTrailingConstraint,
-      self.cardBottomConstraint,
+      self.cardTopConstraint, self.cardLeadingConstraint, self.cardTrailingConstraint, self.cardBottomConstraint,
       [scrollView.topAnchor constraintEqualToAnchor:self.cardView.topAnchor],
       [scrollView.leadingAnchor constraintEqualToAnchor:self.cardView.leadingAnchor],
       [scrollView.trailingAnchor constraintEqualToAnchor:self.cardView.trailingAnchor],
-      [scrollView.bottomAnchor constraintEqualToAnchor:self.cardView.bottomAnchor],
-      self.closeButtonTopConstraint,
-      self.closeButtonTrailingConstraint,
-      self.closeButtonWidthConstraint,
-      self.closeButtonHeightConstraint
+      [scrollView.bottomAnchor constraintEqualToAnchor:self.cardView.bottomAnchor], self.closeButtonTopConstraint, self.closeButtonTrailingConstraint,
+      self.closeButtonWidthConstraint, self.closeButtonHeightConstraint
     ]];
   }
 
@@ -492,13 +482,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
     [heroContainerView.topAnchor constraintEqualToAnchor:contentView.topAnchor],
     [heroContainerView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor],
-    [heroContainerView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor],
-    self.heroContainerHeightConstraint,
+    [heroContainerView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor], self.heroContainerHeightConstraint,
 
-    self.contentStackTopConstraint,
-    self.contentStackLeadingConstraint,
-    self.contentStackTrailingConstraint,
-    self.contentStackBottomConstraint,
+    self.contentStackTopConstraint, self.contentStackLeadingConstraint, self.contentStackTrailingConstraint, self.contentStackBottomConstraint,
     self.startButtonHeightConstraint
   ]];
   [NSLayoutConstraint activateConstraints:constraints];
@@ -506,10 +492,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   self.heroImageTopConstraint = [heroImageView.topAnchor constraintEqualToAnchor:heroContainerView.topAnchor];
   self.heroImageHeightConstraint = [heroImageView.heightAnchor constraintEqualToConstant:MRRRecipeDetailHeaderHeight];
   [NSLayoutConstraint activateConstraints:@[
-    self.heroImageTopConstraint,
-    [heroImageView.leadingAnchor constraintEqualToAnchor:heroContainerView.leadingAnchor],
-    [heroImageView.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor],
-    self.heroImageHeightConstraint
+    self.heroImageTopConstraint, [heroImageView.leadingAnchor constraintEqualToAnchor:heroContainerView.leadingAnchor],
+    [heroImageView.trailingAnchor constraintEqualToAnchor:heroContainerView.trailingAnchor], self.heroImageHeightConstraint
   ]];
 }
 
@@ -605,25 +589,25 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   NSUInteger requestToken = self.heroImageRequestToken;
   __block OnboardingRecipeDetailViewController *blockSelf = self;
   NSURLSessionDataTask *dataTask = [[NSURLSession sharedSession] dataTaskWithURL:imageURL
-                                                              completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                                                                if (error != nil || data == nil) {
-                                                                  return;
-                                                                }
+                                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                                 if (error != nil || data == nil) {
+                                                                   return;
+                                                                 }
 
-                                                                UIImage *image = [[[UIImage alloc] initWithData:data] autorelease];
-                                                                if (image == nil) {
-                                                                  return;
-                                                                }
+                                                                 UIImage *image = [[[UIImage alloc] initWithData:data] autorelease];
+                                                                 if (image == nil) {
+                                                                   return;
+                                                                 }
 
-                                                                MRROnboardingDetailCompleteOnMainThread(^{
-                                                                  OnboardingRecipeDetailViewController *strongSelf = blockSelf;
-                                                                  if (strongSelf == nil || requestToken != strongSelf.heroImageRequestToken) {
-                                                                    return;
-                                                                  }
+                                                                 MRROnboardingDetailCompleteOnMainThread(^{
+                                                                   OnboardingRecipeDetailViewController *strongSelf = blockSelf;
+                                                                   if (strongSelf == nil || requestToken != strongSelf.heroImageRequestToken) {
+                                                                     return;
+                                                                   }
 
-                                                                  strongSelf.heroImageView.image = image;
-                                                                });
-                                                              }];
+                                                                   strongSelf.heroImageView.image = image;
+                                                                 });
+                                                               }];
   [dataTask resume];
 }
 
@@ -646,27 +630,27 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGAffineTransform targetTransform = UIAccessibilityIsReduceMotionEnabled()
                                           ? CGAffineTransformIdentity
                                           : CGAffineTransformMakeScale(MRRRecipeDetailButtonPressedScale, MRRRecipeDetailButtonPressedScale);
-  [UIView animateWithDuration:0.12
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     sender.transform = targetTransform;
-                     sender.alpha = MRRRecipeDetailButtonPressedAlpha;
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.12
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 sender.transform = targetTransform;
+                 sender.alpha = MRRRecipeDetailButtonPressedAlpha;
+               }
+               completion:nil];
 }
 
 - (void)handlePressableButtonTouchUp:(UIButton *)sender {
-  [UIView animateWithDuration:0.16
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     sender.transform = CGAffineTransformIdentity;
-                     sender.alpha = sender.enabled ? 1.0 : 0.58;
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.16
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 sender.transform = CGAffineTransformIdentity;
+                 sender.alpha = sender.enabled ? 1.0 : 0.58;
+               }
+               completion:nil];
 }
 
 - (UILabel *)buildLabelWithText:(NSString *)text font:(UIFont *)font color:(UIColor *)color {
@@ -679,10 +663,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UILabel *)sectionTitleLabelWithText:(NSString *)text accessibilityIdentifier:(NSString *)accessibilityIdentifier {
-  UILabel *label = [self buildLabelWithText:text
-                                       font:[UIFont boldSystemFontOfSize:20.0]
-                                      color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                          [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *label =
+      [self buildLabelWithText:text
+                          font:[UIFont boldSystemFontOfSize:20.0]
+                         color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   label.accessibilityIdentifier = accessibilityIdentifier;
   return label;
 }
@@ -692,21 +676,21 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
   cardView.accessibilityIdentifier = accessibilityIdentifier;
   [MRRLiquidGlassStyling applySurfaceRole:prominent ? MRRGlassSurfaceRoleElevatedCard : MRRGlassSurfaceRoleOverlay toView:cardView];
-  cardView.backgroundColor =
-      [MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0])
-          colorWithAlphaComponent:(prominent ? 0.94 : 0.58)];
+  cardView.backgroundColor = [MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.14 alpha:1.0])
+      colorWithAlphaComponent:(prominent ? 0.94 : 0.58)];
   cardView.layer.cornerRadius = prominent ? 28.0 : 22.0;
   cardView.layer.borderWidth = 1.0;
-  cardView.layer.borderColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:(prominent ? 0.10 : 0.16)].CGColor;
+  cardView.layer.borderColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0])
+                                   colorWithAlphaComponent:(prominent ? 0.10 : 0.16)]
+                                   .CGColor;
   return cardView;
 }
 
 - (nullable UIView *)sectionIconViewWithSystemName:(NSString *)systemName {
   if (@available(iOS 13.0, *)) {
-    UIImageSymbolConfiguration *symbolConfiguration =
-        [UIImageSymbolConfiguration configurationWithPointSize:18.0 weight:UIImageSymbolWeightSemibold scale:UIImageSymbolScaleMedium];
+    UIImageSymbolConfiguration *symbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:18.0
+                                                                                                      weight:UIImageSymbolWeightSemibold
+                                                                                                       scale:UIImageSymbolScaleMedium];
     UIImage *iconImage = [UIImage systemImageNamed:systemName withConfiguration:symbolConfiguration];
     if (iconImage == nil) {
       iconImage = [UIImage systemImageNamed:systemName];
@@ -718,16 +702,13 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     UIImageView *iconView = [[[UIImageView alloc] initWithImage:iconImage] autorelease];
     iconView.translatesAutoresizingMaskIntoConstraints = NO;
     iconView.contentMode = UIViewContentModeScaleAspectFit;
-    iconView.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                       [UIColor colorWithWhite:0.92 alpha:1.0]);
+    iconView.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
     [iconView setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [iconView setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [iconView setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
     [iconView setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
-    [NSLayoutConstraint activateConstraints:@[
-      [iconView.widthAnchor constraintEqualToConstant:20.0],
-      [iconView.heightAnchor constraintEqualToConstant:20.0]
-    ]];
+    [NSLayoutConstraint
+        activateConstraints:@[ [iconView.widthAnchor constraintEqualToConstant:20.0], [iconView.heightAnchor constraintEqualToConstant:20.0] ]];
     return iconView;
   }
 
@@ -772,10 +753,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [stackView addArrangedSubview:subtitleLabel];
   self.subtitleLabel = subtitleLabel;
 
-  UILabel *titleLabel = [self buildLabelWithText:self.recipeDetail.title
-                                            font:[UIFont boldSystemFontOfSize:32.0]
-                                           color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                               [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *titleLabel =
+      [self buildLabelWithText:self.recipeDetail.title
+                          font:[UIFont boldSystemFontOfSize:32.0]
+                         color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   titleLabel.numberOfLines = 0;
   titleLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"titleLabel"];
   [stackView addArrangedSubview:titleLabel];
@@ -787,11 +768,11 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   metadataStackView.alignment = UIStackViewAlignmentFill;
   metadataStackView.distribution = UIStackViewDistributionFillProportionally;
   [metadataStackView addArrangedSubview:[self metadataChipWithText:self.recipeDetail.durationText
-                                           accessibilityIdentifier:[self detailIdentifierForSuffix:@"durationChip"]]];
+                                            accessibilityIdentifier:[self detailIdentifierForSuffix:@"durationChip"]]];
   [metadataStackView addArrangedSubview:[self metadataChipWithText:self.recipeDetail.calorieText
-                                           accessibilityIdentifier:[self detailIdentifierForSuffix:@"calorieChip"]]];
+                                            accessibilityIdentifier:[self detailIdentifierForSuffix:@"calorieChip"]]];
   [metadataStackView addArrangedSubview:[self metadataChipWithText:self.recipeDetail.servingsText
-                                           accessibilityIdentifier:[self detailIdentifierForSuffix:@"servingsChip"]]];
+                                            accessibilityIdentifier:[self detailIdentifierForSuffix:@"servingsChip"]]];
   [stackView addArrangedSubview:metadataStackView];
 
   [NSLayoutConstraint activateConstraints:@[
@@ -821,7 +802,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
     [topRow addArrangedSubview:flexibleSpacer];
     UIView *accessorySkeletonView = MRRSkeletonBlockView(34.0, [self detailIdentifierForSuffix:@"headerAccessorySkeletonView"]);
-    [NSLayoutConstraint activateConstraints:@[[accessorySkeletonView.widthAnchor constraintGreaterThanOrEqualToConstant:86.0]]];
+    [NSLayoutConstraint activateConstraints:@[ [accessorySkeletonView.widthAnchor constraintGreaterThanOrEqualToConstant:86.0] ]];
     [topRow addArrangedSubview:accessorySkeletonView];
     [stackView addArrangedSubview:topRow];
   }
@@ -882,11 +863,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   if (@available(iOS 13.0, *)) {
     includesSymbol = YES;
   }
-  [NSLayoutConstraint activateConstraints:@[
-    [button.widthAnchor constraintGreaterThanOrEqualToConstant:MRRRecipeDetailFavoriteButtonMinimumWidth(button.titleLabel.font,
-                                                                                                          button.contentEdgeInsets,
-                                                                                                          includesSymbol)]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [button.widthAnchor
+                              constraintGreaterThanOrEqualToConstant:MRRRecipeDetailFavoriteButtonMinimumWidth(
+                                                                         button.titleLabel.font, button.contentEdgeInsets, includesSymbol)] ]];
   [button addTarget:self action:@selector(didTapFavoriteButton) forControlEvents:UIControlEventTouchUpInside];
   [self configurePressFeedbackForButton:button];
   return button;
@@ -920,16 +900,16 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   button.alpha = 0.0;
   if (UIAccessibilityIsReduceMotionEnabled()) {
     [UIView animateWithDuration:MRRRecipeDetailFavoriteButtonTransitionDuration
-                          delay:0.0
-                        options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
-                     animations:^{
-                       previousButton.alpha = 0.0;
-                       button.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
-                     }
-                     completion:^(__unused BOOL finished) {
-                       [previousButton removeFromSuperview];
-                       [previousButton release];
-                     }];
+        delay:0.0
+        options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
+        animations:^{
+          previousButton.alpha = 0.0;
+          button.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
+        }
+        completion:^(__unused BOOL finished) {
+          [previousButton removeFromSuperview];
+          [previousButton release];
+        }];
     return;
   }
 
@@ -937,21 +917,21 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   CGAffineTransform outgoingTransform = CGAffineTransformMakeTranslation(0.0, -MRRRecipeDetailFavoriteButtonTransitionOffset);
   button.transform = incomingTransform;
   [UIView animateWithDuration:MRRRecipeDetailFavoriteButtonTransitionDuration
-                        delay:0.0
-       usingSpringWithDamping:0.86
-        initialSpringVelocity:0.18
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
-                   animations:^{
-                     previousButton.alpha = 0.0;
-                     previousButton.transform = outgoingTransform;
-                     button.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
-                     button.transform = CGAffineTransformIdentity;
-                   }
-                   completion:^(__unused BOOL finished) {
-                     previousButton.transform = CGAffineTransformIdentity;
-                     [previousButton removeFromSuperview];
-                     [previousButton release];
-                   }];
+      delay:0.0
+      usingSpringWithDamping:0.86
+      initialSpringVelocity:0.18
+      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
+      animations:^{
+        previousButton.alpha = 0.0;
+        previousButton.transform = outgoingTransform;
+        button.alpha = self.isFavoriteButtonEnabled ? 1.0 : 0.58;
+        button.transform = CGAffineTransformIdentity;
+      }
+      completion:^(__unused BOOL finished) {
+        previousButton.transform = CGAffineTransformIdentity;
+        [previousButton removeFromSuperview];
+        [previousButton release];
+      }];
 }
 
 - (void)applyFavoriteButtonInteractivityAnimated:(BOOL)animated {
@@ -964,8 +944,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | (self.isFavoriteSelected ? UIAccessibilityTraitSelected : 0) |
                                             (self.isFavoriteButtonEnabled ? 0 : UIAccessibilityTraitNotEnabled);
   self.favoriteButton.accessibilityLabel = self.isFavoriteSelected ? @"Remove recipe from saved recipes" : @"Save recipe";
-  self.favoriteButton.accessibilityHint = self.isFavoriteButtonEnabled ? @"Double tap to update this recipe in your saved list."
-                                                                       : @"Wait until the recipe finishes loading.";
+  self.favoriteButton.accessibilityHint =
+      self.isFavoriteButtonEnabled ? @"Double tap to update this recipe in your saved list." : @"Wait until the recipe finishes loading.";
 
   if (!animated || self.favoriteButton.window == nil || ![UIView areAnimationsEnabled]) {
     self.favoriteButton.alpha = targetAlpha;
@@ -989,10 +969,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIColor *accentColor = MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
                                        [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
   UIColor *foregroundColor = self.isFavoriteSelected ? [UIColor whiteColor] : accentColor;
-  UIColor *backgroundColor = self.isFavoriteSelected
-                                 ? accentColor
-                                 : [MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
-                                                  [UIColor colorWithWhite:0.18 alpha:1.0]) colorWithAlphaComponent:0.96];
+  UIColor *backgroundColor = self.isFavoriteSelected ? accentColor
+                                                     : [MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
+                                                                      [UIColor colorWithWhite:0.18 alpha:1.0]) colorWithAlphaComponent:0.96];
   NSString *title = self.isFavoriteSelected ? @"Saved" : @"Save";
   [button setTitle:title forState:UIControlStateNormal];
   [button setTitle:title forState:UIControlStateHighlighted];
@@ -1007,8 +986,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
   if (@available(iOS 13.0, *)) {
     NSString *systemName = self.isFavoriteSelected ? @"heart.fill" : @"heart";
-    UIImageSymbolConfiguration *configuration =
-        [UIImageSymbolConfiguration configurationWithPointSize:15.0 weight:UIImageSymbolWeightSemibold];
+    UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:15.0 weight:UIImageSymbolWeightSemibold];
     UIImage *image = [UIImage systemImageNamed:systemName withConfiguration:configuration];
     [button setImage:image forState:UIControlStateNormal];
     [button setImage:image forState:UIControlStateHighlighted];
@@ -1027,8 +1005,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)ingredientsSectionViewForIngredients:(NSArray<OnboardingRecipeIngredient *> *)ingredients {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsSectionCardView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsSectionCardView"]
+                                                                  prominent:NO];
   self.ingredientsSectionCardView = cardView;
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
@@ -1060,8 +1038,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [headerRow addArrangedSubview:iconView];
   }
 
-  UILabel *titleLabel =
-      [self sectionTitleLabelWithText:@"Ingredients" accessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsTitleLabel"]];
+  UILabel *titleLabel = [self sectionTitleLabelWithText:@"Ingredients"
+                                accessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsTitleLabel"]];
   [headerRow addArrangedSubview:titleLabel];
 
   UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
@@ -1070,13 +1048,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIButton *toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
   toggleButton.translatesAutoresizingMaskIntoConstraints = NO;
   toggleButton.accessibilityIdentifier = [self detailIdentifierForSuffix:@"ingredientsToggleButton"];
-  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                         [UIColor colorWithWhite:0.92 alpha:1.0]);
+  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [toggleButton addTarget:self action:@selector(didTapIngredientsToggleButton) forControlEvents:UIControlEventTouchUpInside];
-  [NSLayoutConstraint activateConstraints:@[
-    [toggleButton.widthAnchor constraintEqualToConstant:28.0],
-    [toggleButton.heightAnchor constraintEqualToConstant:28.0]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [toggleButton.widthAnchor constraintEqualToConstant:28.0], [toggleButton.heightAnchor constraintEqualToConstant:28.0] ]];
   [headerContainer addSubview:toggleButton];
   self.ingredientsToggleButton = toggleButton;
 
@@ -1097,10 +1072,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
   dividerView.accessibilityIdentifier = [self detailIdentifierForSuffix:@"ingredientsSectionDividerView"];
-  dividerView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
-  [NSLayoutConstraint activateConstraints:@[[dividerView.heightAnchor constraintEqualToConstant:1.0]]];
+  dividerView.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
+                                               [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
+  [NSLayoutConstraint activateConstraints:@[ [dividerView.heightAnchor constraintEqualToConstant:1.0] ]];
   [stackView addArrangedSubview:dividerView];
   self.ingredientsSectionDividerView = dividerView;
 
@@ -1121,8 +1095,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)ingredientsSkeletonSectionView {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsSkeletonSectionView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"ingredientsSkeletonSectionView"]
+                                                                  prominent:NO];
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
   stackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -1135,22 +1109,21 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   headerRow.alignment = UIStackViewAlignmentCenter;
   headerRow.spacing = 12.0;
   UIView *iconSkeletonView = MRRSkeletonBlockView(24.0, [self detailIdentifierForSuffix:@"ingredientsIconSkeletonView"]);
-  [NSLayoutConstraint activateConstraints:@[[iconSkeletonView.widthAnchor constraintEqualToConstant:24.0]]];
+  [NSLayoutConstraint activateConstraints:@[ [iconSkeletonView.widthAnchor constraintEqualToConstant:24.0] ]];
   [headerRow addArrangedSubview:iconSkeletonView];
   [headerRow addArrangedSubview:MRRSkeletonBlockView(24.0, [self detailIdentifierForSuffix:@"ingredientsTitleLabel"])];
   UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
   [headerRow addArrangedSubview:flexibleSpacer];
   UIView *toggleSkeletonView = MRRSkeletonBlockView(24.0, [self detailIdentifierForSuffix:@"ingredientsToggleSkeletonView"]);
-  [NSLayoutConstraint activateConstraints:@[[toggleSkeletonView.widthAnchor constraintEqualToConstant:24.0]]];
+  [NSLayoutConstraint activateConstraints:@[ [toggleSkeletonView.widthAnchor constraintEqualToConstant:24.0] ]];
   [headerRow addArrangedSubview:toggleSkeletonView];
   [stackView addArrangedSubview:headerRow];
 
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
-  dividerView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.08];
-  [NSLayoutConstraint activateConstraints:@[[dividerView.heightAnchor constraintEqualToConstant:1.0]]];
+  dividerView.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
+                                               [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.08];
+  [NSLayoutConstraint activateConstraints:@[ [dividerView.heightAnchor constraintEqualToConstant:1.0] ]];
   [stackView addArrangedSubview:dividerView];
 
   [stackView addArrangedSubview:MRRSkeletonBlockView(92.0, [self detailIdentifierForSuffix:@"ingredientsSkeletonView"])];
@@ -1166,8 +1139,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)instructionsSectionViewForInstructions:(NSArray<OnboardingRecipeInstruction *> *)instructions {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"instructionsSectionCardView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"instructionsSectionCardView"]
+                                                                  prominent:NO];
   self.instructionsSectionCardView = cardView;
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
@@ -1199,8 +1172,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [headerRow addArrangedSubview:iconView];
   }
 
-  UILabel *titleLabel =
-      [self sectionTitleLabelWithText:@"Methods" accessibilityIdentifier:[self detailIdentifierForSuffix:@"instructionsTitleLabel"]];
+  UILabel *titleLabel = [self sectionTitleLabelWithText:@"Methods"
+                                accessibilityIdentifier:[self detailIdentifierForSuffix:@"instructionsTitleLabel"]];
   [headerRow addArrangedSubview:titleLabel];
 
   UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
@@ -1209,13 +1182,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIButton *toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
   toggleButton.translatesAutoresizingMaskIntoConstraints = NO;
   toggleButton.accessibilityIdentifier = [self detailIdentifierForSuffix:@"instructionsToggleButton"];
-  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                         [UIColor colorWithWhite:0.92 alpha:1.0]);
+  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [toggleButton addTarget:self action:@selector(didTapInstructionsToggleButton) forControlEvents:UIControlEventTouchUpInside];
-  [NSLayoutConstraint activateConstraints:@[
-    [toggleButton.widthAnchor constraintEqualToConstant:28.0],
-    [toggleButton.heightAnchor constraintEqualToConstant:28.0]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [toggleButton.widthAnchor constraintEqualToConstant:28.0], [toggleButton.heightAnchor constraintEqualToConstant:28.0] ]];
   [headerContainer addSubview:toggleButton];
   self.instructionsToggleButton = toggleButton;
 
@@ -1236,10 +1206,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
   dividerView.accessibilityIdentifier = [self detailIdentifierForSuffix:@"instructionsSectionDividerView"];
-  dividerView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
-  [NSLayoutConstraint activateConstraints:@[[dividerView.heightAnchor constraintEqualToConstant:1.0]]];
+  dividerView.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
+                                               [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
+  [NSLayoutConstraint activateConstraints:@[ [dividerView.heightAnchor constraintEqualToConstant:1.0] ]];
   [stackView addArrangedSubview:dividerView];
   self.instructionsSectionDividerView = dividerView;
 
@@ -1260,8 +1229,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)instructionsSkeletonSectionView {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"instructionsSkeletonSectionView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"instructionsSkeletonSectionView"]
+                                                                  prominent:NO];
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
   stackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -1273,10 +1242,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
-  dividerView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.08];
-  [NSLayoutConstraint activateConstraints:@[[dividerView.heightAnchor constraintEqualToConstant:1.0]]];
+  dividerView.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
+                                               [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.08];
+  [NSLayoutConstraint activateConstraints:@[ [dividerView.heightAnchor constraintEqualToConstant:1.0] ]];
   [stackView addArrangedSubview:dividerView];
   [stackView addArrangedSubview:MRRSkeletonBlockView(132.0, [self detailIdentifierForSuffix:@"instructionsSkeletonView"])];
 
@@ -1291,8 +1259,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)toolsSectionViewForTools:(NSArray<NSString *> *)tools {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"toolsSectionCardView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"toolsSectionCardView"] prominent:NO];
   self.toolsSectionCardView = cardView;
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
@@ -1324,8 +1291,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [headerRow addArrangedSubview:iconView];
   }
 
-  UILabel *titleLabel =
-      [self sectionTitleLabelWithText:@"Tools & Equipment" accessibilityIdentifier:[self detailIdentifierForSuffix:@"toolsTitleLabel"]];
+  UILabel *titleLabel = [self sectionTitleLabelWithText:@"Tools & Equipment"
+                                accessibilityIdentifier:[self detailIdentifierForSuffix:@"toolsTitleLabel"]];
   [headerRow addArrangedSubview:titleLabel];
 
   UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
@@ -1334,13 +1301,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIButton *toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
   toggleButton.translatesAutoresizingMaskIntoConstraints = NO;
   toggleButton.accessibilityIdentifier = [self detailIdentifierForSuffix:@"toolsToggleButton"];
-  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                         [UIColor colorWithWhite:0.92 alpha:1.0]);
+  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [toggleButton addTarget:self action:@selector(didTapToolsToggleButton) forControlEvents:UIControlEventTouchUpInside];
-  [NSLayoutConstraint activateConstraints:@[
-    [toggleButton.widthAnchor constraintEqualToConstant:28.0],
-    [toggleButton.heightAnchor constraintEqualToConstant:28.0]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [toggleButton.widthAnchor constraintEqualToConstant:28.0], [toggleButton.heightAnchor constraintEqualToConstant:28.0] ]];
   [headerContainer addSubview:toggleButton];
   self.toolsToggleButton = toggleButton;
 
@@ -1361,10 +1325,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
   dividerView.accessibilityIdentifier = [self detailIdentifierForSuffix:@"toolsSectionDividerView"];
-  dividerView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
-  [NSLayoutConstraint activateConstraints:@[[dividerView.heightAnchor constraintEqualToConstant:1.0]]];
+  dividerView.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
+                                               [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
+  [NSLayoutConstraint activateConstraints:@[ [dividerView.heightAnchor constraintEqualToConstant:1.0] ]];
   [stackView addArrangedSubview:dividerView];
   self.toolsSectionDividerView = dividerView;
 
@@ -1404,10 +1367,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   dotView.layer.cornerRadius = 5.0;
   [rowView addSubview:dotView];
 
-  UILabel *label = [self buildLabelWithText:toolText
-                                       font:[UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium]
-                                      color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
-                                                          [UIColor colorWithWhite:0.94 alpha:1.0])];
+  UILabel *label =
+      [self buildLabelWithText:toolText
+                          font:[UIFont systemFontOfSize:16.0 weight:UIFontWeightMedium]
+                         color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0], [UIColor colorWithWhite:0.94 alpha:1.0])];
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.numberOfLines = 0;
   label.accessibilityIdentifier = [NSString stringWithFormat:@"%@.label", rowView.accessibilityIdentifier];
@@ -1416,10 +1379,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [NSLayoutConstraint activateConstraints:@[
     [rowView.heightAnchor constraintGreaterThanOrEqualToConstant:52.0],
     [dotView.leadingAnchor constraintEqualToAnchor:rowView.leadingAnchor constant:18.0],
-    [dotView.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor],
-    [dotView.widthAnchor constraintEqualToConstant:10.0],
-    [dotView.heightAnchor constraintEqualToConstant:10.0],
-    [label.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:15.0],
+    [dotView.centerYAnchor constraintEqualToAnchor:rowView.centerYAnchor], [dotView.widthAnchor constraintEqualToConstant:10.0],
+    [dotView.heightAnchor constraintEqualToConstant:10.0], [label.topAnchor constraintEqualToAnchor:rowView.topAnchor constant:15.0],
     [label.leadingAnchor constraintEqualToAnchor:dotView.trailingAnchor constant:16.0],
     [label.trailingAnchor constraintEqualToAnchor:rowView.trailingAnchor constant:-18.0],
     [label.bottomAnchor constraintEqualToAnchor:rowView.bottomAnchor constant:-15.0]
@@ -1429,8 +1390,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)tagsSectionViewForTags:(NSArray<NSString *> *)tags {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"tagsSectionCardView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"tagsSectionCardView"] prominent:NO];
   self.tagsSectionCardView = cardView;
   self.lastRenderedTagViewportWidth = [self layoutViewportSize].width;
 
@@ -1463,8 +1423,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [headerRow addArrangedSubview:iconView];
   }
 
-  UILabel *titleLabel =
-      [self sectionTitleLabelWithText:@"Tags" accessibilityIdentifier:[self detailIdentifierForSuffix:@"tagsTitleLabel"]];
+  UILabel *titleLabel = [self sectionTitleLabelWithText:@"Tags" accessibilityIdentifier:[self detailIdentifierForSuffix:@"tagsTitleLabel"]];
   [headerRow addArrangedSubview:titleLabel];
 
   UIView *flexibleSpacer = [[[UIView alloc] init] autorelease];
@@ -1473,13 +1432,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIButton *toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
   toggleButton.translatesAutoresizingMaskIntoConstraints = NO;
   toggleButton.accessibilityIdentifier = [self detailIdentifierForSuffix:@"tagsToggleButton"];
-  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                         [UIColor colorWithWhite:0.92 alpha:1.0]);
+  toggleButton.tintColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [toggleButton addTarget:self action:@selector(didTapTagsToggleButton) forControlEvents:UIControlEventTouchUpInside];
-  [NSLayoutConstraint activateConstraints:@[
-    [toggleButton.widthAnchor constraintEqualToConstant:28.0],
-    [toggleButton.heightAnchor constraintEqualToConstant:28.0]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [toggleButton.widthAnchor constraintEqualToConstant:28.0], [toggleButton.heightAnchor constraintEqualToConstant:28.0] ]];
   [headerContainer addSubview:toggleButton];
   self.tagsToggleButton = toggleButton;
 
@@ -1500,10 +1456,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *dividerView = [[[UIView alloc] init] autorelease];
   dividerView.translatesAutoresizingMaskIntoConstraints = NO;
   dividerView.accessibilityIdentifier = [self detailIdentifierForSuffix:@"tagsSectionDividerView"];
-  dividerView.backgroundColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
-  [NSLayoutConstraint activateConstraints:@[[dividerView.heightAnchor constraintEqualToConstant:1.0]]];
+  dividerView.backgroundColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
+                                               [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.10];
+  [NSLayoutConstraint activateConstraints:@[ [dividerView.heightAnchor constraintEqualToConstant:1.0] ]];
   [stackView addArrangedSubview:dividerView];
   self.tagsSectionDividerView = dividerView;
 
@@ -1634,13 +1589,13 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
   cardView.accessibilityIdentifier = [self detailIdentifierForSuffix:@"summaryCardView"];
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:cardView];
-  cardView.backgroundColor = [MRRNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.15 alpha:1.0])
-      colorWithAlphaComponent:0.58];
+  cardView.backgroundColor =
+      [MRRNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.15 alpha:1.0]) colorWithAlphaComponent:0.58];
   cardView.layer.cornerRadius = 22.0;
   cardView.layer.borderWidth = 1.0;
-  cardView.layer.borderColor =
-      [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                     [UIColor colorWithWhite:0.92 alpha:1.0]) colorWithAlphaComponent:0.16].CGColor;
+  cardView.layer.borderColor = [MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0])
+                                   colorWithAlphaComponent:0.16]
+                                   .CGColor;
   self.summaryCardView = cardView;
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
@@ -1657,10 +1612,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   [stackView addArrangedSubview:eyebrowLabel];
   self.summaryEyebrowLabel = eyebrowLabel;
 
-  UILabel *summaryLabel = [self buildLabelWithText:recipeDetail.summaryText
-                                              font:[UIFont systemFontOfSize:16.0]
-                                             color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0],
-                                                                 [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *summaryLabel = [self
+      buildLabelWithText:recipeDetail.summaryText
+                    font:[UIFont systemFontOfSize:16.0]
+                   color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   summaryLabel.numberOfLines = 0;
   summaryLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"summaryLabel"];
   [stackView addArrangedSubview:summaryLabel];
@@ -1692,8 +1647,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   cardView.translatesAutoresizingMaskIntoConstraints = NO;
   cardView.accessibilityIdentifier = [self detailIdentifierForSuffix:@"summaryCardSkeletonView"];
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleOverlay toView:cardView];
-  cardView.backgroundColor = [MRRNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.15 alpha:1.0])
-      colorWithAlphaComponent:0.42];
+  cardView.backgroundColor =
+      [MRRNamedColor(@"CardSurfaceColor", [UIColor whiteColor], [UIColor colorWithWhite:0.15 alpha:1.0]) colorWithAlphaComponent:0.42];
   cardView.layer.cornerRadius = 22.0;
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
@@ -1723,8 +1678,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return NO;
   }
 
-  NSArray<NSString *> *components =
-      [summaryText componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  NSArray<NSString *> *components = [summaryText componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   NSUInteger wordCount = 0;
   for (NSString *component in components) {
     if (component.length > 0) {
@@ -1749,14 +1703,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return;
   }
 
-  [UIView animateWithDuration:0.2
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     [self.view layoutIfNeeded];
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.2
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 [self.view layoutIfNeeded];
+               }
+               completion:nil];
 }
 
 - (void)updateSummaryToggleButtonAppearance {
@@ -1806,14 +1760,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return;
   }
 
-  [UIView animateWithDuration:0.22
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     [self.view layoutIfNeeded];
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.22
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 [self.view layoutIfNeeded];
+               }
+               completion:nil];
 }
 
 - (void)updateIngredientsToggleButtonAppearance {
@@ -1822,8 +1776,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   NSString *fallbackTitle = self.ingredientsExpanded ? @"Hide" : @"Show";
-  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                           [UIColor colorWithWhite:0.92 alpha:1.0]);
+  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [self.ingredientsToggleButton setTitle:nil forState:UIControlStateNormal];
   [self.ingredientsToggleButton setTitleColor:foregroundColor forState:UIControlStateNormal];
 
@@ -1852,14 +1805,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return;
   }
 
-  [UIView animateWithDuration:0.22
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     [self.view layoutIfNeeded];
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.22
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 [self.view layoutIfNeeded];
+               }
+               completion:nil];
 }
 
 - (void)updateInstructionsToggleButtonAppearance {
@@ -1868,8 +1821,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   NSString *fallbackTitle = self.instructionsExpanded ? @"Hide" : @"Show";
-  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                           [UIColor colorWithWhite:0.92 alpha:1.0]);
+  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [self.instructionsToggleButton setTitle:nil forState:UIControlStateNormal];
   [self.instructionsToggleButton setTitleColor:foregroundColor forState:UIControlStateNormal];
 
@@ -1898,14 +1850,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return;
   }
 
-  [UIView animateWithDuration:0.22
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     [self.view layoutIfNeeded];
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.22
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 [self.view layoutIfNeeded];
+               }
+               completion:nil];
 }
 
 - (void)updateToolsToggleButtonAppearance {
@@ -1914,8 +1866,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   NSString *fallbackTitle = self.toolsExpanded ? @"Hide" : @"Show";
-  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                           [UIColor colorWithWhite:0.92 alpha:1.0]);
+  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [self.toolsToggleButton setTitle:nil forState:UIControlStateNormal];
   [self.toolsToggleButton setTitleColor:foregroundColor forState:UIControlStateNormal];
 
@@ -1944,14 +1895,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return;
   }
 
-  [UIView animateWithDuration:0.22
-                        delay:0.0
-                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
-                              UIViewAnimationOptionCurveEaseOut
-                   animations:^{
-                     [self.view layoutIfNeeded];
-                   }
-                   completion:nil];
+  [UIView
+      animateWithDuration:0.22
+                    delay:0.0
+                  options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionCurveEaseOut
+               animations:^{
+                 [self.view layoutIfNeeded];
+               }
+               completion:nil];
 }
 
 - (void)updateTagsToggleButtonAppearance {
@@ -1960,8 +1911,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   NSString *fallbackTitle = self.tagsExpanded ? @"Hide" : @"Show";
-  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0],
-                                           [UIColor colorWithWhite:0.92 alpha:1.0]);
+  UIColor *foregroundColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.18 alpha:1.0], [UIColor colorWithWhite:0.92 alpha:1.0]);
   [self.tagsToggleButton setTitle:nil forState:UIControlStateNormal];
   [self.tagsToggleButton setTitleColor:foregroundColor forState:UIControlStateNormal];
 
@@ -1983,10 +1933,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   chipView.accessibilityIdentifier = accessibilityIdentifier;
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleBadge toView:chipView];
 
-  UILabel *label = [self buildLabelWithText:text
-                                       font:[UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold]
-                                      color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                          [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *label =
+      [self buildLabelWithText:text
+                          font:[UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold]
+                         color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".label"];
   [chipView addSubview:label];
@@ -2008,10 +1958,11 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   rowsStackView.translatesAutoresizingMaskIntoConstraints = NO;
 
   for (NSUInteger index = 0; index < ingredients.count; index++) {
-    [rowsStackView addArrangedSubview:[self ingredientChipWithIngredient:ingredients[index]
-                                                  accessibilityIdentifier:[self detailIdentifierForSuffix:[NSString stringWithFormat:
-                                                                                                          @"ingredientChip.%lu",
-                                                                                                          (unsigned long)(index + 1)]]]];
+    [rowsStackView
+        addArrangedSubview:[self
+                               ingredientChipWithIngredient:ingredients[index]
+                                    accessibilityIdentifier:[self detailIdentifierForSuffix:[NSString stringWithFormat:@"ingredientChip.%lu",
+                                                                                                                       (unsigned long)(index + 1)]]]];
   }
 
   return rowsStackView;
@@ -2030,10 +1981,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   bulletView.backgroundColor = MRRNamedColor(@"AccentColor", [UIColor colorWithRed:0.89 green:0.46 blue:0.24 alpha:1.0],
                                              [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
   bulletView.layer.cornerRadius = 4.0;
-  [NSLayoutConstraint activateConstraints:@[
-    [bulletView.widthAnchor constraintEqualToConstant:8.0],
-    [bulletView.heightAnchor constraintEqualToConstant:8.0]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [bulletView.widthAnchor constraintEqualToConstant:8.0], [bulletView.heightAnchor constraintEqualToConstant:8.0] ]];
 
   UIView *bulletOffsetContainer = [[[UIView alloc] init] autorelease];
   bulletOffsetContainer.translatesAutoresizingMaskIntoConstraints = NO;
@@ -2045,19 +1994,17 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [bulletView.centerXAnchor constraintEqualToAnchor:bulletOffsetContainer.centerXAnchor]
   ]];
 
-  UILabel *label = [self buildLabelWithText:ingredient.displayText
-                                       font:[UIFont systemFontOfSize:15.0]
-                                      color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0],
-                                                          [UIColor colorWithWhite:0.94 alpha:1.0])];
+  UILabel *label =
+      [self buildLabelWithText:ingredient.displayText
+                          font:[UIFont systemFontOfSize:15.0]
+                         color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.10 alpha:1.0], [UIColor colorWithWhite:0.94 alpha:1.0])];
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.numberOfLines = 0;
   label.accessibilityIdentifier = [accessibilityIdentifier stringByAppendingString:@".label"];
   [rowStackView addArrangedSubview:bulletOffsetContainer];
   [rowStackView addArrangedSubview:label];
 
-  [NSLayoutConstraint activateConstraints:@[
-    [bulletOffsetContainer.widthAnchor constraintEqualToConstant:10.0]
-  ]];
+  [NSLayoutConstraint activateConstraints:@[ [bulletOffsetContainer.widthAnchor constraintEqualToConstant:10.0] ]];
 
   return rowStackView;
 }
@@ -2084,10 +2031,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   UIView *badgeView = [[[UIView alloc] init] autorelease];
   badgeView.translatesAutoresizingMaskIntoConstraints = NO;
   [MRRLiquidGlassStyling applySurfaceRole:MRRGlassSurfaceRoleBadge toView:badgeView];
-  [NSLayoutConstraint activateConstraints:@[
-    [badgeView.widthAnchor constraintEqualToConstant:36.0],
-    [badgeView.heightAnchor constraintEqualToConstant:36.0]
-  ]];
+  [NSLayoutConstraint
+      activateConstraints:@[ [badgeView.widthAnchor constraintEqualToConstant:36.0], [badgeView.heightAnchor constraintEqualToConstant:36.0] ]];
 
   UILabel *indexLabel = [self buildLabelWithText:[NSString stringWithFormat:@"%lu", (unsigned long)index]
                                             font:[UIFont boldSystemFontOfSize:15.0]
@@ -2107,16 +2052,16 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   textStackView.axis = UILayoutConstraintAxisVertical;
   textStackView.spacing = 4.0;
 
-  UILabel *titleLabel = [self buildLabelWithText:instruction.title
-                                            font:[UIFont boldSystemFontOfSize:17.0]
-                                           color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                               [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *titleLabel =
+      [self buildLabelWithText:instruction.title
+                          font:[UIFont boldSystemFontOfSize:17.0]
+                         color:MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   titleLabel.accessibilityIdentifier =
       [self detailIdentifierForSuffix:[NSString stringWithFormat:@"instructionRow.%lu.titleLabel", (unsigned long)index]];
-  UILabel *bodyLabel = [self buildLabelWithText:instruction.detailText
-                                           font:[UIFont systemFontOfSize:15.0]
-                                          color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0],
-                                                              [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *bodyLabel = [self
+      buildLabelWithText:instruction.detailText
+                    font:[UIFont systemFontOfSize:15.0]
+                   color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   bodyLabel.numberOfLines = 0;
   bodyLabel.accessibilityIdentifier =
       [self detailIdentifierForSuffix:[NSString stringWithFormat:@"instructionRow.%lu.bodyLabel", (unsigned long)index]];
@@ -2130,8 +2075,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 }
 
 - (UIView *)productContextViewForProductContext:(OnboardingRecipeProductContext *)productContext {
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"productContextCardView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"productContextCardView"] prominent:NO];
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
   stackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -2139,8 +2083,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   stackView.spacing = 10.0;
   [cardView addSubview:stackView];
 
-  UILabel *titleLabel =
-      [self sectionTitleLabelWithText:@"Product Context" accessibilityIdentifier:[self detailIdentifierForSuffix:@"productContextTitleLabel"]];
+  UILabel *titleLabel = [self sectionTitleLabelWithText:@"Product Context"
+                                accessibilityIdentifier:[self detailIdentifierForSuffix:@"productContextTitleLabel"]];
   [stackView addArrangedSubview:titleLabel];
 
   NSMutableArray<NSString *> *lines = [NSMutableArray arrayWithObject:productContext.productName];
@@ -2154,10 +2098,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     [lines addObject:[NSString stringWithFormat:@"Nutrition grade: %@", productContext.nutritionGradeText]];
   }
 
-  UILabel *bodyLabel = [self buildLabelWithText:[lines componentsJoinedByString:@"\n"]
-                                           font:[UIFont systemFontOfSize:15.0]
-                                          color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0],
-                                                              [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *bodyLabel = [self
+      buildLabelWithText:[lines componentsJoinedByString:@"\n"]
+                    font:[UIFont systemFontOfSize:15.0]
+                   color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   bodyLabel.numberOfLines = 0;
   bodyLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"productContextBodyLabel"];
   [stackView addArrangedSubview:bodyLabel];
@@ -2177,8 +2121,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
     return nil;
   }
 
-  UIView *cardView =
-      [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"sourceCardView"] prominent:NO];
+  UIView *cardView = [self recipeSurfaceCardViewWithAccessibilityIdentifier:[self detailIdentifierForSuffix:@"sourceCardView"] prominent:NO];
 
   UIStackView *stackView = [[[UIStackView alloc] init] autorelease];
   stackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -2186,15 +2129,14 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   stackView.spacing = 10.0;
   [cardView addSubview:stackView];
 
-  UILabel *titleLabel =
-      [self sectionTitleLabelWithText:@"Source" accessibilityIdentifier:[self detailIdentifierForSuffix:@"sourceTitleLabel"]];
+  UILabel *titleLabel = [self sectionTitleLabelWithText:@"Source" accessibilityIdentifier:[self detailIdentifierForSuffix:@"sourceTitleLabel"]];
   [stackView addArrangedSubview:titleLabel];
 
   NSString *captionText = recipeDetail.sourceName.length > 0 ? recipeDetail.sourceName : recipeDetail.sourceURLString;
-  UILabel *captionLabel = [self buildLabelWithText:captionText
-                                              font:[UIFont systemFontOfSize:15.0]
-                                             color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0],
-                                                                 [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *captionLabel = [self
+      buildLabelWithText:captionText
+                    font:[UIFont systemFontOfSize:15.0]
+                   color:MRRNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.40 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   captionLabel.numberOfLines = 0;
   captionLabel.accessibilityIdentifier = [self detailIdentifierForSuffix:@"sourceCaptionLabel"];
   [stackView addArrangedSubview:captionLabel];
@@ -2227,9 +2169,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   NSString *badgeText = self.debugOrigin == OnboardingRecipeDetailDebugOriginLive ? @"LIVE" : @"FALLBACK";
-  UIColor *badgeTintColor =
-      self.debugOrigin == OnboardingRecipeDetailDebugOriginLive ? [UIColor colorWithRed:0.16 green:0.56 blue:0.32 alpha:1.0]
-                                                                : [UIColor colorWithRed:0.82 green:0.48 blue:0.16 alpha:1.0];
+  UIColor *badgeTintColor = self.debugOrigin == OnboardingRecipeDetailDebugOriginLive ? [UIColor colorWithRed:0.16 green:0.56 blue:0.32 alpha:1.0]
+                                                                                      : [UIColor colorWithRed:0.82 green:0.48 blue:0.16 alpha:1.0];
 
   UIView *badgeView = [[[UIView alloc] init] autorelease];
   badgeView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -2239,9 +2180,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   badgeView.layer.borderWidth = 1.0;
   badgeView.layer.borderColor = [badgeTintColor colorWithAlphaComponent:0.28].CGColor;
 
-  UILabel *label = [self buildLabelWithText:badgeText
-                                       font:[UIFont systemFontOfSize:11.0 weight:UIFontWeightBold]
-                                      color:badgeTintColor];
+  UILabel *label = [self buildLabelWithText:badgeText font:[UIFont systemFontOfSize:11.0 weight:UIFontWeightBold] color:badgeTintColor];
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.accessibilityIdentifier = [self detailIdentifierForSuffix:@"debugSourceBadge.label"];
   [badgeView addSubview:label];
@@ -2408,7 +2347,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
   if (self.summaryEyebrowLabel != nil) {
     self.summaryEyebrowLabel.font = [UIFont systemFontOfSize:MRRLayoutScaledValue(11.0, viewportSize, MRRLayoutScaleAxisWidth)
-                                                     weight:UIFontWeightBold];
+                                                      weight:UIFontWeightBold];
   }
   if (self.summaryLabel != nil) {
     self.summaryLabel.font = [UIFont systemFontOfSize:summaryFontSize];
@@ -2418,12 +2357,12 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   if (@available(iOS 15.0, *)) {
     UIButtonConfiguration *configuration = self.startButton.configuration;
     if (configuration != nil) {
-      UIColor *startButtonTitleColor = [MRRLiquidGlassStyling supportsNativeLiquidGlass]
-                                           ? MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                                           [UIColor colorWithWhite:0.96 alpha:1.0])
-                                           : [UIColor whiteColor];
-      configuration.contentInsets = NSDirectionalEdgeInsetsMake(startButtonVerticalInset, startButtonHorizontalInset, startButtonVerticalInset,
-                                                                startButtonHorizontalInset);
+      UIColor *startButtonTitleColor =
+          [MRRLiquidGlassStyling supportsNativeLiquidGlass]
+              ? MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])
+              : [UIColor whiteColor];
+      configuration.contentInsets =
+          NSDirectionalEdgeInsetsMake(startButtonVerticalInset, startButtonHorizontalInset, startButtonVerticalInset, startButtonHorizontalInset);
       configuration.attributedTitle = [[[NSAttributedString alloc] initWithString:@"Start Cooking"
                                                                        attributes:@{
                                                                          NSFontAttributeName : [UIFont boldSystemFontOfSize:startButtonFontSize],
@@ -2451,12 +2390,9 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
   }
 
   UIColor *surfaceColor = usesNavigationChrome
-                              ? MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0],
-                                              [UIColor colorWithWhite:0.16 alpha:1.0])
-                              : MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0],
-                                              [UIColor colorWithWhite:0.18 alpha:1.0]);
-  UIColor *iconColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.14 alpha:1.0],
-                                     [UIColor colorWithWhite:0.96 alpha:1.0]);
+                              ? MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:0.99 alpha:1.0], [UIColor colorWithWhite:0.16 alpha:1.0])
+                              : MRRNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.18 alpha:1.0]);
+  UIColor *iconColor = MRRNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.14 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0]);
   UIColor *borderColor = MRRNamedColor(@"HomeBorderColor", [UIColor colorWithRed:0.88 green:0.86 blue:0.82 alpha:1.0],
                                        [UIColor colorWithRed:0.28 green:0.29 blue:0.30 alpha:1.0]);
 
@@ -2469,10 +2405,10 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
   if (@available(iOS 13.0, *)) {
     CGFloat symbolPointSize = MRRLayoutScaledValue(14.0, viewportSize, MRRLayoutScaleAxisWidth);
-    UIImageSymbolConfiguration *configuration =
-        [UIImageSymbolConfiguration configurationWithPointSize:symbolPointSize weight:UIImageSymbolWeightSemibold];
-    UIImage *closeImage = [[UIImage systemImageNamed:@"xmark" withConfiguration:configuration]
-        imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:symbolPointSize
+                                                                                                weight:UIImageSymbolWeightSemibold];
+    UIImage *closeImage = [[UIImage systemImageNamed:@"xmark"
+                                   withConfiguration:configuration] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     [self.closeButton setImage:closeImage forState:UIControlStateNormal];
     [self.closeButton setTitle:nil forState:UIControlStateNormal];
     self.closeButton.tintColor = iconColor;
@@ -2497,7 +2433,8 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
   CGFloat offsetY = scrollView.contentOffset.y;
-  CGFloat headerHeight = self.heroContainerHeightConstraint.constant > 0.0 ? self.heroContainerHeightConstraint.constant : MRRRecipeDetailHeaderHeight;
+  CGFloat headerHeight =
+      self.heroContainerHeightConstraint.constant > 0.0 ? self.heroContainerHeightConstraint.constant : MRRRecipeDetailHeaderHeight;
   if (offsetY < 0.0) {
     self.heroImageTopConstraint.constant = offsetY;
     self.heroImageHeightConstraint.constant = headerHeight - offsetY;
