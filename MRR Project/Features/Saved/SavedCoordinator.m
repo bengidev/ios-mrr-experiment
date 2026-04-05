@@ -21,7 +21,7 @@
 }
 
 - (instancetype)initWithSessionUserID:(NSString *)sessionUserID
-                     savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                    savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                            syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
   self = [super init];
   if (self) {
@@ -46,7 +46,7 @@
   if (self.viewController == nil) {
     self.viewController = [[[SavedViewController alloc] initWithSessionUserID:self.sessionUserID
                                                             savedRecipesStore:self.savedRecipesStore
-                                                                  syncEngine:self.syncEngine] autorelease];
+                                                                   syncEngine:self.syncEngine] autorelease];
   }
 
   return self.viewController;
