@@ -16,8 +16,7 @@
 
 @implementation ProfileCoordinator
 
-- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
-                                         session:(MRRAuthSession *)session {
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController session:(MRRAuthSession *)session {
   return [self initWithAuthenticationController:authenticationController session:session logoutController:nil];
 }
 
