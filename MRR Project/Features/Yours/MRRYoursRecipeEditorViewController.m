@@ -479,14 +479,21 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [photoSectionView addSubview:coverImageView];
   self.coverImageView = coverImageView;
 
+  UIScrollView *photoThumbnailsScrollView = [[[UIScrollView alloc] init] autorelease];
+  photoThumbnailsScrollView.translatesAutoresizingMaskIntoConstraints = NO;
+  photoThumbnailsScrollView.showsHorizontalScrollIndicator = NO;
+  photoThumbnailsScrollView.alwaysBounceHorizontal = YES;
+  [photoSectionView addSubview:photoThumbnailsScrollView];
+  self.photoThumbnailsScrollView = photoThumbnailsScrollView;
+
   UIStackView *photoThumbnailsStackView = [[[UIStackView alloc] init] autorelease];
   photoThumbnailsStackView.translatesAutoresizingMaskIntoConstraints = NO;
   photoThumbnailsStackView.axis = UILayoutConstraintAxisHorizontal;
   photoThumbnailsStackView.spacing = 8.0;
   photoThumbnailsStackView.alignment = UIStackViewAlignmentLeading;
-  photoThumbnailsStackView.distribution = UIStackViewDistributionFill;
+  photoThumbnailsStackView.distribution = UIStackViewDistributionEqualSpacing;
   photoThumbnailsStackView.accessibilityIdentifier = @"yours.editor.photoThumbnails";
-  [photoSectionView addSubview:photoThumbnailsStackView];
+  [photoThumbnailsScrollView addSubview:photoThumbnailsStackView];
   self.photoThumbnailsStackView = photoThumbnailsStackView;
 
   UIButton *addPhotoButton = [UIButton buttonWithType:UIButtonTypeSystem];
