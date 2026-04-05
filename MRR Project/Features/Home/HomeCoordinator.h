@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithSession:(nullable MRRAuthSession *)session dataProvider:(nullable id<HomeDataProviding>)dataProvider;
 - (instancetype)initWithSession:(nullable MRRAuthSession *)session
                    dataProvider:(nullable id<HomeDataProviding>)dataProvider
-               savedRecipesStore:(nullable MRRSavedRecipesStore *)savedRecipesStore
+              savedRecipesStore:(nullable MRRSavedRecipesStore *)savedRecipesStore
                      syncEngine:(nullable id<MRRSavedRecipesCloudSyncing>)syncEngine;
 
 @end

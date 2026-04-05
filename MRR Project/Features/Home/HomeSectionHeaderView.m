@@ -52,8 +52,8 @@ static UIColor *MRRHomeHeaderNamedColor(NSString *name, UIColor *lightColor, UIC
     titleLabel.adjustsFontSizeToFitWidth = YES;
     titleLabel.minimumScaleFactor = 0.82;
     titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-    titleLabel.textColor = MRRHomeHeaderNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.12 alpha:1.0],
-                                                   [UIColor colorWithWhite:0.96 alpha:1.0]);
+    titleLabel.textColor =
+        MRRHomeHeaderNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.12 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0]);
     [titleLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [titleLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
     [self addSubview:titleLabel];
@@ -76,13 +76,11 @@ static UIColor *MRRHomeHeaderNamedColor(NSString *name, UIColor *lightColor, UIC
     self.seeAllButton = seeAllButton;
 
     [NSLayoutConstraint activateConstraints:@[
-      [titleLabel.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
-      [titleLabel.topAnchor constraintEqualToAnchor:self.topAnchor],
+      [titleLabel.leadingAnchor constraintEqualToAnchor:self.leadingAnchor], [titleLabel.topAnchor constraintEqualToAnchor:self.topAnchor],
       [titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:seeAllButton.leadingAnchor constant:-12.0],
       [titleLabel.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
 
-      [seeAllButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-      [seeAllButton.topAnchor constraintEqualToAnchor:self.topAnchor]
+      [seeAllButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor], [seeAllButton.topAnchor constraintEqualToAnchor:self.topAnchor]
     ]];
   }
 

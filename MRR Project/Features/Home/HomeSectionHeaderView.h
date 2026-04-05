@@ -7,9 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, retain, readonly) UILabel *titleLabel;
 @property(nonatomic, retain, readonly) UIButton *seeAllButton;
 
-- (void)configureWithTitle:(NSString *)title
-          identifierPrefix:(NSString *)identifierPrefix
-              showsSeeAll:(BOOL)showsSeeAll;
+- (void)configureWithTitle:(NSString *)title identifierPrefix:(NSString *)identifierPrefix showsSeeAll:(BOOL)showsSeeAll;
 
 @end
 

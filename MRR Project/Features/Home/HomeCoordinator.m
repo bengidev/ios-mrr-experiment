@@ -31,7 +31,7 @@
 
 - (instancetype)initWithSession:(MRRAuthSession *)session
                    dataProvider:(id<HomeDataProviding>)dataProvider
-               savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+              savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                      syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
   self = [super init];
   if (self) {
@@ -58,7 +58,7 @@
   if (self.viewController == nil) {
     self.viewController = [[[HomeViewController alloc] initWithSession:self.session
                                                           dataProvider:self.dataProvider
-                                                      savedRecipesStore:self.savedRecipesStore
+                                                     savedRecipesStore:self.savedRecipesStore
                                                             syncEngine:self.syncEngine] autorelease];
   }
 

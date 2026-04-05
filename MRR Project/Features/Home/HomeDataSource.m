@@ -18,18 +18,9 @@ static HomeCategory *MRRHomeCategory(NSString *identifier, NSString *title, NSSt
   return [[[HomeCategory alloc] initWithIdentifier:identifier title:title badgeText:badgeText] autorelease];
 }
 
-static HomeRecipeCard *MRRHomeCard(NSString *recipeID,
-                                   NSString *title,
-                                   NSString *subtitle,
-                                   NSString *assetName,
-                                   NSString *summaryText,
-                                   NSInteger readyInMinutes,
-                                   NSInteger servings,
-                                   NSInteger calorieCount,
-                                   NSInteger popularityScore,
-                                   NSString *sourceName,
-                                   NSString *mealType,
-                                   NSArray<NSString *> *tags) {
+static HomeRecipeCard *MRRHomeCard(NSString *recipeID, NSString *title, NSString *subtitle, NSString *assetName, NSString *summaryText,
+                                   NSInteger readyInMinutes, NSInteger servings, NSInteger calorieCount, NSInteger popularityScore,
+                                   NSString *sourceName, NSString *mealType, NSArray<NSString *> *tags) {
   return [[[HomeRecipeCard alloc] initWithRecipeID:recipeID
                                              title:title
                                           subtitle:subtitle
@@ -95,8 +86,8 @@ static NSArray<NSString *> *MRRHomeNormalizedComponentsFromDelimitedString(NSStr
     return @[];
   }
 
-  NSString *normalizedString = [[trimmedString stringByReplacingOccurrencesOfString:@"\n" withString:@","]
-      stringByReplacingOccurrencesOfString:@";" withString:@","];
+  NSString *normalizedString = [[trimmedString stringByReplacingOccurrencesOfString:@"\n" withString:@","] stringByReplacingOccurrencesOfString:@";"
+                                                                                                                                     withString:@","];
   NSArray<NSString *> *components = [normalizedString componentsSeparatedByString:@","];
   NSMutableOrderedSet<NSString *> *tokens = [NSMutableOrderedSet orderedSet];
   for (NSString *component in components) {
@@ -180,11 +171,7 @@ static NSString *MRRHomeJoinedSearchableTextForRecipeCard(HomeRecipeCard *recipe
 
   NSMutableArray<NSString *> *parts = [NSMutableArray array];
   NSArray<NSString *> *candidateParts = @[
-    recipeCard.title ?: @"",
-    recipeCard.subtitle ?: @"",
-    recipeCard.summaryText ?: @"",
-    recipeCard.mealType ?: @"",
-    recipeCard.sourceName ?: @""
+    recipeCard.title ?: @"", recipeCard.subtitle ?: @"", recipeCard.summaryText ?: @"", recipeCard.mealType ?: @"", recipeCard.sourceName ?: @""
   ];
   for (NSString *part in candidateParts) {
     NSString *trimmedPart = MRRHomeTrimmedString(part);
@@ -235,11 +222,8 @@ static BOOL MRRHomeJoinedTextMatchesIntoleranceTerm(NSString *joinedText, NSStri
     return YES;
   }
 
-  NSArray<NSString *> *acceptedVariants = @[
-    [NSString stringWithFormat:@"%@ free", term],
-    [NSString stringWithFormat:@"%@-free", term],
-    [NSString stringWithFormat:@"no %@", term]
-  ];
+  NSArray<NSString *> *acceptedVariants =
+      @[ [NSString stringWithFormat:@"%@ free", term], [NSString stringWithFormat:@"%@-free", term], [NSString stringWithFormat:@"no %@", term] ];
   for (NSString *variant in acceptedVariants) {
     if ([joinedText containsString:variant]) {
       return YES;
@@ -459,12 +443,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 @implementation HomeAdvancedFilterSettings
 
 + (instancetype)emptySettings {
-  return [[[self alloc] initWithCuisine:nil
-                                   diet:nil
-                           intolerances:nil
-                     includeIngredients:nil
-                     excludeIngredients:nil
-                              equipment:nil
+  return [[[self alloc] initWithCuisine:nil diet:nil intolerances:nil includeIngredients:nil excludeIngredients:nil equipment:nil
                            maxReadyTime:0] autorelease];
 }
 
@@ -500,7 +479,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 }
 
 - (id)copyWithZone:(NSZone *)zone {
-  #pragma unused(zone)
+#pragma unused(zone)
   return [self retain];
 }
 
@@ -513,28 +492,19 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
   }
 
   HomeAdvancedFilterSettings *other = (HomeAdvancedFilterSettings *)object;
-  return self.maxReadyTime == other.maxReadyTime &&
-         [self.cuisine isEqualToString:other.cuisine] &&
-         [self.diet isEqualToString:other.diet] &&
-         [self.intolerances isEqualToString:other.intolerances] &&
-         [self.includeIngredients isEqualToString:other.includeIngredients] &&
-         [self.excludeIngredients isEqualToString:other.excludeIngredients] &&
-         [self.equipment isEqualToString:other.equipment];
+  return self.maxReadyTime == other.maxReadyTime && [self.cuisine isEqualToString:other.cuisine] && [self.diet isEqualToString:other.diet] &&
+         [self.intolerances isEqualToString:other.intolerances] && [self.includeIngredients isEqualToString:other.includeIngredients] &&
+         [self.excludeIngredients isEqualToString:other.excludeIngredients] && [self.equipment isEqualToString:other.equipment];
 }
 
 - (NSUInteger)hash {
-  return self.cuisine.hash ^ self.diet.hash ^ self.intolerances.hash ^ self.includeIngredients.hash ^
-         self.excludeIngredients.hash ^ self.equipment.hash ^ (NSUInteger)self.maxReadyTime;
+  return self.cuisine.hash ^ self.diet.hash ^ self.intolerances.hash ^ self.includeIngredients.hash ^ self.excludeIngredients.hash ^
+         self.equipment.hash ^ (NSUInteger)self.maxReadyTime;
 }
 
 - (BOOL)hasActiveFilters {
-  return self.cuisine.length > 0 ||
-         self.diet.length > 0 ||
-         self.intolerances.length > 0 ||
-         self.includeIngredients.length > 0 ||
-         self.excludeIngredients.length > 0 ||
-         self.equipment.length > 0 ||
-         self.maxReadyTime > 0;
+  return self.cuisine.length > 0 || self.diet.length > 0 || self.intolerances.length > 0 || self.includeIngredients.length > 0 ||
+         self.excludeIngredients.length > 0 || self.equipment.length > 0 || self.maxReadyTime > 0;
 }
 
 - (NSArray<NSString *> *)summaryTokens {
@@ -644,7 +614,9 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
   [super dealloc];
 }
 
-- (NSString *)durationText { return [NSString stringWithFormat:@"%ld min", (long)self.readyInMinutes]; }
+- (NSString *)durationText {
+  return [NSString stringWithFormat:@"%ld min", (long)self.readyInMinutes];
+}
 
 - (NSString *)calorieText {
   if (self.calorieCount > 0) {
@@ -812,11 +784,9 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
   }
 
   NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(HomeRecipeCard *evaluatedObject, NSDictionary<NSString *, id> *bindings) {
-    return MRRHomeStringContainsQuery(evaluatedObject.title, trimmedQuery) ||
-           MRRHomeStringContainsQuery(evaluatedObject.subtitle, trimmedQuery) ||
+    return MRRHomeStringContainsQuery(evaluatedObject.title, trimmedQuery) || MRRHomeStringContainsQuery(evaluatedObject.subtitle, trimmedQuery) ||
            MRRHomeStringContainsQuery(evaluatedObject.summaryText, trimmedQuery) ||
-           MRRHomeStringContainsQuery(evaluatedObject.mealType, trimmedQuery) ||
-           MRRHomeArrayContainsQuery(evaluatedObject.tags, trimmedQuery);
+           MRRHomeStringContainsQuery(evaluatedObject.mealType, trimmedQuery) || MRRHomeArrayContainsQuery(evaluatedObject.tags, trimmedQuery);
   }];
   return [self.allRecipes filteredArrayUsingPredicate:predicate];
 }
@@ -860,48 +830,34 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 
   HomeRecipeCard *avocadoToast =
       MRRHomeCard(@"home.avocadoToast", @"Avocado Toast", @"Bright breakfast", @"avocado-toast",
-                  @"Creamy avocado, citrus, and toasted sourdough make this a quick opener for calm mornings.",
-                  10, 2, 280, 92, @"Culina Test Kitchen", HomeCategoryIdentifierBreakfast,
-                  @[ @"Breakfast", @"Quick", @"Vegetarian", @"Toast" ]);
-  HomeRecipeCard *greekSalad =
-      MRRHomeCard(@"home.greekSalad", @"Greek Salad", @"Crunchy midday plate", @"greek-salad",
-                  @"Fresh vegetables, feta, and olives keep this bowl sharp, bright, and easy to revisit.",
-                  12, 2, 240, 81, @"Culina Test Kitchen", HomeCategoryIdentifierLunch,
-                  @[ @"Lunch", @"Fresh", @"Vegetarian", @"Salad" ]);
+                  @"Creamy avocado, citrus, and toasted sourdough make this a quick opener for calm mornings.", 10, 2, 280, 92,
+                  @"Culina Test Kitchen", HomeCategoryIdentifierBreakfast, @[ @"Breakfast", @"Quick", @"Vegetarian", @"Toast" ]);
+  HomeRecipeCard *greekSalad = MRRHomeCard(@"home.greekSalad", @"Greek Salad", @"Crunchy midday plate", @"greek-salad",
+                                           @"Fresh vegetables, feta, and olives keep this bowl sharp, bright, and easy to revisit.", 12, 2, 240, 81,
+                                           @"Culina Test Kitchen", HomeCategoryIdentifierLunch, @[ @"Lunch", @"Fresh", @"Vegetarian", @"Salad" ]);
   HomeRecipeCard *pastaCarbonara =
       MRRHomeCard(@"home.pastaCarbonara", @"Pasta Carbonara", @"Silky comfort bowl", @"pasta-carbonara",
-                  @"A glossy sauce built from eggs, cheese, and pasta water without the heaviness of cream.",
-                  25, 3, 520, 95, @"Culina Test Kitchen", HomeCategoryIdentifierLunch,
-                  @[ @"Lunch", @"Pasta", @"Comfort", @"Italian" ]);
+                  @"A glossy sauce built from eggs, cheese, and pasta water without the heaviness of cream.", 25, 3, 520, 95, @"Culina Test Kitchen",
+                  HomeCategoryIdentifierLunch, @[ @"Lunch", @"Pasta", @"Comfort", @"Italian" ]);
   HomeRecipeCard *searedSalmon =
       MRRHomeCard(@"home.searedSalmon", @"Seared Salmon", @"Fast weeknight dinner", @"salmon",
-                  @"Golden seared salmon with butter, garlic, and lemon for a polished dinner in one pan.",
-                  18, 2, 430, 88, @"Culina Test Kitchen", HomeCategoryIdentifierDinner,
-                  @[ @"Dinner", @"Seafood", @"High Protein", @"Weeknight" ]);
-  HomeRecipeCard *greenCurry =
-      MRRHomeCard(@"home.greenCurry", @"Green Curry", @"Aromatic comfort", @"green-curry",
-                  @"Fragrant curry paste, coconut milk, and herbs create a rich bowl that still feels lively.",
-                  30, 3, 470, 90, @"Culina Test Kitchen", HomeCategoryIdentifierDinner,
-                  @[ @"Dinner", @"Comfort", @"Curry", @"Herbs" ]);
-  HomeRecipeCard *ramenBowl =
-      MRRHomeCard(@"home.ramenBowl", @"Ramen Bowl", @"Cozy late-night pick", @"ramen",
-                  @"A strong broth, springy noodles, and a few thoughtful toppings keep the bowl satisfying.",
-                  22, 2, 560, 84, @"Culina Test Kitchen", HomeCategoryIdentifierSnack,
-                  @[ @"Snack", @"Dinner", @"Noodles", @"Broth" ]);
-  HomeRecipeCard *pizzaNight =
-      MRRHomeCard(@"home.pizzaNight", @"Pizza Night", @"Crowd-pleasing classic", @"pizza",
-                  @"Crisp crust, bright sauce, and bubbling cheese make this an easy favorite for sharing.",
-                  35, 4, 610, 89, @"Culina Test Kitchen", HomeCategoryIdentifierSnack,
-                  @[ @"Snack", @"Sharing", @"Classic", @"Baked" ]);
+                  @"Golden seared salmon with butter, garlic, and lemon for a polished dinner in one pan.", 18, 2, 430, 88, @"Culina Test Kitchen",
+                  HomeCategoryIdentifierDinner, @[ @"Dinner", @"Seafood", @"High Protein", @"Weeknight" ]);
+  HomeRecipeCard *greenCurry = MRRHomeCard(@"home.greenCurry", @"Green Curry", @"Aromatic comfort", @"green-curry",
+                                           @"Fragrant curry paste, coconut milk, and herbs create a rich bowl that still feels lively.", 30, 3, 470,
+                                           90, @"Culina Test Kitchen", HomeCategoryIdentifierDinner, @[ @"Dinner", @"Comfort", @"Curry", @"Herbs" ]);
+  HomeRecipeCard *ramenBowl = MRRHomeCard(@"home.ramenBowl", @"Ramen Bowl", @"Cozy late-night pick", @"ramen",
+                                          @"A strong broth, springy noodles, and a few thoughtful toppings keep the bowl satisfying.", 22, 2, 560, 84,
+                                          @"Culina Test Kitchen", HomeCategoryIdentifierSnack, @[ @"Snack", @"Dinner", @"Noodles", @"Broth" ]);
+  HomeRecipeCard *pizzaNight = MRRHomeCard(@"home.pizzaNight", @"Pizza Night", @"Crowd-pleasing classic", @"pizza",
+                                           @"Crisp crust, bright sauce, and bubbling cheese make this an easy favorite for sharing.", 35, 4, 610, 89,
+                                           @"Culina Test Kitchen", HomeCategoryIdentifierSnack, @[ @"Snack", @"Sharing", @"Classic", @"Baked" ]);
   HomeRecipeCard *beefBourguignon =
       MRRHomeCard(@"home.beefBourguignon", @"Beef Bourguignon", @"Slow-cooked showpiece", @"beef-bourguignon",
-                  @"Deep sauce, tender beef, and a steady braise make this the most dramatic plate in the set.",
-                  45, 4, 650, 86, @"Culina Test Kitchen", HomeCategoryIdentifierDinner,
-                  @[ @"Dinner", @"Slow Cooked", @"Comfort", @"Rich" ]);
+                  @"Deep sauce, tender beef, and a steady braise make this the most dramatic plate in the set.", 45, 4, 650, 86,
+                  @"Culina Test Kitchen", HomeCategoryIdentifierDinner, @[ @"Dinner", @"Slow Cooked", @"Comfort", @"Rich" ]);
 
-  self.allRecipes = @[
-    avocadoToast, greekSalad, pastaCarbonara, searedSalmon, greenCurry, ramenBowl, pizzaNight, beefBourguignon
-  ];
+  self.allRecipes = @[ avocadoToast, greekSalad, pastaCarbonara, searedSalmon, greenCurry, ramenBowl, pizzaNight, beefBourguignon ];
 
   NSArray<HomeRecipeCard *> *weeklyRecipes = @[ pastaCarbonara, searedSalmon, greenCurry, beefBourguignon ];
   self.sections = @[
@@ -944,9 +900,9 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                     mealType:(nullable NSString *)mealType
                       number:(NSUInteger)number
              advancedFilters:(nullable HomeAdvancedFilterSettings *)advancedFilters
-                  completion:(void (^)(NSArray<NSDictionary *> * _Nullable recipes, BOOL succeeded))completion;
+                  completion:(void (^)(NSArray<NSDictionary *> *_Nullable recipes, BOOL succeeded))completion;
 - (void)fetchRecipeInformationForIdentifier:(NSString *)recipeIdentifier
-                                 completion:(void (^)(NSDictionary * _Nullable recipe, BOOL succeeded))completion;
+                                 completion:(void (^)(NSDictionary *_Nullable recipe, BOOL succeeded))completion;
 
 @end
 
@@ -977,16 +933,15 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                     mealType:(NSString *)mealType
                       number:(NSUInteger)number
              advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters
-                  completion:(void (^)(NSArray<NSDictionary *> * _Nullable recipes, BOOL succeeded))completion {
+                  completion:(void (^)(NSArray<NSDictionary *> *_Nullable recipes, BOOL succeeded))completion {
   NSURLComponents *components = [NSURLComponents componentsWithString:@"https://api.spoonacular.com/recipes/complexSearch"];
-  NSMutableArray<NSURLQueryItem *> *queryItems = [NSMutableArray arrayWithObjects:
-                                                  [NSURLQueryItem queryItemWithName:@"apiKey" value:self.apiKey],
-                                                  [NSURLQueryItem queryItemWithName:@"number" value:[NSString stringWithFormat:@"%lu", (unsigned long)number]],
-                                                  [NSURLQueryItem queryItemWithName:@"instructionsRequired" value:@"true"],
-                                                  [NSURLQueryItem queryItemWithName:@"addRecipeInformation" value:@"true"],
-                                                  [NSURLQueryItem queryItemWithName:@"addRecipeInstructions" value:@"true"],
-                                                  [NSURLQueryItem queryItemWithName:@"addRecipeNutrition" value:@"true"],
-                                                  nil];
+  NSMutableArray<NSURLQueryItem *> *queryItems =
+      [NSMutableArray arrayWithObjects:[NSURLQueryItem queryItemWithName:@"apiKey" value:self.apiKey],
+                                       [NSURLQueryItem queryItemWithName:@"number" value:[NSString stringWithFormat:@"%lu", (unsigned long)number]],
+                                       [NSURLQueryItem queryItemWithName:@"instructionsRequired" value:@"true"],
+                                       [NSURLQueryItem queryItemWithName:@"addRecipeInformation" value:@"true"],
+                                       [NSURLQueryItem queryItemWithName:@"addRecipeInstructions" value:@"true"],
+                                       [NSURLQueryItem queryItemWithName:@"addRecipeNutrition" value:@"true"], nil];
   if (MRRHomeTrimmedString(query).length > 0) {
     [queryItems addObject:[NSURLQueryItem queryItemWithName:@"query" value:MRRHomeTrimmedString(query)]];
   }
@@ -1081,7 +1036,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 }
 
 - (void)fetchRecipeInformationForIdentifier:(NSString *)recipeIdentifier
-                                 completion:(void (^)(NSDictionary * _Nullable recipe, BOOL succeeded))completion {
+                                 completion:(void (^)(NSDictionary *_Nullable recipe, BOOL succeeded))completion {
   NSString *trimmedIdentifier = MRRHomeTrimmedString(recipeIdentifier);
   if (trimmedIdentifier.length == 0) {
     if (completion != nil) {
@@ -1090,9 +1045,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
     return;
   }
 
-  NSString *URLString =
-      [NSString stringWithFormat:@"https://api.spoonacular.com/recipes/%@/information?apiKey=%@&includeNutrition=true",
-                                 trimmedIdentifier, self.apiKey];
+  NSString *URLString = [NSString
+      stringWithFormat:@"https://api.spoonacular.com/recipes/%@/information?apiKey=%@&includeNutrition=true", trimmedIdentifier, self.apiKey];
   NSURL *URL = [NSURL URLWithString:URLString];
   if (URL == nil) {
     if (completion != nil) {
@@ -1163,11 +1117,12 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 - (NSArray<HomeSection *> *)fallbackSections;
 - (NSArray<HomeRecipeCard *> *)fallbackSearchResultsForQuery:(NSString *)query limit:(NSUInteger)limit;
 - (nullable OnboardingRecipePreview *)previewTemplateForTitle:(NSString *)title mealType:(NSString *)mealType;
-- (NSArray<HomeRecipeCard *> *)recipeCardsFromRecipeDictionaries:(NSArray<NSDictionary *> *)recipeDictionaries preferredMealType:(nullable NSString *)preferredMealType;
+- (NSArray<HomeRecipeCard *> *)recipeCardsFromRecipeDictionaries:(NSArray<NSDictionary *> *)recipeDictionaries
+                                               preferredMealType:(nullable NSString *)preferredMealType;
 - (nullable HomeRecipeCard *)recipeCardFromRecipeDictionary:(NSDictionary *)recipeDictionary preferredMealType:(nullable NSString *)preferredMealType;
 - (nullable OnboardingRecipeDetail *)recipeDetailFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                                            recipeCard:(HomeRecipeCard *)recipeCard
-                                                       fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+                                                           recipeCard:(HomeRecipeCard *)recipeCard
+                                                      fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 - (NSString *)mealTypeIdentifierFromRecipeDictionary:(NSDictionary *)recipeDictionary preferredMealType:(nullable NSString *)preferredMealType;
 - (NSString *)assetNameForMealType:(NSString *)mealTypeIdentifier fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 - (NSString *)subtitleTextFromRecipeDictionary:(NSDictionary *)recipeDictionary
@@ -1180,14 +1135,14 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 - (NSInteger)popularityScoreFromRecipeDictionary:(NSDictionary *)recipeDictionary;
 - (NSString *)sourceNameFromRecipeDictionary:(NSDictionary *)recipeDictionary
                              sourceURLString:(nullable NSString *)sourceURLString
-                              fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+                             fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 - (NSArray<NSString *> *)tagsFromRecipeDictionary:(NSDictionary *)recipeDictionary
                                          mealType:(NSString *)mealTypeIdentifier
                                   fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 - (NSArray<OnboardingRecipeIngredient *> *)ingredientsFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                                          fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+                                                           fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 - (NSArray<OnboardingRecipeInstruction *> *)instructionsFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                                            fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
+                                                             fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 - (NSArray<NSString *> *)toolsFromRecipeDictionary:(NSDictionary *)recipeDictionary
                                    fallbackPreview:(nullable OnboardingRecipePreview *)fallbackPreview;
 
@@ -1265,8 +1220,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
     for (HomeSection *section in fallbackSections) {
       NSArray<HomeRecipeCard *> *filteredRecipes = MRRHomeRecipesFilteredForAdvancedFilters(section.recipes ?: @[], advancedFilters);
       NSArray<HomeRecipeCard *> *sortedRecipes = MRRHomeRecipesSortedForFilterOption(filteredRecipes, filterOption);
-      [sortedFallbackSections addObject:[[[HomeSection alloc] initWithIdentifier:section.identifier
-                                                                           title:section.title
+      [sortedFallbackSections addObject:[[[HomeSection alloc] initWithIdentifier:section.identifier title:section.title
                                                                          recipes:sortedRecipes] autorelease]];
     }
     NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *sortedFallbackCategories =
@@ -1307,7 +1261,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                              number:MRRHomeLiveRailRecipeCount
                     advancedFilters:advancedFilters
                          completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
-                           NSArray<HomeRecipeCard *> *mappedRecipes = succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil] : nil;
+                           NSArray<HomeRecipeCard *> *mappedRecipes =
+                               succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil] : nil;
                            @synchronized(self) {
                              recommendationSucceeded = succeeded;
                              recommendationRecipes = [mappedRecipes copy];
@@ -1323,7 +1278,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                              number:MRRHomeLiveRailRecipeCount
                     advancedFilters:advancedFilters
                          completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
-                           NSArray<HomeRecipeCard *> *mappedRecipes = succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil] : nil;
+                           NSArray<HomeRecipeCard *> *mappedRecipes =
+                               succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:nil] : nil;
                            @synchronized(self) {
                              weeklySucceeded = succeeded;
                              weeklyRecipes = [mappedRecipes copy];
@@ -1338,9 +1294,10 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                         sortDirection:recommendationSortDirection
                              mealType:category.identifier
                                number:MRRHomeLiveRailRecipeCount
-                     advancedFilters:advancedFilters
+                      advancedFilters:advancedFilters
                            completion:^(NSArray<NSDictionary *> *recipes, BOOL succeeded) {
-                             NSArray<HomeRecipeCard *> *mappedRecipes = succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:category.identifier] : nil;
+                             NSArray<HomeRecipeCard *> *mappedRecipes =
+                                 succeeded ? [self recipeCardsFromRecipeDictionaries:recipes preferredMealType:category.identifier] : nil;
                              @synchronized(self) {
                                if (mappedRecipes != nil) {
                                  [categoryResults setObject:mappedRecipes forKey:category.identifier];
@@ -1380,8 +1337,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
       [[[HomeSection alloc] initWithIdentifier:HomeSectionIdentifierRecommendation
                                          title:@"Recommendation"
                                        recipes:resolvedRecommendationRecipes ?: @[]] autorelease],
-      [[[HomeSection alloc] initWithIdentifier:HomeSectionIdentifierWeekly
-                                         title:@"Recipes Of The Week"
+      [[[HomeSection alloc] initWithIdentifier:HomeSectionIdentifierWeekly title:@"Recipes Of The Week"
                                        recipes:resolvedWeeklyRecipes ?: @[]] autorelease]
     ];
 
@@ -1422,10 +1378,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 
   NSUInteger requestedLimit = limit > 0 ? limit : MRRHomeFallbackSearchResultLimit;
   if (self.client == nil) {
-    NSArray<HomeRecipeCard *> *fallbackRecipes =
-        MRRHomeRecipesSortedForFilterOption(MRRHomeRecipesFilteredForAdvancedFilters([self fallbackSearchResultsForQuery:trimmedQuery limit:0],
-                                                                                     advancedFilters),
-                                            filterOption);
+    NSArray<HomeRecipeCard *> *fallbackRecipes = MRRHomeRecipesSortedForFilterOption(
+        MRRHomeRecipesFilteredForAdvancedFilters([self fallbackSearchResultsForQuery:trimmedQuery limit:0], advancedFilters), filterOption);
     fallbackRecipes = MRRHomeLimitedRecipeCards(fallbackRecipes, requestedLimit);
     MRRHomeCompleteOnMainThread(^{
       completion(fallbackRecipes, NO);
@@ -1450,10 +1404,9 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                              return;
                            }
 
-                           NSArray<HomeRecipeCard *> *fallbackRecipes =
-                               MRRHomeRecipesSortedForFilterOption(MRRHomeRecipesFilteredForAdvancedFilters([self fallbackSearchResultsForQuery:trimmedQuery limit:0],
-                                                                                                            advancedFilters),
-                                                                  filterOption);
+                           NSArray<HomeRecipeCard *> *fallbackRecipes = MRRHomeRecipesSortedForFilterOption(
+                               MRRHomeRecipesFilteredForAdvancedFilters([self fallbackSearchResultsForQuery:trimmedQuery limit:0], advancedFilters),
+                               filterOption);
                            fallbackRecipes = MRRHomeLimitedRecipeCards(fallbackRecipes, requestedLimit);
                            MRRHomeCompleteOnMainThread(^{
                              completion(fallbackRecipes, NO);
@@ -1477,7 +1430,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
     return;
   }
 
-  BOOL looksLikeLiveRecipe = [recipeCard.recipeID rangeOfCharacterFromSet:[[NSCharacterSet decimalDigitCharacterSet] invertedSet]].location == NSNotFound;
+  BOOL looksLikeLiveRecipe =
+      [recipeCard.recipeID rangeOfCharacterFromSet:[[NSCharacterSet decimalDigitCharacterSet] invertedSet]].location == NSNotFound;
   if (!looksLikeLiveRecipe) {
     OnboardingRecipeDetail *fallbackDetail = [self.fallbackDataProvider recipeDetailForID:recipeCard.recipeID];
     MRRHomeCompleteOnMainThread(^{
@@ -1502,12 +1456,11 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
                                             return;
                                           }
 
-                                          OnboardingRecipePreview *fallbackPreview =
-                                              [self previewTemplateForTitle:recipeCard.title mealType:recipeCard.mealType];
-                                          OnboardingRecipeDetail *detail =
-                                              [self recipeDetailFromRecipeDictionary:recipeDictionary
-                                                                          recipeCard:recipeCard
-                                                                     fallbackPreview:fallbackPreview];
+                                          OnboardingRecipePreview *fallbackPreview = [self previewTemplateForTitle:recipeCard.title
+                                                                                                          mealType:recipeCard.mealType];
+                                          OnboardingRecipeDetail *detail = [self recipeDetailFromRecipeDictionary:recipeDictionary
+                                                                                                       recipeCard:recipeCard
+                                                                                                  fallbackPreview:fallbackPreview];
                                           if (detail != nil) {
                                             @synchronized(self) {
                                               [self.detailCacheByRecipeID setObject:detail forKey:recipeCard.recipeID];
@@ -1593,7 +1546,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
   return [[self.previewByAssetName allValues] firstObject];
 }
 
-- (NSArray<HomeRecipeCard *> *)recipeCardsFromRecipeDictionaries:(NSArray<NSDictionary *> *)recipeDictionaries preferredMealType:(NSString *)preferredMealType {
+- (NSArray<HomeRecipeCard *> *)recipeCardsFromRecipeDictionaries:(NSArray<NSDictionary *> *)recipeDictionaries
+                                               preferredMealType:(NSString *)preferredMealType {
   NSMutableArray<HomeRecipeCard *> *recipeCards = [NSMutableArray arrayWithCapacity:recipeDictionaries.count];
   for (NSDictionary *recipeDictionary in recipeDictionaries) {
     HomeRecipeCard *recipeCard = [self recipeCardFromRecipeDictionary:recipeDictionary preferredMealType:preferredMealType];
@@ -1625,23 +1579,23 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
   NSString *subtitle = [self subtitleTextFromRecipeDictionary:recipeDictionary mealType:mealTypeIdentifier fallbackPreview:fallbackPreview];
   NSString *summaryText = [self summaryTextFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
 
-  HomeRecipeCard *recipeCard = [[[HomeRecipeCard alloc] initWithRecipeID:recipeIdentifier
-                                                                   title:title
-                                                                subtitle:subtitle
-                                                               assetName:assetName
-                                                          imageURLString:MRRHomeTrimmedString([recipeDictionary objectForKey:@"image"])
-                                                             summaryText:summaryText
-                                                          readyInMinutes:[self readyInMinutesFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
-                                                                servings:[self servingsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
-                                                            calorieCount:[self calorieCountFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
-                                                         popularityScore:[self popularityScoreFromRecipeDictionary:recipeDictionary]
-                                                              sourceName:sourceName
-                                                         sourceURLString:sourceURLString
-                                                                mealType:mealTypeIdentifier
-                                                                    tags:tags] autorelease];
+  HomeRecipeCard *recipeCard =
+      [[[HomeRecipeCard alloc] initWithRecipeID:recipeIdentifier
+                                          title:title
+                                       subtitle:subtitle
+                                      assetName:assetName
+                                 imageURLString:MRRHomeTrimmedString([recipeDictionary objectForKey:@"image"])
+                                    summaryText:summaryText
+                                 readyInMinutes:[self readyInMinutesFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
+                                       servings:[self servingsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
+                                   calorieCount:[self calorieCountFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview]
+                                popularityScore:[self popularityScoreFromRecipeDictionary:recipeDictionary]
+                                     sourceName:sourceName
+                                sourceURLString:sourceURLString
+                                       mealType:mealTypeIdentifier
+                                           tags:tags] autorelease];
 
-  OnboardingRecipeDetail *seedDetail =
-      [self recipeDetailFromRecipeDictionary:recipeDictionary recipeCard:recipeCard fallbackPreview:fallbackPreview];
+  OnboardingRecipeDetail *seedDetail = [self recipeDetailFromRecipeDictionary:recipeDictionary recipeCard:recipeCard fallbackPreview:fallbackPreview];
   if (seedDetail != nil) {
     @synchronized(self) {
       [self.detailCacheByRecipeID setObject:seedDetail forKey:recipeIdentifier];
@@ -1652,8 +1606,8 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 }
 
 - (OnboardingRecipeDetail *)recipeDetailFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                                   recipeCard:(HomeRecipeCard *)recipeCard
-                                              fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+                                                  recipeCard:(HomeRecipeCard *)recipeCard
+                                             fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
   OnboardingRecipeDetail *fallbackDetail = fallbackPreview.fallbackDetail;
   NSArray<OnboardingRecipeIngredient *> *ingredients = [self ingredientsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
   NSArray<OnboardingRecipeInstruction *> *instructions = [self instructionsFromRecipeDictionary:recipeDictionary fallbackPreview:fallbackPreview];
@@ -1822,7 +1776,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 
 - (NSString *)sourceNameFromRecipeDictionary:(NSDictionary *)recipeDictionary
                              sourceURLString:(NSString *)sourceURLString
-                              fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+                             fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
   NSString *sourceName = MRRHomeTrimmedString([recipeDictionary objectForKey:@"sourceName"]);
   if (sourceName.length > 0) {
     return sourceName;
@@ -1871,7 +1825,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 }
 
 - (NSArray<OnboardingRecipeIngredient *> *)ingredientsFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                                          fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+                                                           fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
   NSArray<NSDictionary *> *extendedIngredients = [recipeDictionary objectForKey:@"extendedIngredients"];
   NSMutableArray<OnboardingRecipeIngredient *> *ingredients = [NSMutableArray array];
   if ([extendedIngredients isKindOfClass:[NSArray class]]) {
@@ -1888,8 +1842,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
         continue;
       }
 
-      OnboardingRecipeIngredient *ingredient =
-          [[[OnboardingRecipeIngredient alloc] initWithName:name displayText:displayText] autorelease];
+      OnboardingRecipeIngredient *ingredient = [[[OnboardingRecipeIngredient alloc] initWithName:name displayText:displayText] autorelease];
       [ingredients addObject:ingredient];
     }
   }
@@ -1909,7 +1862,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
 }
 
 - (NSArray<OnboardingRecipeInstruction *> *)instructionsFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                                            fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+                                                             fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
   NSArray<NSDictionary *> *analyzedInstructions = [recipeDictionary objectForKey:@"analyzedInstructions"];
   NSMutableArray<OnboardingRecipeInstruction *> *instructions = [NSMutableArray array];
 
@@ -1928,8 +1881,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
         }
 
         NSString *title = number != nil ? [NSString stringWithFormat:@"Step %@", number] : @"Step";
-        OnboardingRecipeInstruction *instruction =
-            [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:stepText] autorelease];
+        OnboardingRecipeInstruction *instruction = [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:stepText] autorelease];
         [instructions addObject:instruction];
       }
     }
@@ -1947,8 +1899,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
         }
 
         NSString *title = [NSString stringWithFormat:@"Step %lu", (unsigned long)stepIndex];
-        OnboardingRecipeInstruction *instruction =
-            [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:stepText] autorelease];
+        OnboardingRecipeInstruction *instruction = [[[OnboardingRecipeInstruction alloc] initWithTitle:title detailText:stepText] autorelease];
         [instructions addObject:instruction];
         stepIndex += 1;
       }
@@ -1969,8 +1920,7 @@ static NSString *MRRHomeSpoonacularWeeklySortForFilterOption(HomeFilterOption fi
   return @[ placeholderInstruction ];
 }
 
-- (NSArray<NSString *> *)toolsFromRecipeDictionary:(NSDictionary *)recipeDictionary
-                                   fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
+- (NSArray<NSString *> *)toolsFromRecipeDictionary:(NSDictionary *)recipeDictionary fallbackPreview:(OnboardingRecipePreview *)fallbackPreview {
   NSArray<NSDictionary *> *analyzedInstructions = [recipeDictionary objectForKey:@"analyzedInstructions"];
   NSMutableOrderedSet<NSString *> *toolSet = [NSMutableOrderedSet orderedSet];
   if ([analyzedInstructions isKindOfClass:[NSArray class]]) {
