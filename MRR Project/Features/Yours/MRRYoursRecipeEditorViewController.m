@@ -1059,7 +1059,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   }
 
   self.coverImageView.image =
-      [UIImage imageNamed:self.existingRecipe.assetName.length > 0 ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
+      [UIImage imageNamed:(self.existingRecipe != nil && self.existingRecipe.assetName.length > 0) ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
   NSString *remoteURLString = MRRYoursEditorTrimmedString(selectedDraft.remoteURLString ?: @"");
   if (remoteURLString.length == 0) {
     return;
