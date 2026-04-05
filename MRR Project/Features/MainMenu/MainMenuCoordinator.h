@@ -14,15 +14,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface MainMenuCoordinator : NSObject <MRRFeatureCoordinator>
 
-- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
-                                         session:(MRRAuthSession *)session;
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController session:(MRRAuthSession *)session;
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                          session:(MRRAuthSession *)session
-                                savedRecipesStore:(nullable MRRSavedRecipesStore *)savedRecipesStore
+                               savedRecipesStore:(nullable MRRSavedRecipesStore *)savedRecipesStore
                                       syncEngine:(nullable id<MRRSavedRecipesCloudSyncing>)syncEngine
-                                 userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
+                                userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
                                   userSyncEngine:(nullable id<MRRUserRecipesCloudSyncing>)userSyncEngine
-                                 logoutController:(nullable id<MRRLogoutCoordinating>)logoutController;
+                                logoutController:(nullable id<MRRLogoutCoordinating>)logoutController;
 
 @end
 
