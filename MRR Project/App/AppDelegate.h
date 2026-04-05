@@ -16,6 +16,6 @@
 
 - (instancetype)initWithOnboardingStateController:(OnboardingStateController *)onboardingStateController;
 - (instancetype)initWithOnboardingStateController:(OnboardingStateController *)onboardingStateController
-                          authenticationController:(id<MRRAuthenticationController>)authenticationController;
+                         authenticationController:(id<MRRAuthenticationController>)authenticationController;
 
 @end

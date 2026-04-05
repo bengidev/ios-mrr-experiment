@@ -58,8 +58,7 @@
 
 - (instancetype)init {
   NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-  OnboardingStateController *onboardingStateController =
-      [[[OnboardingStateController alloc] initWithUserDefaults:userDefaults] autorelease];
+  OnboardingStateController *onboardingStateController = [[[OnboardingStateController alloc] initWithUserDefaults:userDefaults] autorelease];
   id<MRRAuthenticationController> authenticationController = [[[MRRFirebaseAuthenticationController alloc] init] autorelease];
   return [self initWithOnboardingStateController:onboardingStateController authenticationController:authenticationController];
 }
@@ -70,7 +69,7 @@
 }
 
 - (instancetype)initWithOnboardingStateController:(OnboardingStateController *)onboardingStateController
-                          authenticationController:(id<MRRAuthenticationController>)authenticationController {
+                         authenticationController:(id<MRRAuthenticationController>)authenticationController {
   NSParameterAssert(onboardingStateController != nil);
   NSParameterAssert(authenticationController != nil);
 
@@ -167,10 +166,9 @@
     self.userRecipesStore = nil;
     self.savedRecipesSyncEngine = [[[MRRNoOpSavedRecipesSyncEngine alloc] init] autorelease];
     self.userRecipesSyncEngine = [[[MRRNoOpUserRecipesSyncEngine alloc] init] autorelease];
-    self.logoutController =
-        [[[MRRSyncingLogoutController alloc] initWithAuthenticationController:self.authenticationController
-                                                      savedRecipesSyncEngine:self.savedRecipesSyncEngine
-                                                       userRecipesSyncEngine:self.userRecipesSyncEngine] autorelease];
+    self.logoutController = [[[MRRSyncingLogoutController alloc] initWithAuthenticationController:self.authenticationController
+                                                                           savedRecipesSyncEngine:self.savedRecipesSyncEngine
+                                                                            userRecipesSyncEngine:self.userRecipesSyncEngine] autorelease];
     return;
   }
 
@@ -193,10 +191,9 @@
     self.userRecipesSyncEngine = [[[MRRNoOpUserRecipesSyncEngine alloc] init] autorelease];
   }
 
-  self.logoutController =
-      [[[MRRSyncingLogoutController alloc] initWithAuthenticationController:self.authenticationController
-                                                    savedRecipesSyncEngine:self.savedRecipesSyncEngine
-                                                     userRecipesSyncEngine:self.userRecipesSyncEngine] autorelease];
+  self.logoutController = [[[MRRSyncingLogoutController alloc] initWithAuthenticationController:self.authenticationController
+                                                                         savedRecipesSyncEngine:self.savedRecipesSyncEngine
+                                                                          userRecipesSyncEngine:self.userRecipesSyncEngine] autorelease];
 }
 
 - (UIViewController *)buildInitialRootViewController {
@@ -209,9 +206,8 @@
   [self.savedRecipesSyncEngine stopSync];
   [self.userRecipesSyncEngine stopSync];
 
-  OnboardingViewController *viewController =
-      [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController
-                                         authenticationController:self.authenticationController] autorelease];
+  OnboardingViewController *viewController = [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController
+                                                                               authenticationController:self.authenticationController] autorelease];
   viewController.delegate = self;
 
   UINavigationController *navigationController = [[[UINavigationController alloc] initWithRootViewController:viewController] autorelease];
@@ -232,11 +228,11 @@
 - (UIViewController *)buildMainMenuViewControllerWithSession:(MRRAuthSession *)session {
   self.mainMenuCoordinator = [[[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController
                                                                                     session:session
-                                                                           savedRecipesStore:self.savedRecipesStore
+                                                                          savedRecipesStore:self.savedRecipesStore
                                                                                  syncEngine:self.savedRecipesSyncEngine
                                                                            userRecipesStore:self.userRecipesStore
-                                                                            userSyncEngine:self.userRecipesSyncEngine
-                                                                            logoutController:self.logoutController] autorelease];
+                                                                             userSyncEngine:self.userRecipesSyncEngine
+                                                                           logoutController:self.logoutController] autorelease];
   return [self.mainMenuCoordinator rootViewController];
 }
 
@@ -265,23 +261,27 @@
 
   NSString *userID = [[self.visibleAuthenticatedUserID copy] autorelease];
   __block AppDelegate *blockSelf = self;
-  [self.savedRecipesSyncEngine flushPendingChangesForUserID:userID completion:^(__unused NSError *error) {
-    AppDelegate *strongSelf = blockSelf;
-    if (strongSelf == nil) {
-      return;
-    }
+  [self.savedRecipesSyncEngine
+      flushPendingChangesForUserID:userID
+                        completion:^(__unused NSError *error) {
+                          AppDelegate *strongSelf = blockSelf;
+                          if (strongSelf == nil) {
+                            return;
+                          }
 
-    [strongSelf.userRecipesSyncEngine flushPendingChangesForUserID:userID completion:^(__unused NSError *userError) {
-      dispatch_async(dispatch_get_main_queue(), ^{
-        AppDelegate *completedSelf = blockSelf;
-        if (completedSelf == nil) {
-          return;
-        }
+                          [strongSelf.userRecipesSyncEngine
+                              flushPendingChangesForUserID:userID
+                                                completion:^(__unused NSError *userError) {
+                                                  dispatch_async(dispatch_get_main_queue(), ^{
+                                                    AppDelegate *completedSelf = blockSelf;
+                                                    if (completedSelf == nil) {
+                                                      return;
+                                                    }
 
-        [completedSelf endSavedRecipesBackgroundTaskIfNeededForApplication:application];
-      });
-    }];
-  }];
+                                                    [completedSelf endSavedRecipesBackgroundTaskIfNeededForApplication:application];
+                                                  });
+                                                }];
+                        }];
 }
 
 - (void)endSavedRecipesBackgroundTaskIfNeededForApplication:(UIApplication *)application {
