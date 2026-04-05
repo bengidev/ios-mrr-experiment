@@ -50,8 +50,7 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 
 @implementation ProfileViewController
 
-- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
-                                         session:(MRRAuthSession *)session {
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController session:(MRRAuthSession *)session {
   return [self initWithAuthenticationController:authenticationController session:session logoutController:nil];
 }
 
@@ -123,10 +122,9 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   eyebrowLabel.accessibilityIdentifier = @"profile.eyebrowLabel";
   [summaryCardView addSubview:eyebrowLabel];
 
-  UILabel *displayNameLabel =
-      [self labelWithFont:[UIFont boldSystemFontOfSize:30.0]
-                    color:MRRProfileNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                               [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *displayNameLabel = [self
+      labelWithFont:[UIFont boldSystemFontOfSize:30.0]
+              color:MRRProfileNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   displayNameLabel.translatesAutoresizingMaskIntoConstraints = NO;
   displayNameLabel.accessibilityIdentifier = @"profile.displayNameLabel";
   displayNameLabel.numberOfLines = 0;
@@ -134,9 +132,9 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [summaryCardView addSubview:displayNameLabel];
   self.displayNameLabel = displayNameLabel;
 
-  UILabel *emailLabel = [self labelWithFont:[UIFont systemFontOfSize:16.0]
-                                      color:MRRProfileNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                                                 [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *emailLabel = [self
+      labelWithFont:[UIFont systemFontOfSize:16.0]
+              color:MRRProfileNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   emailLabel.translatesAutoresizingMaskIntoConstraints = NO;
   emailLabel.accessibilityIdentifier = @"profile.emailLabel";
   emailLabel.numberOfLines = 0;
@@ -144,10 +142,9 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [summaryCardView addSubview:emailLabel];
   self.emailLabel = emailLabel;
 
-  UILabel *providerLabel =
-      [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
-                    color:MRRProfileNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                               [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *providerLabel = [self
+      labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
+              color:MRRProfileNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   providerLabel.translatesAutoresizingMaskIntoConstraints = NO;
   providerLabel.accessibilityIdentifier = @"profile.providerLabel";
   providerLabel.numberOfLines = 0;
@@ -155,10 +152,9 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [summaryCardView addSubview:providerLabel];
   self.providerLabel = providerLabel;
 
-  UILabel *emailVerificationLabel =
-      [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
-                    color:MRRProfileNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0],
-                                               [UIColor colorWithWhite:0.96 alpha:1.0])];
+  UILabel *emailVerificationLabel = [self
+      labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
+              color:MRRProfileNamedColor(@"TextPrimaryColor", [UIColor colorWithWhite:0.08 alpha:1.0], [UIColor colorWithWhite:0.96 alpha:1.0])];
   emailVerificationLabel.translatesAutoresizingMaskIntoConstraints = NO;
   emailVerificationLabel.accessibilityIdentifier = @"profile.emailVerificationLabel";
   emailVerificationLabel.numberOfLines = 0;
@@ -166,9 +162,9 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [summaryCardView addSubview:emailVerificationLabel];
   self.emailVerificationLabel = emailVerificationLabel;
 
-  UILabel *statusLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0]
-                                       color:MRRProfileNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                                                  [UIColor colorWithWhite:0.70 alpha:1.0])];
+  UILabel *statusLabel = [self
+      labelWithFont:[UIFont systemFontOfSize:15.0]
+              color:MRRProfileNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.70 alpha:1.0])];
   statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
   statusLabel.accessibilityIdentifier = @"profile.statusLabel";
   statusLabel.numberOfLines = 0;
@@ -242,19 +238,20 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [self updateLogoutUIForInProgress:YES];
   if (self.logoutController != nil) {
     __block ProfileViewController *blockSelf = self;
-    [self.logoutController performLogoutForSession:self.session completion:^(NSError *error) {
-      dispatch_async(dispatch_get_main_queue(), ^{
-        ProfileViewController *strongSelf = blockSelf;
-        if (strongSelf == nil) {
-          return;
-        }
+    [self.logoutController performLogoutForSession:self.session
+                                        completion:^(NSError *error) {
+                                          dispatch_async(dispatch_get_main_queue(), ^{
+                                            ProfileViewController *strongSelf = blockSelf;
+                                            if (strongSelf == nil) {
+                                              return;
+                                            }
 
-        [strongSelf updateLogoutUIForInProgress:NO];
-        if (error != nil) {
-          [strongSelf presentLogoutError:error];
-        }
-      });
-    }];
+                                            [strongSelf updateLogoutUIForInProgress:NO];
+                                            if (error != nil) {
+                                              [strongSelf presentLogoutError:error];
+                                            }
+                                          });
+                                        }];
     return;
   }
 

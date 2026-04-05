@@ -9,8 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface ProfileViewController : UIViewController
 
-- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
-                                         session:(MRRAuthSession *)session;
+- (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController session:(MRRAuthSession *)session;
 - (instancetype)initWithAuthenticationController:(id<MRRAuthenticationController>)authenticationController
                                          session:(MRRAuthSession *)session
                                 logoutController:(nullable id<MRRLogoutCoordinating>)logoutController;
