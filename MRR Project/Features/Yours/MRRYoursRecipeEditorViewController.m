@@ -1312,11 +1312,24 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   if (self.selectedPhotoIndex < 0 || self.selectedPhotoIndex >= (NSInteger)self.photoDrafts.count) {
     return;
   }
+
+  // Get the thumbnail button that will be removed for animation
   NSInteger removedIndex = self.selectedPhotoIndex;
+  UIButton *thumbnailToRemove = nil;
+  if (removedIndex >= 0 && removedIndex < (NSInteger)self.photoThumbnailsStackView.arrangedSubviews.count) {
+    UIView *subview = self.photoThumbnailsStackView.arrangedSubviews[removedIndex];
+    if ([subview isKindOfClass:[UIButton class]]) {
+      thumbnailToRemove = (UIButton *)subview;
+    }
+  }
+
+  // Store draft info for cleanup after animation
   MRRYoursRecipePhotoDraft *draft = [self.photoDrafts objectAtIndex:removedIndex];
   if (draft.localRelativePath.length > 0) {
     [self.removedLocalRelativePaths addObject:draft.localRelativePath];
   }
+
+  // Calculate next selected index
   NSInteger nextSelectedIndex = MAX(0, MIN(removedIndex, (NSInteger)self.photoDrafts.count - 2));
   [self.photoDrafts removeObjectAtIndex:removedIndex];
   self.selectedPhotoIndex = nextSelectedIndex;
