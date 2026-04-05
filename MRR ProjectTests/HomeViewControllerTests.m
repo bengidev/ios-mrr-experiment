@@ -63,7 +63,9 @@
 @property(nonatomic, readonly) UIStackView *expandedIntroStackView;
 @property(nonatomic, readonly) BOOL introCompact;
 @property(nonatomic, readonly) BOOL introDropdownExpanded;
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath;
+- (CGSize)collectionView:(UICollectionView *)collectionView
+                    layout:(UICollectionViewLayout *)collectionViewLayout
+    sizeForItemAtIndexPath:(NSIndexPath *)indexPath;
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView;
 
 @end
@@ -87,12 +89,12 @@
 - (HomeRecipeListViewController *)mountedRecipeListViewControllerWithTitle:(NSString *)title
                                                                    recipes:(NSArray<HomeRecipeCard *> *)recipes
                                                               emptyMessage:(NSString *)emptyMessage
-                                                                    window:(UIWindow * __strong *)window
-                                                      navigationController:(UINavigationController * __strong *)navigationController;
+                                                                    window:(UIWindow *__strong *)window
+                                                      navigationController:(UINavigationController *__strong *)navigationController;
 - (HomeViewController *)mountedHomeViewControllerWithSavedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                                                             syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine
-                                                                window:(UIWindow * __strong *)window
-                                                  navigationController:(UINavigationController * __strong *)navigationController;
+                                                                window:(UIWindow *__strong *)window
+                                                  navigationController:(UINavigationController *__strong *)navigationController;
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 - (void)spinMainRunLoop;
 
@@ -190,12 +192,8 @@
   }
 
   NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(HomeRecipeCard *recipeCard, NSDictionary<NSString *, id> *bindings) {
-    NSMutableArray<NSString *> *parts = [NSMutableArray arrayWithObjects:
-        recipeCard.title ?: @"",
-        recipeCard.subtitle ?: @"",
-        recipeCard.summaryText ?: @"",
-        recipeCard.mealType ?: @"",
-        nil];
+    NSMutableArray<NSString *> *parts = [NSMutableArray
+        arrayWithObjects:recipeCard.title ?: @"", recipeCard.subtitle ?: @"", recipeCard.summaryText ?: @"", recipeCard.mealType ?: @"", nil];
     [parts addObjectsFromArray:recipeCard.tags ?: @[]];
     NSString *joinedText = [[parts componentsJoinedByString:@" "] lowercaseString];
 
@@ -244,27 +242,22 @@
 }
 
 - (NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *)recipesByCategoryIdentifierForFilterOption:(HomeFilterOption)filterOption
-                                                                                 advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters {
+                                                                                      advancedFilters:(HomeAdvancedFilterSettings *)advancedFilters {
   NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier = self.initialRecipesByCategoryIdentifierOverride;
   if (recipesByCategoryIdentifier == nil) {
-    NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *derivedRecipesByCategoryIdentifier =
-        [NSMutableDictionary dictionary];
+    NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *derivedRecipesByCategoryIdentifier = [NSMutableDictionary dictionary];
     for (HomeCategory *category in [self availableCategories]) {
       NSArray<HomeRecipeCard *> *recipes = [self recipesForCategory:category] ?: @[];
       recipes = [self recipes:recipes filteredForAdvancedFilters:advancedFilters];
-      [derivedRecipesByCategoryIdentifier setObject:[self sortedRecipes:recipes forFilterOption:filterOption]
-                                             forKey:category.identifier];
+      [derivedRecipesByCategoryIdentifier setObject:[self sortedRecipes:recipes forFilterOption:filterOption] forKey:category.identifier];
     }
     recipesByCategoryIdentifier = derivedRecipesByCategoryIdentifier;
   } else {
     NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *filteredRecipesByCategoryIdentifier =
         [NSMutableDictionary dictionaryWithCapacity:recipesByCategoryIdentifier.count];
-    [recipesByCategoryIdentifier enumerateKeysAndObjectsUsingBlock:^(NSString *key,
-                                                                     NSArray<HomeRecipeCard *> *recipes,
-                                                                     BOOL *stop) {
+    [recipesByCategoryIdentifier enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray<HomeRecipeCard *> *recipes, BOOL *stop) {
       recipes = [self recipes:recipes filteredForAdvancedFilters:advancedFilters];
-      [filteredRecipesByCategoryIdentifier setObject:[self sortedRecipes:recipes forFilterOption:filterOption]
-                                              forKey:key];
+      [filteredRecipesByCategoryIdentifier setObject:[self sortedRecipes:recipes forFilterOption:filterOption] forKey:key];
     }];
     recipesByCategoryIdentifier = filteredRecipesByCategoryIdentifier;
   }
@@ -283,10 +276,8 @@
     return;
   }
 
-  [self.initialRequests addObject:@{
-    @"filterOption" : @(filterOption),
-    @"advancedFilters" : advancedFilters ?: [HomeAdvancedFilterSettings emptySettings]
-  }];
+  [self.initialRequests
+      addObject:@{@"filterOption" : @(filterOption), @"advancedFilters" : advancedFilters ?: [HomeAdvancedFilterSettings emptySettings]}];
   NSArray<HomeSection *> *sections = [self sectionsForFilterOption:filterOption advancedFilters:advancedFilters];
   NSDictionary<NSString *, NSArray<HomeRecipeCard *> *> *recipesByCategoryIdentifier =
       [self recipesByCategoryIdentifierForFilterOption:filterOption advancedFilters:advancedFilters];
@@ -312,15 +303,13 @@
 
   NSString *trimmedQuery = [query stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
   if (trimmedQuery.length == 0) {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(self.searchDelay, 0.0) * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), ^{
-                     completion(@[], self.searchUsesLiveData);
-                   });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(self.searchDelay, 0.0) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      completion(@[], self.searchUsesLiveData);
+    });
     return;
   }
 
-  NSDictionary<NSNumber *, NSArray<HomeRecipeCard *> *> *recipesByFilterOption =
-      [self.searchResultsByQueryAndFilterOption objectForKey:trimmedQuery];
+  NSDictionary<NSNumber *, NSArray<HomeRecipeCard *> *> *recipesByFilterOption = [self.searchResultsByQueryAndFilterOption objectForKey:trimmedQuery];
   NSArray<HomeRecipeCard *> *recipes = [recipesByFilterOption objectForKey:@(filterOption)];
   if (recipes == nil) {
     recipes = [self.searchResultsByQuery objectForKey:trimmedQuery];
@@ -384,7 +373,7 @@
 }
 
 - (nullable MRRSavedRecipeSnapshot *)savedRecipeForUserID:(NSString *)userID recipeID:(NSString *)recipeID error:(NSError **)error {
-  #pragma unused(userID, error)
+#pragma unused(userID, error)
   return [self.snapshotsByRecipeID objectForKey:recipeID];
 }
 
@@ -393,7 +382,7 @@
 }
 
 - (BOOL)saveRecipeSnapshot:(MRRSavedRecipeSnapshot *)snapshot error:(NSError **)error {
-  #pragma unused(error)
+#pragma unused(error)
   self.saveInvocationCount += 1;
   if (snapshot == nil) {
     return NO;
@@ -404,7 +393,7 @@
 }
 
 - (BOOL)removeRecipeForUserID:(NSString *)userID recipeID:(NSString *)recipeID error:(NSError **)error {
-  #pragma unused(userID, error)
+#pragma unused(userID, error)
   self.removeInvocationCount += 1;
   [self.snapshotsByRecipeID removeObjectForKey:recipeID];
   return YES;
@@ -415,7 +404,7 @@
 @implementation HomeSavedRecipesSyncEngineStub
 
 - (void)startSyncForUserID:(NSString *)userID completion:(MRRSavedRecipesSyncCompletion)completion {
-  #pragma unused(userID)
+#pragma unused(userID)
   if (completion != nil) {
     completion(nil);
   }
@@ -438,18 +427,9 @@
 
 @end
 
-static HomeRecipeCard *MRRTestHomeRecipeCard(NSString *recipeID,
-                                             NSString *title,
-                                             NSString *subtitle,
-                                             NSString *assetName,
-                                             NSString *summaryText,
-                                             NSInteger readyInMinutes,
-                                             NSInteger servings,
-                                             NSInteger calorieCount,
-                                             NSInteger popularityScore,
-                                             NSString *sourceName,
-                                             NSString *mealType,
-                                             NSArray<NSString *> *tags) {
+static HomeRecipeCard *MRRTestHomeRecipeCard(NSString *recipeID, NSString *title, NSString *subtitle, NSString *assetName, NSString *summaryText,
+                                             NSInteger readyInMinutes, NSInteger servings, NSInteger calorieCount, NSInteger popularityScore,
+                                             NSString *sourceName, NSString *mealType, NSArray<NSString *> *tags) {
   return [[HomeRecipeCard alloc] initWithRecipeID:recipeID
                                             title:title
                                          subtitle:subtitle
@@ -468,34 +448,25 @@ static HomeRecipeCard *MRRTestHomeRecipeCard(NSString *recipeID,
 
 static NSArray<HomeRecipeCard *> *MRRTestHomeRecipeCardsWithPrefix(NSString *prefix, NSUInteger count, NSString *mealType) {
   NSMutableArray<HomeRecipeCard *> *cards = [NSMutableArray arrayWithCapacity:count];
-  NSArray<NSNumber *> *calories = @[@(540), @(160), @(310), @(220), @(480), @(180), @(260), @(620), @(140), @(390), @(200), @(450), @(170), @(300), @(240)];
+  NSArray<NSNumber *> *calories =
+      @[ @(540), @(160), @(310), @(220), @(480), @(180), @(260), @(620), @(140), @(390), @(200), @(450), @(170), @(300), @(240) ];
   for (NSUInteger index = 0; index < count; index += 1) {
     NSInteger calorieCount = [[calories objectAtIndex:(index % calories.count)] integerValue];
     NSString *title = [NSString stringWithFormat:@"%@ %02lu", prefix, (unsigned long)index + 1];
     NSString *recipeID = [NSString stringWithFormat:@"test.%@.%02lu", prefix.lowercaseString, (unsigned long)index + 1];
-    NSString *summary = [NSString stringWithFormat:@"%@ recipe number %02lu keeps the Home search and sorting states busy.", prefix, (unsigned long)index + 1];
-    [cards addObject:MRRTestHomeRecipeCard(recipeID,
-                                           title,
-                                           [NSString stringWithFormat:@"%@ preview", prefix],
-                                           @"avocado-toast",
-                                           summary,
-                                           10 + (NSInteger)(index % 25),
-                                           1 + (NSInteger)(index % 4),
-                                           calorieCount,
-                                           100 - (NSInteger)index,
-                                           @"Culina Test Kitchen",
-                                           mealType,
-                                           @[ prefix, @"Test", mealType ])];
+    NSString *summary =
+        [NSString stringWithFormat:@"%@ recipe number %02lu keeps the Home search and sorting states busy.", prefix, (unsigned long)index + 1];
+    [cards addObject:MRRTestHomeRecipeCard(recipeID, title, [NSString stringWithFormat:@"%@ preview", prefix], @"avocado-toast", summary,
+                                           10 + (NSInteger)(index % 25), 1 + (NSInteger)(index % 4), calorieCount, 100 - (NSInteger)index,
+                                           @"Culina Test Kitchen", mealType, @[ prefix, @"Test", mealType ])];
   }
 
   return cards;
 }
 
 static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString *assetName) {
-  OnboardingRecipeIngredient *ingredient =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Test Ingredient" displayText:@"1 cup test ingredient"];
-  OnboardingRecipeInstruction *instruction =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Stir and serve."];
+  OnboardingRecipeIngredient *ingredient = [[OnboardingRecipeIngredient alloc] initWithName:@"Test Ingredient" displayText:@"1 cup test ingredient"];
+  OnboardingRecipeInstruction *instruction = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Stir and serve."];
   return [[OnboardingRecipeDetail alloc] initWithTitle:title
                                               subtitle:[NSString stringWithFormat:@"%@ subtitle", title]
                                              assetName:assetName
@@ -534,42 +505,17 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
     @"curry" : @{
       @(HomeFilterOptionFeatured) : MRRTestHomeRecipeCardsWithPrefix(@"Curry", 4, HomeCategoryIdentifierDinner),
       @(HomeFilterOptionLowCalorie) : @[
-        MRRTestHomeRecipeCard(@"test.curry.lowcal.01",
-                              @"Curry 01",
-                              @"Curry preview",
-                              @"avocado-toast",
-                              @"Curry low-calorie recipe number 01 keeps the refetch path visible.",
-                              18,
-                              2,
-                              140,
-                              99,
-                              @"Culina Test Kitchen",
-                              HomeCategoryIdentifierDinner,
-                              @[ @"Curry", @"Test", HomeCategoryIdentifierDinner ]),
-        MRRTestHomeRecipeCard(@"test.curry.lowcal.02",
-                              @"Curry 02",
-                              @"Curry preview",
-                              @"avocado-toast",
-                              @"Curry low-calorie recipe number 02 keeps the refetch path visible.",
-                              22,
-                              2,
-                              180,
-                              98,
-                              @"Culina Test Kitchen",
-                              HomeCategoryIdentifierDinner,
-                              @[ @"Curry", @"Test", HomeCategoryIdentifierDinner ])
+        MRRTestHomeRecipeCard(@"test.curry.lowcal.01", @"Curry 01", @"Curry preview", @"avocado-toast",
+                              @"Curry low-calorie recipe number 01 keeps the refetch path visible.", 18, 2, 140, 99, @"Culina Test Kitchen",
+                              HomeCategoryIdentifierDinner, @[ @"Curry", @"Test", HomeCategoryIdentifierDinner ]),
+        MRRTestHomeRecipeCard(@"test.curry.lowcal.02", @"Curry 02", @"Curry preview", @"avocado-toast",
+                              @"Curry low-calorie recipe number 02 keeps the refetch path visible.", 22, 2, 180, 98, @"Culina Test Kitchen",
+                              HomeCategoryIdentifierDinner, @[ @"Curry", @"Test", HomeCategoryIdentifierDinner ])
       ]
     }
   };
-  dataProvider.searchDelayByQuery = @{
-    @"salad" : @(0.16),
-    @"soup" : @(0.02),
-    @"berry" : @(0.01),
-    @"curry" : @(0.01)
-  };
-  dataProvider.detailByRecipeID = @{
-    @"home.pastaCarbonara" : MRRTestHomeRecipeDetail(@"Pasta Carbonara, Hydrated", @"pasta-carbonara")
-  };
+  dataProvider.searchDelayByQuery = @{@"salad" : @(0.16), @"soup" : @(0.02), @"berry" : @(0.01), @"curry" : @(0.01)};
+  dataProvider.detailByRecipeID = @{@"home.pastaCarbonara" : MRRTestHomeRecipeDetail(@"Pasta Carbonara, Hydrated", @"pasta-carbonara")};
   self.dataProvider = dataProvider;
   self.viewController = [[HomeViewController alloc] initWithSession:self.session dataProvider:self.dataProvider];
   self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.viewController];
@@ -629,12 +575,16 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [refreshControl sendActionsForControlEvents:UIControlEventValueChanged];
 
   XCTAssertTrue(refreshControl.isRefreshing);
-  [self waitForCondition:^BOOL {
-    return self.dataProvider.initialRequests.count == initialRequestCount + 1;
-  } timeout:1.0];
-  [self waitForCondition:^BOOL {
-    return !refreshControl.isRefreshing;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.dataProvider.initialRequests.count == initialRequestCount + 1;
+      }
+               timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return !refreshControl.isRefreshing;
+      }
+               timeout:1.2];
 
   XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount + 1);
   XCTAssertEqualObjects([[self.dataProvider.initialRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionLowCalorie));
@@ -652,8 +602,7 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   XCTAssertNotNil(refreshControl);
 
   UIView *refreshStateView = [self findViewWithAccessibilityIdentifier:@"home.refreshStateView" inView:self.viewController.view];
-  UIView *firstPlaceholderView = [self findViewWithAccessibilityIdentifier:@"home.refreshShimmer.placeholder.1"
-                                                                    inView:self.viewController.view];
+  UIView *firstPlaceholderView = [self findViewWithAccessibilityIdentifier:@"home.refreshShimmer.placeholder.1" inView:self.viewController.view];
   XCTAssertNotNil(refreshStateView);
   XCTAssertNotNil(firstPlaceholderView);
 
@@ -667,9 +616,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
     XCTAssertNotNil([shimmerLayer animationForKey:@"home.refreshShimmerAnimation"]);
   }
 
-  [self waitForCondition:^BOOL {
-    return !refreshControl.isRefreshing;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !refreshControl.isRefreshing;
+      }
+               timeout:1.2];
 
   XCTAssertTrue(refreshStateView.hidden);
   XCTAssertEqual(firstPlaceholderView.layer.sublayers.count, 0U);
@@ -692,12 +643,16 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   XCTAssertTrue(self.viewController.poweredByContainerView.hidden);
 
-  [self waitForCondition:^BOOL {
-    return !refreshControl.isRefreshing;
-  } timeout:1.2];
-  [self waitForCondition:^BOOL {
-    return !self.viewController.poweredByContainerView.hidden;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !refreshControl.isRefreshing;
+      }
+               timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !self.viewController.poweredByContainerView.hidden;
+      }
+               timeout:1.2];
 }
 
 - (void)testChangingFilterReloadsLiveHomeSections {
@@ -707,12 +662,16 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   NSUInteger initialRequestCount = self.dataProvider.initialRequests.count;
   [self.viewController applyFilterOption:HomeFilterOptionFastest];
   XCTAssertFalse(self.viewController.filterButton.enabled);
-  [self waitForCondition:^BOOL {
-    return self.dataProvider.initialRequests.count == initialRequestCount + 1;
-  } timeout:1.2];
-  [self waitForCondition:^BOOL {
-    return self.viewController.filterButton.enabled;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.dataProvider.initialRequests.count == initialRequestCount + 1;
+      }
+               timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.filterButton.enabled;
+      }
+               timeout:1.2];
 
   XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount + 1);
   XCTAssertEqualObjects([[self.dataProvider.initialRequests lastObject] objectForKey:@"filterOption"], @(HomeFilterOptionFastest));
@@ -723,23 +682,26 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.dataProvider.initialDelay = 0.12;
   NSUInteger initialRequestCount = self.dataProvider.initialRequests.count;
-  HomeAdvancedFilterSettings *advancedFilters =
-      [[HomeAdvancedFilterSettings alloc] initWithCuisine:@"Italian"
-                                                     diet:nil
-                                             intolerances:nil
-                                       includeIngredients:nil
-                                       excludeIngredients:nil
-                                                equipment:nil
-                                             maxReadyTime:30];
+  HomeAdvancedFilterSettings *advancedFilters = [[HomeAdvancedFilterSettings alloc] initWithCuisine:@"Italian"
+                                                                                               diet:nil
+                                                                                       intolerances:nil
+                                                                                 includeIngredients:nil
+                                                                                 excludeIngredients:nil
+                                                                                          equipment:nil
+                                                                                       maxReadyTime:30];
 
   [self.viewController applyAdvancedFilters:advancedFilters];
   XCTAssertFalse(self.viewController.activeFiltersContainerView.hidden);
-  [self waitForCondition:^BOOL {
-    return self.dataProvider.initialRequests.count == initialRequestCount + 1;
-  } timeout:1.2];
-  [self waitForCondition:^BOOL {
-    return self.viewController.filterButton.enabled;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.dataProvider.initialRequests.count == initialRequestCount + 1;
+      }
+               timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.filterButton.enabled;
+      }
+               timeout:1.2];
 
   NSDictionary<NSString *, id> *lastRequest = [self.dataProvider.initialRequests lastObject];
   HomeAdvancedFilterSettings *capturedFilters = [lastRequest objectForKey:@"advancedFilters"];
@@ -754,10 +716,8 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   HomeAsyncTestDataProvider *fallbackProvider = [[HomeAsyncTestDataProvider alloc] init];
   fallbackProvider.initialUsesLiveData = NO;
 
-  HomeViewController *fallbackViewController = [[HomeViewController alloc] initWithSession:self.session
-                                                                               dataProvider:fallbackProvider];
-  UINavigationController *fallbackNavigationController =
-      [[UINavigationController alloc] initWithRootViewController:fallbackViewController];
+  HomeViewController *fallbackViewController = [[HomeViewController alloc] initWithSession:self.session dataProvider:fallbackProvider];
+  UINavigationController *fallbackNavigationController = [[UINavigationController alloc] initWithRootViewController:fallbackViewController];
   UIWindow *fallbackWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   fallbackWindow.rootViewController = fallbackNavigationController;
   [fallbackWindow makeKeyAndVisible];
@@ -765,9 +725,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [fallbackViewController loadViewIfNeeded];
   [fallbackViewController.view layoutIfNeeded];
 
-  [self waitForCondition:^BOOL {
-    return !fallbackViewController.isLoadingContent;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !fallbackViewController.isLoadingContent;
+      }
+               timeout:1.2];
 
   XCTAssertFalse(fallbackViewController.displayingLiveContent);
   XCTAssertTrue(fallbackViewController.poweredByContainerView.hidden);
@@ -780,9 +742,8 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [self finishInitialLoadIfNeeded];
 
   NSArray<NSString *> *identifiers = @[
-    @"home.view", @"home.greetingLabel", @"home.headlineLabel", @"home.avatarButton", @"home.searchContainerView",
-    @"home.searchTextField", @"home.filterButton", @"home.categories.collectionView", @"home.recommendation.collectionView",
-    @"home.weekly.collectionView"
+    @"home.view", @"home.greetingLabel", @"home.headlineLabel", @"home.avatarButton", @"home.searchContainerView", @"home.searchTextField",
+    @"home.filterButton", @"home.categories.collectionView", @"home.recommendation.collectionView", @"home.weekly.collectionView"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -833,9 +794,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"salad";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults;
+      }
+               timeout:1.0];
 
   XCTAssertFalse(self.viewController.searchResultsSectionView.hidden);
   XCTAssertTrue(self.viewController.recommendationSectionView.hidden);
@@ -854,9 +817,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"berry tart";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateEmpty;
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateEmpty;
+      }
+               timeout:1.0];
 
   XCTAssertFalse(self.viewController.searchResultsSectionView.hidden);
   XCTAssertFalse(self.viewController.searchEmptyStateLabel.hidden);
@@ -867,14 +832,18 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"salad";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:2.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults;
+      }
+               timeout:2.0];
 
   [self.viewController textFieldShouldReturn:self.viewController.searchTextField];
-  [self waitForCondition:^BOOL {
-    return [self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]];
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return [self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]];
+      }
+               timeout:1.0];
 
   XCTAssertTrue([self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]]);
 
@@ -899,24 +868,31 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"curry";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:2.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults;
+      }
+               timeout:2.0];
 
   NSUInteger requestCountBeforeFilter = self.dataProvider.searchRequests.count;
 
   [self.viewController applyFilterOption:HomeFilterOptionLowCalorie];
   XCTAssertFalse(self.viewController.filterButton.enabled);
-  [self waitForCondition:^BOOL {
-    return self.dataProvider.searchRequests.count == requestCountBeforeFilter + 1;
-  } timeout:1.0];
-  [self waitForCondition:^BOOL {
-    return [self.viewController.lastCompletedSearchQuery isEqualToString:@"curry"] &&
-           self.viewController.currentSearchResults.count == 2U;
-  } timeout:1.0];
-  [self waitForCondition:^BOOL {
-    return self.viewController.filterButton.enabled;
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.dataProvider.searchRequests.count == requestCountBeforeFilter + 1;
+      }
+               timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return [self.viewController.lastCompletedSearchQuery isEqualToString:@"curry"] && self.viewController.currentSearchResults.count == 2U;
+      }
+               timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.filterButton.enabled;
+      }
+               timeout:1.0];
 
   XCTAssertEqual(self.dataProvider.searchRequests.count, requestCountBeforeFilter + 1);
   XCTAssertEqualObjects([[self.dataProvider.searchRequests lastObject] objectForKey:@"query"], @"curry");
@@ -936,9 +912,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"curry";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:2.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults;
+      }
+               timeout:2.0];
 
   UIRefreshControl *refreshControl = nil;
   if (@available(iOS 10.0, *)) {
@@ -952,12 +930,16 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [refreshControl sendActionsForControlEvents:UIControlEventValueChanged];
 
   XCTAssertTrue(refreshControl.isRefreshing);
-  [self waitForCondition:^BOOL {
-    return self.dataProvider.searchRequests.count == searchRequestCount + 1;
-  } timeout:1.0];
-  [self waitForCondition:^BOOL {
-    return !refreshControl.isRefreshing;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.dataProvider.searchRequests.count == searchRequestCount + 1;
+      }
+               timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return !refreshControl.isRefreshing;
+      }
+               timeout:1.2];
 
   XCTAssertEqual(self.dataProvider.initialRequests.count, initialRequestCount);
   XCTAssertEqual(self.dataProvider.searchRequests.count, searchRequestCount + 1);
@@ -972,31 +954,13 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   NSMutableDictionary<NSString *, NSArray<HomeRecipeCard *> *> *searchResultsByQuery =
       [NSMutableDictionary dictionaryWithDictionary:self.dataProvider.searchResultsByQuery ?: @{}];
   [searchResultsByQuery setObject:@[
-    MRRTestHomeRecipeCard(@"test.green.01",
-                          @"Green Pasta",
-                          @"Italian garden bowl",
-                          @"avocado-toast",
-                          @"Tomato basil pasta blended into a bright blender sauce.",
-                          18,
-                          2,
-                          320,
-                          98,
-                          @"Culina Test Kitchen",
-                          HomeCategoryIdentifierLunch,
-                          @[ @"Italian", @"Vegetarian", @"Tomato", @"Blender" ]),
-    MRRTestHomeRecipeCard(@"test.green.02",
-                          @"Green Curry",
-                          @"Comfort bowl",
-                          @"green-curry",
-                          @"Herby curry for a slower dinner with a stock pot.",
-                          34,
-                          3,
-                          410,
-                          94,
-                          @"Culina Test Kitchen",
-                          HomeCategoryIdentifierDinner,
-                          @[ @"Thai", @"Curry", @"Dinner" ])
-  ] forKey:@"green"];
+    MRRTestHomeRecipeCard(@"test.green.01", @"Green Pasta", @"Italian garden bowl", @"avocado-toast",
+                          @"Tomato basil pasta blended into a bright blender sauce.", 18, 2, 320, 98, @"Culina Test Kitchen",
+                          HomeCategoryIdentifierLunch, @[ @"Italian", @"Vegetarian", @"Tomato", @"Blender" ]),
+    MRRTestHomeRecipeCard(@"test.green.02", @"Green Curry", @"Comfort bowl", @"green-curry", @"Herby curry for a slower dinner with a stock pot.", 34,
+                          3, 410, 94, @"Culina Test Kitchen", HomeCategoryIdentifierDinner, @[ @"Thai", @"Curry", @"Dinner" ])
+  ]
+                           forKey:@"green"];
   self.dataProvider.searchResultsByQuery = searchResultsByQuery;
 
   NSMutableDictionary<NSString *, NSNumber *> *searchDelayByQuery =
@@ -1006,31 +970,38 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"green";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:2.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults;
+      }
+               timeout:2.0];
 
   NSUInteger requestCountBeforeFilter = self.dataProvider.searchRequests.count;
-  HomeAdvancedFilterSettings *advancedFilters =
-      [[HomeAdvancedFilterSettings alloc] initWithCuisine:@"Italian"
-                                                     diet:nil
-                                             intolerances:nil
-                                       includeIngredients:@"Tomato"
-                                       excludeIngredients:nil
-                                                equipment:@"Blender"
-                                             maxReadyTime:20];
+  HomeAdvancedFilterSettings *advancedFilters = [[HomeAdvancedFilterSettings alloc] initWithCuisine:@"Italian"
+                                                                                               diet:nil
+                                                                                       intolerances:nil
+                                                                                 includeIngredients:@"Tomato"
+                                                                                 excludeIngredients:nil
+                                                                                          equipment:@"Blender"
+                                                                                       maxReadyTime:20];
 
   [self.viewController applyAdvancedFilters:advancedFilters];
   XCTAssertFalse(self.viewController.filterButton.enabled);
-  [self waitForCondition:^BOOL {
-    return self.dataProvider.searchRequests.count == requestCountBeforeFilter + 1;
-  } timeout:1.2];
-  [self waitForCondition:^BOOL {
-    return self.viewController.currentSearchResults.count == 1U;
-  } timeout:1.2];
-  [self waitForCondition:^BOOL {
-    return self.viewController.filterButton.enabled;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.dataProvider.searchRequests.count == requestCountBeforeFilter + 1;
+      }
+               timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.currentSearchResults.count == 1U;
+      }
+               timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.filterButton.enabled;
+      }
+               timeout:1.2];
 
   NSDictionary<NSString *, id> *lastRequest = [self.dataProvider.searchRequests lastObject];
   HomeAdvancedFilterSettings *capturedFilters = [lastRequest objectForKey:@"advancedFilters"];
@@ -1047,19 +1018,23 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   self.viewController.searchTextField.text = @"salad";
   [self.viewController.searchTextField sendActionsForControlEvents:UIControlEventEditingChanged];
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults;
-  } timeout:2.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults;
+      }
+               timeout:2.0];
 
-  UIButton *seeAllButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"home.searchResultsHeader.seeAllButton" inView:self.viewController.view];
+  UIButton *seeAllButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"home.searchResultsHeader.seeAllButton"
+                                                                          inView:self.viewController.view];
   XCTAssertNotNil(seeAllButton);
   XCTAssertFalse(seeAllButton.hidden);
 
   [seeAllButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self waitForCondition:^BOOL {
-    return [self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]];
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return [self.navigationController.topViewController isKindOfClass:[HomeRecipeListViewController class]];
+      }
+               timeout:1.2];
 
   XCTAssertEqual(self.dataProvider.searchRequests.count, 2U);
   XCTAssertEqual([[[self.dataProvider.searchRequests lastObject] objectForKey:@"limit"] unsignedIntegerValue], 12U);
@@ -1080,10 +1055,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   self.viewController.searchTextField.text = @"soup";
   [self.viewController executeSearchForQuery:@"soup" resultLimit:12 presentingResultsList:NO];
 
-  [self waitForCondition:^BOOL {
-    return self.viewController.searchState == HomeSearchStateResults &&
-           [self.viewController.lastCompletedSearchQuery isEqualToString:@"soup"];
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.searchState == HomeSearchStateResults && [self.viewController.lastCompletedSearchQuery isEqualToString:@"soup"];
+      }
+               timeout:1.0];
 
   XCTAssertEqualObjects(self.viewController.lastCompletedSearchQuery, @"soup");
   XCTAssertEqualObjects([[self titlesForRecipes:self.viewController.currentSearchResults] firstObject], @"Soup 01");
@@ -1093,10 +1069,9 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
 - (void)testRecipeListViewControllerSizesCardsToFitContent {
   NSArray<HomeRecipeCard *> *recipes = [self.dataProvider searchRecipes:@"a"];
-  HomeRecipeListViewController *listViewController =
-      [[HomeRecipeListViewController alloc] initWithScreenTitle:@"Search Results"
-                                                        recipes:recipes
-                                                   emptyMessage:@"No recipes match that search yet."];
+  HomeRecipeListViewController *listViewController = [[HomeRecipeListViewController alloc] initWithScreenTitle:@"Search Results"
+                                                                                                       recipes:recipes
+                                                                                                  emptyMessage:@"No recipes match that search yet."];
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:listViewController];
@@ -1107,12 +1082,12 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [listViewController.view layoutIfNeeded];
 
   CGSize itemSize = [listViewController collectionView:listViewController.collectionView
-                                layout:listViewController.collectionView.collectionViewLayout
-                 sizeForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
+                                                layout:listViewController.collectionView.collectionViewLayout
+                                sizeForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
 
   NSArray<NSString *> *introIdentifiers = @[
-    @"home.recipeList.introCardView", @"home.recipeList.eyebrowLabel", @"home.recipeList.titleLabel",
-    @"home.recipeList.summaryLabel", @"home.recipeList.countBadgeLabel"
+    @"home.recipeList.introCardView", @"home.recipeList.eyebrowLabel", @"home.recipeList.titleLabel", @"home.recipeList.summaryLabel",
+    @"home.recipeList.countBadgeLabel"
   ];
   for (NSString *identifier in introIdentifiers) {
     XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:listViewController.view], @"Missing %@", identifier);
@@ -1131,12 +1106,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testWeeklyRecipeListCompactsIntroIntoDropdownWhenScrolled {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
-                                            recipes:[self weeklyRecipes]
-                                       emptyMessage:@"No weekly picks yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
+                                                                                            recipes:[self weeklyRecipes]
+                                                                                       emptyMessage:@"No weekly picks yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   XCTAssertFalse(listViewController.introCompact);
   XCTAssertTrue(listViewController.introDropdownExpanded);
@@ -1157,12 +1131,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testWeeklyRecipeListDropdownReExpandsIntroAndResetsNearTop {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
-                                            recipes:[self weeklyRecipes]
-                                       emptyMessage:@"No weekly picks yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
+                                                                                            recipes:[self weeklyRecipes]
+                                                                                       emptyMessage:@"No weekly picks yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
   [listViewController scrollViewDidScroll:listViewController.collectionView];
@@ -1190,12 +1163,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testWeeklyRecipeListExpandedDropdownStaysClippedInsideIntroCard {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
-                                            recipes:[self weeklyRecipes]
-                                       emptyMessage:@"No weekly picks yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Recipes Of The Week"
+                                                                                            recipes:[self weeklyRecipes]
+                                                                                       emptyMessage:@"No weekly picks yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
   [listViewController scrollViewDidScroll:listViewController.collectionView];
@@ -1205,12 +1177,12 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [self spinMainRunLoop];
   [listViewController.view layoutIfNeeded];
 
-  CGRect compactDropdownFrame =
-      [listViewController.compactDropdownButton.superview convertRect:listViewController.compactDropdownButton.frame toView:listViewController.view];
-  CGRect expandedIntroFrame =
-      [listViewController.expandedIntroStackView.superview convertRect:listViewController.expandedIntroStackView.frame toView:listViewController.view];
-  CGRect introCardFrame =
-      [listViewController.introCardSurfaceView.superview convertRect:listViewController.introCardSurfaceView.frame toView:listViewController.view];
+  CGRect compactDropdownFrame = [listViewController.compactDropdownButton.superview convertRect:listViewController.compactDropdownButton.frame
+                                                                                         toView:listViewController.view];
+  CGRect expandedIntroFrame = [listViewController.expandedIntroStackView.superview convertRect:listViewController.expandedIntroStackView.frame
+                                                                                        toView:listViewController.view];
+  CGRect introCardFrame = [listViewController.introCardSurfaceView.superview convertRect:listViewController.introCardSurfaceView.frame
+                                                                                  toView:listViewController.view];
 
   XCTAssertTrue(listViewController.introCardSurfaceView.clipsToBounds);
   XCTAssertLessThanOrEqual(CGRectGetMaxY(compactDropdownFrame), CGRectGetMinY(expandedIntroFrame));
@@ -1223,12 +1195,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testRecommendationRecipeListCompactsIntroIntoDropdownWhenScrolled {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Recommendation"
-                                            recipes:[self recommendationRecipes]
-                                       emptyMessage:@"No recommendation picks yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Recommendation"
+                                                                                            recipes:[self recommendationRecipes]
+                                                                                       emptyMessage:@"No recommendation picks yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   XCTAssertFalse(listViewController.introCompact);
   XCTAssertTrue(listViewController.introDropdownExpanded);
@@ -1249,12 +1220,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testRecommendationPicksRecipeListCompactsIntroIntoDropdownWhenScrolled {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Dinner Picks"
-                                            recipes:[self recommendationRecipes]
-                                       emptyMessage:@"There are no recipes in this category yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Dinner Picks"
+                                                                                            recipes:[self recommendationRecipes]
+                                                                                       emptyMessage:@"There are no recipes in this category yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   XCTAssertFalse(listViewController.introCompact);
   XCTAssertTrue(listViewController.introDropdownExpanded);
@@ -1276,12 +1246,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testRecommendationRecipeListExpandedDropdownStaysClippedInsideIntroCard {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Recommendation"
-                                            recipes:[self recommendationRecipes]
-                                       emptyMessage:@"No recommendation picks yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Recommendation"
+                                                                                            recipes:[self recommendationRecipes]
+                                                                                       emptyMessage:@"No recommendation picks yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
   [listViewController scrollViewDidScroll:listViewController.collectionView];
@@ -1291,12 +1260,12 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
   [self spinMainRunLoop];
   [listViewController.view layoutIfNeeded];
 
-  CGRect compactDropdownFrame =
-      [listViewController.compactDropdownButton.superview convertRect:listViewController.compactDropdownButton.frame toView:listViewController.view];
-  CGRect expandedIntroFrame =
-      [listViewController.expandedIntroStackView.superview convertRect:listViewController.expandedIntroStackView.frame toView:listViewController.view];
-  CGRect introCardFrame =
-      [listViewController.introCardSurfaceView.superview convertRect:listViewController.introCardSurfaceView.frame toView:listViewController.view];
+  CGRect compactDropdownFrame = [listViewController.compactDropdownButton.superview convertRect:listViewController.compactDropdownButton.frame
+                                                                                         toView:listViewController.view];
+  CGRect expandedIntroFrame = [listViewController.expandedIntroStackView.superview convertRect:listViewController.expandedIntroStackView.frame
+                                                                                        toView:listViewController.view];
+  CGRect introCardFrame = [listViewController.introCardSurfaceView.superview convertRect:listViewController.introCardSurfaceView.frame
+                                                                                  toView:listViewController.view];
 
   XCTAssertTrue(listViewController.introCardSurfaceView.clipsToBounds);
   XCTAssertLessThanOrEqual(CGRectGetMaxY(compactDropdownFrame), CGRectGetMinY(expandedIntroFrame));
@@ -1309,12 +1278,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testSearchResultsRecipeListKeepsExpandedIntroWhileScrolling {
   UIWindow *window = nil;
   UINavigationController *navigationController = nil;
-  HomeRecipeListViewController *listViewController =
-      [self mountedRecipeListViewControllerWithTitle:@"Search Results"
-                                            recipes:[self.dataProvider searchRecipes:@"a"]
-                                       emptyMessage:@"No recipes match that search yet."
-                                             window:&window
-                               navigationController:&navigationController];
+  HomeRecipeListViewController *listViewController = [self mountedRecipeListViewControllerWithTitle:@"Search Results"
+                                                                                            recipes:[self.dataProvider searchRecipes:@"a"]
+                                                                                       emptyMessage:@"No recipes match that search yet."
+                                                                                             window:&window
+                                                                               navigationController:&navigationController];
 
   listViewController.collectionView.contentOffset = CGPointMake(0.0, 88.0);
   [listViewController scrollViewDidScroll:listViewController.collectionView];
@@ -1341,8 +1309,8 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (void)testSeeAllPushesRecipeListScreen {
   [self finishInitialLoadIfNeeded];
 
-  UIButton *seeAllButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"home.recommendationHeader.seeAllButton" inView:self.viewController.view];
+  UIButton *seeAllButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"home.recommendationHeader.seeAllButton"
+                                                                          inView:self.viewController.view];
   XCTAssertNotNil(seeAllButton);
 
   [seeAllButton sendActionsForControlEvents:UIControlEventTouchUpInside];
@@ -1357,9 +1325,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self waitForCondition:^BOOL {
-    return [self presentedRecipeContainerViewController] != nil;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return [self presentedRecipeContainerViewController] != nil;
+      }
+               timeout:1.2];
 
   XCTAssertNotNil([self presentedRecipeContainerViewController]);
   XCTAssertEqualObjects([self presentedRecipeDetailRootView].accessibilityIdentifier, @"onboarding.recipeDetail.view");
@@ -1370,9 +1340,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self waitForCondition:^BOOL {
-    return [self presentedRecipeContainerViewController] != nil;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return [self presentedRecipeContainerViewController] != nil;
+      }
+               timeout:1.2];
 
   UIViewController *presentedViewController = [self presentedRecipeContainerViewController];
   XCTAssertNotNil(presentedViewController);
@@ -1397,9 +1369,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
       (OnboardingRecipeDetailViewController *)((UINavigationController *)presentedViewController).topViewController;
   XCTAssertTrue(detailViewController.loading);
 
-  [self waitForCondition:^BOOL {
-    return !detailViewController.loading;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !detailViewController.loading;
+      }
+               timeout:1.2];
 
   XCTAssertFalse(detailViewController.loading);
   XCTAssertEqual(detailViewController.debugOrigin, OnboardingRecipeDetailDebugOriginLive);
@@ -1411,13 +1385,14 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self waitForCondition:^BOOL {
-    return [self presentedRecipeContainerViewController] != nil;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return [self presentedRecipeContainerViewController] != nil;
+      }
+               timeout:1.2];
 
   UIView *detailRootView = [self presentedRecipeDetailRootView];
-  UIButton *closeButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
+  UIButton *closeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
   XCTAssertNotNil(closeButton);
   XCTAssertEqualObjects(closeButton.superview, detailRootView);
 }
@@ -1427,13 +1402,14 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
   NSIndexPath *firstIndexPath = [NSIndexPath indexPathForItem:0 inSection:0];
   [self.viewController collectionView:self.viewController.recommendationCollectionView didSelectItemAtIndexPath:firstIndexPath];
-  [self waitForCondition:^BOOL {
-    return [self presentedRecipeContainerViewController] != nil;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return [self presentedRecipeContainerViewController] != nil;
+      }
+               timeout:1.2];
 
   UIView *detailRootView = [self presentedRecipeDetailRootView];
-  UIButton *closeButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
+  UIButton *closeButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:detailRootView];
   XCTAssertNotNil(closeButton);
   XCTAssertNotNil(closeButton.currentImage);
   XCTAssertEqual(closeButton.currentTitle.length, 0U);
@@ -1448,29 +1424,35 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
                                                                                      window:&window
                                                                        navigationController:nil];
 
-  [self waitForCondition:^BOOL {
-    return !viewController.isLoadingContent;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !viewController.isLoadingContent;
+      }
+               timeout:1.2];
 
   HomeRecipeCard *recipeCard = viewController.filteredRecommendationRecipes.firstObject;
   XCTAssertNotNil(recipeCard);
 
   [viewController presentRecipeDetailForCard:recipeCard];
-  [self waitForCondition:^BOOL {
-    return viewController.presentedViewController != nil;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return viewController.presentedViewController != nil;
+      }
+               timeout:1.2];
 
   UINavigationController *presentedNavigationController = (UINavigationController *)viewController.presentedViewController;
   XCTAssertTrue([presentedNavigationController isKindOfClass:[UINavigationController class]]);
 
   OnboardingRecipeDetailViewController *detailViewController =
       (OnboardingRecipeDetailViewController *)presentedNavigationController.topViewController;
-  [self waitForCondition:^BOOL {
-    return !detailViewController.isLoading;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !detailViewController.isLoading;
+      }
+               timeout:1.2];
 
-  UIButton *favoriteButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton" inView:detailViewController.view];
+  UIButton *favoriteButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton"
+                                                                            inView:detailViewController.view];
   XCTAssertNotNil(favoriteButton);
   XCTAssertTrue(favoriteButton.enabled);
 
@@ -1490,21 +1472,20 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
 - (void)testHomeRecipeCardCellFallsBackToLocalAssetWhenRemoteImageURLIsInvalid {
   HomeRecipeCardCell *cell = [[HomeRecipeCardCell alloc] initWithFrame:CGRectMake(0.0, 0.0, 280.0, 320.0)];
-  HomeRecipeCard *card =
-      [[HomeRecipeCard alloc] initWithRecipeID:@"test.cell.fallback"
-                                         title:@"Fallback Test"
-                                      subtitle:@"Fallback subtitle"
-                                     assetName:@"avocado-toast"
-                                imageURLString:@"http://example.com/invalid url"
-                                   summaryText:@"Fallback summary"
-                                readyInMinutes:12
-                                      servings:2
-                                  calorieCount:250
-                               popularityScore:90
-                                    sourceName:@"Culina Test Kitchen"
-                               sourceURLString:nil
-                                      mealType:HomeCategoryIdentifierBreakfast
-                                          tags:@[ @"Test" ]];
+  HomeRecipeCard *card = [[HomeRecipeCard alloc] initWithRecipeID:@"test.cell.fallback"
+                                                            title:@"Fallback Test"
+                                                         subtitle:@"Fallback subtitle"
+                                                        assetName:@"avocado-toast"
+                                                   imageURLString:@"http://example.com/invalid url"
+                                                      summaryText:@"Fallback summary"
+                                                   readyInMinutes:12
+                                                         servings:2
+                                                     calorieCount:250
+                                                  popularityScore:90
+                                                       sourceName:@"Culina Test Kitchen"
+                                                  sourceURLString:nil
+                                                         mealType:HomeCategoryIdentifierBreakfast
+                                                             tags:@[ @"Test" ]];
 
   [cell configureWithRecipeCard:card style:HomeRecipeCardCellStyleRail];
 
@@ -1530,9 +1511,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 }
 
 - (void)finishInitialLoadIfNeeded {
-  [self waitForCondition:^BOOL {
-    return !self.viewController.isLoadingContent;
-  } timeout:1.2];
+  [self
+      waitForCondition:^BOOL {
+        return !self.viewController.isLoadingContent;
+      }
+               timeout:1.2];
 }
 
 - (UIViewController *)presentedRecipeContainerViewController {
@@ -1579,10 +1562,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 - (HomeRecipeListViewController *)mountedRecipeListViewControllerWithTitle:(NSString *)title
                                                                    recipes:(NSArray<HomeRecipeCard *> *)recipes
                                                               emptyMessage:(NSString *)emptyMessage
-                                                                    window:(UIWindow * __strong *)window
-                                                      navigationController:(UINavigationController * __strong *)navigationController {
-  HomeRecipeListViewController *listViewController =
-      [[HomeRecipeListViewController alloc] initWithScreenTitle:title recipes:recipes emptyMessage:emptyMessage];
+                                                                    window:(UIWindow *__strong *)window
+                                                      navigationController:(UINavigationController *__strong *)navigationController {
+  HomeRecipeListViewController *listViewController = [[HomeRecipeListViewController alloc] initWithScreenTitle:title
+                                                                                                       recipes:recipes
+                                                                                                  emptyMessage:emptyMessage];
   UIWindow *mountedWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UINavigationController *mountedNavigationController = [[UINavigationController alloc] initWithRootViewController:listViewController];
   mountedWindow.rootViewController = mountedNavigationController;
@@ -1603,11 +1587,11 @@ static OnboardingRecipeDetail *MRRTestHomeRecipeDetail(NSString *title, NSString
 
 - (HomeViewController *)mountedHomeViewControllerWithSavedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                                                             syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine
-                                                                window:(UIWindow * __strong *)window
-                                                  navigationController:(UINavigationController * __strong *)navigationController {
+                                                                window:(UIWindow *__strong *)window
+                                                  navigationController:(UINavigationController *__strong *)navigationController {
   HomeViewController *homeViewController = [[HomeViewController alloc] initWithSession:self.session
-                                                                           dataProvider:self.dataProvider
-                                                                      savedRecipesStore:savedRecipesStore
+                                                                          dataProvider:self.dataProvider
+                                                                     savedRecipesStore:savedRecipesStore
                                                                             syncEngine:syncEngine];
   UIWindow *mountedWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UINavigationController *mountedNavigationController = [[UINavigationController alloc] initWithRootViewController:homeViewController];

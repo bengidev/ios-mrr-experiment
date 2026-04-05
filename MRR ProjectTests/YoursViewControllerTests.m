@@ -96,7 +96,7 @@
   self.photoBaseDirectoryURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]
                                           isDirectory:YES];
   self.photoStorage = [[MRRLocalUserRecipePhotoStorage alloc] initWithBaseDirectoryURL:self.photoBaseDirectoryURL
-                                                                            fileManager:[NSFileManager defaultManager]];
+                                                                           fileManager:[NSFileManager defaultManager]];
   self.viewController = [[YoursViewController alloc] initWithSessionUserID:@"user-yours"
                                                           userRecipesStore:self.store
                                                                 syncEngine:self.syncEngine
@@ -126,10 +126,8 @@
 }
 
 - (void)testEmptyStateAppearsWhenUserHasNoRecipes {
-  UILabel *emptyStateLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"yours.emptyStateLabel" inView:self.viewController.view];
-  UIButton *emptyStateButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.emptyStateButton" inView:self.viewController.view];
+  UILabel *emptyStateLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"yours.emptyStateLabel" inView:self.viewController.view];
+  UIButton *emptyStateButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.emptyStateButton" inView:self.viewController.view];
 
   XCTAssertNotNil(emptyStateLabel);
   XCTAssertEqualObjects(emptyStateLabel.text, @"You haven't created any recipes yet.");
@@ -168,12 +166,9 @@
   [self spinMainRunLoop];
 
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
-  UITextField *titleField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editor.view];
-  UITextField *ingredientField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
-  UITextField *stepField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+  UITextField *titleField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editor.view];
+  UITextField *ingredientField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
+  UITextField *stepField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
 
   titleField.text = @"Roti Bakar";
   ingredientField.text = @"";
@@ -197,17 +192,15 @@
   [self spinMainRunLoop];
 
   MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
-  UIButton *editButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.editButton." stringByAppendingString:recipe.recipeID]
-                                                     inView:self.viewController.view];
+  UIButton *editButton = (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.editButton." stringByAppendingString:recipe.recipeID]
+                                                                        inView:self.viewController.view];
   XCTAssertNotNil(editButton);
 
   [editButton sendActionsForControlEvents:UIControlEventTouchUpInside];
   [self spinMainRunLoop];
 
   MRRYoursRecipeEditorViewController *editEditor = [self presentedEditor];
-  UITextField *titleField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editEditor.view];
+  UITextField *titleField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editEditor.view];
   titleField.text = @"Pasta Lemon Creamy";
   [editEditor handleSaveTapped:nil];
   [self spinMainRunLoop];
@@ -286,14 +279,11 @@
   [editor.view layoutIfNeeded];
   [self spinMainRunLoop];
 
-  UITextField *ingredientField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
-  UITextField *stepField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
-  UIButton *removeIngredientButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removeIngredientButton.0" inView:editor.view];
-  UIButton *removeStepButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removeStepButton.0" inView:editor.view];
+  UITextField *ingredientField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
+  UITextField *stepField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+  UIButton *removeIngredientButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removeIngredientButton.0"
+                                                                                    inView:editor.view];
+  UIButton *removeStepButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.removeStepButton.0" inView:editor.view];
 
   XCTAssertNotNil(ingredientField);
   XCTAssertNotNil(stepField);
@@ -326,10 +316,8 @@
   [editor.view layoutIfNeeded];
   [self spinMainRunLoop];
 
-  UITextField *firstStepField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
-  UITextField *secondStepField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.1" inView:editor.view];
+  UITextField *firstStepField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+  UITextField *secondStepField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.1" inView:editor.view];
 
   XCTAssertNotNil(firstStepField);
   XCTAssertNotNil(secondStepField);
@@ -350,9 +338,8 @@
   [self spinMainRunLoop];
 
   MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
-  UIButton *deleteButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.deleteButton." stringByAppendingString:recipe.recipeID]
-                                                     inView:self.viewController.view];
+  UIButton *deleteButton = (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.deleteButton." stringByAppendingString:recipe.recipeID]
+                                                                          inView:self.viewController.view];
   XCTAssertNotNil(deleteButton);
 
   [deleteButton sendActionsForControlEvents:UIControlEventTouchUpInside];
@@ -371,22 +358,14 @@
 }
 
 - (void)populateRequiredFieldsInEditor:(MRRYoursRecipeEditorViewController *)editor title:(NSString *)title {
-  UITextField *titleField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editor.view];
-  UITextField *subtitleField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.subtitleField" inView:editor.view];
-  UITextView *summaryTextView =
-      (UITextView *)[self findViewWithAccessibilityIdentifier:@"yours.editor.summaryTextView" inView:editor.view];
-  UITextField *readyField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.readyField" inView:editor.view];
-  UITextField *servingsField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.servingsField" inView:editor.view];
-  UITextField *caloriesField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.caloriesField" inView:editor.view];
-  UITextField *ingredientField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
-  UITextField *stepField =
-      (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
+  UITextField *titleField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editor.view];
+  UITextField *subtitleField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.subtitleField" inView:editor.view];
+  UITextView *summaryTextView = (UITextView *)[self findViewWithAccessibilityIdentifier:@"yours.editor.summaryTextView" inView:editor.view];
+  UITextField *readyField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.readyField" inView:editor.view];
+  UITextField *servingsField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.servingsField" inView:editor.view];
+  UITextField *caloriesField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.caloriesField" inView:editor.view];
+  UITextField *ingredientField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.ingredientField.0" inView:editor.view];
+  UITextField *stepField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.stepField.0" inView:editor.view];
 
   titleField.text = title;
   subtitleField.text = @"Subtitle";

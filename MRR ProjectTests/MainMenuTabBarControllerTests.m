@@ -44,8 +44,7 @@ static UIColor *MRRMainMenuTestSelectedColor(void) {
 }
 
 static UIColor *MRRMainMenuTestUnselectedColor(void) {
-  return MRRMainMenuTestNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0],
-                                   [UIColor colorWithWhite:0.63 alpha:1.0]);
+  return MRRMainMenuTestNamedColor(@"TextSecondaryColor", [UIColor colorWithWhite:0.42 alpha:1.0], [UIColor colorWithWhite:0.63 alpha:1.0]);
 }
 
 static UIColor *MRRMainMenuTestBackgroundColor(void) {
@@ -127,9 +126,7 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 @property(nonatomic, strong) UIWindow *window;
 
 - (void)seedSavedRecipes;
-- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotWithRecipeID:(NSString *)recipeID
-                                                     title:(NSString *)title
-                                                  subtitle:(NSString *)subtitle;
+- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotWithRecipeID:(NSString *)recipeID title:(NSString *)title subtitle:(NSString *)subtitle;
 - (UINavigationController *)navigationControllerAtIndex:(NSUInteger)index;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
 - (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
@@ -165,11 +162,11 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   [self seedSavedRecipes];
   self.mainMenuCoordinator = [[MainMenuCoordinator alloc] initWithAuthenticationController:self.authenticationController
                                                                                    session:self.session
-                                                                          savedRecipesStore:self.savedRecipesStore
+                                                                         savedRecipesStore:self.savedRecipesStore
                                                                                 syncEngine:self.syncEngine
                                                                           userRecipesStore:self.userRecipesStore
-                                                                           userSyncEngine:self.userSyncEngine
-                                                                           logoutController:nil];
+                                                                            userSyncEngine:self.userSyncEngine
+                                                                          logoutController:nil];
   self.tabBarController = (MainMenuTabBarController *)[self.mainMenuCoordinator rootViewController];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.tabBarController;
@@ -221,22 +218,15 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
     UITabBarAppearance *appearance = self.tabBarController.tabBar.standardAppearance;
     XCTAssertNotNil(appearance);
     [self assertColor:appearance.backgroundColor matchesColor:backgroundColor];
-    [self assertItemAppearance:appearance.stackedLayoutAppearance
-             selectedIconColor:selectedIconColor
-               unselectedColor:unselectedColor];
-    [self assertItemAppearance:appearance.inlineLayoutAppearance
-             selectedIconColor:selectedIconColor
-               unselectedColor:unselectedColor];
-    [self assertItemAppearance:appearance.compactInlineLayoutAppearance
-             selectedIconColor:selectedIconColor
-               unselectedColor:unselectedColor];
+    [self assertItemAppearance:appearance.stackedLayoutAppearance selectedIconColor:selectedIconColor unselectedColor:unselectedColor];
+    [self assertItemAppearance:appearance.inlineLayoutAppearance selectedIconColor:selectedIconColor unselectedColor:unselectedColor];
+    [self assertItemAppearance:appearance.compactInlineLayoutAppearance selectedIconColor:selectedIconColor unselectedColor:unselectedColor];
   }
 
   for (UITabBarItem *item in self.tabBarController.tabBar.items) {
     XCTAssertEqualWithAccuracy(item.titlePositionAdjustment.horizontal, 0.0, 0.001);
     XCTAssertEqualWithAccuracy(item.titlePositionAdjustment.vertical, 0.0, 0.001);
   }
-
 }
 
 - (void)testMainMenuScrollEdgeAppearanceMatchesStandardAppearanceTheme {
@@ -292,8 +282,8 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   UINavigationController *homeNavigationController = [self navigationControllerAtIndex:0];
   [homeNavigationController.topViewController loadViewIfNeeded];
 
-  UILabel *greetingLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.greetingLabel" inView:homeNavigationController.topViewController.view];
+  UILabel *greetingLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"home.greetingLabel"
+                                                                         inView:homeNavigationController.topViewController.view];
   XCTAssertNotNil(greetingLabel);
   XCTAssertEqualObjects(greetingLabel.text, @"Hello, Test Cook");
 }
@@ -322,8 +312,8 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   HomeCoordinator *homeCoordinator = [[HomeCoordinator alloc] init];
   SavedCoordinator *savedCoordinator = [[SavedCoordinator alloc] init];
   YoursCoordinator *yoursCoordinator = [[YoursCoordinator alloc] init];
-  ProfileCoordinator *profileCoordinator =
-      [[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController session:self.session];
+  ProfileCoordinator *profileCoordinator = [[ProfileCoordinator alloc] initWithAuthenticationController:self.authenticationController
+                                                                                                session:self.session];
 
   XCTAssertTrue([[homeCoordinator rootViewController] isKindOfClass:[HomeViewController class]]);
   XCTAssertFalse([[homeCoordinator rootViewController] isKindOfClass:[UINavigationController class]]);
@@ -365,8 +355,7 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   UIView *savedView = savedNavigationController.topViewController.view;
   [savedView layoutIfNeeded];
-  UIControl *recipeCardControl =
-      (UIControl *)[self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView];
+  UIControl *recipeCardControl = (UIControl *)[self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView];
 
   XCTAssertNotNil(recipeCardControl);
   XCTAssertTrue([recipeCardControl isKindOfClass:[UIControl class]]);
@@ -376,22 +365,23 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   __block UINavigationController *detailNavigationController = nil;
   __block UILabel *titleLabel = nil;
-  [self waitForCondition:^BOOL {
-    detailNavigationController = (UINavigationController *)savedNavigationController.topViewController.presentedViewController;
-    if (![detailNavigationController isKindOfClass:[UINavigationController class]]) {
-      return NO;
-    }
+  [self
+      waitForCondition:^BOOL {
+        detailNavigationController = (UINavigationController *)savedNavigationController.topViewController.presentedViewController;
+        if (![detailNavigationController isKindOfClass:[UINavigationController class]]) {
+          return NO;
+        }
 
-    UIViewController *detailRootViewController = detailNavigationController.topViewController;
-    if (![detailRootViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]) {
-      return NO;
-    }
+        UIViewController *detailRootViewController = detailNavigationController.topViewController;
+        if (![detailRootViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]) {
+          return NO;
+        }
 
-    [detailRootViewController loadViewIfNeeded];
-    titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel"
-                                                               inView:detailRootViewController.view];
-    return [titleLabel.text isEqualToString:@"Garden Caesar Crunch"];
-  } timeout:2.0];
+        [detailRootViewController loadViewIfNeeded];
+        titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailRootViewController.view];
+        return [titleLabel.text isEqualToString:@"Garden Caesar Crunch"];
+      }
+               timeout:2.0];
 
   XCTAssertNotNil(detailNavigationController);
   XCTAssertEqual(detailNavigationController.modalPresentationStyle, UIModalPresentationFullScreen);
@@ -405,8 +395,7 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   UIView *savedView = savedNavigationController.topViewController.view;
   [savedView layoutIfNeeded];
-  UIButton *favoriteButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView];
+  UIButton *favoriteButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView];
 
   XCTAssertNotNil(favoriteButton);
   XCTAssertTrue([favoriteButton isKindOfClass:[UIButton class]]);
@@ -419,12 +408,14 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
 
   [favoriteButton sendActionsForControlEvents:UIControlEventTouchUpInside];
 
-  [self waitForCondition:^BOOL {
-    [savedView layoutIfNeeded];
-    return [self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView] == nil &&
-           [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView] == nil &&
-           [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView] != nil;
-  } timeout:2.5];
+  [self
+      waitForCondition:^BOOL {
+        [savedView layoutIfNeeded];
+        return [self findViewWithAccessibilityIdentifier:@"saved.favoriteButton.caesarCrunch" inView:savedView] == nil &&
+               [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView] == nil &&
+               [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView] != nil;
+      }
+               timeout:2.5];
 }
 
 - (void)testSavedTabRefreshesWhenStorePostsChangeNotification {
@@ -442,10 +433,12 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
                                                      error:&saveError]);
   XCTAssertNil(saveError);
 
-  [self waitForCondition:^BOOL {
-    [savedView layoutIfNeeded];
-    return [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.chiliCrunchEggs" inView:savedView] != nil;
-  } timeout:2.0];
+  [self
+      waitForCondition:^BOOL {
+        [savedView layoutIfNeeded];
+        return [self findViewWithAccessibilityIdentifier:@"saved.recipeCard.chiliCrunchEggs" inView:savedView] != nil;
+      }
+               timeout:2.0];
 }
 
 - (void)testSavedTabReloadsFromStoreWhenItBecomesVisibleAgain {
@@ -486,9 +479,7 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertNil(saveError);
 }
 
-- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotWithRecipeID:(NSString *)recipeID
-                                                     title:(NSString *)title
-                                                  subtitle:(NSString *)subtitle {
+- (MRRSavedRecipeSnapshot *)savedRecipeSnapshotWithRecipeID:(NSString *)recipeID title:(NSString *)title subtitle:(NSString *)subtitle {
   HomeRecipeCard *recipeCard = [[HomeRecipeCard alloc] initWithRecipeID:recipeID
                                                                   title:title
                                                                subtitle:subtitle
@@ -503,30 +494,27 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
                                                         sourceURLString:@"https://example.com/saved"
                                                                mealType:HomeCategoryIdentifierBreakfast
                                                                    tags:@[ @"Breakfast", @"Fresh" ]];
-  OnboardingRecipeIngredient *ingredientOne =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Sourdough" displayText:@"2 slices sourdough"];
-  OnboardingRecipeIngredient *ingredientTwo =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Avocado" displayText:@"1 ripe avocado"];
-  OnboardingRecipeInstruction *instructionOne =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Toast the bread until golden."];
-  OnboardingRecipeInstruction *instructionTwo =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2" detailText:@"Top with avocado and finish."];
-  OnboardingRecipeDetail *detail =
-      [[OnboardingRecipeDetail alloc] initWithTitle:title
-                                           subtitle:subtitle
-                                          assetName:@"avocado-toast"
-                                 heroImageURLString:nil
-                                       durationText:@"20 mins"
-                                        calorieText:@"390 kcal"
-                                       servingsText:@"2 servings"
-                                        summaryText:@"Persisted saved recipe for tab tests."
-                                        ingredients:@[ ingredientOne, ingredientTwo ]
-                                       instructions:@[ instructionOne, instructionTwo ]
-                                              tools:@[ @"Skillet", @"Mixing bowl" ]
-                                               tags:@[ @"Breakfast", @"Fresh" ]
-                                         sourceName:@"MRR Tests"
-                                    sourceURLString:@"https://example.com/saved"
-                                     productContext:nil];
+  OnboardingRecipeIngredient *ingredientOne = [[OnboardingRecipeIngredient alloc] initWithName:@"Sourdough" displayText:@"2 slices sourdough"];
+  OnboardingRecipeIngredient *ingredientTwo = [[OnboardingRecipeIngredient alloc] initWithName:@"Avocado" displayText:@"1 ripe avocado"];
+  OnboardingRecipeInstruction *instructionOne = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1"
+                                                                                        detailText:@"Toast the bread until golden."];
+  OnboardingRecipeInstruction *instructionTwo = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2"
+                                                                                        detailText:@"Top with avocado and finish."];
+  OnboardingRecipeDetail *detail = [[OnboardingRecipeDetail alloc] initWithTitle:title
+                                                                        subtitle:subtitle
+                                                                       assetName:@"avocado-toast"
+                                                              heroImageURLString:nil
+                                                                    durationText:@"20 mins"
+                                                                     calorieText:@"390 kcal"
+                                                                    servingsText:@"2 servings"
+                                                                     summaryText:@"Persisted saved recipe for tab tests."
+                                                                     ingredients:@[ ingredientOne, ingredientTwo ]
+                                                                    instructions:@[ instructionOne, instructionTwo ]
+                                                                           tools:@[ @"Skillet", @"Mixing bowl" ]
+                                                                            tags:@[ @"Breakfast", @"Fresh" ]
+                                                                      sourceName:@"MRR Tests"
+                                                                 sourceURLString:@"https://example.com/saved"
+                                                                  productContext:nil];
   NSDate *savedAt = [NSDate dateWithTimeIntervalSince1970:1700000100.0];
   return [MRRSavedRecipeSnapshot snapshotWithUserID:self.session.userID
                                          recipeCard:recipeCard

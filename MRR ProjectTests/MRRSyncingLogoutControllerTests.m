@@ -59,7 +59,7 @@
   completion(nil);
 }
 
-- (BOOL)signOut:(NSError *__autoreleasing  _Nullable *)error {
+- (BOOL)signOut:(NSError *__autoreleasing _Nullable *)error {
   self.signOutCalled = YES;
   if (self.signOutError != nil && error != nil) {
     *error = self.signOutError;
@@ -112,7 +112,7 @@
 @implementation MRRSyncingLogoutControllerUserSyncEngineSpy
 
 - (void)startSyncForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
-  #pragma unused(userID)
+#pragma unused(userID)
   if (completion != nil) {
     completion(nil);
   }
@@ -122,7 +122,7 @@
 }
 
 - (void)requestImmediateSyncForUserID:(NSString *)userID {
-  #pragma unused(userID)
+#pragma unused(userID)
 }
 
 - (void)flushPendingChangesForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
@@ -144,10 +144,9 @@
   MRRSyncingLogoutControllerAuthSpy *authenticationSpy = [[MRRSyncingLogoutControllerAuthSpy alloc] init];
   MRRSyncingLogoutControllerSyncEngineSpy *savedSyncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
   MRRSyncingLogoutControllerUserSyncEngineSpy *userSyncEngineSpy = [[MRRSyncingLogoutControllerUserSyncEngineSpy alloc] init];
-  MRRSyncingLogoutController *logoutController =
-      [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
-                                                    savedRecipesSyncEngine:savedSyncEngineSpy
-                                                     userRecipesSyncEngine:userSyncEngineSpy];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                               savedRecipesSyncEngine:savedSyncEngineSpy
+                                                                                                userRecipesSyncEngine:userSyncEngineSpy];
   MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                                              email:@"cook@example.com"
                                                        displayName:@"Cook"
@@ -155,15 +154,16 @@
                                                      emailVerified:YES];
 
   XCTestExpectation *completionExpectation = [self expectationWithDescription:@"logout completion"];
-  [logoutController performLogoutForSession:session completion:^(NSError *error) {
-    XCTAssertNil(error);
-    XCTAssertEqual(savedSyncEngineSpy.flushInvocationCount, 1u);
-    XCTAssertEqual(userSyncEngineSpy.flushInvocationCount, 1u);
-    XCTAssertEqualObjects(savedSyncEngineSpy.flushedUserID, @"firebase-uid");
-    XCTAssertEqualObjects(userSyncEngineSpy.flushedUserID, @"firebase-uid");
-    XCTAssertTrue(authenticationSpy.signOutCalled);
-    [completionExpectation fulfill];
-  }];
+  [logoutController performLogoutForSession:session
+                                 completion:^(NSError *error) {
+                                   XCTAssertNil(error);
+                                   XCTAssertEqual(savedSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertEqual(userSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertEqualObjects(savedSyncEngineSpy.flushedUserID, @"firebase-uid");
+                                   XCTAssertEqualObjects(userSyncEngineSpy.flushedUserID, @"firebase-uid");
+                                   XCTAssertTrue(authenticationSpy.signOutCalled);
+                                   [completionExpectation fulfill];
+                                 }];
 
   [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
 }
@@ -172,8 +172,8 @@
   MRRSyncingLogoutControllerAuthSpy *authenticationSpy = [[MRRSyncingLogoutControllerAuthSpy alloc] init];
   MRRSyncingLogoutControllerSyncEngineSpy *syncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
   syncEngineSpy.flushError = [NSError errorWithDomain:@"MRRSyncTests" code:42 userInfo:nil];
-  MRRSyncingLogoutController *logoutController =
-      [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy syncEngine:syncEngineSpy];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                                           syncEngine:syncEngineSpy];
   MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                                              email:@"cook@example.com"
                                                        displayName:@"Cook"
@@ -181,12 +181,13 @@
                                                      emailVerified:YES];
 
   XCTestExpectation *completionExpectation = [self expectationWithDescription:@"logout completion"];
-  [logoutController performLogoutForSession:session completion:^(NSError *error) {
-    XCTAssertNotNil(error);
-    XCTAssertEqual(syncEngineSpy.flushInvocationCount, 1u);
-    XCTAssertFalse(authenticationSpy.signOutCalled);
-    [completionExpectation fulfill];
-  }];
+  [logoutController performLogoutForSession:session
+                                 completion:^(NSError *error) {
+                                   XCTAssertNotNil(error);
+                                   XCTAssertEqual(syncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertFalse(authenticationSpy.signOutCalled);
+                                   [completionExpectation fulfill];
+                                 }];
 
   [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
 }
@@ -196,10 +197,9 @@
   MRRSyncingLogoutControllerSyncEngineSpy *savedSyncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
   MRRSyncingLogoutControllerUserSyncEngineSpy *userSyncEngineSpy = [[MRRSyncingLogoutControllerUserSyncEngineSpy alloc] init];
   userSyncEngineSpy.flushError = [NSError errorWithDomain:@"MRRSyncTests" code:777 userInfo:nil];
-  MRRSyncingLogoutController *logoutController =
-      [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
-                                                    savedRecipesSyncEngine:savedSyncEngineSpy
-                                                     userRecipesSyncEngine:userSyncEngineSpy];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                               savedRecipesSyncEngine:savedSyncEngineSpy
+                                                                                                userRecipesSyncEngine:userSyncEngineSpy];
   MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
                                                              email:@"cook@example.com"
                                                        displayName:@"Cook"
@@ -207,13 +207,14 @@
                                                      emailVerified:YES];
 
   XCTestExpectation *completionExpectation = [self expectationWithDescription:@"logout completion"];
-  [logoutController performLogoutForSession:session completion:^(NSError *error) {
-    XCTAssertNotNil(error);
-    XCTAssertEqual(savedSyncEngineSpy.flushInvocationCount, 1u);
-    XCTAssertEqual(userSyncEngineSpy.flushInvocationCount, 1u);
-    XCTAssertFalse(authenticationSpy.signOutCalled);
-    [completionExpectation fulfill];
-  }];
+  [logoutController performLogoutForSession:session
+                                 completion:^(NSError *error) {
+                                   XCTAssertNotNil(error);
+                                   XCTAssertEqual(savedSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertEqual(userSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertFalse(authenticationSpy.signOutCalled);
+                                   [completionExpectation fulfill];
+                                 }];
 
   [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
 }

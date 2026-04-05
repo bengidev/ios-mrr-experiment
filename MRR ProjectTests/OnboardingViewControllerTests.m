@@ -164,7 +164,7 @@
   self.authenticationController = [[OnboardingViewControllerAuthStub alloc] init];
   self.viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
                                                          authenticationController:self.authenticationController
-                                                                     recipeCatalog:self.recipeCatalog];
+                                                                    recipeCatalog:self.recipeCatalog];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   self.window.rootViewController = self.viewController;
   [self.window makeKeyAndVisible];
@@ -229,8 +229,8 @@
   OnboardingRecipeDetailViewController *detailViewController = [self presentedRecipeDetailViewController];
   XCTAssertFalse(detailViewController.isLoading);
   UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailViewController.view];
-  UILabel *summaryLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryLabel" inView:detailViewController.view];
+  UILabel *summaryLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryLabel"
+                                                                        inView:detailViewController.view];
   XCTAssertEqualObjects(titleLabel.text, firstRecipe.fallbackDetail.title);
   XCTAssertEqualObjects(summaryLabel.text, firstRecipe.fallbackDetail.summaryText);
   XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.headerCardSkeletonView" inView:detailViewController.view]);
@@ -241,45 +241,32 @@
 - (void)testCuratedRecipeDetailShowsStaticMetadataAndHidesSourceBadge {
   [self presentFirstRecipe];
 
-  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.sourceTitleLabel"
-                                                  inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.sourceButton"
-                                                  inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.headerCardView"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardView"
-                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.sourceTitleLabel" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.sourceButton" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.headerCardView" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardView" inView:[self presentedRecipeDetailRootView]]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryToggleButton"
                                                      inView:[self presentedRecipeDetailRootView]]);
-  UILabel *instructionsTitleLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsTitleLabel"
-                                                    inView:[self presentedRecipeDetailRootView]];
+  UILabel *instructionsTitleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsTitleLabel"
+                                                                                  inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(instructionsTitleLabel);
   XCTAssertEqualObjects(instructionsTitleLabel.text, @"Methods");
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsIconView"
                                                      inView:[self presentedRecipeDetailRootView]]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsHeaderButton"
                                                      inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsTitleLabel"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsIconView"
-                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsTitleLabel" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsIconView" inView:[self presentedRecipeDetailRootView]]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsHeaderButton"
                                                      inView:[self presentedRecipeDetailRootView]]);
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsToggleButton"
                                                      inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolRow.1"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsTitleLabel"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsIconView"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsHeaderButton"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsToggleButton"
-                                                     inView:[self presentedRecipeDetailRootView]]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagChip.1"
-                                                     inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolRow.1" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsTitleLabel" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsIconView" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsHeaderButton" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsToggleButton" inView:[self presentedRecipeDetailRootView]]);
+  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagChip.1" inView:[self presentedRecipeDetailRootView]]);
   XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.summaryCardView.accentBar"
                                                   inView:[self presentedRecipeDetailRootView]]);
   XCTAssertNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.debugSourceBadge.label"
@@ -316,9 +303,8 @@
 
   UIView *ingredientsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.ingredientsSectionBodyView"
                                                                    inView:[self presentedRecipeDetailRootView]];
-  UIButton *ingredientsHeaderButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.ingredientsHeaderButton"
-                                                     inView:[self presentedRecipeDetailRootView]];
+  UIButton *ingredientsHeaderButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.ingredientsHeaderButton"
+                                                                                     inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(ingredientsBodyView);
   XCTAssertNotNil(ingredientsHeaderButton);
   XCTAssertTrue(ingredientsBodyView.hidden);
@@ -339,9 +325,8 @@
 
   UIView *instructionsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsSectionBodyView"
                                                                     inView:[self presentedRecipeDetailRootView]];
-  UIButton *instructionsHeaderButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsHeaderButton"
-                                                     inView:[self presentedRecipeDetailRootView]];
+  UIButton *instructionsHeaderButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.instructionsHeaderButton"
+                                                                                      inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(instructionsBodyView);
   XCTAssertNotNil(instructionsHeaderButton);
   XCTAssertTrue(instructionsBodyView.hidden);
@@ -362,9 +347,8 @@
 
   UIView *toolsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsSectionBodyView"
                                                              inView:[self presentedRecipeDetailRootView]];
-  UIButton *toolsHeaderButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsHeaderButton"
-                                                     inView:[self presentedRecipeDetailRootView]];
+  UIButton *toolsHeaderButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.toolsHeaderButton"
+                                                                               inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(toolsBodyView);
   XCTAssertNotNil(toolsHeaderButton);
   XCTAssertTrue(toolsBodyView.hidden);
@@ -385,9 +369,8 @@
 
   UIView *tagsBodyView = [self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsSectionBodyView"
                                                             inView:[self presentedRecipeDetailRootView]];
-  UIButton *tagsHeaderButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsHeaderButton"
-                                                     inView:[self presentedRecipeDetailRootView]];
+  UIButton *tagsHeaderButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.tagsHeaderButton"
+                                                                              inView:[self presentedRecipeDetailRootView]];
   XCTAssertNotNil(tagsBodyView);
   XCTAssertNotNil(tagsHeaderButton);
   XCTAssertTrue(tagsBodyView.hidden);
@@ -421,8 +404,8 @@
 
   NSInteger recipeIndex = 2;
   NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
-  CGFloat initialOffset =
-      [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:self.viewController.carouselCollectionView];
+  CGFloat initialOffset = [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex
+                                                                 inCollectionView:self.viewController.carouselCollectionView];
   [self.viewController.carouselCollectionView setContentOffset:CGPointMake(initialOffset, 0.0) animated:NO];
   self.viewController.currentRecipeIndex = recipeIndex;
   self.viewController.currentCarouselItemIndex = centeredIndex;
@@ -440,15 +423,19 @@
   NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
 
   [self.viewController collectionView:self.viewController.carouselCollectionView didSelectItemAtIndexPath:indexPath];
-  [self waitForCondition:^BOOL {
-    return [self presentedRecipeContainerViewController] != nil;
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return [self presentedRecipeContainerViewController] != nil;
+      }
+               timeout:1.0];
 
   OnboardingRecipeDetailViewController *detailViewController = [self presentedRecipeDetailViewController];
   [detailViewController didTapCloseButton];
-  [self waitForCondition:^BOOL {
-    return [self presentedRecipeContainerViewController] == nil;
-  } timeout:1.0];
+  [self
+      waitForCondition:^BOOL {
+        return [self presentedRecipeContainerViewController] == nil;
+      }
+               timeout:1.0];
 
   XCTAssertNil([self presentedRecipeContainerViewController]);
 }
@@ -563,9 +550,7 @@
 
   NSInteger recipeIndex = 4;
   NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
-  [secondary setContentOffset:CGPointMake([self.viewController contentOffsetXForCarouselItemIndex:centeredIndex
-                                                                                  inCollectionView:secondary],
-                                          0.0)
+  [secondary setContentOffset:CGPointMake([self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:secondary], 0.0)
                      animated:NO];
   CGFloat initialOffset = secondary.contentOffset.x;
 
@@ -589,10 +574,9 @@
 
   NSInteger recipeIndex = 2;
   NSInteger centeredIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
-  CGFloat primaryInitialOffset =
-      [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:self.viewController.carouselCollectionView];
-  CGFloat secondaryInitialOffset =
-      [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:secondary];
+  CGFloat primaryInitialOffset = [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex
+                                                                        inCollectionView:self.viewController.carouselCollectionView];
+  CGFloat secondaryInitialOffset = [self.viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:secondary];
 
   [self.viewController.carouselCollectionView setContentOffset:CGPointMake(primaryInitialOffset, 0.0) animated:NO];
   [secondary setContentOffset:CGPointMake(secondaryInitialOffset, 0.0) animated:NO];
@@ -620,7 +604,7 @@
   InteractionAwareOnboardingViewController *viewController =
       [[InteractionAwareOnboardingViewController alloc] initWithStateController:self.stateController
                                                        authenticationController:self.authenticationController
-                                                                   recipeCatalog:self.recipeCatalog];
+                                                                  recipeCatalog:self.recipeCatalog];
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, 430.0, 932.0)];
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
@@ -635,8 +619,8 @@
 
   NSInteger recipeIndex = 2;
   NSInteger centeredIndex = [viewController middleCarouselItemIndexForRecipeIndex:recipeIndex];
-  CGFloat primaryInitialOffset =
-      [viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:viewController.carouselCollectionView];
+  CGFloat primaryInitialOffset = [viewController contentOffsetXForCarouselItemIndex:centeredIndex
+                                                                   inCollectionView:viewController.carouselCollectionView];
   CGFloat secondaryInitialOffset = [viewController contentOffsetXForCarouselItemIndex:centeredIndex inCollectionView:secondary];
 
   [viewController.carouselCollectionView setContentOffset:CGPointMake(primaryInitialOffset, 0.0) animated:NO];
@@ -677,11 +661,25 @@
 
 - (void)testOnboardingExposesCoreAccessibilityIdentifiers {
   NSArray<NSString *> *identifiers = @[
-    @"onboarding.logoImageView", @"onboarding.titleLabel", @"onboarding.subtitleLabel", @"onboarding.carouselCaptionLabel",
-    @"onboarding.carouselHelperLabel", @"onboarding.heroCarouselContainerView", @"onboarding.carouselCollectionView",
-    @"onboarding.carouselCollectionView.secondary", @"onboarding.pageControl", @"onboarding.footerLabel", @"onboarding.benefitTitleLabel",
-    @"onboarding.benefitBodyLabel", @"onboarding.signinPromptLabel", @"onboarding.signinLabel", @"onboarding.emailButton",
-    @"onboarding.googleButton", @"onboarding.appleButton", @"onboarding.loadingOverlay", @"onboarding.loadingContainer",
+    @"onboarding.logoImageView",
+    @"onboarding.titleLabel",
+    @"onboarding.subtitleLabel",
+    @"onboarding.carouselCaptionLabel",
+    @"onboarding.carouselHelperLabel",
+    @"onboarding.heroCarouselContainerView",
+    @"onboarding.carouselCollectionView",
+    @"onboarding.carouselCollectionView.secondary",
+    @"onboarding.pageControl",
+    @"onboarding.footerLabel",
+    @"onboarding.benefitTitleLabel",
+    @"onboarding.benefitBodyLabel",
+    @"onboarding.signinPromptLabel",
+    @"onboarding.signinLabel",
+    @"onboarding.emailButton",
+    @"onboarding.googleButton",
+    @"onboarding.appleButton",
+    @"onboarding.loadingOverlay",
+    @"onboarding.loadingContainer",
     @"onboarding.loadingIndicator"
   ];
 
@@ -696,25 +694,11 @@
 
 - (void)testOnboardingExposesDebugAccessibilityIdentifiers {
   NSArray<NSString *> *identifiers = @[
-    @"onboarding.scrollView",
-    @"onboarding.contentView",
-    @"onboarding.contentStackView",
-    @"onboarding.heroCarouselContainerView",
-    @"onboarding.heroCarouselRowsStackView",
-    @"onboarding.heroCarouselPrimaryRowView",
-    @"onboarding.heroCarouselSecondaryRowView",
-    @"onboarding.logoWrapperView",
-    @"onboarding.logoContainerView",
-    @"onboarding.spacerView",
-    @"onboarding.signinContainerView",
-    @"onboarding.signinRowView",
-    @"onboarding.authDividerView",
-    @"onboarding.authDividerView.leftLine",
-    @"onboarding.authDividerView.rightLine",
-    @"onboarding.authDividerView.label",
-    @"onboarding.loadingOverlay",
-    @"onboarding.loadingContainer",
-    @"onboarding.loadingIndicator"
+    @"onboarding.scrollView", @"onboarding.contentView", @"onboarding.contentStackView", @"onboarding.heroCarouselContainerView",
+    @"onboarding.heroCarouselRowsStackView", @"onboarding.heroCarouselPrimaryRowView", @"onboarding.heroCarouselSecondaryRowView",
+    @"onboarding.logoWrapperView", @"onboarding.logoContainerView", @"onboarding.spacerView", @"onboarding.signinContainerView",
+    @"onboarding.signinRowView", @"onboarding.authDividerView", @"onboarding.authDividerView.leftLine", @"onboarding.authDividerView.rightLine",
+    @"onboarding.authDividerView.label", @"onboarding.loadingOverlay", @"onboarding.loadingContainer", @"onboarding.loadingIndicator"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -747,9 +731,8 @@
   [secondary layoutIfNeeded];
 
   NSInteger referenceIndex = [self.viewController middleCarouselItemIndexForRecipeIndex:0];
-  CGFloat primaryOffset =
-      [self.viewController contentOffsetXForCarouselItemIndex:referenceIndex
-                                             inCollectionView:self.viewController.carouselCollectionView];
+  CGFloat primaryOffset = [self.viewController contentOffsetXForCarouselItemIndex:referenceIndex
+                                                                 inCollectionView:self.viewController.carouselCollectionView];
   CGFloat secondaryOffset = [self.viewController contentOffsetXForCarouselItemIndex:referenceIndex inCollectionView:secondary];
   UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.viewController.carouselCollectionView.collectionViewLayout;
   CGFloat expectedPhaseOffset = (layout.itemSize.width + layout.minimumLineSpacing) * 0.5;
@@ -979,16 +962,14 @@
     @"onboarding.recipeDetail.heroImageView", @"onboarding.recipeDetail.subtitleLabel", @"onboarding.recipeDetail.titleLabel",
     @"onboarding.recipeDetail.durationChip", @"onboarding.recipeDetail.calorieChip", @"onboarding.recipeDetail.servingsChip",
     @"onboarding.recipeDetail.summaryLabel", @"onboarding.recipeDetail.ingredientsTitleLabel", @"onboarding.recipeDetail.ingredientsHeaderButton",
-    @"onboarding.recipeDetail.ingredientChip.1", @"onboarding.recipeDetail.instructionsTitleLabel",
-    @"onboarding.recipeDetail.instructionsIconView", @"onboarding.recipeDetail.instructionsHeaderButton",
-    @"onboarding.recipeDetail.instructionRow.1.indexLabel",
+    @"onboarding.recipeDetail.ingredientChip.1", @"onboarding.recipeDetail.instructionsTitleLabel", @"onboarding.recipeDetail.instructionsIconView",
+    @"onboarding.recipeDetail.instructionsHeaderButton", @"onboarding.recipeDetail.instructionRow.1.indexLabel",
     @"onboarding.recipeDetail.instructionRow.1.titleLabel", @"onboarding.recipeDetail.instructionRow.1.bodyLabel",
     @"onboarding.recipeDetail.startCookingButton"
   ];
 
   for (NSString *identifier in identifiers) {
-    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:[self presentedRecipeDetailRootView]], @"Missing %@",
-                    identifier);
+    XCTAssertNotNil([self findViewWithAccessibilityIdentifier:identifier inView:[self presentedRecipeDetailRootView]], @"Missing %@", identifier);
   }
 
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.closeButton" inView:[self presentedRecipeDetailRootView]]);
@@ -1003,9 +984,10 @@
   XCTAssertNotNil(startButton);
 
   [startButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self waitForCondition:^BOOL {
-    return self.viewController.presentedViewController == nil;
-  }
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.presentedViewController == nil;
+      }
                timeout:1.0];
 
   XCTAssertTrue([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
@@ -1015,9 +997,10 @@
 - (void)testClosingDetailDoesNotMarkOnboardingCompleted {
   [self presentFirstRecipe];
   [[self presentedRecipeDetailViewController] didTapCloseButton];
-  [self waitForCondition:^BOOL {
-    return self.viewController.presentedViewController == nil;
-  }
+  [self
+      waitForCondition:^BOOL {
+        return self.viewController.presentedViewController == nil;
+      }
                timeout:1.0];
 
   XCTAssertFalse([self.userDefaults boolForKey:MRRHasCompletedOnboardingDefaultsKey]);
@@ -1065,8 +1048,8 @@
   [detailViewController loadViewIfNeeded];
   [detailViewController.view layoutIfNeeded];
 
-  UIButton *favoriteButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton" inView:detailViewController.view];
+  UIButton *favoriteButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton"
+                                                                            inView:detailViewController.view];
   XCTAssertNotNil(favoriteButton);
   XCTAssertEqualObjects([self displayedTitleForButton:favoriteButton], @"Save");
   XCTAssertFalse(favoriteButton.adjustsImageWhenDisabled);
@@ -1078,8 +1061,8 @@
   XCTAssertEqualWithAccuracy(favoriteButton.alpha, 0.58, 0.001);
 
   detailViewController.favoriteSelected = YES;
-  UIButton *rerenderedFavoriteButton =
-      (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton" inView:detailViewController.view];
+  UIButton *rerenderedFavoriteButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.favoriteButton"
+                                                                                      inView:detailViewController.view];
   XCTAssertNotNil(rerenderedFavoriteButton);
   XCTAssertTrue(favoriteButton != rerenderedFavoriteButton);
   XCTAssertFalse(rerenderedFavoriteButton.enabled);
@@ -1119,7 +1102,7 @@
 - (void)testRecipeDetailLegacyControllerBuildsCustomCloseChromeWhenNotWrapped {
   OnboardingRecipeDetailViewController *detailViewController =
       [[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:self.viewController.recipes.firstObject
-                                                              recipeDetail:self.viewController.recipes.firstObject.fallbackDetail];
+                                                             recipeDetail:self.viewController.recipes.firstObject.fallbackDetail];
   [detailViewController loadViewIfNeeded];
 
   XCTAssertNil(detailViewController.navigationItem.leftBarButtonItem);
@@ -1130,7 +1113,7 @@
   if (@available(iOS 15.0, *)) {
     OnboardingRecipeDetailViewController *detailViewController =
         [[OnboardingRecipeDetailViewController alloc] initWithRecipePreview:self.viewController.recipes.firstObject
-                                                                recipeDetail:self.viewController.recipes.firstObject.fallbackDetail];
+                                                               recipeDetail:self.viewController.recipes.firstObject.fallbackDetail];
     UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:detailViewController];
     navigationController.modalPresentationStyle = UIModalPresentationPageSheet;
 
@@ -1262,8 +1245,7 @@
     CGFloat carouselWidth = CGRectGetWidth([self frameForAccessibilityIdentifier:@"onboarding.heroCarouselContainerView"]);
     CGFloat carouselHeight = CGRectGetHeight(self.viewController.carouselCollectionView.bounds);
 
-    XCTAssertGreaterThanOrEqual(layout.itemSize.width, 80.0, @"%.0fx%.0f should keep a readable card width", viewportSize.width,
-                                viewportSize.height);
+    XCTAssertGreaterThanOrEqual(layout.itemSize.width, 80.0, @"%.0fx%.0f should keep a readable card width", viewportSize.width, viewportSize.height);
     XCTAssertLessThanOrEqual(layout.itemSize.width, ((carouselWidth - (layout.minimumLineSpacing * 2.2)) / 3.2) + 0.5,
                              @"%.0fx%.0f should size cards from carousel width", viewportSize.width, viewportSize.height);
     XCTAssertLessThanOrEqual(layout.itemSize.height, carouselHeight + 0.5, @"%.0fx%.0f should keep card height within the carousel",
@@ -1402,8 +1384,8 @@
 - (NSDictionary<NSString *, NSNumber *> *)currentRecipeDetailMetrics {
   UIView *detailRootView = [self presentedRecipeDetailRootView];
   UILabel *titleLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.titleLabel" inView:detailRootView];
-  UIImageView *heroImageView =
-      (UIImageView *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.heroImageView" inView:detailRootView];
+  UIImageView *heroImageView = (UIImageView *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.heroImageView"
+                                                                                 inView:detailRootView];
   UIButton *startButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"onboarding.recipeDetail.startCookingButton" inView:detailRootView];
 
   XCTAssertNotNil(titleLabel);
@@ -1483,8 +1465,7 @@
   if ([presentedViewController isKindOfClass:[UINavigationController class]]) {
     UINavigationController *navigationController = (UINavigationController *)presentedViewController;
     XCTAssertTrue([navigationController.topViewController isKindOfClass:[OnboardingRecipeDetailViewController class]]);
-    OnboardingRecipeDetailViewController *detailViewController =
-        (OnboardingRecipeDetailViewController *)navigationController.topViewController;
+    OnboardingRecipeDetailViewController *detailViewController = (OnboardingRecipeDetailViewController *)navigationController.topViewController;
     [detailViewController loadViewIfNeeded];
     return detailViewController;
   }
@@ -1505,7 +1486,7 @@
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
   OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
-                                                                             authenticationController:self.authenticationController
+                                                                              authenticationController:self.authenticationController
                                                                                          recipeCatalog:self.recipeCatalog];
   window.rootViewController = viewController;
   [window makeKeyAndVisible];
@@ -1531,7 +1512,7 @@
 
   UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
   OnboardingViewController *viewController = [[OnboardingViewController alloc] initWithStateController:self.stateController
-                                                                             authenticationController:self.authenticationController
+                                                                              authenticationController:self.authenticationController
                                                                                          recipeCatalog:self.recipeCatalog];
   window.rootViewController = viewController;
   [window makeKeyAndVisible];

@@ -161,30 +161,27 @@
                                                         sourceURLString:@"https://example.com/recipe"
                                                                mealType:mealType
                                                                    tags:@[ mealType, @"High Protein" ]];
-  OnboardingRecipeIngredient *ingredientOne =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Rolled oats" displayText:@"1 cup rolled oats"];
-  OnboardingRecipeIngredient *ingredientTwo =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Fried egg" displayText:@"1 fried egg"];
-  OnboardingRecipeInstruction *instructionOne =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Toast the oats in the pan."];
-  OnboardingRecipeInstruction *instructionTwo =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2" detailText:@"Finish with the fried egg."];
-  OnboardingRecipeDetail *recipeDetail =
-      [[OnboardingRecipeDetail alloc] initWithTitle:title
-                                           subtitle:@"Comfort Bowl"
-                                          assetName:@"avocado-toast"
-                                 heroImageURLString:nil
-                                       durationText:@"18 mins"
-                                        calorieText:@"420 kcal"
-                                       servingsText:@"2 servings"
-                                        summaryText:@"A cozy bowl for testing persistence."
-                                        ingredients:@[ ingredientOne, ingredientTwo ]
-                                       instructions:@[ instructionOne, instructionTwo ]
-                                              tools:@[ @"Saucepan", @"Spoon" ]
-                                               tags:@[ mealType, @"High Protein" ]
-                                         sourceName:@"MRR Tests"
-                                    sourceURLString:@"https://example.com/recipe"
-                                     productContext:nil];
+  OnboardingRecipeIngredient *ingredientOne = [[OnboardingRecipeIngredient alloc] initWithName:@"Rolled oats" displayText:@"1 cup rolled oats"];
+  OnboardingRecipeIngredient *ingredientTwo = [[OnboardingRecipeIngredient alloc] initWithName:@"Fried egg" displayText:@"1 fried egg"];
+  OnboardingRecipeInstruction *instructionOne = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1"
+                                                                                        detailText:@"Toast the oats in the pan."];
+  OnboardingRecipeInstruction *instructionTwo = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2"
+                                                                                        detailText:@"Finish with the fried egg."];
+  OnboardingRecipeDetail *recipeDetail = [[OnboardingRecipeDetail alloc] initWithTitle:title
+                                                                              subtitle:@"Comfort Bowl"
+                                                                             assetName:@"avocado-toast"
+                                                                    heroImageURLString:nil
+                                                                          durationText:@"18 mins"
+                                                                           calorieText:@"420 kcal"
+                                                                          servingsText:@"2 servings"
+                                                                           summaryText:@"A cozy bowl for testing persistence."
+                                                                           ingredients:@[ ingredientOne, ingredientTwo ]
+                                                                          instructions:@[ instructionOne, instructionTwo ]
+                                                                                 tools:@[ @"Saucepan", @"Spoon" ]
+                                                                                  tags:@[ mealType, @"High Protein" ]
+                                                                            sourceName:@"MRR Tests"
+                                                                       sourceURLString:@"https://example.com/recipe"
+                                                                        productContext:nil];
   NSDate *savedAt = [NSDate dateWithTimeIntervalSince1970:1700000000.0 + savedOffset];
   NSDate *modifiedAt = [savedAt dateByAddingTimeInterval:30.0];
   return [MRRSavedRecipeSnapshot snapshotWithUserID:userID
