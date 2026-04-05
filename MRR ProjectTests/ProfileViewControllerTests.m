@@ -104,10 +104,10 @@
 
   self.authenticationController = [[ProfileAuthenticationControllerSpy alloc] init];
   self.authenticationController.stubSession = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
-                                                                                email:@"cook@example.com"
-                                                                          displayName:@"Home Cook"
-                                                                         providerType:MRRAuthProviderTypeGoogle
-                                                                        emailVerified:YES];
+                                                                               email:@"cook@example.com"
+                                                                         displayName:@"Home Cook"
+                                                                        providerType:MRRAuthProviderTypeGoogle
+                                                                       emailVerified:YES];
   self.viewController = [[ProfileViewController alloc] initWithAuthenticationController:self.authenticationController
                                                                                 session:self.authenticationController.stubSession];
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
@@ -131,8 +131,8 @@
 
 - (void)testProfileExposesCoreAccessibilityIdentifiers {
   NSArray<NSString *> *identifiers = @[
-    @"profile.summaryCard", @"profile.displayNameLabel", @"profile.emailLabel", @"profile.providerLabel",
-    @"profile.emailVerificationLabel", @"profile.statusLabel", @"profile.logoutButton"
+    @"profile.summaryCard", @"profile.displayNameLabel", @"profile.emailLabel", @"profile.providerLabel", @"profile.emailVerificationLabel",
+    @"profile.statusLabel", @"profile.logoutButton"
   ];
 
   for (NSString *identifier in identifiers) {
@@ -141,8 +141,8 @@
 }
 
 - (void)testProfileShowsEmailVerificationStatus {
-  UILabel *verificationLabel =
-      (UILabel *)[self findViewWithAccessibilityIdentifier:@"profile.emailVerificationLabel" inView:self.viewController.view];
+  UILabel *verificationLabel = (UILabel *)[self findViewWithAccessibilityIdentifier:@"profile.emailVerificationLabel"
+                                                                             inView:self.viewController.view];
 
   XCTAssertNotNil(verificationLabel);
   XCTAssertEqualObjects(verificationLabel.text, @"Email verified: Yes");
@@ -171,9 +171,7 @@
 }
 
 - (void)testLogoutFailurePresentsErrorAlert {
-  self.authenticationController.nextSignOutError = [NSError errorWithDomain:@"ProfileTests"
-                                                                       code:1
-                                                                   userInfo:@{NSLocalizedDescriptionKey : @"Nope"}];
+  self.authenticationController.nextSignOutError = [NSError errorWithDomain:@"ProfileTests" code:1 userInfo:@{NSLocalizedDescriptionKey : @"Nope"}];
 
   [self.viewController performConfirmedLogout];
   [self spinMainRunLoop];

@@ -45,44 +45,34 @@
 
 - (void)testFirestorePayloadWritesRemotePhotoURLsOnlyAndMirrorsCoverHero {
   NSArray<MRRUserRecipePhotoSnapshot *> *photos = @[
-    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-1"
-                                             orderIndex:0
-                                        remoteURLString:@"https://example.com/one.jpg"
-                                      localRelativePath:nil],
-    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-2"
-                                             orderIndex:1
-                                        remoteURLString:nil
-                                      localRelativePath:@"recipe-2/photo-2.jpg"],
+    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-1" orderIndex:0 remoteURLString:@"https://example.com/one.jpg" localRelativePath:nil],
+    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-2" orderIndex:1 remoteURLString:nil localRelativePath:@"recipe-2/photo-2.jpg"],
     [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-3"
                                              orderIndex:2
                                         remoteURLString:@"https://example.com/three.jpg"
                                       localRelativePath:nil]
   ];
 
-  MRRUserRecipeSnapshot *snapshot =
-      [[MRRUserRecipeSnapshot alloc] initWithUserID:@"user-a"
-                                           recipeID:@"recipe-1"
-                                              title:@"Remote Gallery"
-                                           subtitle:@"Subtitle"
-                                        summaryText:@"Summary"
-                                           mealType:MRRUserRecipeMealTypeDinner
-                                     readyInMinutes:20
-                                           servings:2
-                                       calorieCount:400
-                                          assetName:@"pasta-carbonara"
-                                 heroImageURLString:nil
-                                             photos:photos
-                                        ingredients:@[
-                                          [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Pasta" displayText:@"Pasta" orderIndex:0]
-                                        ]
-                                       instructions:@[
-                                         [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1" detailText:@"Cook." orderIndex:0]
-                                       ]
-                                              tools:@[]
-                                               tags:@[]
-                                          createdAt:[NSDate date]
-                                    localModifiedAt:[NSDate date]
-                                    remoteUpdatedAt:nil];
+  MRRUserRecipeSnapshot *snapshot = [[MRRUserRecipeSnapshot alloc]
+          initWithUserID:@"user-a"
+                recipeID:@"recipe-1"
+                   title:@"Remote Gallery"
+                subtitle:@"Subtitle"
+             summaryText:@"Summary"
+                mealType:MRRUserRecipeMealTypeDinner
+          readyInMinutes:20
+                servings:2
+            calorieCount:400
+               assetName:@"pasta-carbonara"
+      heroImageURLString:nil
+                  photos:photos
+             ingredients:@[ [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Pasta" displayText:@"Pasta" orderIndex:0] ]
+            instructions:@[ [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1" detailText:@"Cook." orderIndex:0] ]
+                   tools:@[]
+                    tags:@[]
+               createdAt:[NSDate date]
+         localModifiedAt:[NSDate date]
+         remoteUpdatedAt:nil];
 
   NSDictionary<NSString *, id> *payload = [self.syncEngine firestorePayloadForSnapshot:snapshot updatedAt:[NSDate date]];
   XCTAssertEqualObjects(payload[@"photoURLStrings"], (@[ @"https://example.com/one.jpg", @"https://example.com/three.jpg" ]));
@@ -101,8 +91,8 @@
     @"calorieCount" : @250,
     @"assetName" : @"green-curry",
     @"heroImageURLString" : @"https://example.com/legacy.jpg",
-    @"ingredients" : @[ @{ @"name" : @"Broth", @"displayText" : @"2 cups broth", @"orderIndex" : @0 } ],
-    @"instructions" : @[ @{ @"title" : @"Step 1", @"detailText" : @"Heat broth.", @"orderIndex" : @0 } ],
+    @"ingredients" : @[ @{@"name" : @"Broth", @"displayText" : @"2 cups broth", @"orderIndex" : @0} ],
+    @"instructions" : @[ @{@"title" : @"Step 1", @"detailText" : @"Heat broth.", @"orderIndex" : @0} ],
     @"tools" : @[],
     @"tags" : @[]
   };
@@ -127,8 +117,8 @@
     @"assetName" : @"pizza",
     @"photoURLStrings" : @[ @"https://example.com/cover.jpg", @"https://example.com/detail.jpg" ],
     @"heroImageURLString" : @"https://example.com/outdated.jpg",
-    @"ingredients" : @[ @{ @"name" : @"Flour", @"displayText" : @"2 cups flour", @"orderIndex" : @0 } ],
-    @"instructions" : @[ @{ @"title" : @"Step 1", @"detailText" : @"Mix dough.", @"orderIndex" : @0 } ],
+    @"ingredients" : @[ @{@"name" : @"Flour", @"displayText" : @"2 cups flour", @"orderIndex" : @0} ],
+    @"instructions" : @[ @{@"title" : @"Step 1", @"detailText" : @"Mix dough.", @"orderIndex" : @0} ],
     @"tools" : @[],
     @"tags" : @[]
   };

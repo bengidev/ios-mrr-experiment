@@ -10,10 +10,10 @@
 @property(nonatomic, strong) MRRUserRecipesStore *store;
 
 - (MRRUserRecipeSnapshot *)snapshotWithUserID:(NSString *)userID
-                                      recipeID:(NSString *)recipeID
-                                         title:(NSString *)title
-                                      mealType:(NSString *)mealType
-                                   savedOffset:(NSTimeInterval)savedOffset;
+                                     recipeID:(NSString *)recipeID
+                                        title:(NSString *)title
+                                     mealType:(NSString *)mealType
+                                  savedOffset:(NSTimeInterval)savedOffset;
 
 @end
 
@@ -37,10 +37,10 @@
 
 - (void)testSaveRecipeSnapshotPersistsAndFetchesChildrenInOrder {
   MRRUserRecipeSnapshot *snapshot = [self snapshotWithUserID:@"user-a"
-                                                     recipeID:@"recipe-1"
-                                                        title:@"Savory Oats"
-                                                     mealType:MRRUserRecipeMealTypeBreakfast
-                                                  savedOffset:10.0];
+                                                    recipeID:@"recipe-1"
+                                                       title:@"Savory Oats"
+                                                    mealType:MRRUserRecipeMealTypeBreakfast
+                                                 savedOffset:10.0];
 
   NSError *saveError = nil;
   XCTAssertTrue([self.store saveRecipeSnapshot:snapshot error:&saveError]);
@@ -68,19 +68,19 @@
 
 - (void)testSavingSameRecipeTwiceUpdatesWithoutDuplicatingRows {
   MRRUserRecipeSnapshot *initialSnapshot = [self snapshotWithUserID:@"user-a"
-                                                            recipeID:@"recipe-1"
-                                                               title:@"Savory Oats"
-                                                            mealType:MRRUserRecipeMealTypeBreakfast
-                                                         savedOffset:20.0];
+                                                           recipeID:@"recipe-1"
+                                                              title:@"Savory Oats"
+                                                           mealType:MRRUserRecipeMealTypeBreakfast
+                                                        savedOffset:20.0];
   NSError *saveError = nil;
   XCTAssertTrue([self.store saveRecipeSnapshot:initialSnapshot error:&saveError]);
   XCTAssertNil(saveError);
 
   MRRUserRecipeSnapshot *updatedSnapshot = [self snapshotWithUserID:@"user-a"
-                                                            recipeID:@"recipe-1"
-                                                               title:@"Savory Oats Deluxe"
-                                                            mealType:MRRUserRecipeMealTypeBreakfast
-                                                         savedOffset:20.0];
+                                                           recipeID:@"recipe-1"
+                                                              title:@"Savory Oats Deluxe"
+                                                           mealType:MRRUserRecipeMealTypeBreakfast
+                                                        savedOffset:20.0];
   XCTAssertTrue([self.store saveRecipeSnapshot:updatedSnapshot error:&saveError]);
   XCTAssertNil(saveError);
 
@@ -97,38 +97,29 @@
                                              orderIndex:0
                                         remoteURLString:@"https://example.com/cover.jpg"
                                       localRelativePath:nil],
-    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-2"
-                                             orderIndex:1
-                                        remoteURLString:nil
-                                      localRelativePath:@"recipe-photos/photo-2.jpg"]
+    [[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:@"photo-2" orderIndex:1 remoteURLString:nil localRelativePath:@"recipe-photos/photo-2.jpg"]
   ];
 
-  MRRUserRecipeSnapshot *snapshot =
-      [[MRRUserRecipeSnapshot alloc] initWithUserID:@"user-a"
-                                           recipeID:@"recipe-photo"
-                                              title:@"Photo Pasta"
-                                           subtitle:@"Gallery"
-                                        summaryText:@"Recipe with photo gallery."
-                                           mealType:MRRUserRecipeMealTypeDinner
-                                     readyInMinutes:20
-                                           servings:2
-                                       calorieCount:480
-                                          assetName:@"pasta-carbonara"
-                                 heroImageURLString:nil
-                                             photos:photos
-                                        ingredients:@[
-                                          [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Pasta" displayText:@"200g pasta" orderIndex:0]
-                                        ]
-                                       instructions:@[
-                                         [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1"
-                                                                                     detailText:@"Cook pasta."
-                                                                                     orderIndex:0]
-                                       ]
-                                              tools:@[]
-                                               tags:@[]
-                                          createdAt:[NSDate date]
-                                    localModifiedAt:[NSDate date]
-                                    remoteUpdatedAt:nil];
+  MRRUserRecipeSnapshot *snapshot = [[MRRUserRecipeSnapshot alloc]
+          initWithUserID:@"user-a"
+                recipeID:@"recipe-photo"
+                   title:@"Photo Pasta"
+                subtitle:@"Gallery"
+             summaryText:@"Recipe with photo gallery."
+                mealType:MRRUserRecipeMealTypeDinner
+          readyInMinutes:20
+                servings:2
+            calorieCount:480
+               assetName:@"pasta-carbonara"
+      heroImageURLString:nil
+                  photos:photos
+             ingredients:@[ [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Pasta" displayText:@"200g pasta" orderIndex:0] ]
+            instructions:@[ [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1" detailText:@"Cook pasta." orderIndex:0] ]
+                   tools:@[]
+                    tags:@[]
+               createdAt:[NSDate date]
+         localModifiedAt:[NSDate date]
+         remoteUpdatedAt:nil];
 
   NSError *saveError = nil;
   XCTAssertTrue([self.store saveRecipeSnapshot:snapshot error:&saveError]);
@@ -146,32 +137,26 @@
 }
 
 - (void)testLegacyHeroImageFallsBackToSyntheticPhotoWhenNoPhotoChildrenExist {
-  MRRUserRecipeSnapshot *snapshot =
-      [[MRRUserRecipeSnapshot alloc] initWithUserID:@"user-a"
-                                           recipeID:@"recipe-legacy"
-                                              title:@"Legacy Soup"
-                                           subtitle:@"Classic"
-                                        summaryText:@"Legacy hero only."
-                                           mealType:MRRUserRecipeMealTypeLunch
-                                     readyInMinutes:15
-                                           servings:2
-                                       calorieCount:320
-                                          assetName:@"green-curry"
-                                 heroImageURLString:@"https://example.com/legacy.jpg"
-                                             photos:@[]
-                                        ingredients:@[
-                                          [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Broth" displayText:@"2 cups broth" orderIndex:0]
-                                        ]
-                                       instructions:@[
-                                         [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1"
-                                                                                     detailText:@"Heat broth."
-                                                                                     orderIndex:0]
-                                       ]
-                                              tools:@[]
-                                               tags:@[]
-                                          createdAt:[NSDate date]
-                                    localModifiedAt:[NSDate date]
-                                    remoteUpdatedAt:nil];
+  MRRUserRecipeSnapshot *snapshot = [[MRRUserRecipeSnapshot alloc]
+          initWithUserID:@"user-a"
+                recipeID:@"recipe-legacy"
+                   title:@"Legacy Soup"
+                subtitle:@"Classic"
+             summaryText:@"Legacy hero only."
+                mealType:MRRUserRecipeMealTypeLunch
+          readyInMinutes:15
+                servings:2
+            calorieCount:320
+               assetName:@"green-curry"
+      heroImageURLString:@"https://example.com/legacy.jpg"
+                  photos:@[]
+             ingredients:@[ [[MRRUserRecipeIngredientSnapshot alloc] initWithName:@"Broth" displayText:@"2 cups broth" orderIndex:0] ]
+            instructions:@[ [[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:@"Step 1" detailText:@"Heat broth." orderIndex:0] ]
+                   tools:@[]
+                    tags:@[]
+               createdAt:[NSDate date]
+         localModifiedAt:[NSDate date]
+         remoteUpdatedAt:nil];
 
   NSError *saveError = nil;
   XCTAssertTrue([self.store saveRecipeSnapshot:snapshot error:&saveError]);
@@ -187,10 +172,10 @@
 
 - (void)testRemoveRecipeDeletesSnapshotAndQueuesDeleteSyncChange {
   MRRUserRecipeSnapshot *snapshot = [self snapshotWithUserID:@"user-a"
-                                                     recipeID:@"recipe-1"
-                                                        title:@"Savory Oats"
-                                                     mealType:MRRUserRecipeMealTypeBreakfast
-                                                  savedOffset:5.0];
+                                                    recipeID:@"recipe-1"
+                                                       title:@"Savory Oats"
+                                                    mealType:MRRUserRecipeMealTypeBreakfast
+                                                 savedOffset:5.0];
   NSError *error = nil;
   XCTAssertTrue([self.store saveRecipeSnapshot:snapshot error:&error]);
   XCTAssertNil(error);
@@ -237,10 +222,10 @@
 }
 
 - (MRRUserRecipeSnapshot *)snapshotWithUserID:(NSString *)userID
-                                      recipeID:(NSString *)recipeID
-                                         title:(NSString *)title
-                                      mealType:(NSString *)mealType
-                                   savedOffset:(NSTimeInterval)savedOffset {
+                                     recipeID:(NSString *)recipeID
+                                        title:(NSString *)title
+                                     mealType:(NSString *)mealType
+                                  savedOffset:(NSTimeInterval)savedOffset {
   HomeRecipeCard *recipeCard = [[HomeRecipeCard alloc] initWithRecipeID:recipeID
                                                                   title:title
                                                                subtitle:@"Comfort Bowl"
@@ -255,37 +240,34 @@
                                                         sourceURLString:@"https://example.com/recipe"
                                                                mealType:mealType
                                                                    tags:@[ mealType, @"High Protein" ]];
-  OnboardingRecipeIngredient *ingredientOne =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Rolled oats" displayText:@"1 cup rolled oats"];
-  OnboardingRecipeIngredient *ingredientTwo =
-      [[OnboardingRecipeIngredient alloc] initWithName:@"Fried egg" displayText:@"1 fried egg"];
-  OnboardingRecipeInstruction *instructionOne =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1" detailText:@"Toast the oats in the pan."];
-  OnboardingRecipeInstruction *instructionTwo =
-      [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2" detailText:@"Finish with the fried egg."];
-  OnboardingRecipeDetail *recipeDetail =
-      [[OnboardingRecipeDetail alloc] initWithTitle:title
-                                           subtitle:@"Comfort Bowl"
-                                          assetName:@"avocado-toast"
-                                 heroImageURLString:nil
-                                       durationText:@"18 mins"
-                                        calorieText:@"420 kcal"
-                                       servingsText:@"2 servings"
-                                        summaryText:@"A cozy bowl for testing persistence."
-                                        ingredients:@[ ingredientOne, ingredientTwo ]
-                                       instructions:@[ instructionOne, instructionTwo ]
-                                              tools:@[ @"Saucepan", @"Spoon" ]
-                                               tags:@[ mealType, @"High Protein" ]
-                                         sourceName:@"MRR Tests"
-                                    sourceURLString:@"https://example.com/recipe"
-                                     productContext:nil];
+  OnboardingRecipeIngredient *ingredientOne = [[OnboardingRecipeIngredient alloc] initWithName:@"Rolled oats" displayText:@"1 cup rolled oats"];
+  OnboardingRecipeIngredient *ingredientTwo = [[OnboardingRecipeIngredient alloc] initWithName:@"Fried egg" displayText:@"1 fried egg"];
+  OnboardingRecipeInstruction *instructionOne = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 1"
+                                                                                        detailText:@"Toast the oats in the pan."];
+  OnboardingRecipeInstruction *instructionTwo = [[OnboardingRecipeInstruction alloc] initWithTitle:@"Step 2"
+                                                                                        detailText:@"Finish with the fried egg."];
+  OnboardingRecipeDetail *recipeDetail = [[OnboardingRecipeDetail alloc] initWithTitle:title
+                                                                              subtitle:@"Comfort Bowl"
+                                                                             assetName:@"avocado-toast"
+                                                                    heroImageURLString:nil
+                                                                          durationText:@"18 mins"
+                                                                           calorieText:@"420 kcal"
+                                                                          servingsText:@"2 servings"
+                                                                           summaryText:@"A cozy bowl for testing persistence."
+                                                                           ingredients:@[ ingredientOne, ingredientTwo ]
+                                                                          instructions:@[ instructionOne, instructionTwo ]
+                                                                                 tools:@[ @"Saucepan", @"Spoon" ]
+                                                                                  tags:@[ mealType, @"High Protein" ]
+                                                                            sourceName:@"MRR Tests"
+                                                                       sourceURLString:@"https://example.com/recipe"
+                                                                        productContext:nil];
   NSDate *createdAt = [NSDate dateWithTimeIntervalSince1970:1700000000.0 + savedOffset];
   NSDate *modifiedAt = [createdAt dateByAddingTimeInterval:30.0];
   return [MRRUserRecipeSnapshot snapshotWithUserID:userID
-                                         recipeCard:recipeCard
-                                       recipeDetail:recipeDetail
-                                            createdAt:createdAt
-                                    localModifiedAt:modifiedAt];
+                                        recipeCard:recipeCard
+                                      recipeDetail:recipeDetail
+                                         createdAt:createdAt
+                                   localModifiedAt:modifiedAt];
 }
 
 @end

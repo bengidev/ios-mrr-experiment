@@ -14,8 +14,7 @@
 - (void)setUp {
   [super setUp];
 
-  self.baseDirectoryURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]
-                                     isDirectory:YES];
+  self.baseDirectoryURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString] isDirectory:YES];
   self.storage = [[MRRLocalUserRecipePhotoStorage alloc] initWithBaseDirectoryURL:self.baseDirectoryURL fileManager:[NSFileManager defaultManager]];
 }
 
