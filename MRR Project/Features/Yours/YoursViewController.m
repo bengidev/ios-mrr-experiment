@@ -317,6 +317,122 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   containerView.layer.borderColor = MRRYoursBorderColor().CGColor;
   containerView.accessibilityIdentifier = [MRRYoursRecipeCardIdentifierPrefix stringByAppendingString:recipe.recipeID];
 
+  // Cover image view for recipe photo (main/large image)
+  UIImageView *coverImageView = [[[UIImageView alloc] init] autorelease];
+  coverImageView.translatesAutoresizingMaskIntoConstraints = NO;
+  coverImageView.contentMode = UIViewContentModeScaleAspectFill;
+  coverImageView.clipsToBounds = YES;
+  coverImageView.layer.cornerRadius = 16.0;
+  coverImageView.backgroundColor = MRRYoursMutedSurfaceColor();
+  [containerView addSubview:coverImageView];
+
+  // Load cover image if available (first photo)
+  MRRUserRecipePhotoSnapshot *coverPhoto = recipe.coverPhotoSnapshot;
+  if (coverPhoto != nil && coverPhoto.localRelativePath.length > 0) {
+    UIImage *coverImage = [self.photoStorage imageForRelativePath:coverPhoto.localRelativePath];
+    if (coverImage != nil) {
+      coverImageView.image = coverImage;
+    }
+  }
+
+  // Scrollable container for stacked photo thumbnails
+  UIScrollView *thumbnailsScrollView = [[[UIScrollView alloc] init] autorelease];
+  thumbnailsScrollView.translatesAutoresizingMaskIntoConstraints = NO;
+  thumbnailsScrollView.showsHorizontalScrollIndicator = NO;
+  thumbnailsScrollView.alwaysBounceHorizontal = YES;
+  [containerView addSubview:thumbnailsScrollView];
+
+  // Inner content view for scroll view
+  UIView *thumbnailsContentView = [[[UIView alloc] init] autorelease];
+  thumbnailsContentView.translatesAutoresizingMaskIntoConstraints = NO;
+  [thumbnailsScrollView addSubview:thumbnailsContentView];
+
+  // Add additional photos (excluding cover) as stacked thumbnails
+  NSArray<MRRUserRecipePhotoSnapshot *> *photos = recipe.photos;
+  // Skip first photo (cover) - only show additional photos
+  NSArray<MRRUserRecipePhotoSnapshot *> *additionalPhotos = photos.count > 1 ? [photos subarrayWithRange:NSMakeRange(1, photos.count - 1)] : @[];
+
+  if (additionalPhotos.count > 0) {
+    CGFloat thumbnailSize = 60.0;
+    CGFloat overlap = 20.0;  // Overlap amount for stacked effect
+    UIView *previousThumbnailContainer = nil;
+
+    for (NSUInteger i = 0; i < additionalPhotos.count; i++) {
+      MRRUserRecipePhotoSnapshot *photo = additionalPhotos[i];
+
+      // Container for shadow - elevated/lifted effect
+      UIView *thumbnailContainer = [[[UIView alloc] init] autorelease];
+      thumbnailContainer.translatesAutoresizingMaskIntoConstraints = NO;
+      thumbnailContainer.backgroundColor = MRRYoursMutedSurfaceColor();
+      thumbnailContainer.layer.shadowColor = [UIColor blackColor].CGColor;
+      thumbnailContainer.layer.shadowOffset = CGSizeMake(0, 4);  // Lifted up
+      thumbnailContainer.layer.shadowRadius = 8.0;  // Softer, larger shadow
+      thumbnailContainer.layer.shadowOpacity = 0.20;  // More visible
+      thumbnailContainer.layer.masksToBounds = NO;
+      [thumbnailsContentView addSubview:thumbnailContainer];
+
+      // Image view for content (clipsToBounds = YES for rounded corners)
+      UIImageView *thumbnailView = [[[UIImageView alloc] init] autorelease];
+      thumbnailView.translatesAutoresizingMaskIntoConstraints = NO;
+      thumbnailView.contentMode = UIViewContentModeScaleAspectFill;
+      thumbnailView.clipsToBounds = YES;
+      thumbnailView.layer.cornerRadius = 12.0;
+      thumbnailView.backgroundColor = MRRYoursMutedSurfaceColor();
+      [thumbnailContainer addSubview:thumbnailView];
+
+      // Pin image view to container
+      [NSLayoutConstraint activateConstraints:@[
+        [thumbnailView.topAnchor constraintEqualToAnchor:thumbnailContainer.topAnchor],
+        [thumbnailView.leadingAnchor constraintEqualToAnchor:thumbnailContainer.leadingAnchor],
+        [thumbnailView.trailingAnchor constraintEqualToAnchor:thumbnailContainer.trailingAnchor],
+        [thumbnailView.bottomAnchor constraintEqualToAnchor:thumbnailContainer.bottomAnchor]
+      ]];
+
+      // Constraints for stacked layout - set size before loading image
+      [thumbnailContainer.widthAnchor constraintEqualToConstant:thumbnailSize].active = YES;
+      [thumbnailContainer.heightAnchor constraintEqualToConstant:thumbnailSize].active = YES;
+
+      // Load image if available
+      if (photo.localRelativePath.length > 0) {
+        UIImage *image = [self.photoStorage imageForRelativePath:photo.localRelativePath];
+        if (image != nil) {
+          thumbnailView.image = image;
+        }
+      }
+
+      if (previousThumbnailContainer == nil) {
+        // First thumbnail
+        [thumbnailContainer.leadingAnchor constraintEqualToAnchor:thumbnailsContentView.leadingAnchor].active = YES;
+      } else {
+        // Subsequent thumbnails - overlap with previous
+        [thumbnailContainer.leadingAnchor constraintEqualToAnchor:previousThumbnailContainer.leadingAnchor constant:(thumbnailSize - overlap)].active = YES;
+      }
+      [thumbnailContainer.topAnchor constraintEqualToAnchor:thumbnailsContentView.topAnchor].active = YES;
+      [thumbnailContainer.bottomAnchor constraintEqualToAnchor:thumbnailsContentView.bottomAnchor].active = YES;
+
+      // Last thumbnail - pin trailing to contentView (required for scrollable content size)
+      if (i == additionalPhotos.count - 1) {
+        [thumbnailContainer.trailingAnchor constraintEqualToAnchor:thumbnailsContentView.trailingAnchor].active = YES;
+      }
+
+      previousThumbnailContainer = thumbnailContainer;
+    }
+
+    // Scroll view constraints - content is sized by thumbnails, must pin edges
+    [NSLayoutConstraint activateConstraints:@[
+      [thumbnailsScrollView.heightAnchor constraintEqualToConstant:thumbnailSize],
+      [thumbnailsContentView.topAnchor constraintEqualToAnchor:thumbnailsScrollView.topAnchor],
+      [thumbnailsContentView.leadingAnchor constraintEqualToAnchor:thumbnailsScrollView.leadingAnchor],
+      [thumbnailsContentView.trailingAnchor constraintEqualToAnchor:thumbnailsScrollView.trailingAnchor],
+      [thumbnailsContentView.bottomAnchor constraintEqualToAnchor:thumbnailsScrollView.bottomAnchor],
+      // Width is determined by trailing constraint of last thumbnail to contentView
+      [thumbnailsContentView.heightAnchor constraintEqualToConstant:thumbnailSize]
+    ]];
+  } else {
+    // No additional photos - hide scroll view
+    [thumbnailsScrollView.heightAnchor constraintEqualToConstant:0].active = YES;
+  }
+
   UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:22.0 weight:UIFontWeightSemibold] color:MRRYoursPrimaryTextColor()];
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   titleLabel.text = recipe.title;
@@ -367,7 +483,16 @@ static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.dele
   [actionsStackView addArrangedSubview:deleteButton];
 
   [NSLayoutConstraint activateConstraints:@[
-    [titleLabel.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:20.0],
+    [coverImageView.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:20.0],
+    [coverImageView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
+    [coverImageView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
+    [coverImageView.heightAnchor constraintEqualToConstant:180.0],
+
+    [thumbnailsScrollView.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:12.0],
+    [thumbnailsScrollView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
+    [thumbnailsScrollView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
+
+    [titleLabel.topAnchor constraintEqualToAnchor:thumbnailsScrollView.bottomAnchor constant:12.0],
     [titleLabel.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
     [titleLabel.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
 
