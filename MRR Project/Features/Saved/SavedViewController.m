@@ -149,6 +149,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
                            syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
+    self.title = @"Saved";
     _sessionUserID = [sessionUserID copy];
     _savedRecipesStore = [savedRecipesStore retain];
     _syncEngine = [syncEngine retain];
@@ -195,14 +196,9 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-  [self.navigationController setNavigationBarHidden:YES animated:animated];
+  [self.navigationController setNavigationBarHidden:NO animated:animated];
   [self loadSectionsFromStore];
   [self reloadSections];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-  [super viewWillDisappear:animated];
-  [self.navigationController setNavigationBarHidden:NO animated:animated];
 }
 
 - (void)buildViewHierarchy {
