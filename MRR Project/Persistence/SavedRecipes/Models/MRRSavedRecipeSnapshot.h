@@ -89,7 +89,7 @@ FOUNDATION_EXPORT NSString *const MRRSavedRecipeMealTypeSnack;
                          title:(NSString *)title
                       subtitle:(NSString *)subtitle
                      assetName:(NSString *)assetName
-              heroImageURLString:(nullable NSString *)heroImageURLString
+            heroImageURLString:(nullable NSString *)heroImageURLString
                    summaryText:(NSString *)summaryText
                       mealType:(NSString *)mealType
                     sourceName:(nullable NSString *)sourceName
@@ -112,9 +112,9 @@ FOUNDATION_EXPORT NSString *const MRRSavedRecipeMealTypeSnack;
 
 + (instancetype)snapshotWithUserID:(NSString *)userID
                         recipeCard:(HomeRecipeCard *)recipeCard
-                        recipeDetail:(OnboardingRecipeDetail *)recipeDetail
-                            savedAt:(NSDate *)savedAt
-                    localModifiedAt:(NSDate *)localModifiedAt;
+                      recipeDetail:(OnboardingRecipeDetail *)recipeDetail
+                           savedAt:(NSDate *)savedAt
+                   localModifiedAt:(NSDate *)localModifiedAt;
 - (OnboardingRecipeDetail *)recipeDetailRepresentation;
 - (OnboardingRecipePreview *)recipePreviewRepresentation;
 - (NSString *)sectionIdentifier;

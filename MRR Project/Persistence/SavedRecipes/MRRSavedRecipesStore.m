@@ -63,16 +63,16 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
                                                        context:(NSManagedObjectContext *)context
                                                          error:(NSError *_Nullable *_Nullable)error;
 - (BOOL)upsertSavedRecipeManagedObject:(NSManagedObject *)managedObject
-                           withSnapshot:(MRRSavedRecipeSnapshot *)snapshot
+                          withSnapshot:(MRRSavedRecipeSnapshot *)snapshot
                                context:(NSManagedObjectContext *)context
                           queueForSync:(BOOL)queueForSync
                                  error:(NSError *_Nullable *_Nullable)error;
 - (void)replaceChildrenForRelationship:(NSString *)relationshipName
-                             onRecipe:(NSManagedObject *)recipeManagedObject
-                               values:(NSArray *)values
-                           entityName:(NSString *)entityName
-                        applyBlock:(void (^)(NSManagedObject *childManagedObject, id value))applyBlock
-                              context:(NSManagedObjectContext *)context;
+                              onRecipe:(NSManagedObject *)recipeManagedObject
+                                values:(NSArray *)values
+                            entityName:(NSString *)entityName
+                            applyBlock:(void (^)(NSManagedObject *childManagedObject, id value))applyBlock
+                               context:(NSManagedObjectContext *)context;
 - (MRRSavedRecipeSnapshot *)snapshotFromSavedRecipeManagedObject:(NSManagedObject *)managedObject;
 - (MRRSavedRecipeSyncChange *)syncChangeFromManagedObject:(NSManagedObject *)managedObject;
 - (void)deleteChildrenForRecipeManagedObject:(NSManagedObject *)managedObject context:(NSManagedObjectContext *)context;
@@ -102,8 +102,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
   [self.coreDataStack.viewContext performBlockAndWait:^{
     NSFetchRequest *request = [[[NSFetchRequest alloc] initWithEntityName:MRRSavedRecipeEntityName] autorelease];
     request.predicate = [NSPredicate predicateWithFormat:@"userID == %@", userID];
-    request.sortDescriptors = @[ [[[NSSortDescriptor alloc] initWithKey:@"savedAt" ascending:NO] autorelease],
-                                 [[[NSSortDescriptor alloc] initWithKey:@"title" ascending:YES selector:@selector(localizedCaseInsensitiveCompare:)] autorelease] ];
+    request.sortDescriptors = @[
+      [[[NSSortDescriptor alloc] initWithKey:@"savedAt" ascending:NO] autorelease],
+      [[[NSSortDescriptor alloc] initWithKey:@"title" ascending:YES selector:@selector(localizedCaseInsensitiveCompare:)] autorelease]
+    ];
     NSArray<NSManagedObject *> *results = [self.coreDataStack.viewContext executeFetchRequest:request error:&fetchError];
     if (fetchError != nil) {
       [fetchError retain];
@@ -126,7 +128,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
   __block MRRSavedRecipeSnapshot *snapshot = nil;
   __block NSError *fetchError = nil;
   [self.coreDataStack.viewContext performBlockAndWait:^{
-    NSManagedObject *managedObject = [self savedRecipeManagedObjectForUserID:userID recipeID:recipeID context:self.coreDataStack.viewContext error:&fetchError];
+    NSManagedObject *managedObject = [self savedRecipeManagedObjectForUserID:userID
+                                                                    recipeID:recipeID
+                                                                     context:self.coreDataStack.viewContext
+                                                                       error:&fetchError];
     if (fetchError != nil) {
       [fetchError retain];
       return;
@@ -152,7 +157,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
   __block BOOL didSave = YES;
   [self.coreDataStack.viewContext performBlockAndWait:^{
     NSManagedObjectContext *context = self.coreDataStack.viewContext;
-    NSManagedObject *managedObject = [self savedRecipeManagedObjectForUserID:snapshot.userID recipeID:snapshot.recipeID context:context error:&saveError];
+    NSManagedObject *managedObject = [self savedRecipeManagedObjectForUserID:snapshot.userID
+                                                                    recipeID:snapshot.recipeID
+                                                                     context:context
+                                                                       error:&saveError];
     if (saveError != nil) {
       [saveError retain];
       didSave = NO;
@@ -258,8 +266,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
   __block NSError *fetchError = nil;
   __block BOOL found = NO;
   [self.coreDataStack.viewContext performBlockAndWait:^{
-    NSManagedObject *managedObject =
-        [self syncChangeManagedObjectForUserID:userID recipeID:recipeID context:self.coreDataStack.viewContext error:&fetchError];
+    NSManagedObject *managedObject = [self syncChangeManagedObjectForUserID:userID
+                                                                   recipeID:recipeID
+                                                                    context:self.coreDataStack.viewContext
+                                                                      error:&fetchError];
     if (fetchError != nil) {
       [fetchError retain];
       return;
@@ -330,8 +340,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
       return;
     }
 
-    NSManagedObject *managedObject =
-        [self savedRecipeManagedObjectForUserID:snapshot.userID recipeID:snapshot.recipeID context:context error:&saveError];
+    NSManagedObject *managedObject = [self savedRecipeManagedObjectForUserID:snapshot.userID
+                                                                    recipeID:snapshot.recipeID
+                                                                     context:context
+                                                                       error:&saveError];
     if (saveError != nil) {
       [saveError retain];
       didSave = NO;
@@ -344,33 +356,36 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
     if (managedObject == nil) {
       managedObject = [NSEntityDescription insertNewObjectForEntityForName:MRRSavedRecipeEntityName inManagedObjectContext:context];
     }
-    MRRSavedRecipeSnapshot *snapshotWithRemoteDate =
-        [[[MRRSavedRecipeSnapshot alloc] initWithUserID:snapshot.userID
-                                              recipeID:snapshot.recipeID
-                                                 title:snapshot.title
-                                              subtitle:snapshot.subtitle
-                                             assetName:snapshot.assetName
-                                      heroImageURLString:snapshot.heroImageURLString
-                                           summaryText:snapshot.summaryText
-                                              mealType:snapshot.mealType
-                                            sourceName:snapshot.sourceName
-                                       sourceURLString:snapshot.sourceURLString
-                                        readyInMinutes:snapshot.readyInMinutes
-                                              servings:snapshot.servings
-                                          calorieCount:snapshot.calorieCount
-                                       popularityScore:snapshot.popularityScore
-                                          durationText:snapshot.durationText
-                                           calorieText:snapshot.calorieText
-                                          servingsText:snapshot.servingsText
-                                           ingredients:snapshot.ingredients
-                                          instructions:snapshot.instructions
-                                                 tools:snapshot.tools
-                                                  tags:snapshot.tags
-                                        productContext:snapshot.productContext
-                                               savedAt:snapshot.savedAt
-                                       localModifiedAt:remoteUpdatedAt
-                                       remoteUpdatedAt:remoteUpdatedAt] autorelease];
-    didSave = [self upsertSavedRecipeManagedObject:managedObject withSnapshot:snapshotWithRemoteDate context:context queueForSync:NO error:&saveError];
+    MRRSavedRecipeSnapshot *snapshotWithRemoteDate = [[[MRRSavedRecipeSnapshot alloc] initWithUserID:snapshot.userID
+                                                                                            recipeID:snapshot.recipeID
+                                                                                               title:snapshot.title
+                                                                                            subtitle:snapshot.subtitle
+                                                                                           assetName:snapshot.assetName
+                                                                                  heroImageURLString:snapshot.heroImageURLString
+                                                                                         summaryText:snapshot.summaryText
+                                                                                            mealType:snapshot.mealType
+                                                                                          sourceName:snapshot.sourceName
+                                                                                     sourceURLString:snapshot.sourceURLString
+                                                                                      readyInMinutes:snapshot.readyInMinutes
+                                                                                            servings:snapshot.servings
+                                                                                        calorieCount:snapshot.calorieCount
+                                                                                     popularityScore:snapshot.popularityScore
+                                                                                        durationText:snapshot.durationText
+                                                                                         calorieText:snapshot.calorieText
+                                                                                        servingsText:snapshot.servingsText
+                                                                                         ingredients:snapshot.ingredients
+                                                                                        instructions:snapshot.instructions
+                                                                                               tools:snapshot.tools
+                                                                                                tags:snapshot.tags
+                                                                                      productContext:snapshot.productContext
+                                                                                             savedAt:snapshot.savedAt
+                                                                                     localModifiedAt:remoteUpdatedAt
+                                                                                     remoteUpdatedAt:remoteUpdatedAt] autorelease];
+    didSave = [self upsertSavedRecipeManagedObject:managedObject
+                                      withSnapshot:snapshotWithRemoteDate
+                                           context:context
+                                      queueForSync:NO
+                                             error:&saveError];
     if (saveError != nil) {
       [saveError retain];
       didSave = NO;
@@ -463,7 +478,7 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
 }
 
 - (BOOL)upsertSavedRecipeManagedObject:(NSManagedObject *)managedObject
-                           withSnapshot:(MRRSavedRecipeSnapshot *)snapshot
+                          withSnapshot:(MRRSavedRecipeSnapshot *)snapshot
                                context:(NSManagedObjectContext *)context
                           queueForSync:(BOOL)queueForSync
                                  error:(NSError **)error {
@@ -496,39 +511,39 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
                               onRecipe:managedObject
                                 values:snapshot.ingredients
                             entityName:MRRSavedRecipeIngredientEntityName
-                             applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeIngredientSnapshot *value) {
-                               [childManagedObject setValue:value.name forKey:@"name"];
-                               [childManagedObject setValue:value.displayText forKey:@"displayText"];
-                               [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
-                             }
+                            applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeIngredientSnapshot *value) {
+                              [childManagedObject setValue:value.name forKey:@"name"];
+                              [childManagedObject setValue:value.displayText forKey:@"displayText"];
+                              [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
+                            }
                                context:context];
   [self replaceChildrenForRelationship:MRRSavedRecipeRelationshipInstructions
                               onRecipe:managedObject
                                 values:snapshot.instructions
                             entityName:MRRSavedRecipeInstructionEntityName
-                             applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeInstructionSnapshot *value) {
-                               [childManagedObject setValue:value.title forKey:@"title"];
-                               [childManagedObject setValue:value.detailText forKey:@"detailText"];
-                               [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
-                             }
+                            applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeInstructionSnapshot *value) {
+                              [childManagedObject setValue:value.title forKey:@"title"];
+                              [childManagedObject setValue:value.detailText forKey:@"detailText"];
+                              [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
+                            }
                                context:context];
   [self replaceChildrenForRelationship:MRRSavedRecipeRelationshipTools
                               onRecipe:managedObject
                                 values:snapshot.tools
                             entityName:MRRSavedRecipeToolEntityName
-                             applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeStringSnapshot *value) {
-                               [childManagedObject setValue:value.value forKey:@"value"];
-                               [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
-                             }
+                            applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeStringSnapshot *value) {
+                              [childManagedObject setValue:value.value forKey:@"value"];
+                              [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
+                            }
                                context:context];
   [self replaceChildrenForRelationship:MRRSavedRecipeRelationshipTags
                               onRecipe:managedObject
                                 values:snapshot.tags
                             entityName:MRRSavedRecipeTagEntityName
-                             applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeStringSnapshot *value) {
-                               [childManagedObject setValue:value.value forKey:@"value"];
-                               [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
-                             }
+                            applyBlock:^(NSManagedObject *childManagedObject, MRRSavedRecipeStringSnapshot *value) {
+                              [childManagedObject setValue:value.value forKey:@"value"];
+                              [childManagedObject setValue:@(value.orderIndex) forKey:@"orderIndex"];
+                            }
                                context:context];
 
   if (queueForSync) {
@@ -571,10 +586,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRSavedRecipeIngredientSnapshot *> *ingredients = [NSMutableArray arrayWithCapacity:ingredientObjects.count];
   for (NSManagedObject *ingredientManagedObject in ingredientObjects) {
-    MRRSavedRecipeIngredientSnapshot *ingredient =
-        [[[MRRSavedRecipeIngredientSnapshot alloc] initWithName:MRRSavedRecipesStoreStringValue([ingredientManagedObject valueForKey:@"name"])
-                                                    displayText:MRRSavedRecipesStoreStringValue([ingredientManagedObject valueForKey:@"displayText"])
-                                                     orderIndex:MRRSavedRecipesStoreIntegerValue([ingredientManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeIngredientSnapshot *ingredient = [[[MRRSavedRecipeIngredientSnapshot alloc]
+        initWithName:MRRSavedRecipesStoreStringValue([ingredientManagedObject valueForKey:@"name"])
+         displayText:MRRSavedRecipesStoreStringValue([ingredientManagedObject valueForKey:@"displayText"])
+          orderIndex:MRRSavedRecipesStoreIntegerValue([ingredientManagedObject valueForKey:@"orderIndex"])] autorelease];
     [ingredients addObject:ingredient];
   }
 
@@ -582,10 +597,10 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRSavedRecipeInstructionSnapshot *> *instructions = [NSMutableArray arrayWithCapacity:instructionObjects.count];
   for (NSManagedObject *instructionManagedObject in instructionObjects) {
-    MRRSavedRecipeInstructionSnapshot *instruction =
-        [[[MRRSavedRecipeInstructionSnapshot alloc] initWithTitle:MRRSavedRecipesStoreStringValue([instructionManagedObject valueForKey:@"title"])
-                                                       detailText:MRRSavedRecipesStoreStringValue([instructionManagedObject valueForKey:@"detailText"])
-                                                       orderIndex:MRRSavedRecipesStoreIntegerValue([instructionManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeInstructionSnapshot *instruction = [[[MRRSavedRecipeInstructionSnapshot alloc]
+        initWithTitle:MRRSavedRecipesStoreStringValue([instructionManagedObject valueForKey:@"title"])
+           detailText:MRRSavedRecipesStoreStringValue([instructionManagedObject valueForKey:@"detailText"])
+           orderIndex:MRRSavedRecipesStoreIntegerValue([instructionManagedObject valueForKey:@"orderIndex"])] autorelease];
     [instructions addObject:instruction];
   }
 
@@ -593,9 +608,9 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRSavedRecipeStringSnapshot *> *tools = [NSMutableArray arrayWithCapacity:toolObjects.count];
   for (NSManagedObject *toolManagedObject in toolObjects) {
-    MRRSavedRecipeStringSnapshot *tool =
-        [[[MRRSavedRecipeStringSnapshot alloc] initWithValue:MRRSavedRecipesStoreStringValue([toolManagedObject valueForKey:@"value"])
-                                                  orderIndex:MRRSavedRecipesStoreIntegerValue([toolManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeStringSnapshot *tool = [[[MRRSavedRecipeStringSnapshot alloc]
+        initWithValue:MRRSavedRecipesStoreStringValue([toolManagedObject valueForKey:@"value"])
+           orderIndex:MRRSavedRecipesStoreIntegerValue([toolManagedObject valueForKey:@"orderIndex"])] autorelease];
     [tools addObject:tool];
   }
 
@@ -603,62 +618,67 @@ static NSInteger MRRSavedRecipesStoreIntegerValue(id candidate) {
       sortedArrayUsingDescriptors:@[ [[[NSSortDescriptor alloc] initWithKey:@"orderIndex" ascending:YES] autorelease] ]];
   NSMutableArray<MRRSavedRecipeStringSnapshot *> *tags = [NSMutableArray arrayWithCapacity:tagObjects.count];
   for (NSManagedObject *tagManagedObject in tagObjects) {
-    MRRSavedRecipeStringSnapshot *tag =
-        [[[MRRSavedRecipeStringSnapshot alloc] initWithValue:MRRSavedRecipesStoreStringValue([tagManagedObject valueForKey:@"value"])
-                                                  orderIndex:MRRSavedRecipesStoreIntegerValue([tagManagedObject valueForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeStringSnapshot *tag = [[[MRRSavedRecipeStringSnapshot alloc]
+        initWithValue:MRRSavedRecipesStoreStringValue([tagManagedObject valueForKey:@"value"])
+           orderIndex:MRRSavedRecipesStoreIntegerValue([tagManagedObject valueForKey:@"orderIndex"])] autorelease];
     [tags addObject:tag];
   }
 
   MRRSavedRecipeProductContextSnapshot *productContext = nil;
   NSString *productName = MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productName"]);
   if (productName.length > 0) {
-    productContext = [[[MRRSavedRecipeProductContextSnapshot alloc] initWithProductName:productName
-                                                                              brandText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productBrandText"])
-                                                                     nutritionGradeText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productNutritionGradeText"])
-                                                                           quantityText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productQuantityText"])] autorelease];
+    productContext = [[[MRRSavedRecipeProductContextSnapshot alloc]
+        initWithProductName:productName
+                  brandText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productBrandText"])
+         nutritionGradeText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productNutritionGradeText"])
+               quantityText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"productQuantityText"])] autorelease];
   }
 
-  return [[[MRRSavedRecipeSnapshot alloc] initWithUserID:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"userID"])
-                                                recipeID:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"recipeID"])
-                                                   title:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"title"])
-                                                subtitle:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"subtitle"])
-                                               assetName:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"assetName"])
-                                        heroImageURLString:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"heroImageURLString"])
-                                             summaryText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"summaryText"])
-                                                mealType:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"mealType"])
-                                              sourceName:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"sourceName"])
-                                         sourceURLString:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"sourceURLString"])
-                                          readyInMinutes:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"readyInMinutes"])
-                                                servings:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"servings"])
-                                            calorieCount:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"calorieCount"])
-                                         popularityScore:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"popularityScore"])
-                                            durationText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"durationText"])
-                                             calorieText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"calorieText"])
-                                            servingsText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"servingsText"])
-                                             ingredients:ingredients
-                                            instructions:instructions
-                                                   tools:tools
-                                                    tags:tags
-                                          productContext:productContext
-                                                 savedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"savedAt"]) ?: [NSDate date]
-                                         localModifiedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"localModifiedAt"]) ?: [NSDate date]
-                                         remoteUpdatedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"remoteUpdatedAt"])] autorelease];
+  return
+      [[[MRRSavedRecipeSnapshot alloc] initWithUserID:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"userID"])
+                                             recipeID:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"recipeID"])
+                                                title:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"title"])
+                                             subtitle:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"subtitle"])
+                                            assetName:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"assetName"])
+                                   heroImageURLString:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"heroImageURLString"])
+                                          summaryText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"summaryText"])
+                                             mealType:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"mealType"])
+                                           sourceName:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"sourceName"])
+                                      sourceURLString:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"sourceURLString"])
+                                       readyInMinutes:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"readyInMinutes"])
+                                             servings:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"servings"])
+                                         calorieCount:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"calorieCount"])
+                                      popularityScore:MRRSavedRecipesStoreIntegerValue([managedObject valueForKey:@"popularityScore"])
+                                         durationText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"durationText"])
+                                          calorieText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"calorieText"])
+                                         servingsText:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"servingsText"])
+                                          ingredients:ingredients
+                                         instructions:instructions
+                                                tools:tools
+                                                 tags:tags
+                                       productContext:productContext
+                                              savedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"savedAt"]) ?: [NSDate date]
+                                      localModifiedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"localModifiedAt"]) ?: [NSDate date]
+                                      remoteUpdatedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"remoteUpdatedAt"])] autorelease];
 }
 
 - (MRRSavedRecipeSyncChange *)syncChangeFromManagedObject:(NSManagedObject *)managedObject {
   NSString *operationString = MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"operationType"]);
-  MRRSavedRecipeSyncChangeOperation operation =
-      [operationString isEqualToString:MRRSavedRecipeSyncOperationDelete] ? MRRSavedRecipeSyncChangeOperationDelete
-                                                                          : MRRSavedRecipeSyncChangeOperationUpsert;
+  MRRSavedRecipeSyncChangeOperation operation = [operationString isEqualToString:MRRSavedRecipeSyncOperationDelete]
+                                                    ? MRRSavedRecipeSyncChangeOperationDelete
+                                                    : MRRSavedRecipeSyncChangeOperationUpsert;
   return [[[MRRSavedRecipeSyncChange alloc] initWithUserID:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"userID"])
                                                   recipeID:MRRSavedRecipesStoreStringValue([managedObject valueForKey:@"recipeID"])
                                                  operation:operation
-                                                  queuedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"queuedAt"]) ?: [NSDate date]] autorelease];
+                                                  queuedAt:MRRSavedRecipesStoreDateValue([managedObject valueForKey:@"queuedAt"]) ?: [NSDate date]]
+      autorelease];
 }
 
 - (void)deleteChildrenForRecipeManagedObject:(NSManagedObject *)managedObject context:(NSManagedObjectContext *)context {
-  for (NSString *relationshipName in @[ MRRSavedRecipeRelationshipIngredients, MRRSavedRecipeRelationshipInstructions, MRRSavedRecipeRelationshipTools,
-                                        MRRSavedRecipeRelationshipTags ]) {
+  for (NSString *relationshipName in @[
+         MRRSavedRecipeRelationshipIngredients, MRRSavedRecipeRelationshipInstructions, MRRSavedRecipeRelationshipTools,
+         MRRSavedRecipeRelationshipTags
+       ]) {
     NSMutableSet *relationshipSet = [managedObject mutableSetValueForKey:relationshipName];
     NSArray *children = [relationshipSet allObjects];
     for (NSManagedObject *childManagedObject in children) {

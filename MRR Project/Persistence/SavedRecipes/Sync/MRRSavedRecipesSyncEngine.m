@@ -39,16 +39,13 @@ static NSString *const MRRSavedRecipesFirestoreKeyUserID = @"userID";
 static NSArray<NSDictionary<NSString *, id> *> *MRRSavedRecipesFirestoreIngredientPayload(NSArray<MRRSavedRecipeIngredientSnapshot *> *ingredients) {
   NSMutableArray<NSDictionary<NSString *, id> *> *payload = [NSMutableArray arrayWithCapacity:ingredients.count];
   for (MRRSavedRecipeIngredientSnapshot *ingredient in ingredients) {
-    [payload addObject:@{
-      @"name" : ingredient.name ?: @"",
-      @"displayText" : ingredient.displayText ?: @"",
-      @"orderIndex" : @(ingredient.orderIndex)
-    }];
+    [payload addObject:@{@"name" : ingredient.name ?: @"", @"displayText" : ingredient.displayText ?: @"", @"orderIndex" : @(ingredient.orderIndex)}];
   }
   return payload;
 }
 
-static NSArray<NSDictionary<NSString *, id> *> *MRRSavedRecipesFirestoreInstructionPayload(NSArray<MRRSavedRecipeInstructionSnapshot *> *instructions) {
+static NSArray<NSDictionary<NSString *, id> *> *MRRSavedRecipesFirestoreInstructionPayload(
+    NSArray<MRRSavedRecipeInstructionSnapshot *> *instructions) {
   NSMutableArray<NSDictionary<NSString *, id> *> *payload = [NSMutableArray arrayWithCapacity:instructions.count];
   for (MRRSavedRecipeInstructionSnapshot *instruction in instructions) {
     [payload addObject:@{
@@ -63,10 +60,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRSavedRecipesFirestoreInstruct
 static NSArray<NSDictionary<NSString *, id> *> *MRRSavedRecipesFirestoreStringPayload(NSArray<MRRSavedRecipeStringSnapshot *> *values) {
   NSMutableArray<NSDictionary<NSString *, id> *> *payload = [NSMutableArray arrayWithCapacity:values.count];
   for (MRRSavedRecipeStringSnapshot *value in values) {
-    [payload addObject:@{
-      @"value" : value.value ?: @"",
-      @"orderIndex" : @(value.orderIndex)
-    }];
+    [payload addObject:@{@"value" : value.value ?: @"", @"orderIndex" : @(value.orderIndex)}];
   }
   return payload;
 }
@@ -269,10 +263,10 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
     if (![ingredientEntry isKindOfClass:[NSDictionary class]]) {
       continue;
     }
-    MRRSavedRecipeIngredientSnapshot *snapshot =
-        [[[MRRSavedRecipeIngredientSnapshot alloc] initWithName:MRRSavedRecipesFirestoreStringValue([ingredientEntry objectForKey:@"name"])
-                                                    displayText:MRRSavedRecipesFirestoreStringValue([ingredientEntry objectForKey:@"displayText"])
-                                                     orderIndex:MRRSavedRecipesFirestoreIntegerValue([ingredientEntry objectForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeIngredientSnapshot *snapshot = [[[MRRSavedRecipeIngredientSnapshot alloc]
+        initWithName:MRRSavedRecipesFirestoreStringValue([ingredientEntry objectForKey:@"name"])
+         displayText:MRRSavedRecipesFirestoreStringValue([ingredientEntry objectForKey:@"displayText"])
+          orderIndex:MRRSavedRecipesFirestoreIntegerValue([ingredientEntry objectForKey:@"orderIndex"])] autorelease];
     [ingredients addObject:snapshot];
   }
 
@@ -282,10 +276,10 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
     if (![instructionEntry isKindOfClass:[NSDictionary class]]) {
       continue;
     }
-    MRRSavedRecipeInstructionSnapshot *snapshot =
-        [[[MRRSavedRecipeInstructionSnapshot alloc] initWithTitle:MRRSavedRecipesFirestoreStringValue([instructionEntry objectForKey:@"title"])
-                                                       detailText:MRRSavedRecipesFirestoreStringValue([instructionEntry objectForKey:@"detailText"])
-                                                       orderIndex:MRRSavedRecipesFirestoreIntegerValue([instructionEntry objectForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeInstructionSnapshot *snapshot = [[[MRRSavedRecipeInstructionSnapshot alloc]
+        initWithTitle:MRRSavedRecipesFirestoreStringValue([instructionEntry objectForKey:@"title"])
+           detailText:MRRSavedRecipesFirestoreStringValue([instructionEntry objectForKey:@"detailText"])
+           orderIndex:MRRSavedRecipesFirestoreIntegerValue([instructionEntry objectForKey:@"orderIndex"])] autorelease];
     [instructions addObject:snapshot];
   }
 
@@ -295,9 +289,9 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
     if (![toolEntry isKindOfClass:[NSDictionary class]]) {
       continue;
     }
-    MRRSavedRecipeStringSnapshot *snapshot =
-        [[[MRRSavedRecipeStringSnapshot alloc] initWithValue:MRRSavedRecipesFirestoreStringValue([toolEntry objectForKey:@"value"])
-                                                  orderIndex:MRRSavedRecipesFirestoreIntegerValue([toolEntry objectForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeStringSnapshot *snapshot = [[[MRRSavedRecipeStringSnapshot alloc]
+        initWithValue:MRRSavedRecipesFirestoreStringValue([toolEntry objectForKey:@"value"])
+           orderIndex:MRRSavedRecipesFirestoreIntegerValue([toolEntry objectForKey:@"orderIndex"])] autorelease];
     [tools addObject:snapshot];
   }
 
@@ -307,48 +301,50 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
     if (![tagEntry isKindOfClass:[NSDictionary class]]) {
       continue;
     }
-    MRRSavedRecipeStringSnapshot *snapshot =
-        [[[MRRSavedRecipeStringSnapshot alloc] initWithValue:MRRSavedRecipesFirestoreStringValue([tagEntry objectForKey:@"value"])
-                                                  orderIndex:MRRSavedRecipesFirestoreIntegerValue([tagEntry objectForKey:@"orderIndex"])] autorelease];
+    MRRSavedRecipeStringSnapshot *snapshot = [[[MRRSavedRecipeStringSnapshot alloc]
+        initWithValue:MRRSavedRecipesFirestoreStringValue([tagEntry objectForKey:@"value"])
+           orderIndex:MRRSavedRecipesFirestoreIntegerValue([tagEntry objectForKey:@"orderIndex"])] autorelease];
     [tags addObject:snapshot];
   }
 
   MRRSavedRecipeProductContextSnapshot *productContext = nil;
   NSString *productName = MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductName]);
   if (productName.length > 0) {
-    productContext = [[[MRRSavedRecipeProductContextSnapshot alloc] initWithProductName:productName
-                                                                              brandText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductBrandText])
-                                                                     nutritionGradeText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductNutritionGradeText])
-                                                                           quantityText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductQuantityText])] autorelease];
+    productContext = [[[MRRSavedRecipeProductContextSnapshot alloc]
+        initWithProductName:productName
+                  brandText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductBrandText])
+         nutritionGradeText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductNutritionGradeText])
+               quantityText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyProductQuantityText])] autorelease];
   }
 
-  return [[[MRRSavedRecipeSnapshot alloc] initWithUserID:userID
-                                                recipeID:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyRecipeID]).length > 0
-                                                             ? MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyRecipeID])
-                                                             : document.documentID
-                                                   title:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyTitle])
-                                                subtitle:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySubtitle])
-                                               assetName:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyAssetName])
-                                        heroImageURLString:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyHeroImageURLString])
-                                             summaryText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySummaryText])
-                                                mealType:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyMealType])
-                                              sourceName:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySourceName])
-                                         sourceURLString:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySourceURLString])
-                                          readyInMinutes:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyReadyInMinutes])
-                                                servings:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyServings])
-                                            calorieCount:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyCalorieCount])
-                                         popularityScore:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyPopularityScore])
-                                            durationText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyDurationText])
-                                             calorieText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyCalorieText])
-                                            servingsText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyServingsText])
-                                             ingredients:ingredients
-                                            instructions:instructions
-                                                   tools:tools
-                                                    tags:tags
-                                          productContext:productContext
-                                                 savedAt:MRRSavedRecipesFirestoreDateValue([data objectForKey:MRRSavedRecipesFirestoreKeySavedAt]) ?: [NSDate date]
-                                         localModifiedAt:MRRSavedRecipesFirestoreDateValue([data objectForKey:MRRSavedRecipesFirestoreKeyUpdatedAt]) ?: [NSDate date]
-                                         remoteUpdatedAt:MRRSavedRecipesFirestoreDateValue([data objectForKey:MRRSavedRecipesFirestoreKeyUpdatedAt])] autorelease];
+  return [[[MRRSavedRecipeSnapshot alloc]
+          initWithUserID:userID
+                recipeID:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyRecipeID]).length > 0
+                             ? MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyRecipeID])
+                             : document.documentID
+                   title:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyTitle])
+                subtitle:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySubtitle])
+               assetName:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyAssetName])
+      heroImageURLString:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyHeroImageURLString])
+             summaryText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySummaryText])
+                mealType:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyMealType])
+              sourceName:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySourceName])
+         sourceURLString:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeySourceURLString])
+          readyInMinutes:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyReadyInMinutes])
+                servings:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyServings])
+            calorieCount:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyCalorieCount])
+         popularityScore:MRRSavedRecipesFirestoreIntegerValue([data objectForKey:MRRSavedRecipesFirestoreKeyPopularityScore])
+            durationText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyDurationText])
+             calorieText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyCalorieText])
+            servingsText:MRRSavedRecipesFirestoreStringValue([data objectForKey:MRRSavedRecipesFirestoreKeyServingsText])
+             ingredients:ingredients
+            instructions:instructions
+                   tools:tools
+                    tags:tags
+          productContext:productContext
+                 savedAt:MRRSavedRecipesFirestoreDateValue([data objectForKey:MRRSavedRecipesFirestoreKeySavedAt]) ?: [NSDate date]
+         localModifiedAt:MRRSavedRecipesFirestoreDateValue([data objectForKey:MRRSavedRecipesFirestoreKeyUpdatedAt]) ?: [NSDate date]
+         remoteUpdatedAt:MRRSavedRecipesFirestoreDateValue([data objectForKey:MRRSavedRecipesFirestoreKeyUpdatedAt])] autorelease];
 }
 
 - (void)drainNextPendingChangeForUserID:(NSString *)userID completion:(MRRSavedRecipesSyncCompletion)completion {
@@ -383,27 +379,32 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
       MRRSavedRecipesFirestoreKeyIsDeleted : @YES,
       MRRSavedRecipesFirestoreKeyUpdatedAt : remoteUpdatedAt
     };
-    [documentReference setData:payload merge:YES completion:^(NSError *error) {
-      if (error != nil) {
-        self.syncInFlight = NO;
-        if (completion != nil) {
-          completion(error);
-        }
-        [self completeQueuedCompletionsWithError:error];
-        return;
-      }
-      NSError *markError = nil;
-      [self.store markPendingSyncChangeProcessedForUserID:userID recipeID:change.recipeID remoteUpdatedAt:remoteUpdatedAt error:&markError];
-      if (markError != nil) {
-        self.syncInFlight = NO;
-        if (completion != nil) {
-          completion(markError);
-        }
-        [self completeQueuedCompletionsWithError:markError];
-        return;
-      }
-      [self drainNextPendingChangeForUserID:userID completion:completion];
-    }];
+    [documentReference setData:payload
+                         merge:YES
+                    completion:^(NSError *error) {
+                      if (error != nil) {
+                        self.syncInFlight = NO;
+                        if (completion != nil) {
+                          completion(error);
+                        }
+                        [self completeQueuedCompletionsWithError:error];
+                        return;
+                      }
+                      NSError *markError = nil;
+                      [self.store markPendingSyncChangeProcessedForUserID:userID
+                                                                 recipeID:change.recipeID
+                                                          remoteUpdatedAt:remoteUpdatedAt
+                                                                    error:&markError];
+                      if (markError != nil) {
+                        self.syncInFlight = NO;
+                        if (completion != nil) {
+                          completion(markError);
+                        }
+                        [self completeQueuedCompletionsWithError:markError];
+                        return;
+                      }
+                      [self drainNextPendingChangeForUserID:userID completion:completion];
+                    }];
     return;
   }
 
@@ -433,27 +434,32 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
   }
 
   NSDictionary *payload = [self firestorePayloadForSnapshot:snapshot updatedAt:remoteUpdatedAt];
-  [documentReference setData:payload merge:YES completion:^(NSError *error) {
-    if (error != nil) {
-      self.syncInFlight = NO;
-      if (completion != nil) {
-        completion(error);
-      }
-      [self completeQueuedCompletionsWithError:error];
-      return;
-    }
-    NSError *markError = nil;
-    [self.store markPendingSyncChangeProcessedForUserID:userID recipeID:change.recipeID remoteUpdatedAt:remoteUpdatedAt error:&markError];
-    if (markError != nil) {
-      self.syncInFlight = NO;
-      if (completion != nil) {
-        completion(markError);
-      }
-      [self completeQueuedCompletionsWithError:markError];
-      return;
-    }
-    [self drainNextPendingChangeForUserID:userID completion:completion];
-  }];
+  [documentReference setData:payload
+                       merge:YES
+                  completion:^(NSError *error) {
+                    if (error != nil) {
+                      self.syncInFlight = NO;
+                      if (completion != nil) {
+                        completion(error);
+                      }
+                      [self completeQueuedCompletionsWithError:error];
+                      return;
+                    }
+                    NSError *markError = nil;
+                    [self.store markPendingSyncChangeProcessedForUserID:userID
+                                                               recipeID:change.recipeID
+                                                        remoteUpdatedAt:remoteUpdatedAt
+                                                                  error:&markError];
+                    if (markError != nil) {
+                      self.syncInFlight = NO;
+                      if (completion != nil) {
+                        completion(markError);
+                      }
+                      [self completeQueuedCompletionsWithError:markError];
+                      return;
+                    }
+                    [self drainNextPendingChangeForUserID:userID completion:completion];
+                  }];
 }
 
 - (void)completeQueuedCompletionsWithError:(NSError *)error {

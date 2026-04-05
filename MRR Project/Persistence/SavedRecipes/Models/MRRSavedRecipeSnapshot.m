@@ -18,10 +18,8 @@ static NSString *MRRResolvedSavedRecipeMealType(NSString *mealType) {
     [trimmedMealType release];
     return [MRRSavedRecipeMealTypeSnack retain];
   }
-  if ([trimmedMealType isEqualToString:MRRSavedRecipeMealTypeBreakfast] ||
-      [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeLunch] ||
-      [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeDinner] ||
-      [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeDessert] ||
+  if ([trimmedMealType isEqualToString:MRRSavedRecipeMealTypeBreakfast] || [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeLunch] ||
+      [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeDinner] || [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeDessert] ||
       [trimmedMealType isEqualToString:MRRSavedRecipeMealTypeSnack]) {
     return trimmedMealType;
   }
@@ -38,8 +36,9 @@ static NSArray<MRRSavedRecipeIngredientSnapshot *> *MRRSavedRecipeIngredientSnap
     if (displayText.length == 0) {
       continue;
     }
-    MRRSavedRecipeIngredientSnapshot *snapshot =
-        [[[MRRSavedRecipeIngredientSnapshot alloc] initWithName:name ?: displayText displayText:displayText orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRSavedRecipeIngredientSnapshot *snapshot = [[[MRRSavedRecipeIngredientSnapshot alloc] initWithName:name ?: displayText
+                                                                                             displayText:displayText
+                                                                                              orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -53,10 +52,9 @@ static NSArray<MRRSavedRecipeInstructionSnapshot *> *MRRSavedRecipeInstructionSn
     if (instruction.detailText.length == 0 && instruction.title.length == 0) {
       continue;
     }
-    MRRSavedRecipeInstructionSnapshot *snapshot =
-        [[[MRRSavedRecipeInstructionSnapshot alloc] initWithTitle:instruction.title ?: @""
-                                                       detailText:instruction.detailText ?: @""
-                                                       orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRSavedRecipeInstructionSnapshot *snapshot = [[[MRRSavedRecipeInstructionSnapshot alloc] initWithTitle:instruction.title ?: @""
+                                                                                                 detailText:instruction.detailText ?: @""
+                                                                                                 orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -71,7 +69,8 @@ static NSArray<MRRSavedRecipeStringSnapshot *> *MRRSavedRecipeStringSnapshotsFro
     if (trimmedValue.length == 0) {
       continue;
     }
-    MRRSavedRecipeStringSnapshot *snapshot = [[[MRRSavedRecipeStringSnapshot alloc] initWithValue:trimmedValue orderIndex:(NSInteger)orderIndex] autorelease];
+    MRRSavedRecipeStringSnapshot *snapshot = [[[MRRSavedRecipeStringSnapshot alloc] initWithValue:trimmedValue
+                                                                                       orderIndex:(NSInteger)orderIndex] autorelease];
     [snapshots addObject:snapshot];
     orderIndex += 1;
   }
@@ -252,7 +251,7 @@ static MRRSavedRecipeProductContextSnapshot *MRRSavedRecipeProductContextSnapsho
                          title:(NSString *)title
                       subtitle:(NSString *)subtitle
                      assetName:(NSString *)assetName
-              heroImageURLString:(NSString *)heroImageURLString
+            heroImageURLString:(NSString *)heroImageURLString
                    summaryText:(NSString *)summaryText
                       mealType:(NSString *)mealType
                     sourceName:(NSString *)sourceName
@@ -323,8 +322,8 @@ static MRRSavedRecipeProductContextSnapshot *MRRSavedRecipeProductContextSnapsho
 + (instancetype)snapshotWithUserID:(NSString *)userID
                         recipeCard:(HomeRecipeCard *)recipeCard
                       recipeDetail:(OnboardingRecipeDetail *)recipeDetail
-                            savedAt:(NSDate *)savedAt
-                    localModifiedAt:(NSDate *)localModifiedAt {
+                           savedAt:(NSDate *)savedAt
+                   localModifiedAt:(NSDate *)localModifiedAt {
   NSParameterAssert(recipeCard != nil);
   NSParameterAssert(recipeDetail != nil);
   return [[[self alloc] initWithUserID:userID
@@ -332,7 +331,7 @@ static MRRSavedRecipeProductContextSnapshot *MRRSavedRecipeProductContextSnapsho
                                  title:recipeDetail.title.length > 0 ? recipeDetail.title : recipeCard.title
                               subtitle:recipeDetail.subtitle.length > 0 ? recipeDetail.subtitle : recipeCard.subtitle
                              assetName:recipeDetail.assetName.length > 0 ? recipeDetail.assetName : recipeCard.assetName
-                      heroImageURLString:recipeDetail.heroImageURLString.length > 0 ? recipeDetail.heroImageURLString : recipeCard.imageURLString
+                    heroImageURLString:recipeDetail.heroImageURLString.length > 0 ? recipeDetail.heroImageURLString : recipeCard.imageURLString
                            summaryText:recipeDetail.summaryText.length > 0 ? recipeDetail.summaryText : recipeCard.summaryText
                               mealType:recipeCard.mealType.length > 0 ? recipeCard.mealType : MRRSavedRecipeMealTypeSnack
                             sourceName:recipeDetail.sourceName.length > 0 ? recipeDetail.sourceName : recipeCard.sourceName
@@ -382,15 +381,15 @@ static MRRSavedRecipeProductContextSnapshot *MRRSavedRecipeProductContextSnapsho
 - (OnboardingRecipeDetail *)recipeDetailRepresentation {
   NSMutableArray<OnboardingRecipeIngredient *> *ingredients = [NSMutableArray array];
   for (MRRSavedRecipeIngredientSnapshot *ingredientSnapshot in self.ingredients) {
-    OnboardingRecipeIngredient *ingredient =
-        [[[OnboardingRecipeIngredient alloc] initWithName:ingredientSnapshot.name displayText:ingredientSnapshot.displayText] autorelease];
+    OnboardingRecipeIngredient *ingredient = [[[OnboardingRecipeIngredient alloc] initWithName:ingredientSnapshot.name
+                                                                                   displayText:ingredientSnapshot.displayText] autorelease];
     [ingredients addObject:ingredient];
   }
 
   NSMutableArray<OnboardingRecipeInstruction *> *instructions = [NSMutableArray array];
   for (MRRSavedRecipeInstructionSnapshot *instructionSnapshot in self.instructions) {
-    OnboardingRecipeInstruction *instruction =
-        [[[OnboardingRecipeInstruction alloc] initWithTitle:instructionSnapshot.title detailText:instructionSnapshot.detailText] autorelease];
+    OnboardingRecipeInstruction *instruction = [[[OnboardingRecipeInstruction alloc] initWithTitle:instructionSnapshot.title
+                                                                                        detailText:instructionSnapshot.detailText] autorelease];
     [instructions addObject:instruction];
   }
 

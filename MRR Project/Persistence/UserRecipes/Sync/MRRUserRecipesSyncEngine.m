@@ -30,11 +30,7 @@ static NSString *const MRRUserRecipesFirestoreKeyUserID = @"userID";
 static NSArray<NSDictionary<NSString *, id> *> *MRRUserRecipesFirestoreIngredientPayload(NSArray<MRRUserRecipeIngredientSnapshot *> *ingredients) {
   NSMutableArray<NSDictionary<NSString *, id> *> *payload = [NSMutableArray arrayWithCapacity:ingredients.count];
   for (MRRUserRecipeIngredientSnapshot *ingredient in ingredients) {
-    [payload addObject:@{
-      @"name" : ingredient.name ?: @"",
-      @"displayText" : ingredient.displayText ?: @"",
-      @"orderIndex" : @(ingredient.orderIndex)
-    }];
+    [payload addObject:@{@"name" : ingredient.name ?: @"", @"displayText" : ingredient.displayText ?: @"", @"orderIndex" : @(ingredient.orderIndex)}];
   }
   return payload;
 }
@@ -54,10 +50,7 @@ static NSArray<NSDictionary<NSString *, id> *> *MRRUserRecipesFirestoreInstructi
 static NSArray<NSDictionary<NSString *, id> *> *MRRUserRecipesFirestoreStringPayload(NSArray<MRRUserRecipeStringSnapshot *> *values) {
   NSMutableArray<NSDictionary<NSString *, id> *> *payload = [NSMutableArray arrayWithCapacity:values.count];
   for (MRRUserRecipeStringSnapshot *value in values) {
-    [payload addObject:@{
-      @"value" : value.value ?: @"",
-      @"orderIndex" : @(value.orderIndex)
-    }];
+    [payload addObject:@{@"value" : value.value ?: @"", @"orderIndex" : @(value.orderIndex)}];
   }
   return payload;
 }
@@ -266,9 +259,7 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   return [self snapshotFromDictionary:data userID:userID documentID:document.documentID];
 }
 
-- (MRRUserRecipeSnapshot *)snapshotFromDictionary:(NSDictionary<NSString *, id> *)data
-                                           userID:(NSString *)userID
-                                       documentID:(NSString *)documentID {
+- (MRRUserRecipeSnapshot *)snapshotFromDictionary:(NSDictionary<NSString *, id> *)data userID:(NSString *)userID documentID:(NSString *)documentID {
   NSArray *photoURLStringEntries = [data objectForKey:MRRUserRecipesFirestoreKeyPhotoURLStrings];
   NSMutableArray<MRRUserRecipePhotoSnapshot *> *photos = [NSMutableArray array];
   NSInteger photoOrderIndex = 0;
@@ -278,11 +269,10 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
       continue;
     }
     NSString *photoIdentifier = [NSString stringWithFormat:@"%@.photo.%ld", documentID.length > 0 ? documentID : @"remote", (long)photoOrderIndex];
-    MRRUserRecipePhotoSnapshot *photoSnapshot =
-        [[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:photoIdentifier
-                                                  orderIndex:photoOrderIndex
-                                             remoteURLString:remoteURLString
-                                           localRelativePath:nil] autorelease];
+    MRRUserRecipePhotoSnapshot *photoSnapshot = [[[MRRUserRecipePhotoSnapshot alloc] initWithPhotoID:photoIdentifier
+                                                                                          orderIndex:photoOrderIndex
+                                                                                     remoteURLString:remoteURLString
+                                                                                   localRelativePath:nil] autorelease];
     [photos addObject:photoSnapshot];
     photoOrderIndex += 1;
   }
@@ -298,10 +288,10 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
     if (name.length == 0 || displayText.length == 0) {
       continue;
     }
-    MRRUserRecipeIngredientSnapshot *snapshot =
-        [[[MRRUserRecipeIngredientSnapshot alloc] initWithName:name
-                                                   displayText:displayText
-                                                    orderIndex:MRRUserRecipesFirestoreIntegerValue([ingredientEntry objectForKey:@"orderIndex"])] autorelease];
+    MRRUserRecipeIngredientSnapshot *snapshot = [[[MRRUserRecipeIngredientSnapshot alloc]
+        initWithName:name
+         displayText:displayText
+          orderIndex:MRRUserRecipesFirestoreIntegerValue([ingredientEntry objectForKey:@"orderIndex"])] autorelease];
     [ingredients addObject:snapshot];
   }
 
@@ -316,10 +306,10 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
     if (title.length == 0 || detailText.length == 0) {
       continue;
     }
-    MRRUserRecipeInstructionSnapshot *snapshot =
-        [[[MRRUserRecipeInstructionSnapshot alloc] initWithTitle:title
-                                                      detailText:detailText
-                                                      orderIndex:MRRUserRecipesFirestoreIntegerValue([instructionEntry objectForKey:@"orderIndex"])] autorelease];
+    MRRUserRecipeInstructionSnapshot *snapshot = [[[MRRUserRecipeInstructionSnapshot alloc]
+        initWithTitle:title
+           detailText:detailText
+           orderIndex:MRRUserRecipesFirestoreIntegerValue([instructionEntry objectForKey:@"orderIndex"])] autorelease];
     [instructions addObject:snapshot];
   }
 
@@ -358,30 +348,32 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   NSString *resolvedRecipeID = MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyRecipeID]).length > 0
                                    ? MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyRecipeID])
                                    : documentID;
-  NSString *resolvedHeroImageURLString = photos.count > 0 ? photos.firstObject.remoteURLString
-                                                          : MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyHeroImageURLString]);
+  NSString *resolvedHeroImageURLString = photos.count > 0
+                                             ? photos.firstObject.remoteURLString
+                                             : MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyHeroImageURLString]);
 
-  return [[[MRRUserRecipeSnapshot alloc] initWithUserID:userID
-                                               recipeID:resolvedRecipeID
-                                                  title:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyTitle])
-                                               subtitle:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeySubtitle])
-                                            summaryText:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeySummaryText])
-                                               mealType:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyMealType])
-                                         readyInMinutes:MRRUserRecipesFirestoreIntegerValue([data objectForKey:MRRUserRecipesFirestoreKeyReadyInMinutes])
-                                               servings:MRRUserRecipesFirestoreIntegerValue([data objectForKey:MRRUserRecipesFirestoreKeyServings])
-                                           calorieCount:MRRUserRecipesFirestoreIntegerValue([data objectForKey:MRRUserRecipesFirestoreKeyCalorieCount])
-                                              assetName:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyAssetName]).length > 0
-                                                            ? MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyAssetName])
-                                                            : [MRRUserRecipeSnapshot defaultAssetName]
-                                       heroImageURLString:resolvedHeroImageURLString
-                                                photos:photos
-                                            ingredients:ingredients
-                                           instructions:instructions
-                                                  tools:tools
-                                                   tags:tags
-                                            createdAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyCreatedAt]) ?: [NSDate date]
-                                            localModifiedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt]) ?: [NSDate date]
-                                            remoteUpdatedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt])] autorelease];
+  return [[[MRRUserRecipeSnapshot alloc]
+          initWithUserID:userID
+                recipeID:resolvedRecipeID
+                   title:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyTitle])
+                subtitle:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeySubtitle])
+             summaryText:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeySummaryText])
+                mealType:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyMealType])
+          readyInMinutes:MRRUserRecipesFirestoreIntegerValue([data objectForKey:MRRUserRecipesFirestoreKeyReadyInMinutes])
+                servings:MRRUserRecipesFirestoreIntegerValue([data objectForKey:MRRUserRecipesFirestoreKeyServings])
+            calorieCount:MRRUserRecipesFirestoreIntegerValue([data objectForKey:MRRUserRecipesFirestoreKeyCalorieCount])
+               assetName:MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyAssetName]).length > 0
+                             ? MRRUserRecipesFirestoreStringValue([data objectForKey:MRRUserRecipesFirestoreKeyAssetName])
+                             : [MRRUserRecipeSnapshot defaultAssetName]
+      heroImageURLString:resolvedHeroImageURLString
+                  photos:photos
+             ingredients:ingredients
+            instructions:instructions
+                   tools:tools
+                    tags:tags
+               createdAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyCreatedAt]) ?: [NSDate date]
+         localModifiedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt]) ?: [NSDate date]
+         remoteUpdatedAt:MRRUserRecipesFirestoreDateValue([data objectForKey:MRRUserRecipesFirestoreKeyUpdatedAt])] autorelease];
 }
 
 - (void)drainNextPendingChangeForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
@@ -416,28 +408,33 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
       MRRUserRecipesFirestoreKeyIsDeleted : @YES,
       MRRUserRecipesFirestoreKeyUpdatedAt : remoteUpdatedAt
     };
-    [documentReference setData:payload merge:YES completion:^(NSError *error) {
-      if (error != nil) {
-        self.syncInFlight = NO;
-        if (completion != nil) {
-          completion(error);
-        }
-        [self completeQueuedCompletionsWithError:error];
-        return;
-      }
+    [documentReference setData:payload
+                         merge:YES
+                    completion:^(NSError *error) {
+                      if (error != nil) {
+                        self.syncInFlight = NO;
+                        if (completion != nil) {
+                          completion(error);
+                        }
+                        [self completeQueuedCompletionsWithError:error];
+                        return;
+                      }
 
-      NSError *markError = nil;
-      [self.store markPendingSyncChangeProcessedForUserID:userID recipeID:change.recipeID remoteUpdatedAt:remoteUpdatedAt error:&markError];
-      if (markError != nil) {
-        self.syncInFlight = NO;
-        if (completion != nil) {
-          completion(markError);
-        }
-        [self completeQueuedCompletionsWithError:markError];
-        return;
-      }
-      [self drainNextPendingChangeForUserID:userID completion:completion];
-    }];
+                      NSError *markError = nil;
+                      [self.store markPendingSyncChangeProcessedForUserID:userID
+                                                                 recipeID:change.recipeID
+                                                          remoteUpdatedAt:remoteUpdatedAt
+                                                                    error:&markError];
+                      if (markError != nil) {
+                        self.syncInFlight = NO;
+                        if (completion != nil) {
+                          completion(markError);
+                        }
+                        [self completeQueuedCompletionsWithError:markError];
+                        return;
+                      }
+                      [self drainNextPendingChangeForUserID:userID completion:completion];
+                    }];
     return;
   }
 
@@ -467,27 +464,32 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   }
 
   NSDictionary *payload = [self firestorePayloadForSnapshot:snapshot updatedAt:remoteUpdatedAt];
-  [documentReference setData:payload merge:YES completion:^(NSError *error) {
-    if (error != nil) {
-      self.syncInFlight = NO;
-      if (completion != nil) {
-        completion(error);
-      }
-      [self completeQueuedCompletionsWithError:error];
-      return;
-    }
-    NSError *markError = nil;
-    [self.store markPendingSyncChangeProcessedForUserID:userID recipeID:change.recipeID remoteUpdatedAt:remoteUpdatedAt error:&markError];
-    if (markError != nil) {
-      self.syncInFlight = NO;
-      if (completion != nil) {
-        completion(markError);
-      }
-      [self completeQueuedCompletionsWithError:markError];
-      return;
-    }
-    [self drainNextPendingChangeForUserID:userID completion:completion];
-  }];
+  [documentReference setData:payload
+                       merge:YES
+                  completion:^(NSError *error) {
+                    if (error != nil) {
+                      self.syncInFlight = NO;
+                      if (completion != nil) {
+                        completion(error);
+                      }
+                      [self completeQueuedCompletionsWithError:error];
+                      return;
+                    }
+                    NSError *markError = nil;
+                    [self.store markPendingSyncChangeProcessedForUserID:userID
+                                                               recipeID:change.recipeID
+                                                        remoteUpdatedAt:remoteUpdatedAt
+                                                                  error:&markError];
+                    if (markError != nil) {
+                      self.syncInFlight = NO;
+                      if (completion != nil) {
+                        completion(markError);
+                      }
+                      [self completeQueuedCompletionsWithError:markError];
+                      return;
+                    }
+                    [self drainNextPendingChangeForUserID:userID completion:completion];
+                  }];
 }
 
 - (void)completeQueuedCompletionsWithError:(NSError *)error {
