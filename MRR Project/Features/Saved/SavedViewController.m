@@ -69,8 +69,7 @@ static NSString *const MRRSavedFavoriteButtonIdentifierPrefix = @"saved.favorite
 
 static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGFloat weight) {
   if (@available(iOS 13.0, *)) {
-    UIImageSymbolConfiguration *configuration =
-        [UIImageSymbolConfiguration configurationWithPointSize:pointSize weight:(UIImageSymbolWeight)weight];
+    UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:pointSize weight:(UIImageSymbolWeight)weight];
     return [UIImage systemImageNamed:systemName withConfiguration:configuration];
   }
 
@@ -81,13 +80,11 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
   static NSArray<NSDictionary<NSString *, NSString *> *> *descriptors = nil;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    descriptors = [[NSArray alloc] initWithObjects:
-                                 @{ @"identifier" : MRRSavedRecipeMealTypeBreakfast, @"title" : @"Breakfast" },
-                                 @{ @"identifier" : MRRSavedRecipeMealTypeLunch, @"title" : @"Lunch" },
-                                 @{ @"identifier" : MRRSavedRecipeMealTypeDinner, @"title" : @"Dinner" },
-                                 @{ @"identifier" : MRRSavedRecipeMealTypeDessert, @"title" : @"Dessert" },
-                                 @{ @"identifier" : MRRSavedRecipeMealTypeSnack, @"title" : @"Snack" },
-                                 nil];
+    descriptors = [[NSArray alloc] initWithObjects:@{@"identifier" : MRRSavedRecipeMealTypeBreakfast, @"title" : @"Breakfast"},
+                                                   @{@"identifier" : MRRSavedRecipeMealTypeLunch, @"title" : @"Lunch"},
+                                                   @{@"identifier" : MRRSavedRecipeMealTypeDinner, @"title" : @"Dinner"},
+                                                   @{@"identifier" : MRRSavedRecipeMealTypeDessert, @"title" : @"Dessert"},
+                                                   @{@"identifier" : MRRSavedRecipeMealTypeSnack, @"title" : @"Snack"}, nil];
   });
 
   return descriptors;
@@ -110,9 +107,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 - (void)reloadSections;
 - (NSArray<MRRSavedRecipeSnapshot *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section;
 - (NSString *)countTextForSection:(NSDictionary<NSString *, id> *)section;
-- (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section
-                          atIndex:(NSUInteger)index
-                         expanded:(BOOL)expanded;
+- (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section atIndex:(NSUInteger)index expanded:(BOOL)expanded;
 - (UIView *)recipeCardViewForRecipe:(MRRSavedRecipeSnapshot *)recipe;
 - (UIButton *)favoriteButtonForRecipe:(MRRSavedRecipeSnapshot *)recipe;
 - (UIView *)chipViewWithText:(NSString *)text;
@@ -145,7 +140,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 }
 
 - (instancetype)initWithSessionUserID:(NSString *)sessionUserID
-                     savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
+                    savedRecipesStore:(MRRSavedRecipesStore *)savedRecipesStore
                            syncEngine:(id<MRRSavedRecipesCloudSyncing>)syncEngine {
   self = [super initWithNibName:nil bundle:nil];
   if (self) {
@@ -277,11 +272,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
       firstNonEmptySectionIdentifier = descriptor[@"identifier"];
     }
 
-    [sectionModels addObject:@{
-      @"identifier" : descriptor[@"identifier"],
-      @"title" : descriptor[@"title"],
-      @"recipes" : recipes
-    }];
+    [sectionModels addObject:@{@"identifier" : descriptor[@"identifier"], @"title" : descriptor[@"title"], @"recipes" : recipes}];
   }
 
   self.sections = sectionModels;
@@ -313,9 +304,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
   return [NSString stringWithFormat:@"%lu", (unsigned long)[self visibleRecipesForSection:section].count];
 }
 
-- (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section
-                          atIndex:(NSUInteger)index
-                         expanded:(BOOL)expanded {
+- (UIView *)sectionViewForSection:(NSDictionary<NSString *, id> *)section atIndex:(NSUInteger)index expanded:(BOOL)expanded {
   UIView *containerView = [[[UIView alloc] init] autorelease];
   containerView.translatesAutoresizingMaskIntoConstraints = NO;
   containerView.backgroundColor = [UIColor clearColor];
@@ -342,9 +331,8 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
   countLabel.adjustsFontForContentSizeCategory = YES;
   [headerControl addSubview:countLabel];
 
-  UIImageView *chevronImageView = [[[UIImageView alloc] initWithImage:MRRSavedSymbolImage(expanded ? @"chevron.up" : @"chevron.down",
-                                                                                            16.0,
-                                                                                            UIFontWeightSemibold)] autorelease];
+  UIImageView *chevronImageView =
+      [[[UIImageView alloc] initWithImage:MRRSavedSymbolImage(expanded ? @"chevron.up" : @"chevron.down", 16.0, UIFontWeightSemibold)] autorelease];
   chevronImageView.translatesAutoresizingMaskIntoConstraints = NO;
   chevronImageView.tintColor = MRRSavedPrimaryTextColor();
   [headerControl addSubview:chevronImageView];
@@ -368,15 +356,13 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 
     [chevronImageView.trailingAnchor constraintEqualToAnchor:headerControl.trailingAnchor],
     [chevronImageView.centerYAnchor constraintEqualToAnchor:headerControl.centerYAnchor],
-    [chevronImageView.widthAnchor constraintEqualToConstant:18.0],
-    [chevronImageView.heightAnchor constraintEqualToConstant:18.0],
+    [chevronImageView.widthAnchor constraintEqualToConstant:18.0], [chevronImageView.heightAnchor constraintEqualToConstant:18.0],
 
     [countLabel.trailingAnchor constraintLessThanOrEqualToAnchor:chevronImageView.leadingAnchor constant:-12.0],
 
     [dividerView.topAnchor constraintEqualToAnchor:headerControl.bottomAnchor constant:14.0],
     [dividerView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor],
-    [dividerView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor],
-    [dividerView.heightAnchor constraintEqualToConstant:1.0]
+    [dividerView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor], [dividerView.heightAnchor constraintEqualToConstant:1.0]
   ]];
 
   NSArray<MRRSavedRecipeSnapshot *> *recipes = [self visibleRecipesForSection:section];
@@ -420,8 +406,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
       placeholderView.layer.borderColor = [MRRSavedBorderColor() CGColor];
       [contentContainer addSubview:placeholderView];
 
-      UILabel *placeholderLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium]
-                                                color:MRRSavedSecondaryTextColor()];
+      UILabel *placeholderLabel = [self labelWithFont:[UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium] color:MRRSavedSecondaryTextColor()];
       placeholderLabel.translatesAutoresizingMaskIntoConstraints = NO;
       placeholderLabel.numberOfLines = 0;
       placeholderLabel.textAlignment = NSTextAlignmentCenter;
@@ -735,10 +720,8 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 }
 
 - (void)presentPersistenceError:(NSError *)error title:(NSString *)title {
-  NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription
-                                                            : @"Please try again in a moment.";
-  UIAlertController *alertController =
-      [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+  NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription : @"Please try again in a moment.";
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
   [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
   UIViewController *presenter = self.presentedViewController ?: self;
   [presenter presentViewController:alertController animated:YES completion:nil];
@@ -747,17 +730,17 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 - (void)animateReloadSectionsWithAnnouncement:(NSString *)announcement {
   NSTimeInterval animationDuration = UIAccessibilityIsReduceMotionEnabled() ? 0.0 : 0.22;
   [UIView transitionWithView:self.sectionsStackView
-                    duration:animationDuration
-                     options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionAllowAnimatedContent
-                  animations:^{
-                    [self reloadSections];
-                    [self.view layoutIfNeeded];
-                  }
-                  completion:^(__unused BOOL finished) {
-                    if (announcement.length > 0 && UIAccessibilityIsVoiceOverRunning()) {
-                      UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
-                    }
-                  }];
+      duration:animationDuration
+      options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionAllowAnimatedContent
+      animations:^{
+        [self reloadSections];
+        [self.view layoutIfNeeded];
+      }
+      completion:^(__unused BOOL finished) {
+        if (announcement.length > 0 && UIAccessibilityIsVoiceOverRunning()) {
+          UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
+        }
+      }];
 }
 
 - (void)handleRecipeCardTapped:(UIControl *)sender {
@@ -791,9 +774,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
                      targetView.alpha = pressedAlpha;
                      if (isRecipeCard) {
                        targetView.transform =
-                           CGAffineTransformTranslate(CGAffineTransformMakeScale(pressedScale, pressedScale),
-                                                      0.0,
-                                                      MRRSavedCardPressedTranslationY);
+                           CGAffineTransformTranslate(CGAffineTransformMakeScale(pressedScale, pressedScale), 0.0, MRRSavedCardPressedTranslationY);
                      } else {
                        targetView.transform = CGAffineTransformMakeScale(pressedScale, pressedScale);
                      }
@@ -848,8 +829,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
   [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController
-          didRequestFavoriteState:(BOOL)favorite {
+- (void)recipeDetailViewController:(OnboardingRecipeDetailViewController *)viewController didRequestFavoriteState:(BOOL)favorite {
   if (favorite) {
     viewController.favoriteSelected = YES;
     return;
