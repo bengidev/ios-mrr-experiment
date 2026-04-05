@@ -31,15 +31,11 @@ static UIColor *MRRGlassCardSurfaceColor(void) {
   return MRRGlassNamedColor(@"CardSurfaceColor", [UIColor colorWithWhite:1.0 alpha:1.0], [UIColor colorWithWhite:0.15 alpha:1.0]);
 }
 
-static UIColor *MRRGlassTranslucentSurfaceColor(CGFloat alpha) {
-  return [MRRGlassCardSurfaceColor() colorWithAlphaComponent:alpha];
-}
+static UIColor *MRRGlassTranslucentSurfaceColor(CGFloat alpha) { return [MRRGlassCardSurfaceColor() colorWithAlphaComponent:alpha]; }
 
 static NSAttributedString *MRRGlassAttributedTitle(NSString *title, UIFont *font, UIColor *color) {
-  return [[[NSAttributedString alloc] initWithString:title attributes:@{
-           NSFontAttributeName : font,
-           NSForegroundColorAttributeName : color
-         }] autorelease];
+  return [[[NSAttributedString alloc] initWithString:title
+                                          attributes:@{NSFontAttributeName : font, NSForegroundColorAttributeName : color}] autorelease];
 }
 
 @implementation MRRLiquidGlassStyling
@@ -76,7 +72,7 @@ static NSAttributedString *MRRGlassAttributedTitle(NSString *title, UIFont *font
   button.clipsToBounds = NO;
   button.contentEdgeInsets = UIEdgeInsetsZero;
   button.titleLabel.font = [UIFont systemFontOfSize:role == MRRGlassButtonRoleInline ? 15.0 : 17.0
-                                                weight:role == MRRGlassButtonRolePrimary ? UIFontWeightBold : UIFontWeightSemibold];
+                                             weight:role == MRRGlassButtonRolePrimary ? UIFontWeightBold : UIFontWeightSemibold];
 
   if (@available(iOS 15.0, *)) {
     UIButtonConfiguration *configuration = nil;
@@ -84,32 +80,32 @@ static NSAttributedString *MRRGlassAttributedTitle(NSString *title, UIFont *font
     if (@available(iOS 26.0, *)) {
       usesNativeLiquidGlass = YES;
       switch (role) {
-      case MRRGlassButtonRolePrimary:
-        configuration = [UIButtonConfiguration prominentGlassButtonConfiguration];
-        break;
-      case MRRGlassButtonRoleSecondary:
-        configuration = [UIButtonConfiguration glassButtonConfiguration];
-        break;
-      case MRRGlassButtonRoleInline:
-        configuration = [UIButtonConfiguration plainButtonConfiguration];
-        break;
+        case MRRGlassButtonRolePrimary:
+          configuration = [UIButtonConfiguration prominentGlassButtonConfiguration];
+          break;
+        case MRRGlassButtonRoleSecondary:
+          configuration = [UIButtonConfiguration glassButtonConfiguration];
+          break;
+        case MRRGlassButtonRoleInline:
+          configuration = [UIButtonConfiguration plainButtonConfiguration];
+          break;
       }
     } else {
       switch (role) {
-      case MRRGlassButtonRolePrimary:
-        configuration = [UIButtonConfiguration filledButtonConfiguration];
-        configuration.baseBackgroundColor = MRRGlassAccentColor();
-        configuration.baseForegroundColor = [UIColor whiteColor];
-        break;
-      case MRRGlassButtonRoleSecondary:
-        configuration = [UIButtonConfiguration borderedTintedButtonConfiguration];
-        configuration.baseBackgroundColor = [MRRGlassAccentColor() colorWithAlphaComponent:0.14];
-        configuration.baseForegroundColor = MRRGlassPrimaryTextColor();
-        break;
-      case MRRGlassButtonRoleInline:
-        configuration = [UIButtonConfiguration plainButtonConfiguration];
-        configuration.baseForegroundColor = MRRGlassAccentColor();
-        break;
+        case MRRGlassButtonRolePrimary:
+          configuration = [UIButtonConfiguration filledButtonConfiguration];
+          configuration.baseBackgroundColor = MRRGlassAccentColor();
+          configuration.baseForegroundColor = [UIColor whiteColor];
+          break;
+        case MRRGlassButtonRoleSecondary:
+          configuration = [UIButtonConfiguration borderedTintedButtonConfiguration];
+          configuration.baseBackgroundColor = [MRRGlassAccentColor() colorWithAlphaComponent:0.14];
+          configuration.baseForegroundColor = MRRGlassPrimaryTextColor();
+          break;
+        case MRRGlassButtonRoleInline:
+          configuration = [UIButtonConfiguration plainButtonConfiguration];
+          configuration.baseForegroundColor = MRRGlassAccentColor();
+          break;
       }
     }
 
@@ -142,30 +138,30 @@ static NSAttributedString *MRRGlassAttributedTitle(NSString *title, UIFont *font
   }
 
   switch (role) {
-  case MRRGlassButtonRolePrimary:
-    button.backgroundColor = MRRGlassAccentColor();
-    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [button setTitleColor:[[UIColor whiteColor] colorWithAlphaComponent:0.86] forState:UIControlStateHighlighted];
-    button.layer.shadowOpacity = 0.16f;
-    button.layer.shadowRadius = 16.0f;
-    button.layer.shadowOffset = CGSizeMake(0.0, 10.0);
-    break;
-  case MRRGlassButtonRoleSecondary:
-    button.backgroundColor = [self shouldUseOpaqueFallbackForTransparency] ? MRRGlassCardSurfaceColor() : MRRGlassTranslucentSurfaceColor(0.78);
-    [button setTitleColor:MRRGlassPrimaryTextColor() forState:UIControlStateNormal];
-    [button setTitleColor:[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.78] forState:UIControlStateHighlighted];
-    button.layer.borderWidth = 1.0;
-    button.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.12] CGColor];
-    button.layer.shadowOpacity = 0.10f;
-    button.layer.shadowRadius = 12.0f;
-    button.layer.shadowOffset = CGSizeMake(0.0, 8.0);
-    break;
-  case MRRGlassButtonRoleInline:
-    button.backgroundColor = [UIColor clearColor];
-    [button setTitleColor:MRRGlassAccentColor() forState:UIControlStateNormal];
-    [button setTitleColor:[MRRGlassAccentColor() colorWithAlphaComponent:0.76] forState:UIControlStateHighlighted];
-    button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    break;
+    case MRRGlassButtonRolePrimary:
+      button.backgroundColor = MRRGlassAccentColor();
+      [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+      [button setTitleColor:[[UIColor whiteColor] colorWithAlphaComponent:0.86] forState:UIControlStateHighlighted];
+      button.layer.shadowOpacity = 0.16f;
+      button.layer.shadowRadius = 16.0f;
+      button.layer.shadowOffset = CGSizeMake(0.0, 10.0);
+      break;
+    case MRRGlassButtonRoleSecondary:
+      button.backgroundColor = [self shouldUseOpaqueFallbackForTransparency] ? MRRGlassCardSurfaceColor() : MRRGlassTranslucentSurfaceColor(0.78);
+      [button setTitleColor:MRRGlassPrimaryTextColor() forState:UIControlStateNormal];
+      [button setTitleColor:[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.78] forState:UIControlStateHighlighted];
+      button.layer.borderWidth = 1.0;
+      button.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.12] CGColor];
+      button.layer.shadowOpacity = 0.10f;
+      button.layer.shadowRadius = 12.0f;
+      button.layer.shadowOffset = CGSizeMake(0.0, 8.0);
+      break;
+    case MRRGlassButtonRoleInline:
+      button.backgroundColor = [UIColor clearColor];
+      [button setTitleColor:MRRGlassAccentColor() forState:UIControlStateNormal];
+      [button setTitleColor:[MRRGlassAccentColor() colorWithAlphaComponent:0.76] forState:UIControlStateHighlighted];
+      button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+      break;
   }
 
   [button setTitle:title forState:UIControlStateNormal];
@@ -183,28 +179,28 @@ static NSAttributedString *MRRGlassAttributedTitle(NSString *title, UIFont *font
   view.layer.shadowOffset = CGSizeZero;
 
   switch (role) {
-  case MRRGlassSurfaceRoleElevatedCard:
-    view.backgroundColor = shouldUseOpaqueFallback ? MRRGlassCardSurfaceColor() : MRRGlassTranslucentSurfaceColor(0.72);
-    view.layer.cornerRadius = 28.0;
-    view.layer.borderWidth = 1.0;
-    view.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.12] CGColor];
-    view.layer.shadowOpacity = 0.10f;
-    view.layer.shadowRadius = 18.0f;
-    view.layer.shadowOffset = CGSizeMake(0.0, 12.0);
-    break;
-  case MRRGlassSurfaceRoleOverlay:
-    view.backgroundColor = shouldUseOpaqueFallback ? MRRGlassCardSurfaceColor() : MRRGlassTranslucentSurfaceColor(0.84);
-    view.layer.cornerRadius = 22.0;
-    view.layer.borderWidth = 1.0;
-    view.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.14] CGColor];
-    break;
-  case MRRGlassSurfaceRoleBadge:
-    view.backgroundColor = shouldUseOpaqueFallback ? [MRRGlassAccentColor() colorWithAlphaComponent:0.20]
-                                                  : [MRRGlassAccentColor() colorWithAlphaComponent:0.14];
-    view.layer.cornerRadius = 16.0;
-    view.layer.borderWidth = 1.0;
-    view.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.08] CGColor];
-    break;
+    case MRRGlassSurfaceRoleElevatedCard:
+      view.backgroundColor = shouldUseOpaqueFallback ? MRRGlassCardSurfaceColor() : MRRGlassTranslucentSurfaceColor(0.72);
+      view.layer.cornerRadius = 28.0;
+      view.layer.borderWidth = 1.0;
+      view.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.12] CGColor];
+      view.layer.shadowOpacity = 0.10f;
+      view.layer.shadowRadius = 18.0f;
+      view.layer.shadowOffset = CGSizeMake(0.0, 12.0);
+      break;
+    case MRRGlassSurfaceRoleOverlay:
+      view.backgroundColor = shouldUseOpaqueFallback ? MRRGlassCardSurfaceColor() : MRRGlassTranslucentSurfaceColor(0.84);
+      view.layer.cornerRadius = 22.0;
+      view.layer.borderWidth = 1.0;
+      view.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.14] CGColor];
+      break;
+    case MRRGlassSurfaceRoleBadge:
+      view.backgroundColor =
+          shouldUseOpaqueFallback ? [MRRGlassAccentColor() colorWithAlphaComponent:0.20] : [MRRGlassAccentColor() colorWithAlphaComponent:0.14];
+      view.layer.cornerRadius = 16.0;
+      view.layer.borderWidth = 1.0;
+      view.layer.borderColor = [[MRRGlassPrimaryTextColor() colorWithAlphaComponent:0.08] CGColor];
+      break;
   }
 }
 

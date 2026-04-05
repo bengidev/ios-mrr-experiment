@@ -3,13 +3,9 @@
 static CGFloat const MRRLayoutBaseViewportWidth = 390.0;
 static CGFloat const MRRLayoutBaseViewportHeight = 844.0;
 
-CGFloat MRRLayoutClampedFloat(CGFloat value, CGFloat minimumValue, CGFloat maximumValue) {
-  return MIN(MAX(value, minimumValue), maximumValue);
-}
+CGFloat MRRLayoutClampedFloat(CGFloat value, CGFloat minimumValue, CGFloat maximumValue) { return MIN(MAX(value, minimumValue), maximumValue); }
 
-CGFloat MRRLayoutRoundedMetric(CGFloat value) {
-  return round(value * 10.0) / 10.0;
-}
+CGFloat MRRLayoutRoundedMetric(CGFloat value) { return round(value * 10.0) / 10.0; }
 
 static CGFloat MRRLayoutNormalizedProgress(CGFloat value, CGFloat minimumValue, CGFloat maximumValue) {
   if (maximumValue <= minimumValue) {
@@ -19,11 +15,7 @@ static CGFloat MRRLayoutNormalizedProgress(CGFloat value, CGFloat minimumValue, 
   return MRRLayoutClampedFloat((value - minimumValue) / (maximumValue - minimumValue), 0.0, 1.0);
 }
 
-CGFloat MRRLayoutInterpolatedMetricForValue(CGFloat value,
-                                            CGFloat inputMinimum,
-                                            CGFloat inputMaximum,
-                                            CGFloat outputMinimum,
-                                            CGFloat outputMaximum) {
+CGFloat MRRLayoutInterpolatedMetricForValue(CGFloat value, CGFloat inputMinimum, CGFloat inputMaximum, CGFloat outputMinimum, CGFloat outputMaximum) {
   CGFloat progress = MRRLayoutNormalizedProgress(value, inputMinimum, inputMaximum);
   return outputMinimum + ((outputMaximum - outputMinimum) * progress);
 }
