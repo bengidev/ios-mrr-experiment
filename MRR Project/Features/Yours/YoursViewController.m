@@ -348,9 +348,13 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   [containerView addSubview:thumbnailsScrollView];
 
   // Inner content view for scroll view
-  UIView *thumbnailsContentView = [[[UIView alloc] init] autorelease];
-  thumbnailsContentView.translatesAutoresizingMaskIntoConstraints = NO;
-  [thumbnailsScrollView addSubview:thumbnailsContentView];
+  UIStackView *thumbnailsStackView = [[[UIStackView alloc] init] autorelease];
+  thumbnailsStackView.translatesAutoresizingMaskIntoConstraints = NO;
+  thumbnailsStackView.axis = UILayoutConstraintAxisHorizontal;
+  thumbnailsStackView.alignment = UIStackViewAlignmentCenter;
+  thumbnailsStackView.distribution = UIStackViewDistributionFill;
+  thumbnailsStackView.spacing = MRRYoursRecipeThumbnailSpacing;
+  [thumbnailsScrollView addSubview:thumbnailsStackView];
 
   // Add additional photos (excluding cover) as stacked thumbnails
   NSArray<MRRUserRecipePhotoSnapshot *> *photos = recipe.photos;
