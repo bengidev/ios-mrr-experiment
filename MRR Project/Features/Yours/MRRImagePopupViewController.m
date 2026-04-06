@@ -124,6 +124,13 @@ static CGFloat const MRRImagePopupDoubleTapZoomScale = 2.0;
   UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18.0 weight:UIImageSymbolWeightSemibold];
   [closeButton setImage:[UIImage systemImageNamed:@"xmark" withConfiguration:config] forState:UIControlStateNormal];
   closeButton.tintColor = [UIColor whiteColor];
+
+  // Add shadow for visibility over any background
+  closeButton.layer.shadowColor = [UIColor blackColor].CGColor;
+  closeButton.layer.shadowOffset = CGSizeMake(0.0, 1.0);
+  closeButton.layer.shadowOpacity = 0.3;
+  closeButton.layer.shadowRadius = 2.0;
+
   closeButton.accessibilityLabel = @"Close image viewer";
   closeButton.accessibilityHint = @"Tap to close the full-screen image viewer";
   [closeButton addTarget:self action:@selector(handleCloseButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
