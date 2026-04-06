@@ -4,6 +4,8 @@
 #import "../../Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
 #import "YoursViewController.h"
 
+static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
+
 @interface YoursCoordinator ()
 
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
