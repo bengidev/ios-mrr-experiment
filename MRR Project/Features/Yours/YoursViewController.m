@@ -274,6 +274,8 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 }
 
 - (void)reloadContent {
+  NSLog(@"%@ reloadContent - %lu recipes to display", MRRYoursViewControllerLogPrefix, (unsigned long)self.recipes.count);
+  
   while (self.cardsStackView.arrangedSubviews.count > 0) {
     UIView *subview = self.cardsStackView.arrangedSubviews.firstObject;
     [self.cardsStackView removeArrangedSubview:subview];
