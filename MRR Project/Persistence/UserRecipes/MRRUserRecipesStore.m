@@ -25,9 +25,14 @@ static NSString *const MRRUserRecipeSyncOperationUpsert = @"upsert";
 static NSString *const MRRUserRecipeSyncOperationDelete = @"delete";
 
 static void MRRUserRecipesStorePostChangeNotification(id object) {
-  dispatch_async(dispatch_get_main_queue(), ^{
+  // Post synchronously if already on main thread, otherwise dispatch to main thread and wait
+  if ([NSThread isMainThread]) {
     [[NSNotificationCenter defaultCenter] postNotificationName:MRRUserRecipesStoreDidChangeNotification object:object];
-  });
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [[NSNotificationCenter defaultCenter] postNotificationName:MRRUserRecipesStoreDidChangeNotification object:object];
+    });
+  }
 }
 
 static NSString *MRRUserRecipesStoreStringValue(id candidate) {
