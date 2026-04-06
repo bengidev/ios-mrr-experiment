@@ -167,6 +167,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   self.navigationItem.rightBarButtonItem = addButton;
 
   if (self.userRecipesStore != nil) {
+    NSLog(@"%@ Registering for MRRUserRecipesStoreDidChangeNotification", MRRYoursViewControllerLogPrefix);
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(userRecipesStoreDidChange:)
                                                  name:MRRUserRecipesStoreDidChangeNotification
