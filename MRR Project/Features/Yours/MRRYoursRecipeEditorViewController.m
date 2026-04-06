@@ -1501,6 +1501,11 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
 - (void)handleThumbnailsToggleTapped:(UIButton *)sender {
 #pragma unused(sender)
+  // Cannot toggle when no photos
+  if (self.photoDrafts.count == 0) {
+    return;
+  }
+
   BOOL willExpand = !self.thumbnailsSectionExpanded;
   self.thumbnailsSectionExpanded = willExpand;
 
@@ -1521,15 +1526,21 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
 - (void)updateThumbnailsToggleButtonAppearance {
   NSUInteger photoCount = self.photoDrafts.count;
-  BOOL hasPhotos = photoCount > 1;
 
-  self.thumbnailsToggleButton.hidden = !hasPhotos;
+  // Always show toggle button, but disable interaction when no photos
+  self.thumbnailsToggleButton.enabled = photoCount > 0;
 
-  if (!hasPhotos) {
+  // Auto-collapse when no photos, auto-expand when photos added
+  if (photoCount == 0) {
     self.thumbnailsSectionExpanded = NO;
-    self.thumbnailsScrollViewHeightConstraint.constant = MRRYoursRecipeEditorThumbnailsCollapsedHeight;
-    return;
+  } else if (photoCount == 1 && !self.thumbnailsSectionExpanded) {
+    // Auto-expand on first photo
+    self.thumbnailsSectionExpanded = YES;
   }
+
+  // Update height constraint
+  CGFloat targetHeight = (self.thumbnailsSectionExpanded && photoCount > 0) ? MRRYoursRecipeEditorThumbnailsExpandedHeight : MRRYoursRecipeEditorThumbnailsCollapsedHeight;
+  self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
 
   NSString *arrowIcon = self.thumbnailsSectionExpanded ? @"chevron.up" : @"chevron.down";
   UIImage *iconImage = nil;
@@ -1537,7 +1548,14 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     iconImage = [UIImage systemImageNamed:arrowIcon];
   }
 
-  NSString *titleText = [NSString stringWithFormat:@"%lu additional photos", (unsigned long)(photoCount - 1)];
+  NSString *titleText;
+  if (photoCount == 0) {
+    titleText = @"No photos added";
+  } else if (photoCount == 1) {
+    titleText = @"1 photo";
+  } else {
+    titleText = [NSString stringWithFormat:@"%lu photos (%lu additional)", (unsigned long)photoCount, (unsigned long)(photoCount - 1)];
+  }
 
   if (iconImage != nil) {
     [self.thumbnailsToggleButton setImage:iconImage forState:UIControlStateNormal];
