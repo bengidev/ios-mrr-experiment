@@ -1670,7 +1670,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
             instructions:steps
                    tools:(self.preservedTools ?: @[])tags:[self tagSnapshotsForCurrentSelection]
                createdAt:(self.existingRecipe != nil ? self.existingRecipe.createdAt : [NSDate date])
-           localModifiedAt:[NSDate date]
+         localModifiedAt:[NSDate date]
          remoteUpdatedAt:(self.existingRecipe != nil ? self.existingRecipe.remoteUpdatedAt : nil)] autorelease];
 
   BOOL didSave = [self.userRecipesStore saveRecipeSnapshot:snapshot error:error];
