@@ -8,6 +8,7 @@
 #import "MRRYoursRecipeEditorViewController.h"
 
 static NSErrorDomain const MRRYoursViewControllerErrorDomain = @"MRRYoursViewControllerErrorDomain";
+static NSString *const MRRYoursViewControllerLogPrefix = @"[YoursViewController]";
 
 static UIColor *MRRYoursDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
