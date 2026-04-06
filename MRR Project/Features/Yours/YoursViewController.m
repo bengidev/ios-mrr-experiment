@@ -181,6 +181,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
+  NSLog(@"%@ viewWillAppear - loading recipes from store", MRRYoursViewControllerLogPrefix);
   [self.navigationController setNavigationBarHidden:NO animated:animated];
   [self loadRecipesFromStore];
   [self reloadContent];
