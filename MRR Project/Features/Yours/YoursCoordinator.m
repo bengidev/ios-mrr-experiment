@@ -31,6 +31,12 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
     _sessionUserID = [sessionUserID copy];
     _userRecipesStore = [userRecipesStore retain];
     _syncEngine = [syncEngine retain];
+    
+    NSLog(@"%@ Initialized with sessionUserID: %@, userRecipesStore: %@, syncEngine: %@",
+          MRRYoursCoordinatorLogPrefix,
+          sessionUserID ?: @"nil",
+          userRecipesStore ? @"provided" : @"nil",
+          syncEngine ? @"provided" : @"nil");
   }
 
   return self;
