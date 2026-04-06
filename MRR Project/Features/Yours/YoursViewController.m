@@ -409,6 +409,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
       thumbnailView.clipsToBounds = YES;
       thumbnailView.layer.cornerRadius = 12.0;
       thumbnailView.backgroundColor = MRRYoursMutedSurfaceColor();
+      thumbnailView.userInteractionEnabled = YES;
       [thumbnailContainer addSubview:thumbnailView];
 
       [NSLayoutConstraint activateConstraints:@[
