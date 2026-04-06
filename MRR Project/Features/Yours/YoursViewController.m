@@ -356,15 +356,11 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   thumbnailsStackView.spacing = MRRYoursRecipeThumbnailSpacing;
   [thumbnailsScrollView addSubview:thumbnailsStackView];
 
-  // Add additional photos (excluding cover) as stacked thumbnails
+  // Add additional photos (excluding cover) as a clean horizontal strip.
   NSArray<MRRUserRecipePhotoSnapshot *> *photos = recipe.photos;
-  // Skip first photo (cover) - only show additional photos
   NSArray<MRRUserRecipePhotoSnapshot *> *additionalPhotos = photos.count > 1 ? [photos subarrayWithRange:NSMakeRange(1, photos.count - 1)] : @[];
 
   if (additionalPhotos.count > 0) {
-    CGFloat thumbnailSize = 60.0;
-    CGFloat overlap = 20.0;  // Overlap amount for stacked effect
-    UIView *previousThumbnailContainer = nil;
 
     for (NSUInteger i = 0; i < additionalPhotos.count; i++) {
       MRRUserRecipePhotoSnapshot *photo = additionalPhotos[i];
