@@ -640,6 +640,11 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 
 - (void)handleAddButtonTapped:(id)sender {
 #pragma unused(sender)
+  NSLog(@"%@ handleAddButtonTapped - User wants to add new recipe", MRRYoursViewControllerLogPrefix);
+  NSLog(@"%@ Current state - sessionUserID: %@, userRecipesStore: %@", 
+        MRRYoursViewControllerLogPrefix,
+        self.sessionUserID ?: @"nil",
+        self.userRecipesStore ? @"provided" : @"nil");
   [self presentEditorForRecipe:nil];
 }
 
