@@ -332,6 +332,8 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   coverImageView.clipsToBounds = YES;
   coverImageView.layer.cornerRadius = 16.0;
   coverImageView.backgroundColor = MRRYoursMutedSurfaceColor();
+  coverImageView.userInteractionEnabled = YES;
+  coverImageView.accessibilityIdentifier = [MRRYoursRecipeCoverImageIdentifierPrefix stringByAppendingString:recipe.recipeID];
   [containerView addSubview:coverImageView];
 
   // Load cover image if available (first photo)
