@@ -172,6 +172,8 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
                                              selector:@selector(userRecipesStoreDidChange:)
                                                  name:MRRUserRecipesStoreDidChangeNotification
                                                object:self.userRecipesStore];
+  } else {
+    NSLog(@"%@ WARNING: userRecipesStore is nil - notification observer NOT registered", MRRYoursViewControllerLogPrefix);
   }
 
   [self buildViewHierarchy];
