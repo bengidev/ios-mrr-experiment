@@ -283,6 +283,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   }
 
   if (self.recipes.count == 0) {
+    NSLog(@"%@ Showing empty state view", MRRYoursViewControllerLogPrefix);
     [self.cardsStackView addArrangedSubview:[self emptyStateView]];
     return;
   }
