@@ -64,6 +64,8 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
                                                                    syncEngine:self.syncEngine] autorelease];
     
     NSLog(@"%@ YoursViewController created successfully", MRRYoursCoordinatorLogPrefix);
+  } else {
+    NSLog(@"%@ Reusing existing YoursViewController", MRRYoursCoordinatorLogPrefix);
   }
 
   return self.viewController;
