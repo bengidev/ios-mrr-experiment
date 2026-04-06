@@ -54,6 +54,7 @@ static UIColor *MRRYoursAccentColor(void) {
 }
 
 static NSString *const MRRYoursRecipeCardIdentifierPrefix = @"yours.recipeCard.";
+static NSString *const MRRYoursRecipeCoverImageIdentifierPrefix = @"yours.recipeCoverImage.";
 static NSString *const MRRYoursRecipeEditButtonIdentifierPrefix = @"yours.editButton.";
 static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.deleteButton.";
 static NSString *const MRRYoursRecipeThumbnailsIdentifierPrefix = @"yours.recipeThumbnails.";
