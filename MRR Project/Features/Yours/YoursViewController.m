@@ -700,6 +700,10 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
         notification.object ?: @"nil");
   
   if (notification.object != self.userRecipesStore) {
+    NSLog(@"%@ WARNING: Notification object mismatch - ignoring (expected: %@, got: %@)", 
+          MRRYoursViewControllerLogPrefix,
+          self.userRecipesStore ?: @"nil",
+          notification.object ?: @"nil");
     return;
   }
   [self loadRecipesFromStore];
