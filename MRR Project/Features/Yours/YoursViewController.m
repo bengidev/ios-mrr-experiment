@@ -636,6 +636,20 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   [presenter presentViewController:alertController animated:YES completion:nil];
 }
 
+- (void)handleImageTapped:(UITapGestureRecognizer *)recognizer {
+  UIImageView *imageView = (UIImageView *)recognizer.view;
+  UIImage *image = imageView.image;
+  if (image == nil) {
+    return;
+  }
+  [self presentImagePopupWithImage:image];
+}
+
+- (void)presentImagePopupWithImage:(UIImage *)image {
+  MRRImagePopupViewController *popupViewController = [[[MRRImagePopupViewController alloc] initWithImage:image] autorelease];
+  [self presentViewController:popupViewController animated:YES completion:nil];
+}
+
 - (void)userRecipesStoreDidChange:(NSNotification *)notification {
   if (notification.object != self.userRecipesStore) {
     return;
