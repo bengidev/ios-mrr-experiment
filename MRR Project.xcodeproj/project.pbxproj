@@ -76,6 +76,7 @@
 		E2000000000000000000000B /* MRRUserRecipePhotoStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000115 /* MRRUserRecipePhotoStorage.m */; };
 		E2000000000000000000000C /* MRRUserRecipePhotoStorageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000116 /* MRRUserRecipePhotoStorageTests.m */; };
 		E2000000000000000000000D /* MRRUserRecipesSyncEngineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000117 /* MRRUserRecipesSyncEngineTests.m */; };
+		E2000000000000000000000E /* MRRImagePopupViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000119 /* MRRImagePopupViewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -204,6 +205,8 @@
 		E20000000000000000000115 /* MRRUserRecipePhotoStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipePhotoStorage.m; sourceTree = "<group>"; };
 		E20000000000000000000116 /* MRRUserRecipePhotoStorageTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipePhotoStorageTests.m; sourceTree = "<group>"; };
 		E20000000000000000000117 /* MRRUserRecipesSyncEngineTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRUserRecipesSyncEngineTests.m; sourceTree = "<group>"; };
+		E20000000000000000000118 /* MRRImagePopupViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRRImagePopupViewController.h; sourceTree = "<group>"; };
+		E20000000000000000000119 /* MRRImagePopupViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRImagePopupViewController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -516,6 +519,8 @@
 				E20000000000000000000104 /* YoursCoordinator.m */,
 				E20000000000000000000112 /* MRRYoursRecipeEditorViewController.h */,
 				E20000000000000000000113 /* MRRYoursRecipeEditorViewController.m */,
+				E20000000000000000000118 /* MRRImagePopupViewController.h */,
+				E20000000000000000000119 /* MRRImagePopupViewController.m */,
 				E20000000000000000000101 /* YoursViewController.h */,
 				E20000000000000000000102 /* YoursViewController.m */,
 			);
@@ -772,6 +777,7 @@
 				E2000000000000000000000A /* MRRYoursRecipeEditorViewController.m in Sources */,
 				E20000000000000000000002 /* YoursCoordinator.m in Sources */,
 				E20000000000000000000001 /* YoursViewController.m in Sources */,
+				E2000000000000000000000E /* MRRImagePopupViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
