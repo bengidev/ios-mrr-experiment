@@ -695,6 +695,10 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 }
 
 - (void)userRecipesStoreDidChange:(NSNotification *)notification {
+  NSLog(@"%@ Received MRRUserRecipesStoreDidChangeNotification - notification.object: %@", 
+        MRRYoursViewControllerLogPrefix,
+        notification.object ?: @"nil");
+  
   if (notification.object != self.userRecipesStore) {
     return;
   }
