@@ -43,6 +43,7 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
 }
 
 - (void)dealloc {
+  NSLog(@"%@ dealloc called", MRRYoursCoordinatorLogPrefix);
   [_tabBarItemValue release];
   [_viewController release];
   [_syncEngine release];
