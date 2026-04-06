@@ -291,6 +291,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   for (MRRUserRecipeSnapshot *recipe in self.recipes) {
     [self.cardsStackView addArrangedSubview:[self recipeCardViewForRecipe:recipe]];
   }
+  NSLog(@"%@ Displayed %lu recipe cards", MRRYoursViewControllerLogPrefix, (unsigned long)self.recipes.count);
 }
 
 - (UIView *)emptyStateView {
