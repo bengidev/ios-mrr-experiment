@@ -60,8 +60,10 @@ static NSString *const MRRYoursRecipeEditButtonIdentifierPrefix = @"yours.editBu
 static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.deleteButton.";
 static NSString *const MRRYoursRecipeThumbnailsIdentifierPrefix = @"yours.recipeThumbnails.";
 static NSString *const MRRYoursRecipeThumbnailIdentifierPrefix = @"yours.recipeThumbnail.";
+static NSString *const MRRYoursRecipeThumbnailsToggleIdentifierPrefix = @"yours.recipeThumbnailsToggle.";
 static CGFloat const MRRYoursRecipeThumbnailSize = 62.0;
 static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
+static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
 @interface YoursViewController ()
 
@@ -75,6 +77,8 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 @property(nonatomic, retain) UILabel *emptyStateLabel;
 @property(nonatomic, retain) UIButton *emptyStateButton;
 @property(nonatomic, copy) NSArray<MRRUserRecipeSnapshot *> *recipes;
+@property(nonatomic, retain) NSMutableSet<NSString *> *expandedRecipeIDs;
+@property(nonatomic, retain) NSMutableDictionary<NSString *, NSLayoutConstraint *> *thumbnailsHeightConstraints;
 
 - (instancetype)initWithSessionUserID:(nullable NSString *)sessionUserID
                      userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
@@ -99,6 +103,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 - (void)handleDeleteButtonTapped:(UIButton *)sender;
 - (void)handleImageTapped:(UITapGestureRecognizer *)recognizer;
 - (void)presentImagePopupWithImage:(UIImage *)image;
+- (void)handleThumbnailsToggleTapped:(UIButton *)sender;
 - (void)userRecipesStoreDidChange:(NSNotification *)notification;
 
 @end
@@ -126,12 +131,16 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
     _syncEngine = [syncEngine retain];
     _photoStorage = [(photoStorage ?: [[[MRRLocalUserRecipePhotoStorage alloc] init] autorelease]) retain];
     _recipes = [[NSArray alloc] init];
+    _expandedRecipeIDs = [[NSMutableSet alloc] init];
+    _thumbnailsHeightConstraints = [[NSMutableDictionary alloc] init];
   }
   return self;
 }
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_thumbnailsHeightConstraints release];
+  [_expandedRecipeIDs release];
   [_recipes release];
   [_emptyStateButton release];
   [_emptyStateLabel release];
@@ -380,11 +389,46 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
     [coverImageView addGestureRecognizer:coverTapGesture];
   }
 
+  // Add additional photos (excluding cover) as a clean horizontal strip.
+  NSArray<MRRUserRecipePhotoSnapshot *> *photos = recipe.photos;
+  NSArray<MRRUserRecipePhotoSnapshot *> *additionalPhotos = photos.count > 1 ? [photos subarrayWithRange:NSMakeRange(1, photos.count - 1)] : @[];
+  BOOL hasAdditionalPhotos = additionalPhotos.count > 0;
+  BOOL isExpanded = [self.expandedRecipeIDs containsObject:recipe.recipeID];
+
+  // Toggle header view for sub-images (only if there are additional photos)
+  UIButton *toggleHeaderButton = nil;
+  if (hasAdditionalPhotos) {
+    toggleHeaderButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    toggleHeaderButton.translatesAutoresizingMaskIntoConstraints = NO;
+    toggleHeaderButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    toggleHeaderButton.accessibilityIdentifier = [MRRYoursRecipeThumbnailsToggleIdentifierPrefix stringByAppendingString:recipe.recipeID];
+    [toggleHeaderButton addTarget:self action:@selector(handleThumbnailsToggleTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [containerView addSubview:toggleHeaderButton];
+    
+    // Create chevron icon and count label
+    UIImage *chevronImage = nil;
+    if (@available(iOS 13.0, *)) {
+      chevronImage = [UIImage systemImageNamed:isExpanded ? @"chevron.down" : @"chevron.right"];
+    }
+    [toggleHeaderButton setImage:chevronImage forState:UIControlStateNormal];
+    
+    NSString *countText = [NSString stringWithFormat:@"%lu additional photo%@", 
+                          (unsigned long)additionalPhotos.count, 
+                          additionalPhotos.count == 1 ? @"" : @"s"];
+    [toggleHeaderButton setTitle:countText forState:UIControlStateNormal];
+    toggleHeaderButton.titleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium];
+    [toggleHeaderButton setTitleColor:MRRYoursSecondaryTextColor() forState:UIControlStateNormal];
+    toggleHeaderButton.tintColor = MRRYoursSecondaryTextColor();
+    toggleHeaderButton.contentEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 8.0);
+    toggleHeaderButton.titleEdgeInsets = UIEdgeInsetsMake(0, 8.0, 0, -8.0);
+  }
+
   // Scrollable container for stacked photo thumbnails
   UIScrollView *thumbnailsScrollView = [[[UIScrollView alloc] init] autorelease];
   thumbnailsScrollView.translatesAutoresizingMaskIntoConstraints = NO;
   thumbnailsScrollView.showsHorizontalScrollIndicator = NO;
   thumbnailsScrollView.alwaysBounceHorizontal = YES;
+  thumbnailsScrollView.clipsToBounds = YES;
   thumbnailsScrollView.accessibilityIdentifier = [MRRYoursRecipeThumbnailsIdentifierPrefix stringByAppendingString:recipe.recipeID];
   [containerView addSubview:thumbnailsScrollView];
 
@@ -406,11 +450,15 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
     [thumbnailsStackView.widthAnchor constraintGreaterThanOrEqualToAnchor:thumbnailsScrollView.frameLayoutGuide.widthAnchor]
   ]];
 
-  // Add additional photos (excluding cover) as a clean horizontal strip.
-  NSArray<MRRUserRecipePhotoSnapshot *> *photos = recipe.photos;
-  NSArray<MRRUserRecipePhotoSnapshot *> *additionalPhotos = photos.count > 1 ? [photos subarrayWithRange:NSMakeRange(1, photos.count - 1)] : @[];
+  // Store height constraint for animation
+  NSLayoutConstraint *thumbnailsHeightConstraint = [thumbnailsScrollView.heightAnchor constraintEqualToConstant:0];
+  thumbnailsHeightConstraint.active = YES;
+  if (hasAdditionalPhotos) {
+    self.thumbnailsHeightConstraints[recipe.recipeID] = thumbnailsHeightConstraint;
+    thumbnailsHeightConstraint.constant = isExpanded ? MRRYoursRecipeThumbnailSize : 0;
+  }
 
-  if (additionalPhotos.count > 0) {
+  if (hasAdditionalPhotos) {
 
     for (NSUInteger i = 0; i < additionalPhotos.count; i++) {
       MRRUserRecipePhotoSnapshot *photo = additionalPhotos[i];
@@ -462,10 +510,6 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
     [trailingSpacer setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [trailingSpacer setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [thumbnailsStackView addArrangedSubview:trailingSpacer];
-
-    [thumbnailsScrollView.heightAnchor constraintEqualToConstant:MRRYoursRecipeThumbnailSize].active = YES;
-  } else {
-    [thumbnailsScrollView.heightAnchor constraintEqualToConstant:0].active = YES;
   }
 
   UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:22.0 weight:UIFontWeightSemibold] color:MRRYoursPrimaryTextColor()];
@@ -522,12 +566,35 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
     [coverImageView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
     [coverImageView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
     [coverImageView.heightAnchor constraintEqualToConstant:180.0],
+  ]];
 
-    [thumbnailsScrollView.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:12.0],
-    [thumbnailsScrollView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
-    [thumbnailsScrollView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
+  // Layout for toggle header and thumbnails (conditional)
+  NSMutableArray<NSLayoutConstraint *> *dynamicConstraints = [NSMutableArray array];
+  
+  if (hasAdditionalPhotos && toggleHeaderButton != nil) {
+    [dynamicConstraints addObjectsFromArray:@[
+      [toggleHeaderButton.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:12.0],
+      [toggleHeaderButton.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
+      [toggleHeaderButton.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
+      [toggleHeaderButton.heightAnchor constraintEqualToConstant:MRRYoursRecipeThumbnailsHeaderHeight],
 
-    [titleLabel.topAnchor constraintEqualToAnchor:thumbnailsScrollView.bottomAnchor constant:12.0],
+      [thumbnailsScrollView.topAnchor constraintEqualToAnchor:toggleHeaderButton.bottomAnchor constant:4.0],
+      [thumbnailsScrollView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
+      [thumbnailsScrollView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
+
+      [titleLabel.topAnchor constraintEqualToAnchor:thumbnailsScrollView.bottomAnchor constant:12.0],
+    ]];
+  } else {
+    [dynamicConstraints addObjectsFromArray:@[
+      [thumbnailsScrollView.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:0],
+      [thumbnailsScrollView.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
+      [thumbnailsScrollView.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
+
+      [titleLabel.topAnchor constraintEqualToAnchor:thumbnailsScrollView.bottomAnchor constant:12.0],
+    ]];
+  }
+
+  [dynamicConstraints addObjectsFromArray:@[
     [titleLabel.leadingAnchor constraintEqualToAnchor:containerView.leadingAnchor constant:20.0],
     [titleLabel.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-20.0],
 
@@ -552,6 +619,8 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
     [actionsStackView.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
     [actionsStackView.bottomAnchor constraintEqualToAnchor:containerView.bottomAnchor constant:-20.0]
   ]];
+
+  [NSLayoutConstraint activateConstraints:dynamicConstraints];
 
   return containerView;
 }
@@ -694,6 +763,45 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 - (void)presentImagePopupWithImage:(UIImage *)image {
   MRRImagePopupViewController *popupViewController = [[[MRRImagePopupViewController alloc] initWithImage:image] autorelease];
   [self presentViewController:popupViewController animated:YES completion:nil];
+}
+
+- (void)handleThumbnailsToggleTapped:(UIButton *)sender {
+  NSString *recipeID = [self recipeIdentifierFromButton:sender prefix:MRRYoursRecipeThumbnailsToggleIdentifierPrefix];
+  if (recipeID.length == 0) {
+    return;
+  }
+  
+  BOOL isCurrentlyExpanded = [self.expandedRecipeIDs containsObject:recipeID];
+  BOOL shouldExpand = !isCurrentlyExpanded;
+  
+  NSLog(@"%@ handleThumbnailsToggleTapped - recipeID: %@, %@",
+        MRRYoursViewControllerLogPrefix,
+        recipeID,
+        shouldExpand ? @"expanding" : @"collapsing");
+  
+  // Update state
+  if (shouldExpand) {
+    [self.expandedRecipeIDs addObject:recipeID];
+  } else {
+    [self.expandedRecipeIDs removeObject:recipeID];
+  }
+  
+  // Update chevron icon
+  UIImage *chevronImage = nil;
+  if (@available(iOS 13.0, *)) {
+    chevronImage = [UIImage systemImageNamed:shouldExpand ? @"chevron.down" : @"chevron.right"];
+  }
+  [sender setImage:chevronImage forState:UIControlStateNormal];
+  
+  // Animate height constraint
+  NSLayoutConstraint *heightConstraint = self.thumbnailsHeightConstraints[recipeID];
+  if (heightConstraint != nil) {
+    [UIView animateWithDuration:0.25
+                     animations:^{
+                       heightConstraint.constant = shouldExpand ? MRRYoursRecipeThumbnailSize : 0;
+                       [sender.superview layoutIfNeeded];
+                     }];
+  }
 }
 
 - (void)userRecipesStoreDidChange:(NSNotification *)notification {
