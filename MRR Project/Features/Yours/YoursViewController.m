@@ -423,6 +423,9 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
         UIImage *image = [self.photoStorage imageForRelativePath:photo.localRelativePath];
         if (image != nil) {
           thumbnailView.image = image;
+          UITapGestureRecognizer *thumbnailTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                                action:@selector(handleImageTapped:)] autorelease];
+          [thumbnailView addGestureRecognizer:thumbnailTapGesture];
         }
       }
     }
