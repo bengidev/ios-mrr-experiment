@@ -260,6 +260,50 @@
   }
 }
 
+- (void)testRecipeCardAdditionalPhotoThumbnailsDoNotOverlap {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  NSArray<UIColor *> *colors = @[ [UIColor redColor], [UIColor blueColor], [UIColor greenColor], [UIColor orangeColor], [UIColor purpleColor] ];
+  for (UIColor *color in colors) {
+    NSError *photoError = nil;
+    XCTAssertTrue([editor appendPhotoWithImage:[self sampleImageWithColor:color] error:&photoError]);
+    XCTAssertNil(photoError);
+  }
+
+  [self layoutWindowForSize:CGSizeMake(320.0, 568.0)];
+  [editor.view layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  [self populateRequiredFieldsInEditor:editor title:@"Rawon Keluarga"];
+  [editor handleSaveTapped:nil];
+  [self spinMainRunLoop];
+  [self.viewController.view layoutIfNeeded];
+
+  MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
+  UIScrollView *thumbnailsScrollView =
+      (UIScrollView *)[self findViewWithAccessibilityIdentifier:[@"yours.recipeThumbnails." stringByAppendingString:recipe.recipeID]
+                                                         inView:self.viewController.view];
+  XCTAssertNotNil(thumbnailsScrollView);
+  XCTAssertEqual(recipe.photos.count, colors.count);
+  XCTAssertGreaterThan(thumbnailsScrollView.contentSize.width, CGRectGetWidth(thumbnailsScrollView.bounds));
+
+  CGRect previousFrame = CGRectNull;
+  for (NSUInteger index = 0; index < recipe.photos.count - 1; index += 1) {
+    UIView *thumbnailView =
+        [self findViewWithAccessibilityIdentifier:[NSString stringWithFormat:@"yours.recipeThumbnail.%@.%lu", recipe.recipeID, (unsigned long)index]
+                                           inView:self.viewController.view];
+    XCTAssertNotNil(thumbnailView);
+
+    CGRect currentFrame = [self frameForView:thumbnailView insideView:thumbnailsScrollView];
+    if (!CGRectIsNull(previousFrame)) {
+      XCTAssertGreaterThanOrEqual(CGRectGetMinX(currentFrame) + 0.5, CGRectGetMaxX(previousFrame));
+    }
+    previousFrame = currentFrame;
+  }
+}
+
 - (void)testCompactLayoutKeepsChipAndPhotoActionTitlesReadable {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
