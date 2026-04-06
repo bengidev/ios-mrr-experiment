@@ -96,6 +96,8 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 - (void)handleAddButtonTapped:(id)sender;
 - (void)handleEditButtonTapped:(UIButton *)sender;
 - (void)handleDeleteButtonTapped:(UIButton *)sender;
+- (void)handleImageTapped:(UITapGestureRecognizer *)recognizer;
+- (void)presentImagePopupWithImage:(UIImage *)image;
 - (void)userRecipesStoreDidChange:(NSNotification *)notification;
 
 @end
