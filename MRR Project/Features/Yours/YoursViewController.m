@@ -148,6 +148,11 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 - (void)viewDidLoad {
   [super viewDidLoad];
 
+  NSLog(@"%@ viewDidLoad - sessionUserID: %@, userRecipesStore: %@", 
+        MRRYoursViewControllerLogPrefix,
+        self.sessionUserID ?: @"nil",
+        self.userRecipesStore ? @"provided" : @"nil");
+
   self.title = @"Yours";
   if (@available(iOS 11.0, *)) {
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
