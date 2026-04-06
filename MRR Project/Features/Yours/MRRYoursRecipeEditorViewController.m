@@ -531,7 +531,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [photoSectionView addSubview:photoActionsStackView];
   self.photoActionsStackView = photoActionsStackView;
 
-  [NSLayoutConstraint activateConstraints:@[
+  NSMutableArray<NSLayoutConstraint *> *photoSectionConstraints = [NSMutableArray arrayWithArray:@[
     [photoHeroLabel.topAnchor constraintEqualToAnchor:photoSectionView.topAnchor constant:MRRYoursRecipeEditorSectionContentTopInset],
     [photoHeroLabel.leadingAnchor constraintEqualToAnchor:photoSectionView.leadingAnchor constant:22.0],
     [photoHeroLabel.trailingAnchor constraintEqualToAnchor:photoSectionView.trailingAnchor constant:-22.0],
@@ -546,17 +546,31 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     [photoThumbnailsScrollView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
     [photoThumbnailsScrollView.heightAnchor constraintEqualToConstant:62.0],
 
-    [photoThumbnailsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.topAnchor],
-    [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.leadingAnchor],
-    [photoThumbnailsStackView.trailingAnchor constraintLessThanOrEqualToAnchor:photoThumbnailsScrollView.trailingAnchor],
-    [photoThumbnailsStackView.bottomAnchor constraintEqualToAnchor:photoThumbnailsScrollView.bottomAnchor],
-    [photoThumbnailsStackView.heightAnchor constraintEqualToConstant:62.0],
-
     [photoActionsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.bottomAnchor constant:16.0],
     [photoActionsStackView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
     [photoActionsStackView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
     [photoActionsStackView.bottomAnchor constraintEqualToAnchor:photoSectionView.bottomAnchor constant:-22.0]
   ]];
+
+  if (@available(iOS 11.0, *)) {
+    [photoSectionConstraints addObjectsFromArray:@[
+      [photoThumbnailsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.topAnchor],
+      [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.leadingAnchor],
+      [photoThumbnailsStackView.trailingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.trailingAnchor],
+      [photoThumbnailsStackView.bottomAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.bottomAnchor],
+      [photoThumbnailsStackView.heightAnchor constraintEqualToAnchor:photoThumbnailsScrollView.frameLayoutGuide.heightAnchor]
+    ]];
+  } else {
+    [photoSectionConstraints addObjectsFromArray:@[
+      [photoThumbnailsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.topAnchor],
+      [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.leadingAnchor],
+      [photoThumbnailsStackView.trailingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.trailingAnchor],
+      [photoThumbnailsStackView.bottomAnchor constraintEqualToAnchor:photoThumbnailsScrollView.bottomAnchor],
+      [photoThumbnailsStackView.heightAnchor constraintEqualToConstant:62.0]
+    ]];
+  }
+
+  [NSLayoutConstraint activateConstraints:photoSectionConstraints];
 
   UIView *basicInfoSectionView = [self sectionCardViewWithTitle:@"Basic Info"
                                                     accentColor:MRRYoursEditorAccentColor()
