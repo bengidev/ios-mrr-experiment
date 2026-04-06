@@ -403,36 +403,14 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
       }
     }
 
-      if (previousThumbnailContainer == nil) {
-        // First thumbnail
-        [thumbnailContainer.leadingAnchor constraintEqualToAnchor:thumbnailsContentView.leadingAnchor].active = YES;
-      } else {
-        // Subsequent thumbnails - overlap with previous
-        [thumbnailContainer.leadingAnchor constraintEqualToAnchor:previousThumbnailContainer.leadingAnchor constant:(thumbnailSize - overlap)].active = YES;
-      }
-      [thumbnailContainer.topAnchor constraintEqualToAnchor:thumbnailsContentView.topAnchor].active = YES;
-      [thumbnailContainer.bottomAnchor constraintEqualToAnchor:thumbnailsContentView.bottomAnchor].active = YES;
+    UIView *trailingSpacer = [[[UIView alloc] init] autorelease];
+    trailingSpacer.translatesAutoresizingMaskIntoConstraints = NO;
+    [trailingSpacer setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+    [trailingSpacer setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+    [thumbnailsStackView addArrangedSubview:trailingSpacer];
 
-      // Last thumbnail - pin trailing to contentView (required for scrollable content size)
-      if (i == additionalPhotos.count - 1) {
-        [thumbnailContainer.trailingAnchor constraintEqualToAnchor:thumbnailsContentView.trailingAnchor].active = YES;
-      }
-
-      previousThumbnailContainer = thumbnailContainer;
-    }
-
-    // Scroll view constraints - content is sized by thumbnails, must pin edges
-    [NSLayoutConstraint activateConstraints:@[
-      [thumbnailsScrollView.heightAnchor constraintEqualToConstant:thumbnailSize],
-      [thumbnailsContentView.topAnchor constraintEqualToAnchor:thumbnailsScrollView.topAnchor],
-      [thumbnailsContentView.leadingAnchor constraintEqualToAnchor:thumbnailsScrollView.leadingAnchor],
-      [thumbnailsContentView.trailingAnchor constraintEqualToAnchor:thumbnailsScrollView.trailingAnchor],
-      [thumbnailsContentView.bottomAnchor constraintEqualToAnchor:thumbnailsScrollView.bottomAnchor],
-      // Width is determined by trailing constraint of last thumbnail to contentView
-      [thumbnailsContentView.heightAnchor constraintEqualToConstant:thumbnailSize]
-    ]];
+    [thumbnailsScrollView.heightAnchor constraintEqualToConstant:MRRYoursRecipeThumbnailSize].active = YES;
   } else {
-    // No additional photos - hide scroll view
     [thumbnailsScrollView.heightAnchor constraintEqualToConstant:0].active = YES;
   }
 
