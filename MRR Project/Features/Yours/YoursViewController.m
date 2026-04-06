@@ -249,6 +249,11 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 }
 
 - (void)loadRecipesFromStore {
+  NSLog(@"%@ loadRecipesFromStore - userRecipesStore: %@, sessionUserID: '%@'", 
+        MRRYoursViewControllerLogPrefix,
+        self.userRecipesStore ? @"provided" : @"nil",
+        self.sessionUserID ?: @"nil");
+  
   NSArray<MRRUserRecipeSnapshot *> *recipes = @[];
   if (self.userRecipesStore != nil && self.sessionUserID.length > 0) {
     NSError *fetchError = nil;
