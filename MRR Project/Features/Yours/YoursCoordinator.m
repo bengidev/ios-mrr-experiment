@@ -54,9 +54,16 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
 
 - (UIViewController *)rootViewController {
   if (self.viewController == nil) {
+    NSLog(@"%@ Creating YoursViewController with sessionUserID: %@, userRecipesStore: %@",
+          MRRYoursCoordinatorLogPrefix,
+          self.sessionUserID ?: @"nil",
+          self.userRecipesStore ? @"provided" : @"nil");
+    
     self.viewController = [[[YoursViewController alloc] initWithSessionUserID:self.sessionUserID
                                                              userRecipesStore:self.userRecipesStore
                                                                    syncEngine:self.syncEngine] autorelease];
+    
+    NSLog(@"%@ YoursViewController created successfully", MRRYoursCoordinatorLogPrefix);
   }
 
   return self.viewController;
