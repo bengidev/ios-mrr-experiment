@@ -590,12 +590,26 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 }
 
 - (void)presentEditorForRecipe:(MRRUserRecipeSnapshot *)recipe {
+  if (recipe != nil) {
+    NSLog(@"%@ presentEditorForRecipe - Editing existing recipe: %@ (ID: %@)", 
+          MRRYoursViewControllerLogPrefix, recipe.title ?: @"untitled", recipe.recipeID ?: @"nil");
+  } else {
+    NSLog(@"%@ presentEditorForRecipe - Creating NEW recipe", MRRYoursViewControllerLogPrefix);
+  }
+  
+  NSLog(@"%@ Editor dependencies - sessionUserID: %@, userRecipesStore: %@, syncEngine: %@", 
+        MRRYoursViewControllerLogPrefix,
+        self.sessionUserID ?: @"nil",
+        self.userRecipesStore ? @"provided" : @"nil",
+        self.syncEngine ? @"provided" : @"nil");
+  
   MRRYoursRecipeEditorViewController *editorViewController = [[[MRRYoursRecipeEditorViewController alloc] initWithSessionUserID:self.sessionUserID
                                                                                                                userRecipesStore:self.userRecipesStore
                                                                                                                      syncEngine:self.syncEngine
                                                                                                                    photoStorage:self.photoStorage
                                                                                                                  existingRecipe:recipe] autorelease];
   [self.navigationController pushViewController:editorViewController animated:YES];
+  NSLog(@"%@ Editor pushed to navigation stack", MRRYoursViewControllerLogPrefix);
 }
 
 - (BOOL)deleteRecipeWithIdentifier:(NSString *)recipeIdentifier error:(NSError **)error {
