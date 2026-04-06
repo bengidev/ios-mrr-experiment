@@ -141,8 +141,8 @@ static CGFloat const MRRImagePopupDoubleTapZoomScale = 2.0;
   [NSLayoutConstraint activateConstraints:@[
     [closeButton.topAnchor constraintEqualToAnchor:safeArea.topAnchor constant:16.0],
     [closeButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16.0],
-    [closeButton.widthAnchor constraintEqualToConstant:40.0],
-    [closeButton.heightAnchor constraintEqualToConstant:40.0]
+    [closeButton.widthAnchor constraintEqualToConstant:44.0],
+    [closeButton.heightAnchor constraintEqualToConstant:44.0]
   ]];
 }
 
