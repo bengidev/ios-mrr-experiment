@@ -228,6 +228,38 @@
   XCTAssertEqual(recipe.heroImageURLString.length, 0);
 }
 
+- (void)testCompactLayoutKeepsPhotoThumbnailsFromOverlapping {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  NSArray<UIColor *> *colors = @[ [UIColor redColor], [UIColor blueColor], [UIColor greenColor], [UIColor orangeColor], [UIColor purpleColor] ];
+  for (UIColor *color in colors) {
+    NSError *photoError = nil;
+    XCTAssertTrue([editor appendPhotoWithImage:[self sampleImageWithColor:color] error:&photoError]);
+    XCTAssertNil(photoError);
+  }
+
+  [self layoutWindowForSize:CGSizeMake(320.0, 568.0)];
+  [editor.view layoutIfNeeded];
+  [self spinMainRunLoop];
+
+  UIStackView *thumbnailStack = (UIStackView *)[self findViewWithAccessibilityIdentifier:@"yours.editor.photoThumbnails" inView:editor.view];
+  XCTAssertNotNil(thumbnailStack);
+  XCTAssertEqual(thumbnailStack.arrangedSubviews.count, colors.count);
+
+  UIView *previousThumbnail = nil;
+  for (UIView *thumbnail in thumbnailStack.arrangedSubviews) {
+    XCTAssertGreaterThanOrEqual(CGRectGetWidth(thumbnail.bounds), 61.5);
+    if (previousThumbnail != nil) {
+      CGRect previousFrame = [self frameForView:previousThumbnail insideView:editor.view];
+      CGRect currentFrame = [self frameForView:thumbnail insideView:editor.view];
+      XCTAssertGreaterThanOrEqual(CGRectGetMinX(currentFrame) + 0.5, CGRectGetMaxX(previousFrame));
+    }
+    previousThumbnail = thumbnail;
+  }
+}
+
 - (void)testCompactLayoutKeepsChipAndPhotoActionTitlesReadable {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
