@@ -356,6 +356,15 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   thumbnailsStackView.spacing = MRRYoursRecipeThumbnailSpacing;
   [thumbnailsScrollView addSubview:thumbnailsStackView];
 
+  [NSLayoutConstraint activateConstraints:@[
+    [thumbnailsStackView.topAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.topAnchor],
+    [thumbnailsStackView.leadingAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.leadingAnchor],
+    [thumbnailsStackView.trailingAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.trailingAnchor],
+    [thumbnailsStackView.bottomAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.bottomAnchor],
+    [thumbnailsStackView.heightAnchor constraintEqualToAnchor:thumbnailsScrollView.frameLayoutGuide.heightAnchor],
+    [thumbnailsStackView.widthAnchor constraintGreaterThanOrEqualToAnchor:thumbnailsScrollView.frameLayoutGuide.widthAnchor]
+  ]];
+
   // Add additional photos (excluding cover) as a clean horizontal strip.
   NSArray<MRRUserRecipePhotoSnapshot *> *photos = recipe.photos;
   NSArray<MRRUserRecipePhotoSnapshot *> *additionalPhotos = photos.count > 1 ? [photos subarrayWithRange:NSMakeRange(1, photos.count - 1)] : @[];
