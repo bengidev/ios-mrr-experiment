@@ -19,6 +19,7 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
 @implementation YoursCoordinator
 
 - (instancetype)init {
+  NSLog(@"%@ init called", MRRYoursCoordinatorLogPrefix);
   return [self initWithSessionUserID:nil userRecipesStore:nil syncEngine:nil];
 }
 
