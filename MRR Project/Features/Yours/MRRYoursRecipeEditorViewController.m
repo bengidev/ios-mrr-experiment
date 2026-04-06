@@ -13,6 +13,9 @@ static CGFloat const MRRYoursRecipeEditorSectionContentTopInset = 58.0;
 static CGFloat const MRRYoursRecipeEditorChipSpacing = 10.0;
 static CGFloat const MRRYoursRecipeEditorRowsSpacing = 6.0;
 static CGFloat const MRRYoursRecipeEditorRowVerticalInset = 4.0;
+static CGFloat const MRRYoursRecipeEditorThumbnailsHeaderHeight = 36.0;
+static CGFloat const MRRYoursRecipeEditorThumbnailsCollapsedHeight = 0.0;
+static CGFloat const MRRYoursRecipeEditorThumbnailsExpandedHeight = 62.0;
 
 static UIColor *MRRYoursEditorDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
@@ -143,6 +146,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 @property(nonatomic, retain) UIButton *addPhotoButton;
 @property(nonatomic, retain) UIButton *setCoverButton;
 @property(nonatomic, retain) UIButton *removePhotoButton;
+@property(nonatomic, retain) UIButton *thumbnailsToggleButton;
+@property(nonatomic, retain) NSLayoutConstraint *thumbnailsScrollViewHeightConstraint;
+@property(nonatomic, assign) BOOL thumbnailsSectionExpanded;
 
 @property(nonatomic, retain) UIView *basicInfoSectionView;
 @property(nonatomic, retain) UITextField *titleField;
@@ -216,6 +222,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 - (void)handleRemoveIngredientTapped:(UIButton *)sender;
 - (void)handleRemoveStepTapped:(UIButton *)sender;
 - (void)handleThumbnailTapped:(UIButton *)sender;
+- (void)handleThumbnailsToggleTapped:(UIButton *)sender;
+- (void)updateThumbnailsToggleButtonAppearance;
 - (void)applySelectedState:(BOOL)selected toChipButton:(UIButton *)button tintColor:(UIColor *)tintColor;
 - (void)cleanupUnsavedLocalPhotosIfNeeded;
 
@@ -299,6 +307,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [_subtitleField release];
   [_titleField release];
   [_basicInfoSectionView release];
+  [_thumbnailsToggleButton release];
   [_removePhotoButton release];
   [_setCoverButton release];
   [_addPhotoButton release];
@@ -368,6 +377,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     button.selected = YES;
   }
 
+  self.thumbnailsSectionExpanded = YES;
   [self reloadMealTypeSelection];
   [self reloadTagSelection];
   [self reloadPhotoUI];
@@ -531,6 +541,16 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [photoSectionView addSubview:photoActionsStackView];
   self.photoActionsStackView = photoActionsStackView;
 
+  UIButton *thumbnailsToggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+  thumbnailsToggleButton.translatesAutoresizingMaskIntoConstraints = NO;
+  thumbnailsToggleButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+  thumbnailsToggleButton.titleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium];
+  [thumbnailsToggleButton setTitleColor:MRRYoursEditorSecondaryTextColor() forState:UIControlStateNormal];
+  thumbnailsToggleButton.accessibilityIdentifier = @"yours.editor.thumbnailsToggleButton";
+  [thumbnailsToggleButton addTarget:self action:@selector(handleThumbnailsToggleTapped:) forControlEvents:UIControlEventTouchUpInside];
+  [photoSectionView addSubview:thumbnailsToggleButton];
+  self.thumbnailsToggleButton = thumbnailsToggleButton;
+
   NSMutableArray<NSLayoutConstraint *> *photoSectionConstraints = [NSMutableArray arrayWithArray:@[
     [photoHeroLabel.topAnchor constraintEqualToAnchor:photoSectionView.topAnchor constant:MRRYoursRecipeEditorSectionContentTopInset],
     [photoHeroLabel.leadingAnchor constraintEqualToAnchor:photoSectionView.leadingAnchor constant:22.0],
@@ -541,10 +561,14 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     [coverImageView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
     [coverImageView.heightAnchor constraintEqualToConstant:208.0],
 
-    [photoThumbnailsScrollView.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:14.0],
+    [thumbnailsToggleButton.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:10.0],
+    [thumbnailsToggleButton.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
+    [thumbnailsToggleButton.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
+    [thumbnailsToggleButton.heightAnchor constraintEqualToConstant:MRRYoursRecipeEditorThumbnailsHeaderHeight],
+
+    [photoThumbnailsScrollView.topAnchor constraintEqualToAnchor:thumbnailsToggleButton.bottomAnchor constant:4.0],
     [photoThumbnailsScrollView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
     [photoThumbnailsScrollView.trailingAnchor constraintEqualToAnchor:photoHeroLabel.trailingAnchor],
-    [photoThumbnailsScrollView.heightAnchor constraintEqualToConstant:62.0],
 
     [photoActionsStackView.topAnchor constraintEqualToAnchor:photoThumbnailsScrollView.bottomAnchor constant:16.0],
     [photoActionsStackView.leadingAnchor constraintEqualToAnchor:photoHeroLabel.leadingAnchor],
@@ -569,6 +593,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
       [photoThumbnailsStackView.heightAnchor constraintEqualToConstant:62.0]
     ]];
   }
+
+  NSLayoutConstraint *thumbnailsHeightConstraint = [photoThumbnailsScrollView.heightAnchor constraintEqualToConstant:MRRYoursRecipeEditorThumbnailsExpandedHeight];
+  thumbnailsHeightConstraint.active = YES;
+  self.thumbnailsScrollViewHeightConstraint = thumbnailsHeightConstraint;
 
   [NSLayoutConstraint activateConstraints:photoSectionConstraints];
 
@@ -1061,6 +1089,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   self.removePhotoButton.enabled = self.photoDrafts.count > 0;
   self.addPhotoButton.enabled = self.photoDrafts.count < MRRYoursRecipeEditorMaximumPhotoCount;
   [self reloadCoverImage];
+  [self updateThumbnailsToggleButtonAppearance];
 }
 
 - (void)reloadCoverImage {
@@ -1468,6 +1497,58 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
   self.selectedPhotoIndex = newIndex;
   [self animatePhotoSelectionFromIndex:previousIndex toIndex:newIndex];
+}
+
+- (void)handleThumbnailsToggleTapped:(UIButton *)sender {
+#pragma unused(sender)
+  BOOL willExpand = !self.thumbnailsSectionExpanded;
+  self.thumbnailsSectionExpanded = willExpand;
+
+  CGFloat targetHeight = willExpand ? MRRYoursRecipeEditorThumbnailsExpandedHeight : MRRYoursRecipeEditorThumbnailsCollapsedHeight;
+
+  [UIView animateWithDuration:0.25
+                        delay:0.0
+                      options:UIViewAnimationOptionCurveEaseInOut
+                   animations:^{
+                     self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
+                     [self.thumbnailsToggleButton.imageView.layer setAffineTransform:willExpand ? CGAffineTransformIdentity : CGAffineTransformMakeRotation(M_PI)];
+                     [self.view layoutIfNeeded];
+                   }
+                   completion:nil];
+
+  [self updateThumbnailsToggleButtonAppearance];
+}
+
+- (void)updateThumbnailsToggleButtonAppearance {
+  NSUInteger photoCount = self.photoDrafts.count;
+  BOOL hasPhotos = photoCount > 1;
+
+  self.thumbnailsToggleButton.hidden = !hasPhotos;
+
+  if (!hasPhotos) {
+    self.thumbnailsSectionExpanded = NO;
+    self.thumbnailsScrollViewHeightConstraint.constant = MRRYoursRecipeEditorThumbnailsCollapsedHeight;
+    return;
+  }
+
+  NSString *arrowIcon = self.thumbnailsSectionExpanded ? @"chevron.up" : @"chevron.down";
+  UIImage *iconImage = nil;
+  if (@available(iOS 13.0, *)) {
+    iconImage = [UIImage systemImageNamed:arrowIcon];
+  }
+
+  NSString *titleText = [NSString stringWithFormat:@"%lu additional photos", (unsigned long)(photoCount - 1)];
+
+  if (iconImage != nil) {
+    [self.thumbnailsToggleButton setImage:iconImage forState:UIControlStateNormal];
+    [self.thumbnailsToggleButton setTitle:titleText forState:UIControlStateNormal];
+    self.thumbnailsToggleButton.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.thumbnailsToggleButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 6);
+  } else {
+    NSString *prefix = self.thumbnailsSectionExpanded ? @"▲ " : @"▼ ";
+    [self.thumbnailsToggleButton setTitle:[prefix stringByAppendingString:titleText] forState:UIControlStateNormal];
+    [self.thumbnailsToggleButton setImage:nil forState:UIControlStateNormal];
+  }
 }
 
 - (void)animatePhotoSelectionFromIndex:(NSInteger)previousIndex toIndex:(NSInteger)newIndex {
