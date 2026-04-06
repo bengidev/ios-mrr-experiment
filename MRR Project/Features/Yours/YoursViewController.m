@@ -706,6 +706,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
           notification.object ?: @"nil");
     return;
   }
+  NSLog(@"%@ Reloading content due to store change notification", MRRYoursViewControllerLogPrefix);
   [self loadRecipesFromStore];
   [self reloadContent];
 }
