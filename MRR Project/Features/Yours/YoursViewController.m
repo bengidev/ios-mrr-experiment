@@ -55,6 +55,10 @@ static UIColor *MRRYoursAccentColor(void) {
 static NSString *const MRRYoursRecipeCardIdentifierPrefix = @"yours.recipeCard.";
 static NSString *const MRRYoursRecipeEditButtonIdentifierPrefix = @"yours.editButton.";
 static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.deleteButton.";
+static NSString *const MRRYoursRecipeThumbnailsIdentifierPrefix = @"yours.recipeThumbnails.";
+static NSString *const MRRYoursRecipeThumbnailIdentifierPrefix = @"yours.recipeThumbnail.";
+static CGFloat const MRRYoursRecipeThumbnailSize = 62.0;
+static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 
 @interface YoursViewController ()
 
