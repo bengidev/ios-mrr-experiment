@@ -1533,17 +1533,39 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   // Always show toggle button, but disable interaction when no photos
   self.thumbnailsToggleButton.enabled = photoCount > 0;
 
-  // Auto-collapse when no photos, auto-expand when photos added
+  // Determine previous state for animation decision
+  BOOL wasExpanded = self.thumbnailsSectionExpanded;
+  CGFloat previousHeight = self.thumbnailsScrollViewHeightConstraint.constant;
+
+  // Auto-collapse when no photos, auto-expand only once when first photo added
   if (photoCount == 0) {
     self.thumbnailsSectionExpanded = NO;
-  } else if (photoCount == 1 && !self.thumbnailsSectionExpanded) {
-    // Auto-expand on first photo
+    self.thumbnailsSectionHasAutoExpanded = NO;  // Reset flag so next photo will auto-expand
+  } else if (photoCount >= 1 && !self.thumbnailsSectionHasAutoExpanded) {
+    // Auto-expand only on first photo addition, respect user toggle after that
     self.thumbnailsSectionExpanded = YES;
+    self.thumbnailsSectionHasAutoExpanded = YES;
   }
 
-  // Update height constraint
+  // Update height constraint with animation if state changed
   CGFloat targetHeight = (self.thumbnailsSectionExpanded && photoCount > 0) ? MRRYoursRecipeEditorThumbnailsExpandedHeight : MRRYoursRecipeEditorThumbnailsCollapsedHeight;
-  self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
+  BOOL heightChanged = fabs(previousHeight - targetHeight) > 0.5;
+
+  if (heightChanged && (wasExpanded != self.thumbnailsSectionExpanded || photoCount == 0 || photoCount == 1)) {
+    // Animate height change when auto-expanding/collapsing
+    [UIView animateWithDuration:0.25
+                          delay:0.0
+                        options:UIViewAnimationOptionCurveEaseInOut
+                     animations:^{
+                       self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
+                       [self.thumbnailsToggleButton.imageView.layer setAffineTransform:self.thumbnailsSectionExpanded ? CGAffineTransformIdentity : CGAffineTransformMakeRotation(M_PI)];
+                       [self.view layoutIfNeeded];
+                     }
+                     completion:nil];
+  } else {
+    // Update without animation for initial setup or manual toggle
+    self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
+  }
 
   NSString *arrowIcon = self.thumbnailsSectionExpanded ? @"chevron.up" : @"chevron.down";
   UIImage *iconImage = nil;
