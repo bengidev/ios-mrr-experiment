@@ -1477,7 +1477,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
   if (newImage == nil) {
     newImage =
-        [UIImage imageNamed:(self.existingRecipe != nil && self.existingRecipe.assetName.length > 0) ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
+        [UIImage imageNamed:(self.existingRecipe != nil && self.existingRecipe.assetName.length > 0) ? self.existingRecipe.assetName
+                                                                                                     : [MRRUserRecipeSnapshot defaultAssetName]];
   }
 
   // Crossfade animation for cover image
