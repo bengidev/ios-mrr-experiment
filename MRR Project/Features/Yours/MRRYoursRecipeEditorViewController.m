@@ -490,8 +490,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   photoThumbnailsStackView.translatesAutoresizingMaskIntoConstraints = NO;
   photoThumbnailsStackView.axis = UILayoutConstraintAxisHorizontal;
   photoThumbnailsStackView.spacing = 8.0;
-  photoThumbnailsStackView.alignment = UIStackViewAlignmentLeading;
-  photoThumbnailsStackView.distribution = UIStackViewDistributionEqualSpacing;
+  photoThumbnailsStackView.alignment = UIStackViewAlignmentFill;
+  photoThumbnailsStackView.distribution = UIStackViewDistributionFill;
   photoThumbnailsStackView.accessibilityIdentifier = @"yours.editor.photoThumbnails";
   [photoThumbnailsScrollView addSubview:photoThumbnailsStackView];
   self.photoThumbnailsStackView = photoThumbnailsStackView;
