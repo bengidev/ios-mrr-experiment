@@ -379,6 +379,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   }
 
   self.thumbnailsSectionExpanded = YES;
+  // If starting with existing photos, mark as already auto-expanded so user can toggle freely
+  self.thumbnailsSectionHasAutoExpanded = self.photoDrafts.count > 0;
   [self reloadMealTypeSelection];
   [self reloadTagSelection];
   [self reloadPhotoUI];
