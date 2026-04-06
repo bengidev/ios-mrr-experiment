@@ -370,13 +370,16 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
       thumbnailContainer.translatesAutoresizingMaskIntoConstraints = NO;
       thumbnailContainer.backgroundColor = MRRYoursMutedSurfaceColor();
       thumbnailContainer.layer.shadowColor = [UIColor blackColor].CGColor;
-      thumbnailContainer.layer.shadowOffset = CGSizeMake(0, 4);  // Lifted up
-      thumbnailContainer.layer.shadowRadius = 8.0;  // Softer, larger shadow
-      thumbnailContainer.layer.shadowOpacity = 0.20;  // More visible
+      thumbnailContainer.layer.shadowOffset = CGSizeMake(0, 4);
+      thumbnailContainer.layer.shadowRadius = 8.0;
+      thumbnailContainer.layer.shadowOpacity = 0.14;
       thumbnailContainer.layer.masksToBounds = NO;
-      [thumbnailsContentView addSubview:thumbnailContainer];
+      thumbnailContainer.accessibilityIdentifier =
+          [NSString stringWithFormat:@"%@%@.%lu", MRRYoursRecipeThumbnailIdentifierPrefix, recipe.recipeID, (unsigned long)i];
+      [thumbnailContainer.widthAnchor constraintEqualToConstant:MRRYoursRecipeThumbnailSize].active = YES;
+      [thumbnailContainer.heightAnchor constraintEqualToConstant:MRRYoursRecipeThumbnailSize].active = YES;
+      [thumbnailsStackView addArrangedSubview:thumbnailContainer];
 
-      // Image view for content (clipsToBounds = YES for rounded corners)
       UIImageView *thumbnailView = [[[UIImageView alloc] init] autorelease];
       thumbnailView.translatesAutoresizingMaskIntoConstraints = NO;
       thumbnailView.contentMode = UIViewContentModeScaleAspectFill;
@@ -385,7 +388,6 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
       thumbnailView.backgroundColor = MRRYoursMutedSurfaceColor();
       [thumbnailContainer addSubview:thumbnailView];
 
-      // Pin image view to container
       [NSLayoutConstraint activateConstraints:@[
         [thumbnailView.topAnchor constraintEqualToAnchor:thumbnailContainer.topAnchor],
         [thumbnailView.leadingAnchor constraintEqualToAnchor:thumbnailContainer.leadingAnchor],
@@ -393,17 +395,13 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
         [thumbnailView.bottomAnchor constraintEqualToAnchor:thumbnailContainer.bottomAnchor]
       ]];
 
-      // Constraints for stacked layout - set size before loading image
-      [thumbnailContainer.widthAnchor constraintEqualToConstant:thumbnailSize].active = YES;
-      [thumbnailContainer.heightAnchor constraintEqualToConstant:thumbnailSize].active = YES;
-
-      // Load image if available
       if (photo.localRelativePath.length > 0) {
         UIImage *image = [self.photoStorage imageForRelativePath:photo.localRelativePath];
         if (image != nil) {
           thumbnailView.image = image;
         }
       }
+    }
 
       if (previousThumbnailContainer == nil) {
         // First thumbnail
