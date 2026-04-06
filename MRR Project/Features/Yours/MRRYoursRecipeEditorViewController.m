@@ -1395,7 +1395,8 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     UIImage *nextImage = [self displayImageForPhotoDraft:nextDraft];
     if (nextImage == nil) {
       nextImage =
-          [UIImage imageNamed:(self.existingRecipe != nil && self.existingRecipe.assetName.length > 0) ? self.existingRecipe.assetName : [MRRUserRecipeSnapshot defaultAssetName]];
+          [UIImage imageNamed:(self.existingRecipe != nil && self.existingRecipe.assetName.length > 0) ? self.existingRecipe.assetName
+                                                                                                       : [MRRUserRecipeSnapshot defaultAssetName]];
     }
 
     [UIView transitionWithView:self.coverImageView
