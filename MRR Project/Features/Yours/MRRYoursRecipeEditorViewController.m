@@ -1472,7 +1472,6 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
 - (void)animatePhotoSelectionFromIndex:(NSInteger)previousIndex toIndex:(NSInteger)newIndex {
   // Animate cover image crossfade
-  UIImage *previousImage = self.coverImageView.image;
   MRRYoursRecipePhotoDraft *newDraft = (newIndex >= 0 && newIndex < (NSInteger)self.photoDrafts.count) ? self.photoDrafts[newIndex] : nil;
   UIImage *newImage = [self displayImageForPhotoDraft:newDraft];
 
