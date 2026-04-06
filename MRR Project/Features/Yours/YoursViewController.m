@@ -344,6 +344,7 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
   thumbnailsScrollView.translatesAutoresizingMaskIntoConstraints = NO;
   thumbnailsScrollView.showsHorizontalScrollIndicator = NO;
   thumbnailsScrollView.alwaysBounceHorizontal = YES;
+  thumbnailsScrollView.accessibilityIdentifier = [MRRYoursRecipeThumbnailsIdentifierPrefix stringByAppendingString:recipe.recipeID];
   [containerView addSubview:thumbnailsScrollView];
 
   // Inner content view for scroll view
