@@ -338,11 +338,19 @@ static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 
   // Load cover image if available (first photo)
   MRRUserRecipePhotoSnapshot *coverPhoto = recipe.coverPhotoSnapshot;
+  UIImage *coverImage = nil;
   if (coverPhoto != nil && coverPhoto.localRelativePath.length > 0) {
-    UIImage *coverImage = [self.photoStorage imageForRelativePath:coverPhoto.localRelativePath];
+    coverImage = [self.photoStorage imageForRelativePath:coverPhoto.localRelativePath];
     if (coverImage != nil) {
       coverImageView.image = coverImage;
     }
+  }
+
+  // Add tap gesture to cover image for popup
+  if (coverImage != nil) {
+    UITapGestureRecognizer *coverTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                      action:@selector(handleImageTapped:)] autorelease];
+    [coverImageView addGestureRecognizer:coverTapGesture];
   }
 
   // Scrollable container for stacked photo thumbnails
