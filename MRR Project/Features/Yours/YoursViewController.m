@@ -4,6 +4,7 @@
 #import "../../Persistence/UserRecipes/MRRUserRecipesStore.h"
 #import "../../Persistence/UserRecipes/Models/MRRUserRecipeSnapshot.h"
 #import "../../Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
+#import "MRRImagePopupViewController.h"
 #import "MRRYoursRecipeEditorViewController.h"
 
 static NSErrorDomain const MRRYoursViewControllerErrorDomain = @"MRRYoursViewControllerErrorDomain";
