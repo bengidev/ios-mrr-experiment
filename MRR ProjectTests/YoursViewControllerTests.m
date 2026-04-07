@@ -263,12 +263,15 @@
   }
 }
 
-- (void)testRecipeCardAdditionalPhotoThumbnailsDoNotOverlap {
+- (void)testRecipeCardAdditionalThumbnailsDoNotOverlapWithMoreThanFivePhotos {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
 
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
-  NSArray<UIColor *> *colors = @[ [UIColor redColor], [UIColor blueColor], [UIColor greenColor], [UIColor orangeColor], [UIColor purpleColor] ];
+  NSArray<UIColor *> *colors = @[
+    [UIColor redColor], [UIColor blueColor], [UIColor greenColor], [UIColor orangeColor], [UIColor purpleColor], [UIColor brownColor],
+    [UIColor cyanColor]
+  ];
   for (UIColor *color in colors) {
     NSError *photoError = nil;
     XCTAssertTrue([editor appendPhotoWithImage:[self sampleImageWithColor:color] error:&photoError]);
