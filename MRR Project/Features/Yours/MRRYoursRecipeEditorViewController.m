@@ -5,6 +5,7 @@
 #import "../../Persistence/UserRecipes/MRRUserRecipesStore.h"
 #import "../../Persistence/UserRecipes/Models/MRRUserRecipeSnapshot.h"
 #import "../../Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
+#import <Photos/Photos.h>
 
 static NSErrorDomain const MRRYoursRecipeEditorValidationErrorDomain = @"MRRYoursRecipeEditorValidationErrorDomain";
 static NSInteger const MRRYoursRecipeEditorMaximumPhotoCount = 5;
