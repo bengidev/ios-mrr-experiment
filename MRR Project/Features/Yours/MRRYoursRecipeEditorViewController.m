@@ -1780,8 +1780,12 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
     pickerController.modalPresentationStyle = UIModalPresentationPopover;
     UIPopoverPresentationController *popoverPresentationController = pickerController.popoverPresentationController;
-    popoverPresentationController.sourceView = sourceView;
-    popoverPresentationController.sourceRect = sourceView.bounds;
+    UIView *resolvedSourceView = sourceView ?: self.addPhotoButton ?: self.view;
+    if (resolvedSourceView.window == nil) {
+      resolvedSourceView = self.view;
+    }
+    popoverPresentationController.sourceView = resolvedSourceView;
+    popoverPresentationController.sourceRect = resolvedSourceView.bounds;
   }
   [self presentViewController:pickerController animated:YES completion:nil];
 }
