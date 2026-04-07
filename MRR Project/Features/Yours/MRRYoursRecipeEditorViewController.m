@@ -1716,6 +1716,12 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
     [self finishPhotoPickerFlow];
     return;
   }
+#if MRR_HAS_PHOTOS_UI
+  if (@available(iOS 14.0, *)) {
+    [self presentModernPhotoPickerFromSourceView:sourceView];
+    return;
+  }
+#endif
   if (![UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary]) {
     NSError *error = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
                                          code:30
