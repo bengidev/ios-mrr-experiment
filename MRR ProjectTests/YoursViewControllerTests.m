@@ -344,6 +344,46 @@
   }
 }
 
+- (void)testCollapsedRecipeCardThumbnailStripPreservesFixedThumbnailContentHeight {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  NSArray<UIColor *> *colors = @[ [UIColor redColor], [UIColor blueColor], [UIColor greenColor] ];
+  for (UIColor *color in colors) {
+    NSError *photoError = nil;
+    XCTAssertTrue([editor appendPhotoWithImage:[self sampleImageWithColor:color] error:&photoError]);
+    XCTAssertNil(photoError);
+  }
+
+  [self populateRequiredFieldsInEditor:editor title:@"Soto Betawi"];
+  [editor handleSaveTapped:nil];
+  [self spinMainRunLoop];
+  [self.viewController.view layoutIfNeeded];
+
+  MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
+  UIScrollView *thumbnailsScrollView =
+      (UIScrollView *)[self findViewWithAccessibilityIdentifier:[@"yours.recipeThumbnails." stringByAppendingString:recipe.recipeID]
+                                                         inView:self.viewController.view];
+  XCTAssertNotNil(thumbnailsScrollView);
+
+  UIStackView *thumbnailStack = nil;
+  for (UIView *subview in thumbnailsScrollView.subviews) {
+    if ([subview isKindOfClass:[UIStackView class]]) {
+      thumbnailStack = (UIStackView *)subview;
+      break;
+    }
+  }
+
+  XCTAssertNotNil(thumbnailStack);
+  NSLayoutConstraint *heightConstraint = [self activeConstraintForView:thumbnailStack attribute:NSLayoutAttributeHeight];
+  XCTAssertNotNil(heightConstraint);
+  XCTAssertNil(heightConstraint.secondItem);
+  XCTAssertEqualWithAccuracy(heightConstraint.constant, 62.0, 0.5);
+  XCTAssertEqualWithAccuracy(CGRectGetHeight(thumbnailsScrollView.bounds), 0.0, 0.5);
+  XCTAssertEqualWithAccuracy(CGRectGetHeight(thumbnailStack.bounds), 62.0, 0.5);
+}
+
 - (void)testCompactLayoutKeepsChipAndPhotoActionTitlesReadable {
   [self.viewController handleAddButtonTapped:nil];
   [self spinMainRunLoop];
