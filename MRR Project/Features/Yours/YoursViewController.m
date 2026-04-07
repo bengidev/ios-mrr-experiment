@@ -441,12 +441,13 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   thumbnailsStackView.spacing = MRRYoursRecipeThumbnailSpacing;
   [thumbnailsScrollView addSubview:thumbnailsStackView];
 
+  CGFloat thumbnailsContentHeight = hasAdditionalPhotos ? MRRYoursRecipeThumbnailSize : 0.0;
   [NSLayoutConstraint activateConstraints:@[
     [thumbnailsStackView.topAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.topAnchor],
     [thumbnailsStackView.leadingAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.leadingAnchor],
     [thumbnailsStackView.trailingAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.trailingAnchor],
     [thumbnailsStackView.bottomAnchor constraintEqualToAnchor:thumbnailsScrollView.contentLayoutGuide.bottomAnchor],
-    [thumbnailsStackView.heightAnchor constraintEqualToAnchor:thumbnailsScrollView.frameLayoutGuide.heightAnchor],
+    [thumbnailsStackView.heightAnchor constraintEqualToConstant:thumbnailsContentHeight],
     [thumbnailsStackView.widthAnchor constraintGreaterThanOrEqualToAnchor:thumbnailsScrollView.frameLayoutGuide.widthAnchor]
   ]];
 
