@@ -118,9 +118,17 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
     _firestore = [[FIRFirestore firestore] retain];
     _pendingCompletions = [[NSMutableArray alloc] init];
 
-    FIRFirestoreSettings *settings = [[[FIRFirestoreSettings alloc] init] autorelease];
-    settings.cacheSettings = [[[FIRMemoryCacheSettings alloc] init] autorelease];
-    _firestore.settings = settings;
+    FIRFirestoreSettings *settings = [[[_firestore settings] copy] autorelease];
+    if (settings == nil) {
+      settings = [[[FIRFirestoreSettings alloc] init] autorelease];
+    }
+    if (![settings.cacheSettings isKindOfClass:[FIRMemoryCacheSettings class]]) {
+      settings.cacheSettings = [[[FIRMemoryCacheSettings alloc] init] autorelease];
+      @try {
+        _firestore.settings = settings;
+      } @catch (__unused NSException *exception) {
+      }
+    }
   }
   return self;
 }
