@@ -119,11 +119,12 @@ static NSAttributedString *MRRGlassAttributedTitle(NSString *title, UIFont *font
     }
 
     UIFont *font = button.titleLabel.font ?: [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
-    UIColor *foregroundColor = role == MRRGlassButtonRolePrimary && !usesNativeLiquidGlass ? [UIColor whiteColor] : nil;
-    if (role == MRRGlassButtonRoleInline) {
+    UIColor *foregroundColor = nil;
+    if (role == MRRGlassButtonRolePrimary) {
+      foregroundColor = [UIColor whiteColor];
+    } else if (role == MRRGlassButtonRoleInline) {
       foregroundColor = MRRGlassAccentColor();
-    }
-    if (role == MRRGlassButtonRoleSecondary && !usesNativeLiquidGlass) {
+    } else if (role == MRRGlassButtonRoleSecondary && !usesNativeLiquidGlass) {
       foregroundColor = MRRGlassPrimaryTextColor();
     }
     if (foregroundColor == nil) {
