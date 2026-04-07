@@ -151,6 +151,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 @property(nonatomic, retain) NSLayoutConstraint *thumbnailsScrollViewHeightConstraint;
 @property(nonatomic, assign) BOOL thumbnailsSectionExpanded;
 @property(nonatomic, assign) BOOL thumbnailsSectionHasAutoExpanded;
+@property(nonatomic, assign) BOOL photoPickerFlowInProgress;
 
 @property(nonatomic, retain) UIView *basicInfoSectionView;
 @property(nonatomic, retain) UITextField *titleField;
