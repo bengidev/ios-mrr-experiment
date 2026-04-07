@@ -214,6 +214,9 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 - (void)clearValidationErrors;
 - (void)showValidationMessage:(NSString *)message onLabel:(UILabel *)label scrollTarget:(UIView *)scrollTarget;
 - (void)presentPhotoPickerFromSourceView:(UIView *)sourceView;
+- (BOOL)isPhotoLibraryAuthorizationStatusAllowed:(PHAuthorizationStatus)status;
+- (void)presentAuthorizedPhotoPickerFromSourceView:(UIView *)sourceView;
+- (void)finishPhotoPickerFlow;
 - (BOOL)appendPhotoWithImage:(UIImage *)image error:(NSError *_Nullable *_Nullable)error;
 - (void)handleAddPhotoTapped:(id)sender;
 - (void)handleSetCoverTapped:(id)sender;
