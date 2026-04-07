@@ -1708,6 +1708,44 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   }
 
   if (![self isPhotoLibraryAuthorizationStatusAllowed:authorizationStatus]) {
+    if (authorizationStatus == PHAuthorizationStatusNotDetermined) {
+      if (@available(iOS 14.0, *)) {
+        [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelReadWrite
+                                                   handler:^(PHAuthorizationStatus status) {
+                                                     dispatch_async(dispatch_get_main_queue(), ^{
+                                                       if ([self isPhotoLibraryAuthorizationStatusAllowed:status]) {
+                                                         [self presentPhotoPickerFromSourceView:sourceView];
+                                                         return;
+                                                       }
+                                                       NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                                                                                      code:34
+                                                                                                  userInfo:@{
+                                                                                                    NSLocalizedDescriptionKey :
+                                                                                                        @"Photos access is required to add recipe images. You can enable it in Settings."
+                                                                                                  }];
+                                                       [self presentValidationError:permissionError];
+                                                     });
+                                                   }];
+      } else {
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if ([self isPhotoLibraryAuthorizationStatusAllowed:status]) {
+              [self presentPhotoPickerFromSourceView:sourceView];
+              return;
+            }
+            NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                                           code:34
+                                                       userInfo:@{
+                                                         NSLocalizedDescriptionKey :
+                                                             @"Photos access is required to add recipe images. You can enable it in Settings."
+                                                       }];
+            [self presentValidationError:permissionError];
+          });
+        }];
+      }
+      return;
+    }
+
     NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
                                                    code:34
                                                userInfo:@{
