@@ -1689,11 +1689,31 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 }
 
 - (void)presentPhotoPickerFromSourceView:(UIView *)sourceView {
+  if (self.presentedViewController != nil) {
+    return;
+  }
   if (![UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary]) {
     NSError *error = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
                                          code:30
                                      userInfo:@{NSLocalizedDescriptionKey : @"Photo library is not available on this device."}];
     [self presentValidationError:error];
+    return;
+  }
+
+  PHAuthorizationStatus authorizationStatus = PHAuthorizationStatusDenied;
+  if (@available(iOS 14.0, *)) {
+    authorizationStatus = [PHPhotoLibrary authorizationStatusForAccessLevel:PHAccessLevelReadWrite];
+  } else {
+    authorizationStatus = [PHPhotoLibrary authorizationStatus];
+  }
+
+  if (![self isPhotoLibraryAuthorizationStatusAllowed:authorizationStatus]) {
+    NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                                   code:34
+                                               userInfo:@{
+                                                 NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."
+                                               }];
+    [self presentValidationError:permissionError];
     return;
   }
 
