@@ -329,6 +329,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
   [_removePhotoButton release];
   [_setCoverButton release];
   [_addPhotoButton release];
+  [_thumbnailsScrollViewHeightConstraint release];
   [_photoThumbnailsStackView release];
   [_photoThumbnailsScrollView release];
   [_photoHelperLabel release];
