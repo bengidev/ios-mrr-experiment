@@ -1101,10 +1101,8 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
   }
 
   self.selectedPhotoIndex = MAX(0, MIN(self.selectedPhotoIndex, (NSInteger)self.photoDrafts.count - 1));
-  self.photoHelperLabel.text = self.photoDrafts.count > 0
-                                   ? [NSString stringWithFormat:@"Photo %lu of %ld selected. The first photo is your cover.",
-                                                                (unsigned long)(self.selectedPhotoIndex + 1), (long)self.photoDrafts.count]
-                                   : @"Add up to 5 photos. The first photo becomes your cover.";
+  NSUInteger selectedIndex = self.selectedPhotoIndex >= 0 ? (NSUInteger)self.selectedPhotoIndex : 0;
+  self.photoHelperLabel.text = MRRYoursEditorPhotoHelperText(selectedIndex, self.photoDrafts.count);
   self.setCoverButton.enabled = self.photoDrafts.count > 1 && self.selectedPhotoIndex > 0;
   self.removePhotoButton.enabled = self.photoDrafts.count > 0;
   self.addPhotoButton.enabled = self.photoDrafts.count < MRRYoursRecipeEditorMaximumPhotoCount;
@@ -1340,7 +1338,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
     if (error != NULL) {
       *error = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
                                    code:32
-                               userInfo:@{NSLocalizedDescriptionKey : @"You can add up to 5 photos for now."}];
+                               userInfo:@{NSLocalizedDescriptionKey : MRRYoursEditorPhotoLimitErrorText()}];
     }
     return NO;
   }
@@ -1680,9 +1678,8 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
   }
 
   // Update helper label with fade animation
-  NSString *newHelperText = self.photoDrafts.count > 0 ? [NSString stringWithFormat:@"Photo %lu of %ld selected. The first photo is your cover.",
-                                                                                    (unsigned long)(newIndex + 1), (long)self.photoDrafts.count]
-                                                       : @"Add up to 5 photos. The first photo becomes your cover.";
+  NSUInteger selectedIndex = newIndex >= 0 ? (NSUInteger)newIndex : 0;
+  NSString *newHelperText = MRRYoursEditorPhotoHelperText(selectedIndex, self.photoDrafts.count);
 
   [UIView transitionWithView:self.photoHelperLabel
                     duration:0.18
