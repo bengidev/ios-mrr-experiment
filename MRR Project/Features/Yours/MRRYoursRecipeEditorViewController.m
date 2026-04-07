@@ -2111,6 +2111,53 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
                              }];
 }
 
+#if MRR_HAS_PHOTOS_UI
+- (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPickerResult *> *)results API_AVAILABLE(ios(14.0)) {
+  if (results.count == 0) {
+    [picker dismissViewControllerAnimated:YES
+                               completion:^{
+                                 [self finishPhotoPickerFlow];
+                               }];
+    return;
+  }
+
+  PHPickerResult *result = results.firstObject;
+  NSItemProvider *itemProvider = result.itemProvider;
+  if (![itemProvider canLoadObjectOfClass:[UIImage class]]) {
+    NSError *error = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                         code:35
+                                     userInfo:@{NSLocalizedDescriptionKey : @"The selected item could not be loaded as a photo."}];
+    [picker dismissViewControllerAnimated:YES
+                               completion:^{
+                                 [self presentValidationError:error];
+                                 [self finishPhotoPickerFlow];
+                               }];
+    return;
+  }
+
+  [picker dismissViewControllerAnimated:YES completion:nil];
+  [itemProvider loadObjectOfClass:[UIImage class]
+                completionHandler:^(id<NSItemProviderReading> object, NSError *error) {
+                  dispatch_async(dispatch_get_main_queue(), ^{
+                    UIImage *selectedImage = [object isKindOfClass:[UIImage class]] ? (UIImage *)object : nil;
+                    if (selectedImage != nil) {
+                      NSError *appendError = nil;
+                      if (![self appendPhotoWithImage:selectedImage error:&appendError] && appendError != nil) {
+                        [self presentValidationError:appendError];
+                      }
+                    } else {
+                      NSError *loadError =
+                          error ?: [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                                        code:35
+                                                    userInfo:@{NSLocalizedDescriptionKey : @"Photo could not be imported."}];
+                      [self presentValidationError:loadError];
+                    }
+                    [self finishPhotoPickerFlow];
+                  });
+                }];
+}
+#endif
+
 - (void)imagePickerController:(UIImagePickerController *)picker
     didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey, id> *)info {
   UIImage *selectedImage = info[UIImagePickerControllerOriginalImage];
