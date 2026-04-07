@@ -8,7 +8,7 @@
 #import <Photos/Photos.h>
 
 static NSErrorDomain const MRRYoursRecipeEditorValidationErrorDomain = @"MRRYoursRecipeEditorValidationErrorDomain";
-static NSInteger const MRRYoursRecipeEditorMaximumPhotoCount = 5;
+static NSInteger const MRRYoursRecipeEditorMaximumPhotoCount = 10;
 static CGFloat const MRRYoursRecipeEditorKeyboardGap = 18.0;
 static CGFloat const MRRYoursRecipeEditorSectionContentTopInset = 58.0;
 static CGFloat const MRRYoursRecipeEditorChipSpacing = 10.0;
