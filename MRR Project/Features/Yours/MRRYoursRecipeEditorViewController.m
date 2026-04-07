@@ -1710,6 +1710,16 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [self presentViewController:pickerController animated:YES completion:nil];
 }
 
+- (BOOL)isPhotoLibraryAuthorizationStatusAllowed:(PHAuthorizationStatus)status {
+  if (status == PHAuthorizationStatusAuthorized) {
+    return YES;
+  }
+  if (@available(iOS 14.0, *)) {
+    return status == PHAuthorizationStatusLimited;
+  }
+  return NO;
+}
+
 - (void)handleSaveTapped:(id)sender {
 #pragma unused(sender)
   [self.view endEditing:YES];
