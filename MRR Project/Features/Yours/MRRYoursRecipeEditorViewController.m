@@ -603,7 +603,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
       [photoThumbnailsStackView.leadingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.leadingAnchor],
       [photoThumbnailsStackView.trailingAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.trailingAnchor],
       [photoThumbnailsStackView.bottomAnchor constraintEqualToAnchor:photoThumbnailsScrollView.contentLayoutGuide.bottomAnchor],
-      [photoThumbnailsStackView.heightAnchor constraintEqualToAnchor:photoThumbnailsScrollView.frameLayoutGuide.heightAnchor]
+      [photoThumbnailsStackView.heightAnchor constraintEqualToConstant:MRRYoursRecipeEditorThumbnailsExpandedHeight]
     ]];
   } else {
     [photoSectionConstraints addObjectsFromArray:@[
@@ -615,7 +615,8 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
     ]];
   }
 
-  NSLayoutConstraint *thumbnailsHeightConstraint = [photoThumbnailsScrollView.heightAnchor constraintEqualToConstant:MRRYoursRecipeEditorThumbnailsExpandedHeight];
+  NSLayoutConstraint *thumbnailsHeightConstraint =
+      [photoThumbnailsScrollView.heightAnchor constraintEqualToConstant:MRRYoursRecipeEditorThumbnailsExpandedHeight];
   thumbnailsHeightConstraint.active = YES;
   self.thumbnailsScrollViewHeightConstraint = thumbnailsHeightConstraint;
 
