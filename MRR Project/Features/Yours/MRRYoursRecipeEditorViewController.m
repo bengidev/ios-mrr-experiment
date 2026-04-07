@@ -1755,6 +1755,24 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     return;
   }
 
+  [self presentAuthorizedPhotoPickerFromSourceView:sourceView];
+}
+
+- (BOOL)isPhotoLibraryAuthorizationStatusAllowed:(PHAuthorizationStatus)status {
+  if (status == PHAuthorizationStatusAuthorized) {
+    return YES;
+  }
+  if (@available(iOS 14.0, *)) {
+    return status == PHAuthorizationStatusLimited;
+  }
+  return NO;
+}
+
+- (void)presentAuthorizedPhotoPickerFromSourceView:(UIView *)sourceView {
+  if (self.presentedViewController != nil) {
+    return;
+  }
+
   UIImagePickerController *pickerController = [[[UIImagePickerController alloc] init] autorelease];
   pickerController.delegate = self;
   pickerController.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
@@ -1766,16 +1784,6 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
     popoverPresentationController.sourceRect = sourceView.bounds;
   }
   [self presentViewController:pickerController animated:YES completion:nil];
-}
-
-- (BOOL)isPhotoLibraryAuthorizationStatusAllowed:(PHAuthorizationStatus)status {
-  if (status == PHAuthorizationStatusAuthorized) {
-    return YES;
-  }
-  if (@available(iOS 14.0, *)) {
-    return status == PHAuthorizationStatusLimited;
-  }
-  return NO;
 }
 
 - (void)handleSaveTapped:(id)sender {
