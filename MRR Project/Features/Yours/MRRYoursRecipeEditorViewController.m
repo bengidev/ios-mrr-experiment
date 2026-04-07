@@ -1035,7 +1035,6 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
       currentRow.spacing = MRRYoursRecipeEditorChipSpacing;
       currentRow.distribution = UIStackViewDistributionFill;
       [stackView addArrangedSubview:currentRow];
-      currentRowWidth = 0.0;
       projectedWidth = buttonWidth;
     }
     [currentRow addArrangedSubview:button];
