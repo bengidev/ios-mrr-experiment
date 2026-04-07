@@ -2062,7 +2062,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
-  [picker dismissViewControllerAnimated:YES completion:nil];
+  [picker dismissViewControllerAnimated:YES
+                             completion:^{
+                               [self finishPhotoPickerFlow];
+                             }];
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker
@@ -2071,7 +2074,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   if ([selectedImage isKindOfClass:[UIImage class]]) {
     [self appendPhotoWithImage:selectedImage error:nil];
   }
-  [picker dismissViewControllerAnimated:YES completion:nil];
+  [picker dismissViewControllerAnimated:YES
+                             completion:^{
+                               [self finishPhotoPickerFlow];
+                             }];
 }
 
 - (void)textViewDidBeginEditing:(UITextView *)textView {
