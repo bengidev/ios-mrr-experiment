@@ -6,6 +6,12 @@
 #import "../../Persistence/UserRecipes/Models/MRRUserRecipeSnapshot.h"
 #import "../../Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
 #import <Photos/Photos.h>
+#if __has_include(<PhotosUI/PhotosUI.h>)
+#import <PhotosUI/PhotosUI.h>
+#define MRR_HAS_PHOTOS_UI 1
+#else
+#define MRR_HAS_PHOTOS_UI 0
+#endif
 
 static NSErrorDomain const MRRYoursRecipeEditorValidationErrorDomain = @"MRRYoursRecipeEditorValidationErrorDomain";
 static NSInteger const MRRYoursRecipeEditorMaximumPhotoCount = 10;
@@ -126,10 +132,14 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
 
 @end
 
-@interface MRRYoursRecipeEditorViewController () <UIImagePickerControllerDelegate,
-                                                  UINavigationControllerDelegate,
-                                                  UITextFieldDelegate,
-                                                  UITextViewDelegate>
+@interface MRRYoursRecipeEditorViewController ()
+    <UIImagePickerControllerDelegate,
+     UINavigationControllerDelegate,
+#if MRR_HAS_PHOTOS_UI
+     PHPickerViewControllerDelegate,
+#endif
+     UITextFieldDelegate,
+     UITextViewDelegate>
 
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
@@ -228,6 +238,9 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
 - (void)presentPhotoPickerFromSourceView:(UIView *)sourceView;
 - (BOOL)isPhotoLibraryAuthorizationStatusAllowed:(PHAuthorizationStatus)status;
 - (void)presentAuthorizedPhotoPickerFromSourceView:(UIView *)sourceView;
+#if MRR_HAS_PHOTOS_UI
+- (void)presentModernPhotoPickerFromSourceView:(UIView *)sourceView API_AVAILABLE(ios(14.0));
+#endif
 - (void)finishPhotoPickerFlow;
 - (BOOL)appendPhotoWithImage:(UIImage *)image error:(NSError *_Nullable *_Nullable)error;
 - (void)handleAddPhotoTapped:(id)sender;
@@ -1780,6 +1793,22 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
   }
   return NO;
 }
+
+#if MRR_HAS_PHOTOS_UI
+- (void)presentModernPhotoPickerFromSourceView:(UIView *)sourceView {
+#pragma unused(sourceView)
+  PHPickerConfiguration *configuration =
+      [[[PHPickerConfiguration alloc] initWithPhotoLibrary:[PHPhotoLibrary sharedPhotoLibrary]] autorelease];
+  configuration.filter = [PHPickerFilter imagesFilter];
+  configuration.selectionLimit = 1;
+  configuration.preferredAssetRepresentationMode = PHPickerConfigurationAssetRepresentationModeCurrent;
+
+  PHPickerViewController *pickerController = [[[PHPickerViewController alloc] initWithConfiguration:configuration] autorelease];
+  pickerController.delegate = self;
+  pickerController.modalPresentationStyle = UIModalPresentationFullScreen;
+  [self presentViewController:pickerController animated:YES completion:nil];
+}
+#endif
 
 - (void)presentAuthorizedPhotoPickerFromSourceView:(UIView *)sourceView {
   if (self.presentedViewController != nil) {
