@@ -74,6 +74,18 @@ static NSArray<NSString *> *MRRYoursEditorMealTypes(void) {
 
 static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Salad", @"Main Course", @"Drink" ]; }
 
+static NSString *MRRYoursEditorPhotoHelperText(NSUInteger selectedIndex, NSUInteger photoCount) {
+  if (photoCount == 0) {
+    return [NSString stringWithFormat:@"Add up to %ld photos. The first photo becomes your cover.", (long)MRRYoursRecipeEditorMaximumPhotoCount];
+  }
+  return [NSString
+      stringWithFormat:@"Photo %lu of %lu selected. The first photo is your cover.", (unsigned long)(selectedIndex + 1), (unsigned long)photoCount];
+}
+
+static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
+  return [NSString stringWithFormat:@"You can add up to %ld photos for now.", (long)MRRYoursRecipeEditorMaximumPhotoCount];
+}
+
 @interface MRRYoursRecipePhotoDraft : NSObject
 
 @property(nonatomic, copy) NSString *photoID;
@@ -480,7 +492,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [self.contentStackView addArrangedSubview:photoSectionView];
 
   UILabel *photoHeroLabel = [self labelWithFont:[UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium] color:MRRYoursEditorSecondaryTextColor()];
-  photoHeroLabel.text = @"Add up to 5 photos. The first photo becomes your cover.";
+  photoHeroLabel.text = MRRYoursEditorPhotoHelperText(0, 0);
   photoHeroLabel.numberOfLines = 0;
   [photoSectionView addSubview:photoHeroLabel];
   self.photoHelperLabel = photoHeroLabel;
