@@ -1553,7 +1553,8 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
                       options:UIViewAnimationOptionCurveEaseInOut
                    animations:^{
                      self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
-                     [self.thumbnailsToggleButton.imageView.layer setAffineTransform:willExpand ? CGAffineTransformIdentity : CGAffineTransformMakeRotation(M_PI)];
+                     [self.thumbnailsToggleButton.imageView.layer
+                         setAffineTransform:willExpand ? CGAffineTransformIdentity : CGAffineTransformMakeRotation(M_PI)];
                      [self.view layoutIfNeeded];
                    }
                    completion:nil];
@@ -1582,7 +1583,8 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
   }
 
   // Update height constraint with animation if state changed
-  CGFloat targetHeight = (self.thumbnailsSectionExpanded && photoCount > 0) ? MRRYoursRecipeEditorThumbnailsExpandedHeight : MRRYoursRecipeEditorThumbnailsCollapsedHeight;
+  CGFloat targetHeight = (self.thumbnailsSectionExpanded && photoCount > 0) ? MRRYoursRecipeEditorThumbnailsExpandedHeight
+                                                                            : MRRYoursRecipeEditorThumbnailsCollapsedHeight;
   BOOL heightChanged = fabs(previousHeight - targetHeight) > 0.5;
 
   if (heightChanged && (wasExpanded != self.thumbnailsSectionExpanded || photoCount == 0 || photoCount == 1)) {
@@ -1592,7 +1594,8 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
                         options:UIViewAnimationOptionCurveEaseInOut
                      animations:^{
                        self.thumbnailsScrollViewHeightConstraint.constant = targetHeight;
-                       [self.thumbnailsToggleButton.imageView.layer setAffineTransform:self.thumbnailsSectionExpanded ? CGAffineTransformIdentity : CGAffineTransformMakeRotation(M_PI)];
+                       [self.thumbnailsToggleButton.imageView.layer
+                           setAffineTransform:self.thumbnailsSectionExpanded ? CGAffineTransformIdentity : CGAffineTransformMakeRotation(M_PI)];
                        [self.view layoutIfNeeded];
                      }
                      completion:nil];
@@ -1716,12 +1719,14 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
     [self finishPhotoPickerFlow];
     return;
   }
+
 #if MRR_HAS_PHOTOS_UI
   if (@available(iOS 14.0, *)) {
     [self presentModernPhotoPickerFromSourceView:sourceView];
     return;
   }
 #endif
+
   if (![UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary]) {
     NSError *error = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
                                          code:30
@@ -1745,22 +1750,25 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
 
   if (authorizationStatus == PHAuthorizationStatusNotDetermined) {
     if (@available(iOS 14.0, *)) {
-      [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelReadWrite
-                                                 handler:^(PHAuthorizationStatus status) {
-                                                   dispatch_async(dispatch_get_main_queue(), ^{
-                                                     if ([self isPhotoLibraryAuthorizationStatusAllowed:status]) {
-                                                       [self presentAuthorizedPhotoPickerFromSourceView:sourceView];
-                                                       return;
-                                                     }
-                                                     NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
-                                                                                                    code:34
-                                                                                                userInfo:@{
-                                                                                                  NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."
-                                                                                                }];
-                                                     [self presentValidationError:permissionError];
-                                                     [self finishPhotoPickerFlow];
-                                                   });
-                                                 }];
+      [PHPhotoLibrary
+          requestAuthorizationForAccessLevel:PHAccessLevelReadWrite
+                                     handler:^(PHAuthorizationStatus status) {
+                                       dispatch_async(dispatch_get_main_queue(), ^{
+                                         if ([self isPhotoLibraryAuthorizationStatusAllowed:status]) {
+                                           [self presentAuthorizedPhotoPickerFromSourceView:sourceView];
+                                           return;
+                                         }
+                                         NSError *permissionError =
+                                             [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                                                 code:34
+                                                             userInfo:@{
+                                                               NSLocalizedDescriptionKey :
+                                                                   @"Photos access is required to add recipe images. You can enable it in Settings."
+                                                             }];
+                                         [self presentValidationError:permissionError];
+                                         [self finishPhotoPickerFlow];
+                                       });
+                                     }];
     } else {
       [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -1768,11 +1776,10 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
             [self presentAuthorizedPhotoPickerFromSourceView:sourceView];
             return;
           }
-          NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
-                                                         code:34
-                                                     userInfo:@{
-                                                       NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."
-                                                     }];
+          NSError *permissionError = [NSError
+              errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                         code:34
+                     userInfo:@{NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."}];
           [self presentValidationError:permissionError];
           [self finishPhotoPickerFlow];
         });
@@ -1781,11 +1788,10 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
     return;
   }
 
-  NSError *permissionError = [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
-                                                 code:34
-                                             userInfo:@{
-                                               NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."
-                                             }];
+  NSError *permissionError =
+      [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                          code:34
+                      userInfo:@{NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."}];
   [self presentValidationError:permissionError];
   [self finishPhotoPickerFlow];
 }
