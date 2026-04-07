@@ -1790,6 +1790,10 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
   [self presentViewController:pickerController animated:YES completion:nil];
 }
 
+- (void)finishPhotoPickerFlow {
+  self.photoPickerFlowInProgress = NO;
+}
+
 - (void)handleSaveTapped:(id)sender {
 #pragma unused(sender)
   [self.view endEditing:YES];
