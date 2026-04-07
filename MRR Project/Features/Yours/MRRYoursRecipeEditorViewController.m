@@ -1307,7 +1307,12 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 }
 
 - (void)handleAddPhotoTapped:(id)sender {
-  [self presentPhotoPickerFromSourceView:(UIView *)sender];
+  if (self.photoPickerFlowInProgress) {
+    return;
+  }
+  self.photoPickerFlowInProgress = YES;
+  UIView *sourceView = [sender isKindOfClass:[UIView class]] ? (UIView *)sender : self.addPhotoButton;
+  [self presentPhotoPickerFromSourceView:sourceView ?: self.addPhotoButton];
 }
 
 - (BOOL)appendPhotoWithImage:(UIImage *)image error:(NSError **)error {
