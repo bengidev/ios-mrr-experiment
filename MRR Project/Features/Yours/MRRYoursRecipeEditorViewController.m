@@ -1690,6 +1690,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
 - (void)presentPhotoPickerFromSourceView:(UIView *)sourceView {
   if (self.presentedViewController != nil) {
+    [self finishPhotoPickerFlow];
     return;
   }
   if (![UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary]) {
@@ -1697,6 +1698,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
                                          code:30
                                      userInfo:@{NSLocalizedDescriptionKey : @"Photo library is not available on this device."}];
     [self presentValidationError:error];
+    [self finishPhotoPickerFlow];
     return;
   }
 
@@ -1724,6 +1726,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
                                                                                                         @"Photos access is required to add recipe images. You can enable it in Settings."
                                                                                                   }];
                                                        [self presentValidationError:permissionError];
+                                                       [self finishPhotoPickerFlow];
                                                      });
                                                    }];
       } else {
@@ -1740,6 +1743,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
                                                              @"Photos access is required to add recipe images. You can enable it in Settings."
                                                        }];
             [self presentValidationError:permissionError];
+            [self finishPhotoPickerFlow];
           });
         }];
       }
@@ -1752,6 +1756,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
                                                  NSLocalizedDescriptionKey : @"Photos access is required to add recipe images. You can enable it in Settings."
                                                }];
     [self presentValidationError:permissionError];
+    [self finishPhotoPickerFlow];
     return;
   }
 
@@ -1770,6 +1775,7 @@ static NSArray<NSString *> *MRRYoursEditorSuggestionTags(void) { return @[ @"Sal
 
 - (void)presentAuthorizedPhotoPickerFromSourceView:(UIView *)sourceView {
   if (self.presentedViewController != nil) {
+    [self finishPhotoPickerFlow];
     return;
   }
 
