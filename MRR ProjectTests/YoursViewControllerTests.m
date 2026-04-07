@@ -72,6 +72,7 @@
 
 - (NSArray<MRRUserRecipeSnapshot *> *)currentRecipes;
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view;
+- (nullable NSLayoutConstraint *)activeConstraintForView:(UIView *)view attribute:(NSLayoutAttribute)attribute;
 - (CGRect)frameForView:(UIView *)view insideView:(UIView *)containerView;
 - (MRRYoursRecipeEditorViewController *)presentedEditor;
 - (void)layoutWindowForSize:(CGSize)size;
@@ -261,6 +262,39 @@
     }
     previousThumbnail = thumbnail;
   }
+}
+
+- (void)testCollapsingThumbnailStripPreservesFixedThumbnailContentHeight {
+  [self.viewController handleAddButtonTapped:nil];
+  [self spinMainRunLoop];
+
+  MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
+  BOOL animationsWereEnabled = [UIView areAnimationsEnabled];
+  [UIView setAnimationsEnabled:NO];
+
+  NSError *photoError = nil;
+  XCTAssertTrue([editor appendPhotoWithImage:[self sampleImageWithColor:[UIColor redColor]] error:&photoError]);
+  XCTAssertNil(photoError);
+  [editor.view layoutIfNeeded];
+
+  UIStackView *thumbnailStack = (UIStackView *)[self findViewWithAccessibilityIdentifier:@"yours.editor.photoThumbnails" inView:editor.view];
+  UIButton *toggleButton = (UIButton *)[self findViewWithAccessibilityIdentifier:@"yours.editor.thumbnailsToggleButton" inView:editor.view];
+  XCTAssertNotNil(thumbnailStack);
+  XCTAssertNotNil(toggleButton);
+
+  NSLayoutConstraint *heightConstraint = [self activeConstraintForView:thumbnailStack attribute:NSLayoutAttributeHeight];
+  XCTAssertNotNil(heightConstraint);
+  XCTAssertNil(heightConstraint.secondItem);
+  XCTAssertEqualWithAccuracy(heightConstraint.constant, 62.0, 0.5);
+
+  [toggleButton sendActionsForControlEvents:UIControlEventTouchUpInside];
+  [editor.view layoutIfNeeded];
+  [UIView setAnimationsEnabled:animationsWereEnabled];
+
+  UIScrollView *thumbnailScrollView = (UIScrollView *)thumbnailStack.superview;
+  XCTAssertTrue([thumbnailScrollView isKindOfClass:[UIScrollView class]]);
+  XCTAssertEqualWithAccuracy(CGRectGetHeight(thumbnailScrollView.bounds), 0.0, 0.5);
+  XCTAssertEqualWithAccuracy(CGRectGetHeight(thumbnailStack.bounds), 62.0, 0.5);
 }
 
 - (void)testRecipeCardAdditionalThumbnailsDoNotOverlapWithMoreThanFivePhotos {
@@ -474,6 +508,19 @@
     UIView *match = [self findViewWithAccessibilityIdentifier:identifier inView:subview];
     if (match != nil) {
       return match;
+    }
+  }
+  return nil;
+}
+
+- (nullable NSLayoutConstraint *)activeConstraintForView:(UIView *)view attribute:(NSLayoutAttribute)attribute {
+  for (UIView *candidate = view; candidate != nil; candidate = candidate.superview) {
+    for (NSLayoutConstraint *constraint in candidate.constraints) {
+      BOOL matchesFirstItem = constraint.firstItem == view && constraint.firstAttribute == attribute;
+      BOOL matchesSecondItem = constraint.secondItem == view && constraint.secondAttribute == attribute;
+      if (constraint.active && (matchesFirstItem || matchesSecondItem)) {
+        return constraint;
+      }
     }
   }
   return nil;
