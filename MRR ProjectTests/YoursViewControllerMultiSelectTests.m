@@ -22,7 +22,7 @@
 
 - (void)setUp {
   [super setUp];
-  // Create real dependencies for testing
+  // Initialize test dependencies before each test method
   self.mockStore = [[MRRUserRecipesStore alloc] init];
   self.mockSyncEngine = [[MRRSyncEngine alloc] init];
   self.mockPhotoStorage = [[MRRPhotoStorage alloc] init];
