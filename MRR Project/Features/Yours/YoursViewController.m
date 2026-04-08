@@ -1,10 +1,13 @@
 #import "YoursViewController.h"
 
+#import <objc/runtime.h>
+
 #import "../../Persistence/UserRecipes/MRRUserRecipePhotoStorage.h"
 #import "../../Persistence/UserRecipes/MRRUserRecipesStore.h"
 #import "../../Persistence/UserRecipes/Models/MRRUserRecipeSnapshot.h"
 #import "../../Persistence/UserRecipes/Sync/MRRUserRecipesCloudSyncing.h"
 #import "MRRImagePopupViewController.h"
+#import "MRRRecipeCardContextMenuViewController.h"
 #import "MRRYoursRecipeEditorViewController.h"
 
 static NSErrorDomain const MRRYoursViewControllerErrorDomain = @"MRRYoursViewControllerErrorDomain";
@@ -79,6 +82,13 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 @property(nonatomic, copy) NSArray<MRRUserRecipeSnapshot *> *recipes;
 @property(nonatomic, retain) NSMutableSet<NSString *> *expandedRecipeIDs;
 @property(nonatomic, retain) NSMutableDictionary<NSString *, NSLayoutConstraint *> *thumbnailsHeightConstraints;
+@property(nonatomic, retain) NSMutableSet<NSString *> *selectedRecipeIDs;
+@property(nonatomic, assign) BOOL isSelectionMode;
+@property(nonatomic, retain) UIToolbar *selectionToolbar;
+@property(nonatomic, retain) UIBarButtonItem *editBarButtonItem;
+@property(nonatomic, retain) UIBarButtonItem *doneBarButtonItem;
+@property(nonatomic, retain) UIBarButtonItem *deleteToolbarButton;
+@property(nonatomic, retain) UIView *pressedCardView;
 
 - (instancetype)initWithSessionUserID:(nullable NSString *)sessionUserID
                      userRecipesStore:(nullable MRRUserRecipesStore *)userRecipesStore
@@ -99,12 +109,22 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 - (BOOL)deleteRecipeWithIdentifier:(NSString *)recipeIdentifier error:(NSError *_Nullable *_Nullable)error;
 - (void)presentValidationError:(NSError *)error title:(NSString *)title;
 - (void)handleAddButtonTapped:(id)sender;
-- (void)handleEditButtonTapped:(UIButton *)sender;
+- (void)handleEditButtonTapped:(id)sender;
+- (void)handleDoneButtonTapped:(id)sender;
 - (void)handleDeleteButtonTapped:(UIButton *)sender;
+- (void)handleDeleteToolbarButtonTapped:(id)sender;
+- (void)performBulkDelete;
+- (void)updateNavigationBarButtons;
+- (void)updateAllCardsSelectionVisibility;
+- (void)updateToolbarVisibility;
 - (void)handleImageTapped:(UITapGestureRecognizer *)recognizer;
 - (void)presentImagePopupWithImage:(UIImage *)image;
 - (void)handleThumbnailsToggleTapped:(UIButton *)sender;
 - (void)userRecipesStoreDidChange:(NSNotification *)notification;
+- (void)handleSelectButtonTapped:(UIButton *)sender;
+- (void)updateCardSelectionVisuals:(NSString *)recipeID;
+- (void)handleCardTappedForSelection:(UITapGestureRecognizer *)gesture;
+- (UIImage *)circularImageWithSize:(CGSize)size fillColor:(UIColor *)fillColor strokeColor:(UIColor *)strokeColor;
 
 @end
 
@@ -132,6 +152,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     _photoStorage = [(photoStorage ?: [[[MRRLocalUserRecipePhotoStorage alloc] init] autorelease]) retain];
     _recipes = [[NSArray alloc] init];
     _expandedRecipeIDs = [[NSMutableSet alloc] init];
+    _selectedRecipeIDs = [[NSMutableSet alloc] init];
+    _isSelectionMode = NO;
     _thumbnailsHeightConstraints = [[NSMutableDictionary alloc] init];
   }
   return self;
@@ -139,6 +161,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_pressedCardView release];
   [_thumbnailsHeightConstraints release];
   [_expandedRecipeIDs release];
   [_recipes release];
@@ -151,6 +174,11 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [_syncEngine release];
   [_userRecipesStore release];
   [_sessionUserID release];
+  [_deleteToolbarButton release];
+  [_doneBarButtonItem release];
+  [_editBarButtonItem release];
+  [_selectionToolbar release];
+  [_selectedRecipeIDs release];
   [super dealloc];
 }
 
@@ -169,11 +197,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   self.view.accessibilityIdentifier = @"yours.view";
   self.view.backgroundColor = MRRYoursCanvasColor();
 
-  UIBarButtonItem *addButton = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd
-                                                                              target:self
-                                                                              action:@selector(handleAddButtonTapped:)] autorelease];
-  addButton.accessibilityIdentifier = @"yours.addButton";
-  self.navigationItem.rightBarButtonItem = addButton;
+// Navigation bar buttons are set up based on state
+  [self updateNavigationBarButtons];
 
   if (self.userRecipesStore != nil) {
     NSLog(@"%@ Registering for MRRUserRecipesStoreDidChangeNotification", MRRYoursViewControllerLogPrefix);
@@ -188,6 +213,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [self buildViewHierarchy];
   [self loadRecipesFromStore];
   [self reloadContent];
+  [self updateNavigationBarButtons];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -196,6 +222,62 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [self.navigationController setNavigationBarHidden:NO animated:animated];
   [self loadRecipesFromStore];
   [self reloadContent];
+  [self updateNavigationBarButtons];
+}
+
+- (void)updateNavigationBarButtons {
+  if (self.isSelectionMode) {
+    // In selection mode: show Done button
+    if (self.doneBarButtonItem == nil) {
+      self.doneBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                                              target:self
+                                                                              action:@selector(handleDoneButtonTapped:)] autorelease];
+      self.doneBarButtonItem.accessibilityIdentifier = @"yours.doneButton";
+    }
+    self.doneBarButtonItem.accessibilityLabel = @"Exit selection mode";
+    self.doneBarButtonItem.accessibilityHint = @"Double-tap to cancel selection";
+    self.navigationItem.rightBarButtonItem = self.doneBarButtonItem;
+
+    // Show selection count on left if items selected
+    if (self.selectedRecipeIDs.count > 0) {
+      NSString *countText = [NSString stringWithFormat:@"%lu selected", (unsigned long)self.selectedRecipeIDs.count];
+      self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:countText
+                                                                               style:UIBarButtonItemStylePlain
+                                                                              target:nil
+                                                                              action:nil] autorelease];
+      self.navigationItem.leftBarButtonItem.enabled = NO;
+    } else {
+      self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Select Items"
+                                                                               style:UIBarButtonItemStylePlain
+                                                                              target:nil
+                                                                              action:nil] autorelease];
+      self.navigationItem.leftBarButtonItem.enabled = NO;
+    }
+  } else {
+    // Not in selection mode: show Add button (or Edit if recipes exist)
+    if (self.recipes.count > 0) {
+      // Show Edit button to enter selection mode
+      if (self.editBarButtonItem == nil) {
+        self.editBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit
+                                                                                 target:self
+                                                                                 action:@selector(handleEditButtonTapped:)] autorelease];
+        self.editBarButtonItem.accessibilityIdentifier = @"yours.editButton";
+      }
+      self.editBarButtonItem.accessibilityLabel = @"Enter selection mode";
+      self.editBarButtonItem.accessibilityHint = @"Double-tap to select multiple recipes";
+      self.navigationItem.rightBarButtonItem = self.editBarButtonItem;
+    } else {
+      // Empty state: show Add button
+      UIBarButtonItem *addButton = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd
+                                                                                  target:self
+                                                                                  action:@selector(handleAddButtonTapped:)] autorelease];
+      addButton.accessibilityIdentifier = @"yours.addButton";
+      self.navigationItem.rightBarButtonItem = addButton;
+    }
+
+    // Clear left bar button item
+    self.navigationItem.leftBarButtonItem = nil;
+  }
 }
 
 - (void)buildViewHierarchy {
@@ -235,6 +317,38 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [cardsStackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
     [cardsStackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
     [cardsStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-28.0]
+  ]];
+
+  // Add contextual toolbar for selection mode (hidden by default)
+  UIToolbar *toolbar = [[[UIToolbar alloc] init] autorelease];
+  toolbar.translatesAutoresizingMaskIntoConstraints = NO;
+  toolbar.hidden = YES;
+  toolbar.accessibilityIdentifier = @"yours.selectionToolbar";
+  toolbar.accessibilityLabel = @"Selection actions";
+  [self.view addSubview:toolbar];
+  self.selectionToolbar = [toolbar retain];
+
+  // Create toolbar items
+  UIBarButtonItem *flexSpace = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                                            target:nil
+                                                                            action:nil] autorelease];
+
+  UIBarButtonItem *deleteButton = [[[UIBarButtonItem alloc] initWithTitle:@"Delete"
+                                                                   style:UIBarButtonItemStylePlain
+                                                                  target:self
+                                                                  action:@selector(handleDeleteToolbarButtonTapped:)] autorelease];
+  deleteButton.tintColor = [UIColor systemRedColor];
+  deleteButton.accessibilityIdentifier = @"yours.deleteToolbarButton";
+  deleteButton.accessibilityHint = @"Double-tap to delete selected recipes";
+  self.deleteToolbarButton = [deleteButton retain];
+
+  toolbar.items = @[flexSpace, deleteButton, flexSpace];
+
+  // Toolbar constraints
+  [NSLayoutConstraint activateConstraints:@[
+    [toolbar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [toolbar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+    [toolbar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor]
   ]];
 }
 
@@ -360,6 +474,12 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   containerView.layer.borderWidth = 1.0;
   containerView.layer.borderColor = MRRYoursBorderColor().CGColor;
   containerView.accessibilityIdentifier = [MRRYoursRecipeCardIdentifierPrefix stringByAppendingString:recipe.recipeID];
+  
+  // Add shadow for press animation effect
+  containerView.layer.shadowColor = [UIColor blackColor].CGColor;
+  containerView.layer.shadowOffset = CGSizeMake(0.0, 4.0);
+  containerView.layer.shadowRadius = 8.0;
+  containerView.layer.shadowOpacity = 0.14;
 
   // Cover image view for recipe photo (main/large image)
   UIImageView *coverImageView = [[[UIImageView alloc] init] autorelease];
@@ -543,24 +663,66 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   updatedLabel.numberOfLines = 0;
   [containerView addSubview:updatedLabel];
 
-  UIStackView *actionsStackView = [[[UIStackView alloc] init] autorelease];
-  actionsStackView.translatesAutoresizingMaskIntoConstraints = NO;
-  actionsStackView.axis = UILayoutConstraintAxisHorizontal;
-  actionsStackView.spacing = 12.0;
-  actionsStackView.distribution = UIStackViewDistributionFillEqually;
-  [containerView addSubview:actionsStackView];
+  // Add long-press gesture for context menu with card animation
+  UILongPressGestureRecognizer *longPressGesture = [[[UILongPressGestureRecognizer alloc] initWithTarget:self
+                                                                                                 action:@selector(handleRecipeCardLongPress:)] autorelease];
+  longPressGesture.minimumPressDuration = 0.5; // Slightly shorter for better responsiveness
+  longPressGesture.cancelsTouchesInView = YES; // Cancel other touches when long press triggers
+  [containerView addGestureRecognizer:longPressGesture];
 
-  UIButton *editButton = [self actionButtonWithTitle:@"Edit" filled:NO];
-  editButton.accessibilityIdentifier = [MRRYoursRecipeEditButtonIdentifierPrefix stringByAppendingString:recipe.recipeID];
-  [editButton addTarget:self action:@selector(handleEditButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [actionsStackView addArrangedSubview:editButton];
+  // Add selection checkmark overlay (hidden by default)
+  UIButton *selectButton = [UIButton buttonWithType:UIButtonTypeCustom];
+  selectButton.translatesAutoresizingMaskIntoConstraints = NO;
+  selectButton.accessibilityIdentifier = [NSString stringWithFormat:@"yours.selectButton.%@", recipe.recipeID];
 
-  UIButton *deleteButton = [self actionButtonWithTitle:@"Delete" filled:NO];
-  deleteButton.backgroundColor = [UIColor colorWithRed:0.79 green:0.21 blue:0.17 alpha:0.12];
-  [deleteButton setTitleColor:[UIColor colorWithRed:0.79 green:0.21 blue:0.17 alpha:1.0] forState:UIControlStateNormal];
-  deleteButton.accessibilityIdentifier = [MRRYoursRecipeDeleteButtonIdentifierPrefix stringByAppendingString:recipe.recipeID];
-  [deleteButton addTarget:self action:@selector(handleDeleteButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-  [actionsStackView addArrangedSubview:deleteButton];
+  // Accessibility
+  selectButton.accessibilityLabel = [NSString stringWithFormat:@"Select %@", recipe.title ?: @"recipe"];
+  selectButton.accessibilityHint = @"Double-tap to toggle selection";
+  selectButton.accessibilityTraits = UIAccessibilityTraitButton;
+
+  // Set checkmark images (selected/unselected states)
+  UIImage *uncheckedImage = nil;
+  UIImage *checkedImage = nil;
+  if (@available(iOS 13.0, *)) {
+    uncheckedImage = [UIImage systemImageNamed:@"circle"];
+    checkedImage = [UIImage systemImageNamed:@"checkmark.circle.fill"];
+  } else {
+    // Fallback for iOS 12 - create simple circle images
+    uncheckedImage = [self circularImageWithSize:CGSizeMake(28, 28) fillColor:[UIColor clearColor] strokeColor:MRRYoursAccentColor()];
+    checkedImage = [self circularImageWithSize:CGSizeMake(28, 28) fillColor:MRRYoursAccentColor() strokeColor:MRRYoursAccentColor()];
+  }
+
+  [selectButton setImage:uncheckedImage forState:UIControlStateNormal];
+  [selectButton setImage:checkedImage forState:UIControlStateSelected];
+  selectButton.tintColor = MRRYoursAccentColor();
+  selectButton.alpha = 0.0;  // Hidden by default, shown in selection mode
+  selectButton.hidden = YES;
+
+  // Store recipeID as associated object for tap handling
+  objc_setAssociatedObject(selectButton, @selector(recipeID), recipe.recipeID, OBJC_ASSOCIATION_COPY_NONATOMIC);
+
+  [selectButton addTarget:self action:@selector(handleSelectButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+  [containerView addSubview:selectButton];
+
+  // Constraints for select button (top-right corner)
+  [NSLayoutConstraint activateConstraints:@[
+    [selectButton.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:12.0],
+    [selectButton.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-12.0],
+    [selectButton.widthAnchor constraintEqualToConstant:32.0],
+    [selectButton.heightAnchor constraintEqualToConstant:32.0]
+  ]];
+
+  // Update selection state if already selected
+  BOOL isSelected = [self.selectedRecipeIDs containsObject:recipe.recipeID];
+  selectButton.selected = isSelected;
+  selectButton.alpha = self.isSelectionMode ? 1.0 : 0.0;
+  selectButton.hidden = !self.isSelectionMode;
+
+  // Add tap gesture to card for selection mode
+  UITapGestureRecognizer *cardTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                  action:@selector(handleCardTappedForSelection:)] autorelease];
+  cardTapGesture.cancelsTouchesInView = NO;  // Allow other gestures to work
+  [containerView addGestureRecognizer:cardTapGesture];
 
   [NSLayoutConstraint activateConstraints:@[
     [coverImageView.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:20.0],
@@ -614,11 +776,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [updatedLabel.topAnchor constraintEqualToAnchor:summaryLabel.bottomAnchor constant:14.0],
     [updatedLabel.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
     [updatedLabel.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
-
-    [actionsStackView.topAnchor constraintEqualToAnchor:updatedLabel.bottomAnchor constant:18.0],
-    [actionsStackView.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
-    [actionsStackView.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
-    [actionsStackView.bottomAnchor constraintEqualToAnchor:containerView.bottomAnchor constant:-20.0]
+    [updatedLabel.bottomAnchor constraintEqualToAnchor:containerView.bottomAnchor constant:-20.0]
   ]];
 
   [NSLayoutConstraint activateConstraints:dynamicConstraints];
@@ -659,6 +817,24 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   formatter.dateStyle = NSDateFormatterMediumStyle;
   formatter.timeStyle = NSDateFormatterShortStyle;
   return [NSString stringWithFormat:@"Updated %@", [formatter stringFromDate:recipe.localModifiedAt]];
+}
+
+- (UIImage *)circularImageWithSize:(CGSize)size fillColor:(UIColor *)fillColor strokeColor:(UIColor *)strokeColor {
+  UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
+  CGContextRef context = UIGraphicsGetCurrentContext();
+
+  CGRect rect = CGRectMake(2, 2, size.width - 4, size.height - 4);
+  CGContextSetFillColorWithColor(context, fillColor.CGColor);
+  CGContextSetStrokeColorWithColor(context, strokeColor.CGColor);
+  CGContextSetLineWidth(context, 2.0);
+
+  CGContextFillEllipseInRect(context, rect);
+  CGContextStrokeEllipseInRect(context, rect);
+
+  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+
+  return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 }
 
 - (void)presentEditorForRecipe:(MRRUserRecipeSnapshot *)recipe {
@@ -720,12 +896,166 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [self presentEditorForRecipe:nil];
 }
 
-- (void)handleEditButtonTapped:(UIButton *)sender {
-  MRRUserRecipeSnapshot *recipe = [self recipeForIdentifier:[self recipeIdentifierFromButton:sender prefix:MRRYoursRecipeEditButtonIdentifierPrefix]];
-  if (recipe == nil) {
+- (void)handleEditButtonTapped:(id)sender {
+#pragma unused(sender)
+  // Enter selection mode
+  self.isSelectionMode = YES;
+  [self updateNavigationBarButtons];
+  [self updateAllCardsSelectionVisibility];
+  [self updateToolbarVisibility];
+}
+
+- (void)handleDoneButtonTapped:(id)sender {
+#pragma unused(sender)
+  // Exit selection mode
+  self.isSelectionMode = NO;
+  [self.selectedRecipeIDs removeAllObjects];
+  [self updateNavigationBarButtons];
+  [self updateAllCardsSelectionVisibility];
+  [self updateToolbarVisibility];
+
+  // Announce exit for VoiceOver
+  UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, @"Selection mode exited");
+}
+
+- (void)updateAllCardsSelectionVisibility {
+  // Announce mode change for VoiceOver
+  if (self.isSelectionMode) {
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, @"Selection mode enabled. Tap recipes to select.");
+  }
+
+  for (UIView *cardView in self.cardsStackView.arrangedSubviews) {
+    NSString *cardIdentifier = cardView.accessibilityIdentifier ?: @"";
+    NSString *recipeID = [cardIdentifier stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix
+                                                                  withString:@""];
+
+    // Find the select button in this card
+    for (UIView *subview in cardView.subviews) {
+      if ([subview isKindOfClass:[UIButton class]]) {
+        UIButton *button = (UIButton *)subview;
+        NSString *identifier = button.accessibilityIdentifier ?: @"";
+        if ([identifier hasPrefix:@"yours.selectButton."]) {
+          // Update visibility
+          button.alpha = self.isSelectionMode ? 1.0 : 0.0;
+          button.hidden = !self.isSelectionMode;
+
+          // Update selection state
+          BOOL isSelected = [self.selectedRecipeIDs containsObject:recipeID];
+          button.selected = isSelected;
+        }
+      }
+    }
+
+    // Update card border
+    [self updateCardSelectionVisuals:recipeID];
+  }
+}
+
+- (void)updateToolbarVisibility {
+  // Show toolbar in selection mode when there are selected items
+  BOOL shouldShowToolbar = self.isSelectionMode && self.selectedRecipeIDs.count > 0;
+
+  // Update toolbar visibility with animation
+  if (shouldShowToolbar != !self.selectionToolbar.hidden) {
+    [UIView animateWithDuration:0.25
+                     animations:^{
+                       self.selectionToolbar.hidden = !shouldShowToolbar;
+                       self.selectionToolbar.alpha = shouldShowToolbar ? 1.0 : 0.0;
+                     }];
+  }
+
+  // Update delete button title with count
+  if (self.selectedRecipeIDs.count > 0) {
+    NSString *title = [NSString stringWithFormat:@"Delete (%lu)", (unsigned long)self.selectedRecipeIDs.count];
+    self.deleteToolbarButton.title = title;
+    self.deleteToolbarButton.enabled = YES;
+    // Update accessibility label with count
+    NSString *accessibilityLabel = [NSString stringWithFormat:@"Delete %lu recipe%@",
+                                    (unsigned long)self.selectedRecipeIDs.count,
+                                    self.selectedRecipeIDs.count == 1 ? @"" : @"s"];
+    self.deleteToolbarButton.accessibilityLabel = accessibilityLabel;
+  } else {
+    self.deleteToolbarButton.title = @"Delete";
+    self.deleteToolbarButton.enabled = NO;
+  }
+}
+
+- (void)handleDeleteToolbarButtonTapped:(id)sender {
+  #pragma unused(sender)
+
+  NSUInteger count = self.selectedRecipeIDs.count;
+  if (count == 0) {
     return;
   }
-  [self presentEditorForRecipe:recipe];
+
+  NSString *title = [NSString stringWithFormat:@"Delete %lu Recipe%@?",
+                     (unsigned long)count,
+                     count == 1 ? @"" : @"s"];
+  NSString *message = [NSString stringWithFormat:@"This will permanently delete %lu recipe%@. This action cannot be undone.",
+                       (unsigned long)count,
+                       count == 1 ? @"" : @"s"];
+
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title
+                                                                         message:message
+                                                                  preferredStyle:UIAlertControllerStyleAlert];
+  alertController.view.accessibilityIdentifier = @"yours.bulkDeleteAlert";
+
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel"
+                                                      style:UIAlertActionStyleCancel
+                                                    handler:nil]];
+
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Delete"
+                                                      style:UIAlertActionStyleDestructive
+                                                    handler:^(UIAlertAction *action) {
+                                                      [self performBulkDelete];
+                                                    }]];
+
+  UIViewController *presenter = self.presentedViewController ?: self;
+  [presenter presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)performBulkDelete {
+  NSLog(@"%@ performBulkDelete - deleting %lu recipes",
+        MRRYoursViewControllerLogPrefix,
+        (unsigned long)self.selectedRecipeIDs.count);
+
+  NSMutableArray<NSError *> *errors = [NSMutableArray array];
+  NSUInteger successCount = 0;
+
+  // Delete each selected recipe
+  for (NSString *recipeID in self.selectedRecipeIDs) {
+    NSError *error = nil;
+    BOOL deleted = [self deleteRecipeWithIdentifier:recipeID error:&error];
+    if (deleted) {
+      successCount++;
+    } else if (error != nil) {
+      [errors addObject:error];
+    }
+  }
+
+  // Log results
+  NSLog(@"%@ Bulk delete complete - %lu succeeded, %lu failed",
+        MRRYoursViewControllerLogPrefix,
+        (unsigned long)successCount,
+        (unsigned long)errors.count);
+
+  // Show error if any deletions failed
+  if (errors.count > 0) {
+    NSError *firstError = errors.firstObject;
+    NSString *errorTitle = errors.count == 1 ? @"Couldn't Delete Recipe" : @"Couldn't Delete Some Recipes";
+    [self presentValidationError:firstError title:errorTitle];
+  }
+
+  // Exit selection mode and refresh
+  self.isSelectionMode = NO;
+  [self.selectedRecipeIDs removeAllObjects];
+  [self updateNavigationBarButtons];
+  [self updateAllCardsSelectionVisibility];
+  [self updateToolbarVisibility];
+
+  // Reload recipes
+  [self loadRecipesFromStore];
+  [self reloadContent];
 }
 
 - (void)handleDeleteButtonTapped:(UIButton *)sender {
@@ -759,6 +1089,262 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     return;
   }
   [self presentImagePopupWithImage:image];
+}
+
+- (void)handleRecipeCardLongPress:(UILongPressGestureRecognizer *)gesture {
+  // Handle different states of the long press
+  switch (gesture.state) {
+    case UIGestureRecognizerStateBegan: {
+      // Get recipe from gesture view
+      UIView *cardView = gesture.view;
+      NSString *cardID = cardView.accessibilityIdentifier ?: @"";
+      NSString *recipeID = [cardID stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix withString:@""];
+      MRRUserRecipeSnapshot *recipe = [self recipeForIdentifier:recipeID];
+
+      if (recipe == nil) {
+        return;
+      }
+
+      // Animate card press down with scale transform
+      [self animateCardPressDown:cardView];
+
+      // Present beautiful animated context menu
+      [self presentContextMenuForRecipe:recipe fromCardView:cardView];
+      break;
+    }
+
+    case UIGestureRecognizerStateEnded:
+    case UIGestureRecognizerStateCancelled: {
+      // Animate card release
+      UIView *cardView = gesture.view;
+      [self animateCardPressRelease:cardView];
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
+- (void)animateCardPressDown:(UIView *)cardView {
+  // Scale down animation with spring anticipation
+  [UIView animateWithDuration:0.20
+                        delay:0.0
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
+                   animations:^{
+                     cardView.transform = CGAffineTransformMakeScale(0.96, 0.96);
+                     cardView.alpha = 0.92;
+                     // Enhance shadow during press
+                     cardView.layer.shadowOffset = CGSizeMake(0.0, 6.0);
+                     cardView.layer.shadowRadius = 12.0;
+                     cardView.layer.shadowOpacity = 0.22;
+                   }
+                   completion:nil];
+}
+
+- (void)animateCardPressRelease:(UIView *)cardView {
+  // Spring back animation
+  [UIView animateWithDuration:0.25
+                        delay:0.0
+       usingSpringWithDamping:0.85
+        initialSpringVelocity:0.4
+                      options:UIViewAnimationOptionBeginFromCurrentState
+                   animations:^{
+                     cardView.transform = CGAffineTransformIdentity;
+                     cardView.alpha = 1.0;
+                     // Restore original shadow
+                     cardView.layer.shadowOffset = CGSizeMake(0.0, 4.0);
+                     cardView.layer.shadowRadius = 8.0;
+                     cardView.layer.shadowOpacity = 0.14;
+                   }
+                   completion:nil];
+}
+
+- (void)presentContextMenuForRecipe:(MRRUserRecipeSnapshot *)recipe fromCardView:(UIView *)cardView {
+  // Create context menu with recipe title
+  MRRRecipeCardContextMenuViewController *contextMenu = [[[MRRRecipeCardContextMenuViewController alloc] initWithRecipeTitle:recipe.title] autorelease];
+
+  __weak typeof(self) weakSelf = self;
+  __weak MRRUserRecipeSnapshot *weakRecipe = recipe;
+
+  // Add Edit action
+  [contextMenu addActionWithTitle:@"Edit Recipe"
+                        imageName:@"square.and.pencil"
+                    isDestructive:NO
+                          handler:^{
+                            __strong typeof(weakSelf) strongSelf = weakSelf;
+                            __strong MRRUserRecipeSnapshot *strongRecipe = weakRecipe;
+                            if (strongSelf && strongRecipe) {
+                              [strongSelf presentEditorForRecipe:strongRecipe];
+                            }
+                          }];
+
+  // Add Share action (if iOS 13+)
+  if (@available(iOS 13.0, *)) {
+    [contextMenu addActionWithTitle:@"Share Recipe"
+                          imageName:@"square.and.arrow.up"
+                      isDestructive:NO
+                            handler:^{
+                              __strong typeof(weakSelf) strongSelf = weakSelf;
+                              __strong MRRUserRecipeSnapshot *strongRecipe = weakRecipe;
+                              if (strongSelf && strongRecipe) {
+                                [strongSelf shareRecipe:strongRecipe];
+                              }
+                            }];
+  }
+
+  // Add Delete action
+  [contextMenu addActionWithTitle:@"Delete Recipe"
+                        imageName:@"trash"
+                    isDestructive:YES
+                          handler:^{
+                            __strong typeof(weakSelf) strongSelf = weakSelf;
+                            __strong MRRUserRecipeSnapshot *strongRecipe = weakRecipe;
+                            if (strongSelf && strongRecipe) {
+                              [strongSelf showDeleteConfirmationForRecipe:strongRecipe];
+                            }
+                          }];
+
+  // Set cancel handler to animate card release
+  contextMenu.cancelHandler = ^{
+    __strong typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf animateCardPressRelease:cardView];
+    }
+  };
+
+  // Present the menu
+  [self presentViewController:contextMenu animated:YES completion:nil];
+}
+
+- (void)shareRecipe:(MRRUserRecipeSnapshot *)recipe {
+  // Create share items
+  NSMutableArray *items = [NSMutableArray array];
+  [items addObject:recipe.title];
+  if (recipe.summaryText.length > 0) {
+    [items addObject:recipe.summaryText];
+  }
+
+  UIActivityViewController *activityVC = [[[UIActivityViewController alloc] initWithActivityItems:items
+                                                                            applicationActivities:nil] autorelease];
+
+  // For iPad support
+  if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+    activityVC.popoverPresentationController.sourceView = self.view;
+    activityVC.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds),
+                                                                      CGRectGetMidY(self.view.bounds), 1.0, 1.0);
+    activityVC.popoverPresentationController.permittedArrowDirections = 0;
+  }
+
+  [self presentViewController:activityVC animated:YES completion:nil];
+}
+
+- (void)showDeleteConfirmationForRecipe:(MRRUserRecipeSnapshot *)recipe {
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Delete Recipe?"
+                                                                           message:@"This removes the recipe locally and queues a Firestore delete."
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+  alertController.view.accessibilityIdentifier = @"yours.deleteAlert";
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Delete"
+                                                      style:UIAlertActionStyleDestructive
+                                                    handler:^(UIAlertAction *action) {
+                                                      NSError *error = nil;
+                                                      if (![self deleteRecipeWithIdentifier:recipe.recipeID error:&error] && error != nil) {
+                                                        [self presentValidationError:error title:@"Couldn't delete recipe"];
+                                                      }
+                                                    }]];
+  UIViewController *presenter = self.presentedViewController ?: self;
+  [presenter presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)handleSelectButtonTapped:(UIButton *)sender {
+  // Get recipeID from associated object
+  NSString *recipeID = objc_getAssociatedObject(sender, @selector(recipeID));
+
+  if (recipeID.length == 0) {
+    return;
+  }
+
+  // Toggle selection
+  BOOL isSelected = [self.selectedRecipeIDs containsObject:recipeID];
+  if (isSelected) {
+    [self.selectedRecipeIDs removeObject:recipeID];
+    sender.selected = NO;
+  } else {
+    [self.selectedRecipeIDs addObject:recipeID];
+    sender.selected = YES;
+  }
+
+  // Update accessibility
+  BOOL nowSelected = !isSelected;
+  MRRUserRecipeSnapshot *recipe = [self recipeForIdentifier:recipeID];
+  if (nowSelected) {
+    sender.accessibilityLabel = [NSString stringWithFormat:@"Deselect %@", recipe.title ?: @"recipe"];
+    sender.accessibilityValue = @"Selected";
+    sender.accessibilityTraits = UIAccessibilityTraitButton | UIAccessibilityTraitSelected;
+  } else {
+    sender.accessibilityLabel = [NSString stringWithFormat:@"Select %@", recipe.title ?: @"recipe"];
+    sender.accessibilityValue = nil;
+    sender.accessibilityTraits = UIAccessibilityTraitButton;
+  }
+
+  // Announce selection change for VoiceOver
+  NSString *announcement = nowSelected ?
+    [NSString stringWithFormat:@"%@ selected. %lu items selected.", recipe.title ?: @"Recipe", (unsigned long)self.selectedRecipeIDs.count] :
+    [NSString stringWithFormat:@"%@ deselected. %lu items selected.", recipe.title ?: @"Recipe", (unsigned long)self.selectedRecipeIDs.count];
+  UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
+
+  // Update UI
+  [self updateNavigationBarButtons];  // Update selection count on left
+  [self updateToolbarVisibility];      // Show/hide toolbar
+  [self updateCardSelectionVisuals:recipeID];  // Update card border
+}
+
+- (void)updateCardSelectionVisuals:(NSString *)recipeID {
+  // Find the card view for this recipe
+  for (UIView *cardView in self.cardsStackView.arrangedSubviews) {
+    NSString *cardIdentifier = cardView.accessibilityIdentifier ?: @"";
+    if ([cardIdentifier isEqualToString:[MRRYoursRecipeCardIdentifierPrefix stringByAppendingString:recipeID]]) {
+      // Update card border to indicate selection
+      BOOL isSelected = [self.selectedRecipeIDs containsObject:recipeID];
+      if (isSelected && self.isSelectionMode) {
+        cardView.layer.borderColor = MRRYoursAccentColor().CGColor;
+        cardView.layer.borderWidth = 2.0;
+      } else {
+        cardView.layer.borderColor = MRRYoursBorderColor().CGColor;
+        cardView.layer.borderWidth = 1.0;
+      }
+      break;
+    }
+  }
+}
+
+- (void)handleCardTappedForSelection:(UITapGestureRecognizer *)gesture {
+  if (!self.isSelectionMode) {
+    return;  // Only handle taps in selection mode
+  }
+
+  UIView *cardView = gesture.view;
+  NSString *cardIdentifier = cardView.accessibilityIdentifier ?: @"";
+  NSString *recipeID = [cardIdentifier stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix
+                                                                  withString:@""];
+
+  if (recipeID.length == 0) {
+    return;
+  }
+
+  // Find the select button and toggle it
+  for (UIView *subview in cardView.subviews) {
+    if ([subview isKindOfClass:[UIButton class]]) {
+      UIButton *button = (UIButton *)subview;
+      NSString *identifier = button.accessibilityIdentifier ?: @"";
+      if ([identifier isEqualToString:[NSString stringWithFormat:@"yours.selectButton.%@", recipeID]]) {
+        // Simulate button tap
+        [self handleSelectButtonTapped:button];
+        break;
+      }
+    }
+  }
 }
 
 - (void)presentImagePopupWithImage:(UIImage *)image {
