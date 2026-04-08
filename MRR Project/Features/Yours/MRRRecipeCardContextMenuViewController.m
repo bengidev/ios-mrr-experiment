@@ -1,5 +1,7 @@
 #import "MRRRecipeCardContextMenuViewController.h"
 
+#pragma mark - Constants
+
 static CGFloat const MRRContextMenuBackdropAlpha = 0.85;
 static CGFloat const MRRContextMenuCornerRadius = 24.0;
 static CGFloat const MRRContextMenuItemHeight = 56.0;
