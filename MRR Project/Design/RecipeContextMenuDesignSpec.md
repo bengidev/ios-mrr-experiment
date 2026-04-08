@@ -1,5 +1,8 @@
 # Recipe Card Context Menu Design Specifications
 
+> **Version:** 1.0  
+> **Last Updated:** 2026-04-08
+
 ## Overview
 A beautiful, iOS-native context menu popup that appears when the user long-presses a recipe card. The menu combines the visual language of iOS action sheets with the app's existing glass-morphism aesthetic.
 
