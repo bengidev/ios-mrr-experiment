@@ -673,7 +673,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     // iOS 12 fallback: Use custom long-press gesture
     UILongPressGestureRecognizer *longPressGesture = [[[UILongPressGestureRecognizer alloc] initWithTarget:self
                                                                                                   action:@selector(handleRecipeCardLongPress:)] autorelease];
-    longPressGesture.minimumPressDuration = 0.3;
+    longPressGesture.minimumPressDuration = 0.3;  // Optimized for faster response
     longPressGesture.cancelsTouchesInView = YES;
     [containerView addGestureRecognizer:longPressGesture];
   }
