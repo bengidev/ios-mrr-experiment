@@ -2,10 +2,40 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Build & Run on iOS Simulator",
+      "program": "${workspaceFolder}/.derivedData/Build/Products/Debug-iphonesimulator/MRR Project.app",
+      "iosBundleId": "com.bengidev.MRR-Project",
+      "iosTarget": "simulator",
+      "preLaunchTask": "build: simulator",
+      "sourceMap": {
+        "${workspaceFolder}": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "sweetpad-lldb",
+      "request": "launch",
+      "name": "Build & Run (SweetPad)",
+      "preLaunchTask": "sweetpad: build"
+    },
+    {
       "type": "sweetpad-lldb",
       "request": "attach",
-      "name": "Attach to running app (SweetPad)",
+      "name": "Attach to Running App (SweetPad)",
       "preLaunchTask": "sweetpad: launch"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Run Tests",
+      "program": "${workspaceFolder}/.derivedData/Build/Products/Debug-iphonesimulator/MRR Project.app",
+      "iosBundleId": "com.bengidev.MRR-Project",
+      "iosTarget": "simulator",
+      "preLaunchTask": "test",
+      "sourceMap": {
+        "${workspaceFolder}": "${workspaceFolder}"
+      }
     }
   ]
 }
