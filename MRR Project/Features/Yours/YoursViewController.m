@@ -19,6 +19,7 @@ static UIColor *MRRYoursDynamicFallbackColor(UIColor *lightColor, UIColor *darkC
       return traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark ? darkColor : lightColor;
     }];
   }
+
   return lightColor;
 }
 
@@ -185,9 +186,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  NSLog(@"%@ viewDidLoad - sessionUserID: %@, userRecipesStore: %@", 
-        MRRYoursViewControllerLogPrefix,
-        self.sessionUserID ?: @"nil",
+  NSLog(@"%@ viewDidLoad - sessionUserID: %@, userRecipesStore: %@", MRRYoursViewControllerLogPrefix, self.sessionUserID ?: @"nil",
         self.userRecipesStore ? @"provided" : @"nil");
 
   self.title = @"Yours";
@@ -197,7 +196,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   self.view.accessibilityIdentifier = @"yours.view";
   self.view.backgroundColor = MRRYoursCanvasColor();
 
-// Navigation bar buttons are set up based on state
+  // Navigation bar buttons are set up based on state
   [self updateNavigationBarButtons];
 
   if (self.userRecipesStore != nil) {
@@ -241,16 +240,14 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     // Show selection count on left if items selected
     if (self.selectedRecipeIDs.count > 0) {
       NSString *countText = [NSString stringWithFormat:@"%lu selected", (unsigned long)self.selectedRecipeIDs.count];
-      self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:countText
-                                                                               style:UIBarButtonItemStylePlain
-                                                                              target:nil
-                                                                              action:nil] autorelease];
+      self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:countText style:UIBarButtonItemStylePlain target:nil
+                                                                               action:nil] autorelease];
       self.navigationItem.leftBarButtonItem.enabled = NO;
     } else {
       self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Select Items"
-                                                                               style:UIBarButtonItemStylePlain
-                                                                              target:nil
-                                                                              action:nil] autorelease];
+                                                                                style:UIBarButtonItemStylePlain
+                                                                               target:nil
+                                                                               action:nil] autorelease];
       self.navigationItem.leftBarButtonItem.enabled = NO;
     }
   } else {
@@ -259,8 +256,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
       // Show Edit button to enter selection mode
       if (self.editBarButtonItem == nil) {
         self.editBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit
-                                                                                 target:self
-                                                                                 action:@selector(handleEditButtonTapped:)] autorelease];
+                                                                                target:self
+                                                                                action:@selector(handleEditButtonTapped:)] autorelease];
         self.editBarButtonItem.accessibilityIdentifier = @"yours.editButton";
       }
       self.editBarButtonItem.accessibilityLabel = @"Enter selection mode";
@@ -329,20 +326,19 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   self.selectionToolbar = [toolbar retain];
 
   // Create toolbar items
-  UIBarButtonItem *flexSpace = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-                                                                            target:nil
-                                                                            action:nil] autorelease];
+  UIBarButtonItem *flexSpace = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil
+                                                                              action:nil] autorelease];
 
   UIBarButtonItem *deleteButton = [[[UIBarButtonItem alloc] initWithTitle:@"Delete"
-                                                                   style:UIBarButtonItemStylePlain
-                                                                  target:self
-                                                                  action:@selector(handleDeleteToolbarButtonTapped:)] autorelease];
+                                                                    style:UIBarButtonItemStylePlain
+                                                                   target:self
+                                                                   action:@selector(handleDeleteToolbarButtonTapped:)] autorelease];
   deleteButton.tintColor = [UIColor systemRedColor];
   deleteButton.accessibilityIdentifier = @"yours.deleteToolbarButton";
   deleteButton.accessibilityHint = @"Double-tap to delete selected recipes";
   self.deleteToolbarButton = [deleteButton retain];
 
-  toolbar.items = @[flexSpace, deleteButton, flexSpace];
+  toolbar.items = @[ flexSpace, deleteButton, flexSpace ];
 
   // Toolbar constraints
   [NSLayoutConstraint activateConstraints:@[
@@ -374,11 +370,9 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 }
 
 - (void)loadRecipesFromStore {
-  NSLog(@"%@ loadRecipesFromStore - userRecipesStore: %@, sessionUserID: '%@'", 
-        MRRYoursViewControllerLogPrefix,
-        self.userRecipesStore ? @"provided" : @"nil",
-        self.sessionUserID ?: @"nil");
-  
+  NSLog(@"%@ loadRecipesFromStore - userRecipesStore: %@, sessionUserID: '%@'", MRRYoursViewControllerLogPrefix,
+        self.userRecipesStore ? @"provided" : @"nil", self.sessionUserID ?: @"nil");
+
   NSArray<MRRUserRecipeSnapshot *> *recipes = @[];
   if (self.userRecipesStore != nil && self.sessionUserID.length > 0) {
     NSError *fetchError = nil;
@@ -390,17 +384,15 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
       NSLog(@"%@ FAILED to load recipes - error: %@", MRRYoursViewControllerLogPrefix, fetchError ?: @"unknown");
     }
   } else {
-    NSLog(@"%@ SKIPPING load - userRecipesStore: %@, sessionUserID.length: %lu", 
-          MRRYoursViewControllerLogPrefix,
-          self.userRecipesStore ? @"provided" : @"nil",
-          (unsigned long)self.sessionUserID.length);
+    NSLog(@"%@ SKIPPING load - userRecipesStore: %@, sessionUserID.length: %lu", MRRYoursViewControllerLogPrefix,
+          self.userRecipesStore ? @"provided" : @"nil", (unsigned long)self.sessionUserID.length);
   }
   self.recipes = recipes;
 }
 
 - (void)reloadContent {
   NSLog(@"%@ reloadContent - %lu recipes to display", MRRYoursViewControllerLogPrefix, (unsigned long)self.recipes.count);
-  
+
   while (self.cardsStackView.arrangedSubviews.count > 0) {
     UIView *subview = self.cardsStackView.arrangedSubviews.firstObject;
     [self.cardsStackView removeArrangedSubview:subview];
@@ -474,7 +466,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   containerView.layer.borderWidth = 1.0;
   containerView.layer.borderColor = MRRYoursBorderColor().CGColor;
   containerView.accessibilityIdentifier = [MRRYoursRecipeCardIdentifierPrefix stringByAppendingString:recipe.recipeID];
-  
+
   // Add shadow for press animation effect
   containerView.layer.shadowColor = [UIColor blackColor].CGColor;
   containerView.layer.shadowOffset = CGSizeMake(0.0, 4.0);
@@ -504,8 +496,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
   // Add tap gesture to cover image for popup
   if (coverImage != nil) {
-    UITapGestureRecognizer *coverTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                      action:@selector(handleImageTapped:)] autorelease];
+    UITapGestureRecognizer *coverTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleImageTapped:)] autorelease];
     [coverImageView addGestureRecognizer:coverTapGesture];
   }
 
@@ -524,17 +515,16 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     toggleHeaderButton.accessibilityIdentifier = [MRRYoursRecipeThumbnailsToggleIdentifierPrefix stringByAppendingString:recipe.recipeID];
     [toggleHeaderButton addTarget:self action:@selector(handleThumbnailsToggleTapped:) forControlEvents:UIControlEventTouchUpInside];
     [containerView addSubview:toggleHeaderButton];
-    
+
     // Create chevron icon and count label
     UIImage *chevronImage = nil;
     if (@available(iOS 13.0, *)) {
       chevronImage = [UIImage systemImageNamed:isExpanded ? @"chevron.down" : @"chevron.right"];
     }
     [toggleHeaderButton setImage:chevronImage forState:UIControlStateNormal];
-    
-    NSString *countText = [NSString stringWithFormat:@"%lu additional photo%@", 
-                          (unsigned long)additionalPhotos.count, 
-                          additionalPhotos.count == 1 ? @"" : @"s"];
+
+    NSString *countText =
+        [NSString stringWithFormat:@"%lu additional photo%@", (unsigned long)additionalPhotos.count, additionalPhotos.count == 1 ? @"" : @"s"];
     [toggleHeaderButton setTitle:countText forState:UIControlStateNormal];
     toggleHeaderButton.titleLabel.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium];
     [toggleHeaderButton setTitleColor:MRRYoursSecondaryTextColor() forState:UIControlStateNormal];
@@ -580,7 +570,6 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   }
 
   if (hasAdditionalPhotos) {
-
     for (NSUInteger i = 0; i < additionalPhotos.count; i++) {
       MRRUserRecipePhotoSnapshot *photo = additionalPhotos[i];
 
@@ -620,7 +609,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
         if (image != nil) {
           thumbnailView.image = image;
           UITapGestureRecognizer *thumbnailTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                                action:@selector(handleImageTapped:)] autorelease];
+                                                                                                 action:@selector(handleImageTapped:)] autorelease];
           [thumbnailView addGestureRecognizer:thumbnailTapGesture];
         }
       }
@@ -671,8 +660,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [interaction release];  // View retains the interaction
   } else {
     // iOS 12 fallback: Use custom long-press gesture
-    UILongPressGestureRecognizer *longPressGesture = [[[UILongPressGestureRecognizer alloc] initWithTarget:self
-                                                                                                  action:@selector(handleRecipeCardLongPress:)] autorelease];
+    UILongPressGestureRecognizer *longPressGesture =
+        [[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleRecipeCardLongPress:)] autorelease];
     longPressGesture.minimumPressDuration = 0.3;  // Optimized for faster response
     longPressGesture.cancelsTouchesInView = YES;
     [containerView addGestureRecognizer:longPressGesture];
@@ -716,8 +705,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [NSLayoutConstraint activateConstraints:@[
     [selectButton.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:12.0],
     [selectButton.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-12.0],
-    [selectButton.widthAnchor constraintEqualToConstant:32.0],
-    [selectButton.heightAnchor constraintEqualToConstant:32.0]
+    [selectButton.widthAnchor constraintEqualToConstant:32.0], [selectButton.heightAnchor constraintEqualToConstant:32.0]
   ]];
 
   // Update selection state if already selected
@@ -728,7 +716,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
   // Add tap gesture to card for selection mode
   UITapGestureRecognizer *cardTapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                  action:@selector(handleCardTappedForSelection:)] autorelease];
+                                                                                    action:@selector(handleCardTappedForSelection:)] autorelease];
   cardTapGesture.cancelsTouchesInView = NO;  // Allow other gestures to work
   [containerView addGestureRecognizer:cardTapGesture];
 
@@ -741,7 +729,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
   // Layout for toggle header and thumbnails (conditional)
   NSMutableArray<NSLayoutConstraint *> *dynamicConstraints = [NSMutableArray array];
-  
+
   if (hasAdditionalPhotos && toggleHeaderButton != nil) {
     [dynamicConstraints addObjectsFromArray:@[
       [toggleHeaderButton.topAnchor constraintEqualToAnchor:coverImageView.bottomAnchor constant:12.0],
@@ -847,18 +835,15 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
 - (void)presentEditorForRecipe:(MRRUserRecipeSnapshot *)recipe {
   if (recipe != nil) {
-    NSLog(@"%@ presentEditorForRecipe - Editing existing recipe: %@ (ID: %@)", 
-          MRRYoursViewControllerLogPrefix, recipe.title ?: @"untitled", recipe.recipeID ?: @"nil");
+    NSLog(@"%@ presentEditorForRecipe - Editing existing recipe: %@ (ID: %@)", MRRYoursViewControllerLogPrefix, recipe.title ?: @"untitled",
+          recipe.recipeID ?: @"nil");
   } else {
     NSLog(@"%@ presentEditorForRecipe - Creating NEW recipe", MRRYoursViewControllerLogPrefix);
   }
-  
-  NSLog(@"%@ Editor dependencies - sessionUserID: %@, userRecipesStore: %@, syncEngine: %@", 
-        MRRYoursViewControllerLogPrefix,
-        self.sessionUserID ?: @"nil",
-        self.userRecipesStore ? @"provided" : @"nil",
-        self.syncEngine ? @"provided" : @"nil");
-  
+
+  NSLog(@"%@ Editor dependencies - sessionUserID: %@, userRecipesStore: %@, syncEngine: %@", MRRYoursViewControllerLogPrefix,
+        self.sessionUserID ?: @"nil", self.userRecipesStore ? @"provided" : @"nil", self.syncEngine ? @"provided" : @"nil");
+
   MRRYoursRecipeEditorViewController *editorViewController = [[[MRRYoursRecipeEditorViewController alloc] initWithSessionUserID:self.sessionUserID
                                                                                                                userRecipesStore:self.userRecipesStore
                                                                                                                      syncEngine:self.syncEngine
@@ -897,9 +882,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 - (void)handleAddButtonTapped:(id)sender {
 #pragma unused(sender)
   NSLog(@"%@ handleAddButtonTapped - User wants to add new recipe", MRRYoursViewControllerLogPrefix);
-  NSLog(@"%@ Current state - sessionUserID: %@, userRecipesStore: %@", 
-        MRRYoursViewControllerLogPrefix,
-        self.sessionUserID ?: @"nil",
+  NSLog(@"%@ Current state - sessionUserID: %@, userRecipesStore: %@", MRRYoursViewControllerLogPrefix, self.sessionUserID ?: @"nil",
         self.userRecipesStore ? @"provided" : @"nil");
   [self presentEditorForRecipe:nil];
 }
@@ -934,8 +917,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
   for (UIView *cardView in self.cardsStackView.arrangedSubviews) {
     NSString *cardIdentifier = cardView.accessibilityIdentifier ?: @"";
-    NSString *recipeID = [cardIdentifier stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix
-                                                                  withString:@""];
+    NSString *recipeID = [cardIdentifier stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix withString:@""];
 
     // Find the select button in this card
     for (UIView *subview in cardView.subviews) {
@@ -978,9 +960,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     self.deleteToolbarButton.title = title;
     self.deleteToolbarButton.enabled = YES;
     // Update accessibility label with count
-    NSString *accessibilityLabel = [NSString stringWithFormat:@"Delete %lu recipe%@",
-                                    (unsigned long)self.selectedRecipeIDs.count,
-                                    self.selectedRecipeIDs.count == 1 ? @"" : @"s"];
+    NSString *accessibilityLabel = [NSString
+        stringWithFormat:@"Delete %lu recipe%@", (unsigned long)self.selectedRecipeIDs.count, self.selectedRecipeIDs.count == 1 ? @"" : @"s"];
     self.deleteToolbarButton.accessibilityLabel = accessibilityLabel;
   } else {
     self.deleteToolbarButton.title = @"Delete";
@@ -989,28 +970,21 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 }
 
 - (void)handleDeleteToolbarButtonTapped:(id)sender {
-  #pragma unused(sender)
+#pragma unused(sender)
 
   NSUInteger count = self.selectedRecipeIDs.count;
   if (count == 0) {
     return;
   }
 
-  NSString *title = [NSString stringWithFormat:@"Delete %lu Recipe%@?",
-                     (unsigned long)count,
-                     count == 1 ? @"" : @"s"];
-  NSString *message = [NSString stringWithFormat:@"This will permanently delete %lu recipe%@. This action cannot be undone.",
-                       (unsigned long)count,
-                       count == 1 ? @"" : @"s"];
+  NSString *title = [NSString stringWithFormat:@"Delete %lu Recipe%@?", (unsigned long)count, count == 1 ? @"" : @"s"];
+  NSString *message = [NSString
+      stringWithFormat:@"This will permanently delete %lu recipe%@. This action cannot be undone.", (unsigned long)count, count == 1 ? @"" : @"s"];
 
-  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title
-                                                                         message:message
-                                                                  preferredStyle:UIAlertControllerStyleAlert];
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
   alertController.view.accessibilityIdentifier = @"yours.bulkDeleteAlert";
 
-  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel"
-                                                      style:UIAlertActionStyleCancel
-                                                    handler:nil]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
 
   [alertController addAction:[UIAlertAction actionWithTitle:@"Delete"
                                                       style:UIAlertActionStyleDestructive
@@ -1023,9 +997,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 }
 
 - (void)performBulkDelete {
-  NSLog(@"%@ performBulkDelete - deleting %lu recipes",
-        MRRYoursViewControllerLogPrefix,
-        (unsigned long)self.selectedRecipeIDs.count);
+  NSLog(@"%@ performBulkDelete - deleting %lu recipes", MRRYoursViewControllerLogPrefix, (unsigned long)self.selectedRecipeIDs.count);
 
   NSMutableArray<NSError *> *errors = [NSMutableArray array];
   NSUInteger successCount = 0;
@@ -1042,9 +1014,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   }
 
   // Log results
-  NSLog(@"%@ Bulk delete complete - %lu succeeded, %lu failed",
-        MRRYoursViewControllerLogPrefix,
-        (unsigned long)successCount,
+  NSLog(@"%@ Bulk delete complete - %lu succeeded, %lu failed", MRRYoursViewControllerLogPrefix, (unsigned long)successCount,
         (unsigned long)errors.count);
 
   // Show error if any deletions failed
@@ -1170,7 +1140,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
 - (void)presentContextMenuForRecipe:(MRRUserRecipeSnapshot *)recipe fromCardView:(UIView *)cardView {
   // Create context menu with recipe title
-  MRRRecipeCardContextMenuViewController *contextMenu = [[[MRRRecipeCardContextMenuViewController alloc] initWithRecipeTitle:recipe.title] autorelease];
+  MRRRecipeCardContextMenuViewController *contextMenu =
+      [[[MRRRecipeCardContextMenuViewController alloc] initWithRecipeTitle:recipe.title] autorelease];
 
   __weak typeof(self) weakSelf = self;
   __weak MRRUserRecipeSnapshot *weakRecipe = recipe;
@@ -1229,7 +1200,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 // Provides native context menu support for modern iOS devices
 
 - (UIContextMenuConfiguration *)contextMenuInteraction:(UIContextMenuInteraction *)interaction
-                       configurationForMenuAtLocation:(CGPoint)location API_AVAILABLE(ios(13.0)) {
+                        configurationForMenuAtLocation:(CGPoint)location API_AVAILABLE(ios(13.0)) {
 #pragma unused(location)
   // Get the card view from the interaction
   UIView *cardView = interaction.view;
@@ -1245,82 +1216,86 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   __weak typeof(self) weakSelf = self;
   NSString *recipeIDCopy = [recipeID copy];
 
-  UIContextMenuConfiguration *configuration = [UIContextMenuConfiguration configurationWithIdentifier:recipeIDCopy
-                                                                                     previewProvider:nil
-                                                                                      actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
+  UIContextMenuConfiguration *configuration = [UIContextMenuConfiguration
+      configurationWithIdentifier:recipeIDCopy
+                  previewProvider:nil
+                   actionProvider:^UIMenu *_Nullable(NSArray<UIMenuElement *> *_Nonnull suggestedActions) {
 #pragma unused(suggestedActions)
-    __strong typeof(weakSelf) strongSelf = weakSelf;
-    if (!strongSelf) {
-      return nil;
-    }
+                     __strong typeof(weakSelf) strongSelf = weakSelf;
+                     if (!strongSelf) {
+                       return nil;
+                     }
 
-    // Get recipe from stored ID
-    MRRUserRecipeSnapshot *menuRecipe = [strongSelf recipeForIdentifier:recipeIDCopy];
-    if (!menuRecipe) {
-      return nil;
-    }
+                     // Get recipe from stored ID
+                     MRRUserRecipeSnapshot *menuRecipe = [strongSelf recipeForIdentifier:recipeIDCopy];
+                     if (!menuRecipe) {
+                       return nil;
+                     }
 
-    // Build menu actions
-    NSMutableArray<UIAction *> *actions = [NSMutableArray array];
+                     // Build menu actions
+                     NSMutableArray<UIAction *> *actions = [NSMutableArray array];
 
-    // Edit action
-    UIAction *editAction = [UIAction actionWithTitle:@"Edit Recipe"
-                                               image:[UIImage systemImageNamed:@"square.and.pencil"]
-                                          identifier:nil
-                                             handler:^(__kindof UIAction * _Nonnull action) {
+                     // Edit action
+                     UIAction *editAction = [UIAction actionWithTitle:@"Edit Recipe"
+                                                                image:[UIImage systemImageNamed:@"square.and.pencil"]
+                                                           identifier:nil
+                                                              handler:^(__kindof UIAction *_Nonnull action) {
 #pragma unused(action)
-      __strong typeof(weakSelf) editStrongSelf = weakSelf;
-      if (editStrongSelf) {
-        MRRUserRecipeSnapshot *editRecipe = [editStrongSelf recipeForIdentifier:recipeIDCopy];
-        if (editRecipe) {
-          [editStrongSelf presentEditorForRecipe:editRecipe];
-        }
-      }
-    }];
-    [actions addObject:editAction];
+                                                                __strong typeof(weakSelf) editStrongSelf = weakSelf;
+                                                                if (editStrongSelf) {
+                                                                  MRRUserRecipeSnapshot *editRecipe =
+                                                                      [editStrongSelf recipeForIdentifier:recipeIDCopy];
+                                                                  if (editRecipe) {
+                                                                    [editStrongSelf presentEditorForRecipe:editRecipe];
+                                                                  }
+                                                                }
+                                                              }];
+                     [actions addObject:editAction];
 
-    // Share action
-    UIAction *shareAction = [UIAction actionWithTitle:@"Share Recipe"
-                                                image:[UIImage systemImageNamed:@"square.and.arrow.up"]
-                                           identifier:nil
-                                              handler:^(__kindof UIAction * _Nonnull action) {
+                     // Share action
+                     UIAction *shareAction = [UIAction actionWithTitle:@"Share Recipe"
+                                                                 image:[UIImage systemImageNamed:@"square.and.arrow.up"]
+                                                            identifier:nil
+                                                               handler:^(__kindof UIAction *_Nonnull action) {
 #pragma unused(action)
-      __strong typeof(weakSelf) shareStrongSelf = weakSelf;
-      if (shareStrongSelf) {
-        MRRUserRecipeSnapshot *shareRecipe = [shareStrongSelf recipeForIdentifier:recipeIDCopy];
-        if (shareRecipe) {
-          [shareStrongSelf shareRecipe:shareRecipe];
-        }
-      }
-    }];
-    [actions addObject:shareAction];
+                                                                 __strong typeof(weakSelf) shareStrongSelf = weakSelf;
+                                                                 if (shareStrongSelf) {
+                                                                   MRRUserRecipeSnapshot *shareRecipe =
+                                                                       [shareStrongSelf recipeForIdentifier:recipeIDCopy];
+                                                                   if (shareRecipe) {
+                                                                     [shareStrongSelf shareRecipe:shareRecipe];
+                                                                   }
+                                                                 }
+                                                               }];
+                     [actions addObject:shareAction];
 
-    // Delete action (destructive)
-    UIAction *deleteAction = [UIAction actionWithTitle:@"Delete Recipe"
-                                                 image:[UIImage systemImageNamed:@"trash"]
-                                            identifier:nil
-                                               handler:^(__kindof UIAction * _Nonnull action) {
+                     // Delete action (destructive)
+                     UIAction *deleteAction = [UIAction actionWithTitle:@"Delete Recipe"
+                                                                  image:[UIImage systemImageNamed:@"trash"]
+                                                             identifier:nil
+                                                                handler:^(__kindof UIAction *_Nonnull action) {
 #pragma unused(action)
-      __strong typeof(weakSelf) deleteStrongSelf = weakSelf;
-      if (deleteStrongSelf) {
-        MRRUserRecipeSnapshot *deleteRecipe = [deleteStrongSelf recipeForIdentifier:recipeIDCopy];
-        if (deleteRecipe) {
-          [deleteStrongSelf showDeleteConfirmationForRecipe:deleteRecipe];
-        }
-      }
-    }];
-    deleteAction.attributes = UIMenuElementAttributesDestructive;
-    [actions addObject:deleteAction];
+                                                                  __strong typeof(weakSelf) deleteStrongSelf = weakSelf;
+                                                                  if (deleteStrongSelf) {
+                                                                    MRRUserRecipeSnapshot *deleteRecipe =
+                                                                        [deleteStrongSelf recipeForIdentifier:recipeIDCopy];
+                                                                    if (deleteRecipe) {
+                                                                      [deleteStrongSelf showDeleteConfirmationForRecipe:deleteRecipe];
+                                                                    }
+                                                                  }
+                                                                }];
+                     deleteAction.attributes = UIMenuElementAttributesDestructive;
+                     [actions addObject:deleteAction];
 
-    return [UIMenu menuWithTitle:@"" children:actions];
-  }];
+                     return [UIMenu menuWithTitle:@"" children:actions];
+                   }];
 
   [recipeIDCopy release];
   return configuration;
 }
 
 - (UITargetedPreview *)contextMenuInteraction:(UIContextMenuInteraction *)interaction
-       previewForHighlightingMenuWithConfiguration:(UIContextMenuConfiguration *)configuration API_AVAILABLE(ios(13.0)) {
+    previewForHighlightingMenuWithConfiguration:(UIContextMenuConfiguration *)configuration API_AVAILABLE(ios(13.0)) {
 #pragma unused(configuration)
   UIView *cardView = interaction.view;
 
@@ -1337,14 +1312,12 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [items addObject:recipe.summaryText];
   }
 
-  UIActivityViewController *activityVC = [[[UIActivityViewController alloc] initWithActivityItems:items
-                                                                            applicationActivities:nil] autorelease];
+  UIActivityViewController *activityVC = [[[UIActivityViewController alloc] initWithActivityItems:items applicationActivities:nil] autorelease];
 
   // For iPad support
   if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
     activityVC.popoverPresentationController.sourceView = self.view;
-    activityVC.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds),
-                                                                      CGRectGetMidY(self.view.bounds), 1.0, 1.0);
+    activityVC.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1.0, 1.0);
     activityVC.popoverPresentationController.permittedArrowDirections = 0;
   }
 
@@ -1401,14 +1374,15 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   }
 
   // Announce selection change for VoiceOver
-  NSString *announcement = nowSelected ?
-    [NSString stringWithFormat:@"%@ selected. %lu items selected.", recipe.title ?: @"Recipe", (unsigned long)self.selectedRecipeIDs.count] :
-    [NSString stringWithFormat:@"%@ deselected. %lu items selected.", recipe.title ?: @"Recipe", (unsigned long)self.selectedRecipeIDs.count];
+  NSString *announcement =
+      nowSelected
+          ? [NSString stringWithFormat:@"%@ selected. %lu items selected.", recipe.title ?: @"Recipe", (unsigned long)self.selectedRecipeIDs.count]
+          : [NSString stringWithFormat:@"%@ deselected. %lu items selected.", recipe.title ?: @"Recipe", (unsigned long)self.selectedRecipeIDs.count];
   UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
 
   // Update UI
-  [self updateNavigationBarButtons];  // Update selection count on left
-  [self updateToolbarVisibility];      // Show/hide toolbar
+  [self updateNavigationBarButtons];           // Update selection count on left
+  [self updateToolbarVisibility];              // Show/hide toolbar
   [self updateCardSelectionVisuals:recipeID];  // Update card border
 }
 
@@ -1438,8 +1412,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
   UIView *cardView = gesture.view;
   NSString *cardIdentifier = cardView.accessibilityIdentifier ?: @"";
-  NSString *recipeID = [cardIdentifier stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix
-                                                                  withString:@""];
+  NSString *recipeID = [cardIdentifier stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix withString:@""];
 
   if (recipeID.length == 0) {
     return;
@@ -1469,29 +1442,27 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   if (recipeID.length == 0) {
     return;
   }
-  
+
   BOOL isCurrentlyExpanded = [self.expandedRecipeIDs containsObject:recipeID];
   BOOL shouldExpand = !isCurrentlyExpanded;
-  
-  NSLog(@"%@ handleThumbnailsToggleTapped - recipeID: %@, %@",
-        MRRYoursViewControllerLogPrefix,
-        recipeID,
+
+  NSLog(@"%@ handleThumbnailsToggleTapped - recipeID: %@, %@", MRRYoursViewControllerLogPrefix, recipeID,
         shouldExpand ? @"expanding" : @"collapsing");
-  
+
   // Update state
   if (shouldExpand) {
     [self.expandedRecipeIDs addObject:recipeID];
   } else {
     [self.expandedRecipeIDs removeObject:recipeID];
   }
-  
+
   // Update chevron icon
   UIImage *chevronImage = nil;
   if (@available(iOS 13.0, *)) {
     chevronImage = [UIImage systemImageNamed:shouldExpand ? @"chevron.down" : @"chevron.right"];
   }
   [sender setImage:chevronImage forState:UIControlStateNormal];
-  
+
   // Animate height constraint
   NSLayoutConstraint *heightConstraint = self.thumbnailsHeightConstraints[recipeID];
   if (heightConstraint != nil) {
@@ -1504,15 +1475,12 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 }
 
 - (void)userRecipesStoreDidChange:(NSNotification *)notification {
-  NSLog(@"%@ Received MRRUserRecipesStoreDidChangeNotification - notification.object: %@", 
-        MRRYoursViewControllerLogPrefix,
+  NSLog(@"%@ Received MRRUserRecipesStoreDidChangeNotification - notification.object: %@", MRRYoursViewControllerLogPrefix,
         notification.object ?: @"nil");
-  
+
   if (notification.object != self.userRecipesStore) {
-    NSLog(@"%@ WARNING: Notification object mismatch - ignoring (expected: %@, got: %@)", 
-          MRRYoursViewControllerLogPrefix,
-          self.userRecipesStore ?: @"nil",
-          notification.object ?: @"nil");
+    NSLog(@"%@ WARNING: Notification object mismatch - ignoring (expected: %@, got: %@)", MRRYoursViewControllerLogPrefix,
+          self.userRecipesStore ?: @"nil", notification.object ?: @"nil");
     return;
   }
   NSLog(@"%@ Reloading content due to store change notification", MRRYoursViewControllerLogPrefix);
