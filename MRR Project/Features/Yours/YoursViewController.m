@@ -666,7 +666,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   // Add long-press gesture for context menu with card animation
   UILongPressGestureRecognizer *longPressGesture = [[[UILongPressGestureRecognizer alloc] initWithTarget:self
                                                                                                  action:@selector(handleRecipeCardLongPress:)] autorelease];
-  longPressGesture.minimumPressDuration = 0.5; // Slightly shorter for better responsiveness
+  longPressGesture.minimumPressDuration = 0.3; // Faster response for better UX
   longPressGesture.cancelsTouchesInView = YES; // Cancel other touches when long press triggers
   [containerView addGestureRecognizer:longPressGesture];
 
