@@ -1226,6 +1226,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 }
 
 #pragma mark - UIContextMenuInteractionDelegate (iOS 13+)
+// Provides native context menu support for modern iOS devices
 
 - (UIContextMenuConfiguration *)contextMenuInteraction:(UIContextMenuInteraction *)interaction
                        configurationForMenuAtLocation:(CGPoint)location API_AVAILABLE(ios(13.0)) {
