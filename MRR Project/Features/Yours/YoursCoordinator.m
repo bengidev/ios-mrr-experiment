@@ -31,12 +31,9 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
     _sessionUserID = [sessionUserID copy];
     _userRecipesStore = [userRecipesStore retain];
     _syncEngine = [syncEngine retain];
-    
-    NSLog(@"%@ Initialized with sessionUserID: %@, userRecipesStore: %@, syncEngine: %@",
-          MRRYoursCoordinatorLogPrefix,
-          sessionUserID ?: @"nil",
-          userRecipesStore ? @"provided" : @"nil",
-          syncEngine ? @"provided" : @"nil");
+
+    NSLog(@"%@ Initialized with sessionUserID: %@, userRecipesStore: %@, syncEngine: %@", MRRYoursCoordinatorLogPrefix, sessionUserID ?: @"nil",
+          userRecipesStore ? @"provided" : @"nil", syncEngine ? @"provided" : @"nil");
   }
 
   return self;
@@ -54,15 +51,13 @@ static NSString *const MRRYoursCoordinatorLogPrefix = @"[YoursCoordinator]";
 
 - (UIViewController *)rootViewController {
   if (self.viewController == nil) {
-    NSLog(@"%@ Creating YoursViewController with sessionUserID: %@, userRecipesStore: %@",
-          MRRYoursCoordinatorLogPrefix,
-          self.sessionUserID ?: @"nil",
+    NSLog(@"%@ Creating YoursViewController with sessionUserID: %@, userRecipesStore: %@", MRRYoursCoordinatorLogPrefix, self.sessionUserID ?: @"nil",
           self.userRecipesStore ? @"provided" : @"nil");
-    
+
     self.viewController = [[[YoursViewController alloc] initWithSessionUserID:self.sessionUserID
                                                              userRecipesStore:self.userRecipesStore
                                                                    syncEngine:self.syncEngine] autorelease];
-    
+
     NSLog(@"%@ YoursViewController created successfully", MRRYoursCoordinatorLogPrefix);
   } else {
     NSLog(@"%@ Reusing existing YoursViewController", MRRYoursCoordinatorLogPrefix);
