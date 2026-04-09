@@ -69,8 +69,7 @@ static CGFloat const MRRImagePopupDoubleTapZoomScale = 2.0;
 
   UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
   [NSLayoutConstraint activateConstraints:@[
-    [dimmingView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-    [dimmingView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [dimmingView.topAnchor constraintEqualToAnchor:self.view.topAnchor], [dimmingView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
     [dimmingView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     [dimmingView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
   ]];
@@ -90,8 +89,7 @@ static CGFloat const MRRImagePopupDoubleTapZoomScale = 2.0;
 
   UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
   [NSLayoutConstraint activateConstraints:@[
-    [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
-    [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor], [scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
     [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     [scrollView.bottomAnchor constraintEqualToAnchor:safeArea.bottomAnchor]
   ]];
@@ -141,19 +139,16 @@ static CGFloat const MRRImagePopupDoubleTapZoomScale = 2.0;
   [NSLayoutConstraint activateConstraints:@[
     [closeButton.topAnchor constraintEqualToAnchor:safeArea.topAnchor constant:16.0],
     [closeButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16.0],
-    [closeButton.widthAnchor constraintEqualToConstant:44.0],
-    [closeButton.heightAnchor constraintEqualToConstant:44.0]
+    [closeButton.widthAnchor constraintEqualToConstant:44.0], [closeButton.heightAnchor constraintEqualToConstant:44.0]
   ]];
 }
 
 - (void)setupGestureRecognizers {
-  UITapGestureRecognizer *doubleTapRecognizer = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                        action:@selector(handleDoubleTap:)] autorelease];
+  UITapGestureRecognizer *doubleTapRecognizer = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTap:)] autorelease];
   doubleTapRecognizer.numberOfTapsRequired = 2;
   [self.scrollView addGestureRecognizer:doubleTapRecognizer];
 
-  UITapGestureRecognizer *singleTapRecognizer = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                          action:@selector(handleSingleTap:)] autorelease];
+  UITapGestureRecognizer *singleTapRecognizer = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleSingleTap:)] autorelease];
   singleTapRecognizer.numberOfTapsRequired = 1;
   [singleTapRecognizer requireGestureRecognizerToFail:doubleTapRecognizer];
   [self.dimmingView addGestureRecognizer:singleTapRecognizer];
@@ -169,10 +164,9 @@ static CGFloat const MRRImagePopupDoubleTapZoomScale = 2.0;
     [self.scrollView setZoomScale:self.scrollView.minimumZoomScale animated:YES];
   } else {
     CGPoint location = [recognizer locationInView:self.imageView];
-    CGSize zoomSize = CGSizeMake(self.view.bounds.size.width / MRRImagePopupDoubleTapZoomScale,
-                                  self.view.bounds.size.height / MRRImagePopupDoubleTapZoomScale);
-    CGRect zoomRect = CGRectMake(location.x - zoomSize.width / 2.0, location.y - zoomSize.height / 2.0,
-                                  zoomSize.width, zoomSize.height);
+    CGSize zoomSize =
+        CGSizeMake(self.view.bounds.size.width / MRRImagePopupDoubleTapZoomScale, self.view.bounds.size.height / MRRImagePopupDoubleTapZoomScale);
+    CGRect zoomRect = CGRectMake(location.x - zoomSize.width / 2.0, location.y - zoomSize.height / 2.0, zoomSize.width, zoomSize.height);
     [self.scrollView zoomToRect:zoomRect animated:YES];
   }
 }
