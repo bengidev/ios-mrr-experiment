@@ -68,7 +68,7 @@ static CGFloat const MRRYoursRecipeThumbnailSize = 62.0;
 static CGFloat const MRRYoursRecipeThumbnailSpacing = 10.0;
 static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 
-@interface YoursViewController ()
+@interface YoursViewController () <UIContextMenuInteractionDelegate>
 
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
