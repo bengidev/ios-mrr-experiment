@@ -303,6 +303,11 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;
 
 #pragma mark - Animation
 
+/**
+ * Animates the presentation of the context menu with backdrop fade,
+ * container spring animation, and staggered item appearance.
+ * Optimized for quick response with minimal delays.
+ */
 - (void)animatePresentation {
   // Animate backdrop
   [UIView animateWithDuration:0.25
