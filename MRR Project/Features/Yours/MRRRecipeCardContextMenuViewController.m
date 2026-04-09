@@ -314,9 +314,9 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;
                    }
                    completion:nil];
   
-  // Animate menu container with spring
+  // Animate menu container with spring - start immediately
   [UIView animateWithDuration:MRRContextMenuAnimationDuration
-                        delay:0.05
+                        delay:0.0
        usingSpringWithDamping:MRRContextMenuSpringDamping
         initialSpringVelocity:MRRContextMenuSpringVelocity
                       options:UIViewAnimationOptionBeginFromCurrentState
