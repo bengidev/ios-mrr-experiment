@@ -21,18 +21,12 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
 @property(nonatomic, copy, readonly) NSString *imageName;
 @property(nonatomic, assign, readonly) BOOL isDestructive;
 @property(nonatomic, copy, readonly) void (^handler)(void);
-+ (instancetype)actionWithTitle:(NSString *)title
-                      imageName:(NSString *)imageName
-                  isDestructive:(BOOL)isDestructive
-                        handler:(void (^)(void))handler;
++ (instancetype)actionWithTitle:(NSString *)title imageName:(NSString *)imageName isDestructive:(BOOL)isDestructive handler:(void (^)(void))handler;
 @end
 
 @implementation MRRRecipeCardContextMenuAction
 
-+ (instancetype)actionWithTitle:(NSString *)title
-                      imageName:(NSString *)imageName
-                  isDestructive:(BOOL)isDestructive
-                        handler:(void (^)(void))handler {
++ (instancetype)actionWithTitle:(NSString *)title imageName:(NSString *)imageName isDestructive:(BOOL)isDestructive handler:(void (^)(void))handler {
   MRRRecipeCardContextMenuAction *action = [[[self alloc] init] autorelease];
   if (action) {
     action->_title = [title copy];
@@ -64,9 +58,7 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
 - (void)setupBlurBackground;
 - (void)setupMenuContainer;
 - (void)buildMenuItems;
-- (UIView *)menuItemViewForAction:(MRRRecipeCardContextMenuAction *)action
-                           index:(NSUInteger)index
-                           total:(NSUInteger)total;
+- (UIView *)menuItemViewForAction:(MRRRecipeCardContextMenuAction *)action index:(NSUInteger)index total:(NSUInteger)total;
 - (void)animatePresentation;
 - (void)animateDismissalWithCompletion:(void (^)(void))completion;
 - (void)handleBackdropTap:(UITapGestureRecognizer *)recognizer;
@@ -86,7 +78,7 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
     _recipeTitle = [recipeTitle copy];
     _actions = [[NSMutableArray alloc] init];
     _menuItemViews = [[NSMutableArray alloc] init];
-    
+
     self.modalPresentationStyle = UIModalPresentationOverFullScreen;
     self.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
   }
@@ -106,24 +98,24 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  
+
   self.view.backgroundColor = [UIColor clearColor];
-  
+
   [self setupBlurBackground];
   [self setupMenuContainer];
   [self buildMenuItems];
-  
+
   // Initial state - menu is hidden
   self.menuContainerView.alpha = 0.0;
   self.menuContainerView.transform = CGAffineTransformMakeScale(MRRContextMenuInitialScale, MRRContextMenuInitialScale);
-  
+
   // Trigger haptic feedback
   [self triggerHapticFeedback];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
   [super viewDidAppear:animated];
-  
+
   // Animate presentation
   [self animatePresentation];
 }
@@ -138,7 +130,7 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
   dimmingView.alpha = 0.0;
   [self.view addSubview:dimmingView];
   self.dimmingView = dimmingView;
-  
+
   // Blur effect view
   UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
   UIVisualEffectView *blurView = [[[UIVisualEffectView alloc] initWithEffect:blurEffect] autorelease];
@@ -146,23 +138,19 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
   blurView.alpha = 0.0;
   [self.view addSubview:blurView];
   self.blurView = blurView;
-  
+
   // Tap gesture to dismiss
-  UITapGestureRecognizer *tapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                action:@selector(handleBackdropTap:)] autorelease];
+  UITapGestureRecognizer *tapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleBackdropTap:)] autorelease];
   [blurView.contentView addGestureRecognizer:tapGesture];
-  
+
   // Constraints
   [NSLayoutConstraint activateConstraints:@[
-    [dimmingView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-    [dimmingView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [dimmingView.topAnchor constraintEqualToAnchor:self.view.topAnchor], [dimmingView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
     [dimmingView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     [dimmingView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-    
-    [blurView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-    [blurView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-    [blurView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-    [blurView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
+
+    [blurView.topAnchor constraintEqualToAnchor:self.view.topAnchor], [blurView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [blurView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor], [blurView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
   ]];
 }
 
@@ -175,14 +163,14 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
   menuContainer.layer.shadowOffset = CGSizeMake(0.0, 14.0);
   menuContainer.layer.shadowRadius = MRRContextMenuShadowRadius;
   menuContainer.layer.shadowOpacity = MRRContextMenuShadowOpacity;
-  
+
   // Add subtle border
   menuContainer.layer.borderWidth = 0.5;
   menuContainer.layer.borderColor = [[self primaryTextColor] colorWithAlphaComponent:0.12].CGColor;
-  
+
   [self.view addSubview:menuContainer];
   self.menuContainerView = menuContainer;
-  
+
   // Center constraints
   [NSLayoutConstraint activateConstraints:@[
     [menuContainer.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
@@ -197,62 +185,59 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
   if (self.actions.count == 0) {
     return;
   }
-  
+
   UIView *previousView = nil;
-  
+
   for (NSUInteger i = 0; i < self.actions.count; i++) {
     MRRRecipeCardContextMenuAction *action = self.actions[i];
     UIView *itemView = [self menuItemViewForAction:action index:i total:self.actions.count];
-    
+
     [self.menuContainerView addSubview:itemView];
     [self.menuItemViews addObject:itemView];
-    
+
     // Initial state for stagger animation
     itemView.alpha = 0.0;
     itemView.transform = CGAffineTransformMakeTranslation(0.0, 20.0);
-    
+
     // Constraints
     [NSLayoutConstraint activateConstraints:@[
       [itemView.leadingAnchor constraintEqualToAnchor:self.menuContainerView.leadingAnchor],
       [itemView.trailingAnchor constraintEqualToAnchor:self.menuContainerView.trailingAnchor],
       [itemView.heightAnchor constraintEqualToConstant:MRRContextMenuItemHeight]
     ]];
-    
+
     if (previousView == nil) {
       [itemView.topAnchor constraintEqualToAnchor:self.menuContainerView.topAnchor].active = YES;
     } else {
       [itemView.topAnchor constraintEqualToAnchor:previousView.bottomAnchor].active = YES;
     }
-    
+
     previousView = itemView;
   }
-  
+
   // Bottom constraint for last item
   if (previousView != nil) {
     [previousView.bottomAnchor constraintEqualToAnchor:self.menuContainerView.bottomAnchor].active = YES;
   }
 }
 
-- (UIView *)menuItemViewForAction:(MRRRecipeCardContextMenuAction *)action
-                           index:(NSUInteger)index
-                           total:(NSUInteger)total {
+- (UIView *)menuItemViewForAction:(MRRRecipeCardContextMenuAction *)action index:(NSUInteger)index total:(NSUInteger)total {
   UIView *itemView = [[[UIView alloc] init] autorelease];
   itemView.translatesAutoresizingMaskIntoConstraints = NO;
   itemView.backgroundColor = [UIColor clearColor];
-  itemView.tag = index; // Store index for tap handling
-  
+  itemView.tag = index;  // Store index for tap handling
+
   // Tap gesture
-  UITapGestureRecognizer *tapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                action:@selector(handleMenuItemTap:)] autorelease];
+  UITapGestureRecognizer *tapGesture = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuItemTap:)] autorelease];
   [itemView addGestureRecognizer:tapGesture];
-  
+
   // Separator (except for first item)
   if (index > 0) {
     UIView *separator = [[[UIView alloc] init] autorelease];
     separator.translatesAutoresizingMaskIntoConstraints = NO;
     separator.backgroundColor = [[self primaryTextColor] colorWithAlphaComponent:0.08];
     [itemView addSubview:separator];
-    
+
     [NSLayoutConstraint activateConstraints:@[
       [separator.topAnchor constraintEqualToAnchor:itemView.topAnchor],
       [separator.leadingAnchor constraintEqualToAnchor:itemView.leadingAnchor constant:MRRContextMenuPadding],
@@ -260,13 +245,13 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
       [separator.heightAnchor constraintEqualToConstant:0.5]
     ]];
   }
-  
+
   // Icon
   UIImageView *iconView = [[[UIImageView alloc] init] autorelease];
   iconView.translatesAutoresizingMaskIntoConstraints = NO;
   iconView.contentMode = UIViewContentModeScaleAspectFit;
   iconView.tintColor = action.isDestructive ? [self destructiveColor] : [self primaryTextColor];
-  
+
   if (action.imageName.length > 0) {
     UIImage *image = nil;
     if (@available(iOS 13.0, *)) {
@@ -274,30 +259,29 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
     }
     iconView.image = image;
   }
-  
+
   [itemView addSubview:iconView];
-  
+
   // Label
   UILabel *label = [[[UILabel alloc] init] autorelease];
   label.translatesAutoresizingMaskIntoConstraints = NO;
   label.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightMedium];
   label.textColor = action.isDestructive ? [self destructiveColor] : [self primaryTextColor];
   label.text = action.title;
-  
+
   [itemView addSubview:label];
-  
+
   // Constraints
   [NSLayoutConstraint activateConstraints:@[
     [iconView.leadingAnchor constraintEqualToAnchor:itemView.leadingAnchor constant:MRRContextMenuPadding],
-    [iconView.centerYAnchor constraintEqualToAnchor:itemView.centerYAnchor],
-    [iconView.widthAnchor constraintEqualToConstant:MRRContextMenuIconSize],
+    [iconView.centerYAnchor constraintEqualToAnchor:itemView.centerYAnchor], [iconView.widthAnchor constraintEqualToConstant:MRRContextMenuIconSize],
     [iconView.heightAnchor constraintEqualToConstant:MRRContextMenuIconSize],
-    
+
     [label.leadingAnchor constraintEqualToAnchor:iconView.trailingAnchor constant:12.0],
     [label.centerYAnchor constraintEqualToAnchor:itemView.centerYAnchor],
     [label.trailingAnchor constraintLessThanOrEqualToAnchor:itemView.trailingAnchor constant:-MRRContextMenuPadding]
   ]];
-  
+
   return itemView;
 }
 
@@ -318,7 +302,7 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
                      self.blurView.alpha = 1.0;
                    }
                    completion:nil];
-  
+
   // Animate menu container with spring - start immediately
   [UIView animateWithDuration:MRRContextMenuAnimationDuration
                         delay:0.0
@@ -330,12 +314,12 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
                      self.menuContainerView.transform = CGAffineTransformIdentity;
                    }
                    completion:nil];
-  
+
   // Animate menu items with stagger
   for (NSUInteger i = 0; i < self.menuItemViews.count; i++) {
     UIView *itemView = self.menuItemViews[i];
     CGFloat delay = 0.05 + (i * MRRContextMenuItemStaggerDelay);
-    
+
     [UIView animateWithDuration:0.35
                           delay:delay
          usingSpringWithDamping:0.80
@@ -352,27 +336,24 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
 - (void)animateDismissalWithCompletion:(void (^)(void))completion {
   // Animate menu out
   [UIView animateWithDuration:0.25
-                        delay:0.0
-                      options:UIViewAnimationOptionCurveEaseIn
-                   animations:^{
-                     self.menuContainerView.alpha = 0.0;
-                     self.menuContainerView.transform = CGAffineTransformMakeScale(0.92, 0.92);
-                     self.dimmingView.alpha = 0.0;
-                     self.blurView.alpha = 0.0;
-                   }
-                   completion:^(BOOL finished) {
-                     if (completion) {
-                       completion();
-                     }
-                   }];
+      delay:0.0
+      options:UIViewAnimationOptionCurveEaseIn
+      animations:^{
+        self.menuContainerView.alpha = 0.0;
+        self.menuContainerView.transform = CGAffineTransformMakeScale(0.92, 0.92);
+        self.dimmingView.alpha = 0.0;
+        self.blurView.alpha = 0.0;
+      }
+      completion:^(BOOL finished) {
+        if (completion) {
+          completion();
+        }
+      }];
 }
 
 #pragma mark - Actions
 
-- (void)addActionWithTitle:(NSString *)title
-                 imageName:(NSString *)imageName
-             isDestructive:(BOOL)isDestructive
-                   handler:(void (^)(void))handler {
+- (void)addActionWithTitle:(NSString *)title imageName:(NSString *)imageName isDestructive:(BOOL)isDestructive handler:(void (^)(void))handler {
   MRRRecipeCardContextMenuAction *action = [MRRRecipeCardContextMenuAction actionWithTitle:title
                                                                                  imageName:imageName
                                                                              isDestructive:isDestructive
@@ -399,29 +380,29 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between ite
   if (index >= self.actions.count) {
     return;
   }
-  
+
   MRRRecipeCardContextMenuAction *action = self.actions[index];
-  
+
   // Highlight animation
   UIView *itemView = recognizer.view;
   [UIView animateWithDuration:0.12
-                   animations:^{
-                     itemView.alpha = 0.6;
-                   }
-                   completion:^(BOOL finished) {
-                     [UIView animateWithDuration:0.12
-                                      animations:^{
-                                        itemView.alpha = 1.0;
-                                      }
-                                      completion:^(BOOL finished) {
-                                        // Dismiss and execute handler
-                                        [self animateDismissalWithCompletion:^{
-                                          if (action.handler) {
-                                            action.handler();
-                                          }
-                                        }];
-                                      }];
-                   }];
+      animations:^{
+        itemView.alpha = 0.6;
+      }
+      completion:^(BOOL finished) {
+        [UIView animateWithDuration:0.12
+            animations:^{
+              itemView.alpha = 1.0;
+            }
+            completion:^(BOOL finished) {
+              // Dismiss and execute handler
+              [self animateDismissalWithCompletion:^{
+                if (action.handler) {
+                  action.handler();
+                }
+              }];
+            }];
+      }];
 }
 
 #pragma mark - Haptic Feedback
