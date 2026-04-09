@@ -1,0 +1,163 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build: simulator",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "MRR Project.xcodeproj",
+        "-scheme",
+        "MRR Project",
+        "-sdk",
+        "iphonesimulator",
+        "-destination",
+        "platform=iOS Simulator,name=iPhone SE (3rd generation)",
+        "-derivedDataPath",
+        ".derivedData",
+        "build"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "build: device",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "MRR Project.xcodeproj",
+        "-scheme",
+        "MRR Project",
+        "-sdk",
+        "iphoneos",
+        "-derivedDataPath",
+        ".derivedData",
+        "build"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "build: clean",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "MRR Project.xcodeproj",
+        "-scheme",
+        "MRR Project",
+        "clean"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "MRR Project.xcodeproj",
+        "-scheme",
+        "MRR Project",
+        "-sdk",
+        "iphonesimulator",
+        "-destination",
+        "platform=iOS Simulator,name=iPhone SE (3rd generation)",
+        "-derivedDataPath",
+        ".derivedData",
+        "test"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "analyze",
+      "type": "shell",
+      "command": "./scripts/lint-objc.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "./scripts/format-objc.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+    },
+    {
+      "label": "install: git-hooks",
+      "type": "shell",
+      "command": "./scripts/install-git-hooks.sh",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "sweetpad: build",
+      "type": "sweetpad",
+      "action": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "sweetpad: launch",
+      "type": "sweetpad",
+      "action": "launch",
+      "problemMatcher": []
+    }
+  ]
+}
