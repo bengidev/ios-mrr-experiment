@@ -4,14 +4,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * A beautiful animated context menu for recipe cards.
- * 
+ *
  * Features:
  * - Dark blur backdrop with dimming
  * - Spring-animated menu presentation
  * - Staggered menu item animations
  * - Haptic feedback on presentation
  * - Smooth tap interactions with visual feedback
- * 
+ *
  * Usage:
  *   MRRRecipeCardContextMenuViewController *menu = [[[MRRRecipeCardContextMenuViewController alloc] initWithRecipeTitle:@"Recipe Name"] autorelease];
  *   [menu addActionWithTitle:@"Edit" imageName:@"square.and.pencil" isDestructive:NO handler:^{
@@ -34,16 +34,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Adds an action to the context menu.
  * Actions are displayed in the order they are added.
- * 
+ *
  * @param title The display title for the action
  * @param imageName The SF Symbol name for the action icon (iOS 13+)
  * @param isDestructive Whether this is a destructive action (renders in red)
  * @param handler The block to execute when the action is selected
  */
-- (void)addActionWithTitle:(NSString *)title
-                 imageName:(NSString *)imageName
-             isDestructive:(BOOL)isDestructive
-                   handler:(void (^)(void))handler;
+- (void)addActionWithTitle:(NSString *)title imageName:(NSString *)imageName isDestructive:(BOOL)isDestructive handler:(void (^)(void))handler;
 
 /**
  * Sets a handler to be called when the menu is cancelled (backdrop tapped).
