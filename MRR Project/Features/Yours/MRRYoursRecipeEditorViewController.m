@@ -132,14 +132,13 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
 
 @end
 
-@interface MRRYoursRecipeEditorViewController ()
-    <UIImagePickerControllerDelegate,
-     UINavigationControllerDelegate,
+@interface MRRYoursRecipeEditorViewController () <UIImagePickerControllerDelegate,
+                                                  UINavigationControllerDelegate,
 #if MRR_HAS_PHOTOS_UI
-     PHPickerViewControllerDelegate,
+                                                  PHPickerViewControllerDelegate,
 #endif
-     UITextFieldDelegate,
-     UITextViewDelegate>
+                                                  UITextFieldDelegate,
+                                                  UITextViewDelegate>
 
 @property(nonatomic, copy, nullable) NSString *sessionUserID;
 @property(nonatomic, retain, nullable) MRRUserRecipesStore *userRecipesStore;
@@ -1585,6 +1584,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
   // Update height constraint with animation if state changed
   CGFloat targetHeight = (self.thumbnailsSectionExpanded && photoCount > 0) ? MRRYoursRecipeEditorThumbnailsExpandedHeight
                                                                             : MRRYoursRecipeEditorThumbnailsCollapsedHeight;
+
   BOOL heightChanged = fabs(previousHeight - targetHeight) > 0.5;
 
   if (heightChanged && (wasExpanded != self.thumbnailsSectionExpanded || photoCount == 0 || photoCount == 1)) {
@@ -1809,8 +1809,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
 #if MRR_HAS_PHOTOS_UI
 - (void)presentModernPhotoPickerFromSourceView:(UIView *)sourceView {
 #pragma unused(sourceView)
-  PHPickerConfiguration *configuration =
-      [[[PHPickerConfiguration alloc] initWithPhotoLibrary:[PHPhotoLibrary sharedPhotoLibrary]] autorelease];
+  PHPickerConfiguration *configuration = [[[PHPickerConfiguration alloc] initWithPhotoLibrary:[PHPhotoLibrary sharedPhotoLibrary]] autorelease];
   configuration.filter = [PHPickerFilter imagesFilter];
   configuration.selectionLimit = 1;
   configuration.preferredAssetRepresentationMode = PHPickerConfigurationAssetRepresentationModeCurrent;
@@ -2152,10 +2151,10 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
                         [self presentValidationError:appendError];
                       }
                     } else {
-                      NSError *loadError =
-                          error ?: [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
-                                                        code:35
-                                                    userInfo:@{NSLocalizedDescriptionKey : @"Photo could not be imported."}];
+                      NSError *loadError = error
+                                               ?: [NSError errorWithDomain:MRRYoursRecipeEditorValidationErrorDomain
+                                                                      code:35
+                                                                  userInfo:@{NSLocalizedDescriptionKey : @"Photo could not be imported."}];
                       [self presentValidationError:loadError];
                     }
                     [self finishPhotoPickerFlow];
