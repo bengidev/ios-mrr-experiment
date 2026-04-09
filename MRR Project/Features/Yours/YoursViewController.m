@@ -1225,6 +1225,109 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [self presentViewController:contextMenu animated:YES completion:nil];
 }
 
+#pragma mark - UIContextMenuInteractionDelegate (iOS 13+)
+
+- (UIContextMenuConfiguration *)contextMenuInteraction:(UIContextMenuInteraction *)interaction
+                       configurationForMenuAtLocation:(CGPoint)location API_AVAILABLE(ios(13.0)) {
+#pragma unused(location)
+  // Get the card view from the interaction
+  UIView *cardView = interaction.view;
+  NSString *cardID = cardView.accessibilityIdentifier ?: @"";
+  NSString *recipeID = [cardID stringByReplacingOccurrencesOfString:MRRYoursRecipeCardIdentifierPrefix withString:@""];
+  MRRUserRecipeSnapshot *recipe = [self recipeForIdentifier:recipeID];
+
+  if (recipe == nil) {
+    return nil;
+  }
+
+  // Store recipeID in configuration identifier for later retrieval
+  __weak typeof(self) weakSelf = self;
+  NSString *recipeIDCopy = [recipeID copy];
+
+  UIContextMenuConfiguration *configuration = [UIContextMenuConfiguration configurationWithIdentifier:recipeIDCopy
+                                                                                     previewProvider:nil
+                                                                                      actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
+#pragma unused(suggestedActions)
+    __strong typeof(weakSelf) strongSelf = weakSelf;
+    if (!strongSelf) {
+      return nil;
+    }
+
+    // Get recipe from stored ID
+    MRRUserRecipeSnapshot *menuRecipe = [strongSelf recipeForIdentifier:recipeIDCopy];
+    if (!menuRecipe) {
+      return nil;
+    }
+
+    // Build menu actions
+    NSMutableArray<UIAction *> *actions = [NSMutableArray array];
+
+    // Edit action
+    UIAction *editAction = [UIAction actionWithTitle:@"Edit Recipe"
+                                               image:[UIImage systemImageNamed:@"square.and.pencil"]
+                                          identifier:nil
+                                             handler:^(__kindof UIAction * _Nonnull action) {
+#pragma unused(action)
+      __strong typeof(weakSelf) editStrongSelf = weakSelf;
+      if (editStrongSelf) {
+        MRRUserRecipeSnapshot *editRecipe = [editStrongSelf recipeForIdentifier:recipeIDCopy];
+        if (editRecipe) {
+          [editStrongSelf presentEditorForRecipe:editRecipe];
+        }
+      }
+    }];
+    [actions addObject:editAction];
+
+    // Share action
+    UIAction *shareAction = [UIAction actionWithTitle:@"Share Recipe"
+                                                image:[UIImage systemImageNamed:@"square.and.arrow.up"]
+                                           identifier:nil
+                                              handler:^(__kindof UIAction * _Nonnull action) {
+#pragma unused(action)
+      __strong typeof(weakSelf) shareStrongSelf = weakSelf;
+      if (shareStrongSelf) {
+        MRRUserRecipeSnapshot *shareRecipe = [shareStrongSelf recipeForIdentifier:recipeIDCopy];
+        if (shareRecipe) {
+          [shareStrongSelf shareRecipe:shareRecipe];
+        }
+      }
+    }];
+    [actions addObject:shareAction];
+
+    // Delete action (destructive)
+    UIAction *deleteAction = [UIAction actionWithTitle:@"Delete Recipe"
+                                                 image:[UIImage systemImageNamed:@"trash"]
+                                            identifier:nil
+                                               handler:^(__kindof UIAction * _Nonnull action) {
+#pragma unused(action)
+      __strong typeof(weakSelf) deleteStrongSelf = weakSelf;
+      if (deleteStrongSelf) {
+        MRRUserRecipeSnapshot *deleteRecipe = [deleteStrongSelf recipeForIdentifier:recipeIDCopy];
+        if (deleteRecipe) {
+          [deleteStrongSelf showDeleteConfirmationForRecipe:deleteRecipe];
+        }
+      }
+    }];
+    deleteAction.attributes = UIMenuElementAttributesDestructive;
+    [actions addObject:deleteAction];
+
+    return [UIMenu menuWithTitle:@"" children:actions];
+  }];
+
+  [recipeIDCopy release];
+  return configuration;
+}
+
+- (UITargetedPreview *)contextMenuInteraction:(UIContextMenuInteraction *)interaction
+       previewForHighlightingMenuWithConfiguration:(UIContextMenuConfiguration *)configuration API_AVAILABLE(ios(13.0)) {
+#pragma unused(configuration)
+  UIView *cardView = interaction.view;
+
+  // Use the card view itself as the preview
+  UITargetedPreview *preview = [[UITargetedPreview alloc] initWithView:cardView];
+  return [preview autorelease];
+}
+
 - (void)shareRecipe:(MRRUserRecipeSnapshot *)recipe {
   // Create share items
   NSMutableArray *items = [NSMutableArray array];
