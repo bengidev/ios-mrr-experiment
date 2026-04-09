@@ -14,7 +14,7 @@ static CGFloat const MRRContextMenuInitialScale = 0.88;
 static CGFloat const MRRContextMenuSpringDamping = 0.75;
 static CGFloat const MRRContextMenuSpringVelocity = 0.5;
 static CGFloat const MRRContextMenuAnimationDuration = 0.45;
-static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;
+static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;  // 40ms between items
 
 @interface MRRRecipeCardContextMenuAction : NSObject
 @property(nonatomic, copy, readonly) NSString *title;
