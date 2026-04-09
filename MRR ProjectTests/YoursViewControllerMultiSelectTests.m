@@ -28,9 +28,9 @@
   self.mockPhotoStorage = [[MRRPhotoStorage alloc] init];
 
   self.viewController = [[YoursViewController alloc] initWithSessionUserID:@"test-user"
-                                                        userRecipesStore:self.mockStore
-                                                              syncEngine:self.mockSyncEngine
-                                                            photoStorage:self.mockPhotoStorage];
+                                                          userRecipesStore:self.mockStore
+                                                                syncEngine:self.mockSyncEngine
+                                                              photoStorage:self.mockPhotoStorage];
 }
 
 - (void)tearDown {
@@ -149,4 +149,3 @@
 }
 
 @end
-
