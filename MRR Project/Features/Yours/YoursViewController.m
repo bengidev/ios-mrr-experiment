@@ -663,12 +663,20 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   updatedLabel.numberOfLines = 0;
   [containerView addSubview:updatedLabel];
 
-  // Add long-press gesture for context menu with card animation
-  UILongPressGestureRecognizer *longPressGesture = [[[UILongPressGestureRecognizer alloc] initWithTarget:self
-                                                                                                 action:@selector(handleRecipeCardLongPress:)] autorelease];
-  longPressGesture.minimumPressDuration = 0.3; // Faster response for better UX
-  longPressGesture.cancelsTouchesInView = YES; // Cancel other touches when long press triggers
-  [containerView addGestureRecognizer:longPressGesture];
+  // Setup context menu based on iOS version
+  if (@available(iOS 13.0, *)) {
+    // Use native UIContextMenuInteraction for modern iOS
+    UIContextMenuInteraction *interaction = [[UIContextMenuInteraction alloc] initWithDelegate:self];
+    [containerView addInteraction:interaction];
+    [interaction release];  // View retains the interaction
+  } else {
+    // iOS 12 fallback: Use custom long-press gesture
+    UILongPressGestureRecognizer *longPressGesture = [[[UILongPressGestureRecognizer alloc] initWithTarget:self
+                                                                                                  action:@selector(handleRecipeCardLongPress:)] autorelease];
+    longPressGesture.minimumPressDuration = 0.3;
+    longPressGesture.cancelsTouchesInView = YES;
+    [containerView addGestureRecognizer:longPressGesture];
+  }
 
   // Add selection checkmark overlay (hidden by default)
   UIButton *selectButton = [UIButton buttonWithType:UIButtonTypeCustom];
