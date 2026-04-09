@@ -329,7 +329,7 @@ static CGFloat const MRRContextMenuItemStaggerDelay = 0.04;
   // Animate menu items with stagger
   for (NSUInteger i = 0; i < self.menuItemViews.count; i++) {
     UIView *itemView = self.menuItemViews[i];
-    CGFloat delay = 0.15 + (i * MRRContextMenuItemStaggerDelay);
+    CGFloat delay = 0.05 + (i * MRRContextMenuItemStaggerDelay);
     
     [UIView animateWithDuration:0.35
                           delay:delay
