@@ -73,8 +73,8 @@ static BOOL MRRManagedObjectContextHasPersistentChanges(NSManagedObjectContext *
   } else {
     // Explicitly set SQLite store type and URL for reliable persistence
     description.type = NSSQLiteStoreType;
-    NSURL *storeURL = [[[NSPersistentContainer defaultDirectoryURL] URLByAppendingPathComponent:MRRCoreDataModelName]
-                        URLByAppendingPathExtension:@"sqlite"];
+    NSURL *storeURL =
+        [[[NSPersistentContainer defaultDirectoryURL] URLByAppendingPathComponent:MRRCoreDataModelName] URLByAppendingPathExtension:@"sqlite"];
     [description setURL:storeURL];
   }
   description.shouldMigrateStoreAutomatically = YES;
