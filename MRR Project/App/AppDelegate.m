@@ -333,25 +333,25 @@
     return;
   }
 
-  __block AppDelegate *blockSelf = self;
+  MRRAppDelegateObservationTarget *targetBox = [[self.authObservationTarget retain] autorelease];
   self.authStateObservation = [[self.authenticationController observeAuthStateWithHandler:^(MRRAuthSession *_Nullable session) {
-    AppDelegate *strongSelf = blockSelf;
-    if (strongSelf == nil) {
+    AppDelegate *target = targetBox.target;
+    if (target == nil) {
       return;
     }
 
     if ([NSThread isMainThread]) {
-      [strongSelf handleObservedAuthenticationSession:session];
+      [target handleObservedAuthenticationSession:session];
       return;
     }
 
     dispatch_async(dispatch_get_main_queue(), ^{
-      AppDelegate *mainThreadSelf = blockSelf;
-      if (mainThreadSelf == nil) {
+      AppDelegate *mainThreadTarget = targetBox.target;
+      if (mainThreadTarget == nil) {
         return;
       }
 
-      [mainThreadSelf handleObservedAuthenticationSession:session];
+      [mainThreadTarget handleObservedAuthenticationSession:session];
     });
   }] retain];
 }
