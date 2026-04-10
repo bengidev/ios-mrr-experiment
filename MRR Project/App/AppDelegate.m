@@ -276,25 +276,15 @@
   }];
 
   NSString *userID = [[self.visibleAuthenticatedUserID copy] autorelease];
-  __block AppDelegate *blockSelf = self;
+  AppDelegate *strongSelf = self;
   [self.savedRecipesSyncEngine
       flushPendingChangesForUserID:userID
                         completion:^(__unused NSError *error) {
-                          AppDelegate *strongSelf = blockSelf;
-                          if (strongSelf == nil) {
-                            return;
-                          }
-
                           [strongSelf.userRecipesSyncEngine
                               flushPendingChangesForUserID:userID
                                                 completion:^(__unused NSError *userError) {
                                                   dispatch_async(dispatch_get_main_queue(), ^{
-                                                    AppDelegate *completedSelf = blockSelf;
-                                                    if (completedSelf == nil) {
-                                                      return;
-                                                    }
-
-                                                    [completedSelf endSavedRecipesBackgroundTaskIfNeededForApplication:application];
+                                                    [strongSelf endSavedRecipesBackgroundTaskIfNeededForApplication:application];
                                                   });
                                                 }];
                         }];
