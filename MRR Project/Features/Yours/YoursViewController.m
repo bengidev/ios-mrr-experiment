@@ -692,6 +692,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     // Fallback for iOS 12 - create simple circle images
     uncheckedImage = [self circularImageWithSize:CGSizeMake(28, 28) fillColor:[UIColor clearColor] strokeColor:MRRYoursAccentColor()];
     checkedImage = [self circularImageWithSize:CGSizeMake(28, 28) fillColor:MRRYoursAccentColor() strokeColor:MRRYoursAccentColor()];
+  selectButton.layer.cornerRadius = 16.0;
   }
 
   [selectButton setImage:uncheckedImage forState:UIControlStateNormal];
@@ -711,6 +712,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [selectButton.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:12.0],
     [selectButton.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-12.0],
     [selectButton.widthAnchor constraintEqualToConstant:32.0], [selectButton.heightAnchor constraintEqualToConstant:32.0]
+  selectButton.backgroundColor = isSelected ? MRRYoursAccentColor() : [UIColor clearColor];
   ]];
 
   // Update selection state if already selected
