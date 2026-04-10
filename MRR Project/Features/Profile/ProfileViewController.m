@@ -237,15 +237,10 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 
   [self updateLogoutUIForInProgress:YES];
   if (self.logoutController != nil) {
-    __block ProfileViewController *blockSelf = self;
+    ProfileViewController *strongSelf = self;
     [self.logoutController performLogoutForSession:self.session
                                         completion:^(NSError *error) {
                                           dispatch_async(dispatch_get_main_queue(), ^{
-                                            ProfileViewController *strongSelf = blockSelf;
-                                            if (strongSelf == nil) {
-                                              return;
-                                            }
-
                                             [strongSelf updateLogoutUIForInProgress:NO];
                                             if (error != nil) {
                                               [strongSelf presentLogoutError:error];
