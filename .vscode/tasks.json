@@ -159,6 +159,8 @@
       "label": "sweetpad: launch",
       "type": "sweetpad",
       "action": "launch",
+      "scheme": "MRR Project",
+      "destination": "platform=iOS Simulator,name=iPhone 17e,OS=latest",
       "problemMatcher": []
     }
   ]
