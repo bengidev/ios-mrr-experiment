@@ -162,6 +162,20 @@
       "scheme": "MRR Project",
       "destination": "platform=iOS Simulator,name=iPhone 17e,OS=latest",
       "problemMatcher": []
+    },
+    {
+      "label": "sweetpad: debugging-launch",
+      "type": "sweetpad",
+      "action": "debugging-launch",
+      "scheme": "MRR Project",
+      "destination": "platform=iOS Simulator,name=iPhone 17e,OS=latest",
+      "isBackground": true,
+      "problemMatcher": [
+        "$sweetpad-watch",
+        "$sweetpad-xcodebuild-default",
+        "$sweetpad-xcbeautify-errors",
+        "$sweetpad-xcbeautify-warnings"
+      ]
     }
   ]
 }
