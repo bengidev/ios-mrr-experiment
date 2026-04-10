@@ -25,6 +25,17 @@
 
 #import <GoogleSignIn/GoogleSignIn.h>
 
+@class AppDelegate;
+
+@interface MRRAppDelegateObservationTarget : NSObject
+
+@property(nonatomic, assign, nullable) AppDelegate *target;
+
+@end
+
+@implementation MRRAppDelegateObservationTarget
+@end
+
 @interface AppDelegate () <OnboardingViewControllerDelegate>
 
 @property(nonatomic, retain) OnboardingStateController *onboardingStateController;
@@ -36,6 +47,7 @@
 @property(nonatomic, retain) id<MRRUserRecipesCloudSyncing> userRecipesSyncEngine;
 @property(nonatomic, retain, nullable) id<MRRLogoutCoordinating> logoutController;
 @property(nonatomic, retain, nullable) id<MRRAuthStateObservation> authStateObservation;
+@property(nonatomic, retain) MRRAppDelegateObservationTarget *authObservationTarget;
 @property(nonatomic, retain, nullable) MainMenuCoordinator *mainMenuCoordinator;
 @property(nonatomic, copy, nullable) NSString *visibleAuthenticatedUserID;
 @property(nonatomic, assign) UIBackgroundTaskIdentifier savedRecipesBackgroundTaskIdentifier;
@@ -77,6 +89,8 @@
   if (self) {
     _onboardingStateController = [onboardingStateController retain];
     _authenticationController = [authenticationController retain];
+    _authObservationTarget = [[MRRAppDelegateObservationTarget alloc] init];
+    _authObservationTarget.target = self;
     _savedRecipesBackgroundTaskIdentifier = UIBackgroundTaskInvalid;
   }
 
@@ -86,6 +100,7 @@
 #pragma mark - Memory Management
 
 - (void)dealloc {
+  self.authObservationTarget.target = nil;
   [self.authStateObservation invalidate];
   [_logoutController release];
   [_userRecipesSyncEngine release];
@@ -95,6 +110,7 @@
   [_coreDataStack release];
   [_visibleAuthenticatedUserID release];
   [_mainMenuCoordinator release];
+  [_authObservationTarget release];
   [_authStateObservation release];
   [_authenticationController release];
   [_onboardingStateController release];
