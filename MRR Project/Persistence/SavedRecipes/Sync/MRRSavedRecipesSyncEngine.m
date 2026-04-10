@@ -89,6 +89,17 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
   return 0;
 }
 
+@class MRRSavedRecipesSyncEngine;
+
+@interface MRRSavedRecipesSyncEngineTargetBox : NSObject
+
+@property(nonatomic, assign, nullable) MRRSavedRecipesSyncEngine *target;
+
+@end
+
+@implementation MRRSavedRecipesSyncEngineTargetBox
+@end
+
 @interface MRRSavedRecipesSyncEngine ()
 
 @property(nonatomic, retain) MRRSavedRecipesStore *store;
@@ -96,6 +107,7 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
 @property(nonatomic, retain, nullable) id<FIRListenerRegistration> listenerRegistration;
 @property(nonatomic, copy, nullable) NSString *activeUserID;
 @property(nonatomic, retain) NSMutableArray *pendingCompletions;
+@property(nonatomic, retain) MRRSavedRecipesSyncEngineTargetBox *listenerTargetBox;
 @property(nonatomic, assign) BOOL syncInFlight;
 
 - (FIRCollectionReference *)savedRecipesCollectionForUserID:(NSString *)userID;
@@ -117,6 +129,8 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
     _store = [store retain];
     _firestore = [[FIRFirestore firestore] retain];
     _pendingCompletions = [[NSMutableArray alloc] init];
+    _listenerTargetBox = [[MRRSavedRecipesSyncEngineTargetBox alloc] init];
+    _listenerTargetBox.target = self;
 
     FIRFirestoreSettings *settings = [[[_firestore settings] copy] autorelease];
     if (settings == nil) {
@@ -134,7 +148,9 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
 }
 
 - (void)dealloc {
+  self.listenerTargetBox.target = nil;
   [self.listenerRegistration remove];
+  [_listenerTargetBox release];
   [_pendingCompletions release];
   [_activeUserID release];
   [_listenerRegistration release];
@@ -158,9 +174,11 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
   self.activeUserID = userID;
 
   FIRCollectionReference *collection = [self savedRecipesCollectionForUserID:userID];
+  MRRSavedRecipesSyncEngineTargetBox *targetBox = [[self.listenerTargetBox retain] autorelease];
   [collection getDocumentsWithCompletion:^(FIRQuerySnapshot *snapshot, NSError *error) {
-    if (error == nil && snapshot != nil) {
-      [self handleRemoteSnapshot:snapshot userID:userID];
+    MRRSavedRecipesSyncEngine *target = targetBox.target;
+    if (target != nil && error == nil && snapshot != nil) {
+      [target handleRemoteSnapshot:snapshot userID:userID];
     }
     if (completion != nil) {
       completion(error);
@@ -168,10 +186,12 @@ static NSInteger MRRSavedRecipesFirestoreIntegerValue(id candidate) {
   }];
 
   self.listenerRegistration = [[collection addSnapshotListener:^(FIRQuerySnapshot *snapshot, NSError *error) {
-    if (error != nil || snapshot == nil) {
+    MRRSavedRecipesSyncEngine *target = targetBox.target;
+    if (target == nil || error != nil || snapshot == nil) {
       return;
     }
-    [self handleRemoteSnapshot:snapshot userID:userID];
+
+    [target handleRemoteSnapshot:snapshot userID:userID];
   }] retain];
 
   [self requestImmediateSyncForUserID:userID];
