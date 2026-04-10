@@ -58,6 +58,17 @@ static UIColor *MRRYoursAccentColor(void) {
                             [UIColor colorWithRed:0.96 green:0.70 blue:0.47 alpha:1.0]);
 }
 
+static UIColor *MRRYoursDeleteColor(void) {
+  return MRRYoursDynamicFallbackColor([UIColor colorWithRed:0.87 green:0.21 blue:0.19 alpha:1.0], [UIColor colorWithRed:1.0
+                                                                                                                  green:0.42
+                                                                                                                   blue:0.40
+                                                                                                                  alpha:1.0]);
+}
+
+static CGFloat MRRYoursSelectionToolbarWidth(void) { return 228.0; }
+
+static CGFloat MRRYoursDeleteButtonWidth(void) { return 180.0; }
+
 static NSString *const MRRYoursRecipeCardIdentifierPrefix = @"yours.recipeCard.";
 static NSString *const MRRYoursRecipeCoverImageIdentifierPrefix = @"yours.recipeCoverImage.";
 static NSString *const MRRYoursRecipeDeleteButtonIdentifierPrefix = @"yours.deleteButton.";
@@ -84,11 +95,12 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 @property(nonatomic, retain) NSMutableDictionary<NSString *, NSLayoutConstraint *> *thumbnailsHeightConstraints;
 @property(nonatomic, retain) NSMutableSet<NSString *> *selectedRecipeIDs;
 @property(nonatomic, assign) BOOL isSelectionMode;
-@property(nonatomic, retain) UIToolbar *selectionToolbar;
+@property(nonatomic, retain) UIView *selectionToolbar;
+@property(nonatomic, retain) NSLayoutConstraint *selectionToolbarBottomConstraint;
 @property(nonatomic, retain) UIBarButtonItem *addBarButtonItem;
 @property(nonatomic, retain) UIBarButtonItem *editBarButtonItem;
 @property(nonatomic, retain) UIBarButtonItem *doneBarButtonItem;
-@property(nonatomic, retain) UIBarButtonItem *deleteToolbarButton;
+@property(nonatomic, retain) UIButton *deleteToolbarButton;
 @property(nonatomic, retain) UIView *pressedCardView;
 
 - (instancetype)initWithSessionUserID:(nullable NSString *)sessionUserID
@@ -179,6 +191,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [_doneBarButtonItem release];
   [_editBarButtonItem release];
   [_addBarButtonItem release];
+  [_selectionToolbarBottomConstraint release];
   [_selectionToolbar release];
   [_selectedRecipeIDs release];
   [super dealloc];
@@ -262,6 +275,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     self.addBarButtonItem.accessibilityLabel = @"Add recipe";
     self.addBarButtonItem.accessibilityHint = @"Double-tap to create a new recipe";
     self.addBarButtonItem.tintColor = MRRYoursAccentColor();
+
+    // Not in selection mode: keep Add available and pair it with Edit when recipes exist
     if (self.recipes.count > 0) {
       if (self.editBarButtonItem == nil) {
         self.editBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit
@@ -321,35 +336,57 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [cardsStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-28.0]
   ]];
 
-  // Add contextual toolbar for selection mode (hidden by default)
-  UIToolbar *toolbar = [[[UIToolbar alloc] init] autorelease];
+  // Add a floating action bar for selection mode (hidden by default)
+  UIView *toolbar = [[[UIView alloc] init] autorelease];
   toolbar.translatesAutoresizingMaskIntoConstraints = NO;
   toolbar.hidden = YES;
+  toolbar.alpha = 0.0;
+  toolbar.transform = CGAffineTransformMakeTranslation(0.0, 12.0);
   toolbar.accessibilityIdentifier = @"yours.selectionToolbar";
   toolbar.accessibilityLabel = @"Selection actions";
+  toolbar.backgroundColor = MRRYoursSurfaceColor();
+  toolbar.layer.cornerRadius = 26.0;
+  toolbar.layer.borderWidth = 1.0;
+  toolbar.layer.borderColor = MRRYoursBorderColor().CGColor;
+  toolbar.layer.shadowColor = [UIColor blackColor].CGColor;
+  toolbar.layer.shadowOffset = CGSizeMake(0.0, 10.0);
+  toolbar.layer.shadowRadius = 22.0;
+  toolbar.layer.shadowOpacity = 0.10;
   [self.view addSubview:toolbar];
   self.selectionToolbar = [toolbar retain];
 
-  // Create toolbar items
-  UIBarButtonItem *flexSpace = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil
-                                                                              action:nil] autorelease];
-
-  UIBarButtonItem *deleteButton = [[[UIBarButtonItem alloc] initWithTitle:@"Delete"
-                                                                    style:UIBarButtonItemStylePlain
-                                                                   target:self
-                                                                   action:@selector(handleDeleteToolbarButtonTapped:)] autorelease];
-  deleteButton.tintColor = [UIColor systemRedColor];
+  UIButton *deleteButton = [UIButton buttonWithType:UIButtonTypeSystem];
+  deleteButton.translatesAutoresizingMaskIntoConstraints = NO;
+  deleteButton.layer.cornerRadius = 18.0;
+  deleteButton.backgroundColor = [MRRYoursDeleteColor() colorWithAlphaComponent:0.10];
+  deleteButton.contentEdgeInsets = UIEdgeInsetsMake(12.0, 22.0, 12.0, 22.0);
+  deleteButton.titleLabel.font = [UIFont monospacedDigitSystemFontOfSize:17.0 weight:UIFontWeightSemibold];
+  deleteButton.titleLabel.numberOfLines = 1;
+  deleteButton.titleLabel.lineBreakMode = NSLineBreakByClipping;
+  deleteButton.titleLabel.adjustsFontSizeToFitWidth = NO;
+  deleteButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+  [deleteButton setTitle:@"Delete" forState:UIControlStateNormal];
+  [deleteButton setTitleColor:MRRYoursDeleteColor() forState:UIControlStateNormal];
+  [deleteButton setTitleColor:[MRRYoursDeleteColor() colorWithAlphaComponent:0.38] forState:UIControlStateDisabled];
   deleteButton.accessibilityIdentifier = @"yours.deleteToolbarButton";
   deleteButton.accessibilityHint = @"Double-tap to delete selected recipes";
+  [deleteButton addTarget:self action:@selector(handleDeleteToolbarButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+  [toolbar addSubview:deleteButton];
   self.deleteToolbarButton = [deleteButton retain];
 
-  toolbar.items = @[ flexSpace, deleteButton, flexSpace ];
-
-  // Toolbar constraints
+  self.selectionToolbarBottomConstraint = [[toolbar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
+                                                                                constant:-14.0] retain];
   [NSLayoutConstraint activateConstraints:@[
-    [toolbar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-    [toolbar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-    [toolbar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor]
+    [toolbar.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+    [toolbar.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.view.leadingAnchor constant:24.0],
+    [toolbar.trailingAnchor constraintLessThanOrEqualToAnchor:self.view.trailingAnchor constant:-24.0],
+    [toolbar.widthAnchor constraintEqualToConstant:MRRYoursSelectionToolbarWidth()],
+    [toolbar.heightAnchor constraintGreaterThanOrEqualToConstant:72.0], self.selectionToolbarBottomConstraint,
+
+    [deleteButton.topAnchor constraintEqualToAnchor:toolbar.topAnchor constant:12.0],
+    [deleteButton.centerXAnchor constraintEqualToAnchor:toolbar.centerXAnchor],
+    [deleteButton.widthAnchor constraintEqualToConstant:MRRYoursDeleteButtonWidth()],
+    [deleteButton.bottomAnchor constraintEqualToAnchor:toolbar.bottomAnchor constant:-12.0]
   ]];
 }
 
@@ -692,12 +729,12 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     // Fallback for iOS 12 - create simple circle images
     uncheckedImage = [self circularImageWithSize:CGSizeMake(28, 28) fillColor:[UIColor clearColor] strokeColor:MRRYoursAccentColor()];
     checkedImage = [self circularImageWithSize:CGSizeMake(28, 28) fillColor:MRRYoursAccentColor() strokeColor:MRRYoursAccentColor()];
-  selectButton.layer.cornerRadius = 16.0;
   }
 
   [selectButton setImage:uncheckedImage forState:UIControlStateNormal];
   [selectButton setImage:checkedImage forState:UIControlStateSelected];
   selectButton.tintColor = MRRYoursAccentColor();
+  selectButton.layer.cornerRadius = 16.0;
   selectButton.alpha = 0.0;  // Hidden by default, shown in selection mode
   selectButton.hidden = YES;
 
@@ -712,12 +749,12 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     [selectButton.topAnchor constraintEqualToAnchor:containerView.topAnchor constant:12.0],
     [selectButton.trailingAnchor constraintEqualToAnchor:containerView.trailingAnchor constant:-12.0],
     [selectButton.widthAnchor constraintEqualToConstant:32.0], [selectButton.heightAnchor constraintEqualToConstant:32.0]
-  selectButton.backgroundColor = isSelected ? MRRYoursAccentColor() : [UIColor clearColor];
   ]];
 
   // Update selection state if already selected
   BOOL isSelected = [self.selectedRecipeIDs containsObject:recipe.recipeID];
   selectButton.selected = isSelected;
+  selectButton.backgroundColor = isSelected ? MRRYoursAccentColor() : [UIColor clearColor];
   selectButton.alpha = self.isSelectionMode ? 1.0 : 0.0;
   selectButton.hidden = !self.isSelectionMode;
 
@@ -951,27 +988,45 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 - (void)updateToolbarVisibility {
   // Show toolbar in selection mode when there are selected items
   BOOL shouldShowToolbar = self.isSelectionMode && self.selectedRecipeIDs.count > 0;
+  NSString *deleteTitle = shouldShowToolbar ? [NSString stringWithFormat:@"Delete (%lu)", (unsigned long)self.selectedRecipeIDs.count] : @"Delete";
+  UIEdgeInsets scrollInsets = self.scrollView.contentInset;
+  scrollInsets.bottom = shouldShowToolbar ? 116.0 : 0.0;
+  UIEdgeInsets indicatorInsets = self.scrollView.scrollIndicatorInsets;
+  indicatorInsets.bottom = scrollInsets.bottom;
+
+  [UIView performWithoutAnimation:^{
+    [self.deleteToolbarButton setTitle:deleteTitle forState:UIControlStateNormal];
+    [self.selectionToolbar layoutIfNeeded];
+  }];
 
   // Update toolbar visibility with animation
-  if (shouldShowToolbar != !self.selectionToolbar.hidden) {
-    [UIView animateWithDuration:0.25
-                     animations:^{
-                       self.selectionToolbar.hidden = !shouldShowToolbar;
-                       self.selectionToolbar.alpha = shouldShowToolbar ? 1.0 : 0.0;
-                     }];
+  if (shouldShowToolbar) {
+    self.selectionToolbar.hidden = NO;
+  }
+  [UIView animateWithDuration:0.25
+      animations:^{
+        self.selectionToolbar.alpha = shouldShowToolbar ? 1.0 : 0.0;
+        self.selectionToolbar.transform = shouldShowToolbar ? CGAffineTransformIdentity : CGAffineTransformMakeTranslation(0.0, 12.0);
+        self.scrollView.contentInset = scrollInsets;
+        self.scrollView.scrollIndicatorInsets = indicatorInsets;
+      }
+      completion:^(BOOL finished) {
+        if (finished) {
+          self.selectionToolbar.hidden = !shouldShowToolbar;
+        }
+      }];
+  if (!shouldShowToolbar) {
+    self.selectionToolbarBottomConstraint.constant = -14.0;
   }
 
   // Update delete button title with count
   if (self.selectedRecipeIDs.count > 0) {
-    NSString *title = [NSString stringWithFormat:@"Delete (%lu)", (unsigned long)self.selectedRecipeIDs.count];
-    self.deleteToolbarButton.title = title;
     self.deleteToolbarButton.enabled = YES;
     // Update accessibility label with count
     NSString *accessibilityLabel = [NSString
         stringWithFormat:@"Delete %lu recipe%@", (unsigned long)self.selectedRecipeIDs.count, self.selectedRecipeIDs.count == 1 ? @"" : @"s"];
     self.deleteToolbarButton.accessibilityLabel = accessibilityLabel;
   } else {
-    self.deleteToolbarButton.title = @"Delete";
     self.deleteToolbarButton.enabled = NO;
   }
 }
@@ -1406,6 +1461,17 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
       } else {
         cardView.layer.borderColor = MRRYoursBorderColor().CGColor;
         cardView.layer.borderWidth = 1.0;
+      }
+
+      for (UIView *subview in cardView.subviews) {
+        if ([subview isKindOfClass:[UIButton class]]) {
+          UIButton *button = (UIButton *)subview;
+          if ([button.accessibilityIdentifier isEqualToString:[NSString stringWithFormat:@"yours.selectButton.%@", recipeID]]) {
+            button.selected = isSelected;
+            button.backgroundColor = (isSelected && self.isSelectionMode) ? MRRYoursAccentColor() : [UIColor clearColor];
+            break;
+          }
+        }
       }
       break;
     }
