@@ -12,7 +12,8 @@
 	"argv": [
 		"/opt/homebrew/bin/xcode-build-server"
 	],
-	"build_root": "/Users/beng/Documents/iOS Projects/iOS MRR Learning Project/ios_mrr_learning_project/.derivedData",
+	"build_root": "/Users/beng/Library/Developer/Xcode/DerivedData/MRR_Project-czpvzhtjywhqsthikkuahnumowam",
 	"scheme": "MRR Project",
-	"kind": "xcode"
+	"kind": "xcode",
+	"workspace": "/Users/beng/Documents/iOS Projects/iOS MRR Experiment/ios-mrr-experiment/MRR Project.xcodeproj/project.xcworkspace"
 }
