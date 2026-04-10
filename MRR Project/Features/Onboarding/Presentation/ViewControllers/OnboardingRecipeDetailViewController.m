@@ -587,7 +587,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
 
   self.heroImageRequestToken += 1;
   NSUInteger requestToken = self.heroImageRequestToken;
-  __block OnboardingRecipeDetailViewController *blockSelf = self;
+  OnboardingRecipeDetailViewController *strongSelf = self;
   NSURLSessionDataTask *dataTask = [[NSURLSession sharedSession] dataTaskWithURL:imageURL
                                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
                                                                  if (error != nil || data == nil) {
@@ -600,8 +600,7 @@ static void MRROnboardingDetailCompleteOnMainThread(void (^block)(void)) {
                                                                  }
 
                                                                  MRROnboardingDetailCompleteOnMainThread(^{
-                                                                   OnboardingRecipeDetailViewController *strongSelf = blockSelf;
-                                                                   if (strongSelf == nil || requestToken != strongSelf.heroImageRequestToken) {
+                                                                   if (requestToken != strongSelf.heroImageRequestToken) {
                                                                      return;
                                                                    }
 
