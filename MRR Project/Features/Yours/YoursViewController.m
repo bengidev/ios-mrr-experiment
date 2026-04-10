@@ -85,6 +85,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
 @property(nonatomic, retain) NSMutableSet<NSString *> *selectedRecipeIDs;
 @property(nonatomic, assign) BOOL isSelectionMode;
 @property(nonatomic, retain) UIToolbar *selectionToolbar;
+@property(nonatomic, retain) UIBarButtonItem *addBarButtonItem;
 @property(nonatomic, retain) UIBarButtonItem *editBarButtonItem;
 @property(nonatomic, retain) UIBarButtonItem *doneBarButtonItem;
 @property(nonatomic, retain) UIBarButtonItem *deleteToolbarButton;
@@ -177,6 +178,7 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
   [_deleteToolbarButton release];
   [_doneBarButtonItem release];
   [_editBarButtonItem release];
+  [_addBarButtonItem release];
   [_selectionToolbar release];
   [_selectedRecipeIDs release];
   [super dealloc];
@@ -234,7 +236,8 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
     }
     self.doneBarButtonItem.accessibilityLabel = @"Exit selection mode";
     self.doneBarButtonItem.accessibilityHint = @"Double-tap to cancel selection";
-    self.navigationItem.rightBarButtonItem = self.doneBarButtonItem;
+    self.doneBarButtonItem.tintColor = MRRYoursAccentColor();
+    self.navigationItem.rightBarButtonItems = @[ self.doneBarButtonItem ];
 
     // Show selection count on left if items selected
     if (self.selectedRecipeIDs.count > 0) {
@@ -250,9 +253,16 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
       self.navigationItem.leftBarButtonItem.enabled = NO;
     }
   } else {
-    // Not in selection mode: show Add button (or Edit if recipes exist)
+    if (self.addBarButtonItem == nil) {
+      self.addBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd
+                                                                             target:self
+                                                                             action:@selector(handleAddButtonTapped:)] autorelease];
+      self.addBarButtonItem.accessibilityIdentifier = @"yours.addButton";
+    }
+    self.addBarButtonItem.accessibilityLabel = @"Add recipe";
+    self.addBarButtonItem.accessibilityHint = @"Double-tap to create a new recipe";
+    self.addBarButtonItem.tintColor = MRRYoursAccentColor();
     if (self.recipes.count > 0) {
-      // Show Edit button to enter selection mode
       if (self.editBarButtonItem == nil) {
         self.editBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit
                                                                                 target:self
@@ -261,14 +271,10 @@ static CGFloat const MRRYoursRecipeThumbnailsHeaderHeight = 36.0;
       }
       self.editBarButtonItem.accessibilityLabel = @"Enter selection mode";
       self.editBarButtonItem.accessibilityHint = @"Double-tap to select multiple recipes";
-      self.navigationItem.rightBarButtonItem = self.editBarButtonItem;
+      self.editBarButtonItem.tintColor = MRRYoursAccentColor();
+      self.navigationItem.rightBarButtonItems = @[ self.addBarButtonItem, self.editBarButtonItem ];
     } else {
-      // Empty state: show Add button
-      UIBarButtonItem *addButton = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd
-                                                                                  target:self
-                                                                                  action:@selector(handleAddButtonTapped:)] autorelease];
-      addButton.accessibilityIdentifier = @"yours.addButton";
-      self.navigationItem.rightBarButtonItem = addButton;
+      self.navigationItem.rightBarButtonItems = @[ self.addBarButtonItem ];
     }
 
     // Clear left bar button item
