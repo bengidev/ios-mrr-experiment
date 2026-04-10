@@ -1147,7 +1147,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
 
   self.coverImageRequestToken += 1;
   NSUInteger requestToken = self.coverImageRequestToken;
-  __block MRRYoursRecipeEditorViewController *blockSelf = self;
+  MRRYoursRecipeEditorViewController *strongSelf = self;
   NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:imageURL
                                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
 #pragma unused(response)
@@ -1159,8 +1159,7 @@ static NSString *MRRYoursEditorPhotoLimitErrorText(void) {
                                                                return;
                                                              }
                                                              dispatch_async(dispatch_get_main_queue(), ^{
-                                                               MRRYoursRecipeEditorViewController *strongSelf = blockSelf;
-                                                               if (strongSelf == nil || requestToken != strongSelf.coverImageRequestToken) {
+                                                               if (requestToken != strongSelf.coverImageRequestToken) {
                                                                  return;
                                                                }
                                                                selectedDraft.previewImage = image;
