@@ -8,7 +8,9 @@ SCHEME="${SCHEME:-MRR Project}"
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-$ROOT_DIR/ci_artifacts}"
 RESULTS_DIR="$ARTIFACTS_DIR/test-results"
 COVERAGE_DIR="$ARTIFACTS_DIR/coverage"
-DERIVED_DATA_PATH="$ARTIFACTS_DIR/DerivedData"
+DERIVED_DATA_ROOT="${DERIVED_DATA_ROOT:-${TMPDIR%/}/ios-mrr-experiment-ci}"
+DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$DERIVED_DATA_ROOT/DerivedData}"
+CLONED_SOURCE_PACKAGES_DIR_PATH="${CLONED_SOURCE_PACKAGES_DIR_PATH:-$DERIVED_DATA_ROOT/SourcePackages}"
 RESULT_BUNDLE_PATH="$RESULTS_DIR/MRR-Project-Tests.xcresult"
 COVERAGE_REPORT_PATH="$COVERAGE_DIR/coverage-report.txt"
 COVERAGE_JSON_PATH="$COVERAGE_DIR/coverage-report.json"
@@ -20,8 +22,8 @@ if [[ -n "${IOS_SIMULATOR_NAME:-}" ]]; then
 fi
 PREFERRED_SIMULATORS+=("iPhone 16e" "iPhone 16" "iPhone 15" "iPhone 14")
 
-mkdir -p "$RESULTS_DIR" "$COVERAGE_DIR"
-rm -rf "$DERIVED_DATA_PATH" "$RESULT_BUNDLE_PATH"
+mkdir -p "$RESULTS_DIR" "$COVERAGE_DIR" "$DERIVED_DATA_ROOT"
+rm -rf "$DERIVED_DATA_PATH" "$CLONED_SOURCE_PACKAGES_DIR_PATH" "$RESULT_BUNDLE_PATH"
 
 find_simulator_name() {
   local destinations_output="" candidate="" fallback=""
@@ -41,6 +43,7 @@ find_simulator_name() {
   fallback="$(printf '%s\n' "$destinations_output" \
     | sed -n 's/.*platform:iOS Simulator[^}]*name:\([^,}]*\).*/\1/p' \
     | sed 's/[[:space:]]*$//' \
+    | grep -v '^Any iOS' \
     | head -n 1)"
 
   if [[ -n "$fallback" ]]; then
@@ -57,6 +60,7 @@ SIMULATOR_NAME="$(find_simulator_name)"
 DESTINATION="platform=iOS Simulator,name=$SIMULATOR_NAME,OS=latest"
 
 printf 'Running tests for scheme "%s" on destination "%s"\n' "$SCHEME" "$DESTINATION"
+printf 'Using DerivedData at "%s"\n' "$DERIVED_DATA_PATH"
 
 xcodebuild \
   -project "$PROJECT_PATH" \
@@ -64,6 +68,7 @@ xcodebuild \
   -destination "$DESTINATION" \
   -destination-timeout 120 \
   -derivedDataPath "$DERIVED_DATA_PATH" \
+  -clonedSourcePackagesDirPath "$CLONED_SOURCE_PACKAGES_DIR_PATH" \
   -resultBundlePath "$RESULT_BUNDLE_PATH" \
   -enableCodeCoverage YES \
   CODE_SIGNING_ALLOWED=NO \
