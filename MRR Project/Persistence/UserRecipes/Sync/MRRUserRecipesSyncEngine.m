@@ -97,6 +97,17 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   return 0;
 }
 
+@class MRRUserRecipesSyncEngine;
+
+@interface MRRUserRecipesSyncEngineTargetBox : NSObject
+
+@property(nonatomic, assign, nullable) MRRUserRecipesSyncEngine *target;
+
+@end
+
+@implementation MRRUserRecipesSyncEngineTargetBox
+@end
+
 @interface MRRUserRecipesSyncEngine ()
 
 @property(nonatomic, retain) MRRUserRecipesStore *store;
@@ -104,6 +115,7 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 @property(nonatomic, retain, nullable) id<FIRListenerRegistration> listenerRegistration;
 @property(nonatomic, copy, nullable) NSString *activeUserID;
 @property(nonatomic, retain) NSMutableArray *pendingCompletions;
+@property(nonatomic, retain) MRRUserRecipesSyncEngineTargetBox *listenerTargetBox;
 @property(nonatomic, assign) BOOL syncInFlight;
 
 - (instancetype)initWithStore:(MRRUserRecipesStore *)store firestore:(nullable FIRFirestore *)firestore;
@@ -133,6 +145,8 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
     _store = [store retain];
     _firestore = [(firestore ?: [FIRFirestore firestore]) retain];
     _pendingCompletions = [[NSMutableArray alloc] init];
+    _listenerTargetBox = [[MRRUserRecipesSyncEngineTargetBox alloc] init];
+    _listenerTargetBox.target = self;
 
     if (_firestore != nil) {
       FIRFirestoreSettings *settings = [[[_firestore settings] copy] autorelease];
@@ -152,7 +166,9 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 }
 
 - (void)dealloc {
+  self.listenerTargetBox.target = nil;
   [self.listenerRegistration remove];
+  [_listenerTargetBox release];
   [_pendingCompletions release];
   [_activeUserID release];
   [_listenerRegistration release];
@@ -176,9 +192,11 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   self.activeUserID = userID;
 
   FIRCollectionReference *collection = [self userRecipesCollectionForUserID:userID];
+  MRRUserRecipesSyncEngineTargetBox *targetBox = [[self.listenerTargetBox retain] autorelease];
   [collection getDocumentsWithCompletion:^(FIRQuerySnapshot *snapshot, NSError *error) {
-    if (error == nil && snapshot != nil) {
-      [self handleRemoteSnapshot:snapshot userID:userID];
+    MRRUserRecipesSyncEngine *target = targetBox.target;
+    if (target != nil && error == nil && snapshot != nil) {
+      [target handleRemoteSnapshot:snapshot userID:userID];
     }
     if (completion != nil) {
       completion(error);
@@ -186,10 +204,11 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   }];
 
   self.listenerRegistration = [[collection addSnapshotListener:^(FIRQuerySnapshot *snapshot, NSError *error) {
-    if (error != nil || snapshot == nil) {
+    MRRUserRecipesSyncEngine *target = targetBox.target;
+    if (target == nil || error != nil || snapshot == nil) {
       return;
     }
-    [self handleRemoteSnapshot:snapshot userID:userID];
+    [target handleRemoteSnapshot:snapshot userID:userID];
   }] retain];
 
   [self requestImmediateSyncForUserID:userID];
