@@ -100,6 +100,16 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
   [super dealloc];
 }
 
+- (void)layoutSubviews {
+  [super layoutSubviews];
+  self.titleLabel.preferredMaxLayoutWidth = CGRectGetWidth(self.titleLabel.bounds);
+}
+
+- (void)updateConstraints {
+  [super updateConstraints];
+  self.titleLabel.preferredMaxLayoutWidth = CGRectGetWidth(self.titleLabel.bounds);
+}
+
 - (void)buildItemViewHierarchy {
   self.backgroundColor = [UIColor clearColor];
   self.contentView.backgroundColor = [UIColor clearColor];
