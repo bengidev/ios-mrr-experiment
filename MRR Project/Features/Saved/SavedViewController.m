@@ -98,6 +98,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 @property(nonatomic, retain) UIScrollView *scrollView;
 @property(nonatomic, retain) UIView *contentView;
 @property(nonatomic, retain) UIStackView *sectionsStackView;
+@property(nonatomic, retain) UIView *emptyStateView;
 @property(nonatomic, copy) NSArray<NSDictionary<NSString *, id> *> *sections;
 @property(nonatomic, copy, nullable) NSString *expandedSectionIdentifier;
 @property(nonatomic, copy, nullable) NSString *presentedRecipeIdentifier;
@@ -115,6 +116,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
 - (nullable MRRSavedRecipeSnapshot *)snapshotForRecipeIdentifier:(NSString *)recipeIdentifier;
 - (void)applyFavoriteButtonAppearance:(UIButton *)button recipe:(MRRSavedRecipeSnapshot *)recipe;
 - (void)configurePressFeedbackForControl:(UIControl *)control;
+- (UIView *)buildEmptyStateView;
 - (nullable NSString *)recipeIdentifierForCardControl:(UIControl *)control;
 - (nullable NSString *)recipeIdentifierForFavoriteButton:(UIButton *)button;
 - (nullable NSString *)recipeTitleForIdentifier:(NSString *)recipeIdentifier;
@@ -162,6 +164,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
   [_sectionsStackView release];
   [_contentView release];
   [_scrollView release];
+  [_emptyStateView release];
   [_syncEngine release];
   [_savedRecipesStore release];
   [_sessionUserID release];
@@ -220,6 +223,12 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
   [contentView addSubview:sectionsStackView];
   self.sectionsStackView = sectionsStackView;
 
+  UIView *emptyStateView = [self buildEmptyStateView];
+  emptyStateView.translatesAutoresizingMaskIntoConstraints = NO;
+  emptyStateView.hidden = YES;
+  [self.view addSubview:emptyStateView];
+  self.emptyStateView = emptyStateView;
+
   UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
   [NSLayoutConstraint activateConstraints:@[
     [scrollView.topAnchor constraintEqualToAnchor:safeArea.topAnchor constant:4.0],
@@ -236,7 +245,11 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
     [sectionsStackView.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:14.0],
     [sectionsStackView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:24.0],
     [sectionsStackView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-24.0],
-    [sectionsStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-32.0]
+    [sectionsStackView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-32.0],
+
+    [emptyStateView.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor constant:-20.0],
+    [emptyStateView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+    [emptyStateView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor]
   ]];
 }
 
@@ -289,11 +302,17 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
     [subview removeFromSuperview];
   }
 
+  NSUInteger totalRecipes = 0;
   for (NSUInteger index = 0; index < self.sections.count; index += 1) {
     NSDictionary<NSString *, id> *section = self.sections[index];
+    totalRecipes += [self visibleRecipesForSection:section].count;
     BOOL expanded = [self.expandedSectionIdentifier isEqualToString:section[@"identifier"]];
     [self.sectionsStackView addArrangedSubview:[self sectionViewForSection:section atIndex:index expanded:expanded]];
   }
+
+  BOOL isEmpty = (totalRecipes == 0);
+  self.scrollView.hidden = isEmpty;
+  self.emptyStateView.hidden = !isEmpty;
 }
 
 - (NSArray<MRRSavedRecipeSnapshot *> *)visibleRecipesForSection:(NSDictionary<NSString *, id> *)section {
@@ -640,6 +659,69 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *MRRSavedSectionDescripto
                 action:@selector(handlePressableControlTouchUp:)
       forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel | UIControlEventTouchDragExit];
   [control addTarget:self action:@selector(handlePressableControlTouchDown:) forControlEvents:UIControlEventTouchDragEnter];
+}
+
+- (UIView *)buildEmptyStateView {
+  UIView *container = [[[UIView alloc] init] autorelease];
+  container.translatesAutoresizingMaskIntoConstraints = NO;
+  container.backgroundColor = [UIColor clearColor];
+  container.accessibilityIdentifier = @"saved.emptyState";
+
+  UIView *cardView = [[[UIView alloc] init] autorelease];
+  cardView.translatesAutoresizingMaskIntoConstraints = NO;
+  cardView.backgroundColor = MRRSavedSurfaceColor();
+  cardView.layer.cornerRadius = 24.0;
+  cardView.layer.borderWidth = 1.0;
+  cardView.layer.borderColor = [MRRSavedBorderColor() CGColor];
+  cardView.accessibilityIdentifier = @"saved.emptyState.card";
+  [container addSubview:cardView];
+
+  UIImageView *iconImageView = [[[UIImageView alloc] init] autorelease];
+  iconImageView.translatesAutoresizingMaskIntoConstraints = NO;
+  iconImageView.contentMode = UIViewContentModeScaleAspectFit;
+  iconImageView.tintColor = MRRSavedHeartBubbleColor();
+  iconImageView.image = MRRSavedSymbolImage(@"bookmark", 36.0, UIFontWeightMedium);
+  iconImageView.accessibilityIdentifier = @"saved.emptyState.icon";
+  [cardView addSubview:iconImageView];
+
+  UILabel *titleLabel = [self labelWithFont:[UIFont systemFontOfSize:18.0 weight:UIFontWeightSemibold] color:MRRSavedPrimaryTextColor()];
+  titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  titleLabel.numberOfLines = 0;
+  titleLabel.textAlignment = NSTextAlignmentCenter;
+  titleLabel.text = @"No saved recipes yet.";
+  titleLabel.accessibilityIdentifier = @"saved.emptyState.title";
+  [cardView addSubview:titleLabel];
+
+  UILabel *subtitleLabel = [self labelWithFont:[UIFont systemFontOfSize:14.0 weight:UIFontWeightRegular] color:MRRSavedSecondaryTextColor()];
+  subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+  subtitleLabel.numberOfLines = 0;
+  subtitleLabel.textAlignment = NSTextAlignmentCenter;
+  subtitleLabel.text = @"Recipes you save will appear here.";
+  subtitleLabel.accessibilityIdentifier = @"saved.emptyState.subtitle";
+  [cardView addSubview:subtitleLabel];
+
+  [NSLayoutConstraint activateConstraints:@[
+    [cardView.topAnchor constraintEqualToAnchor:container.topAnchor constant:16.0],
+    [cardView.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:24.0],
+    [cardView.trailingAnchor constraintEqualToAnchor:container.trailingAnchor constant:-24.0],
+    [cardView.bottomAnchor constraintEqualToAnchor:container.bottomAnchor constant:-16.0],
+
+    [iconImageView.topAnchor constraintEqualToAnchor:cardView.topAnchor constant:32.0],
+    [iconImageView.centerXAnchor constraintEqualToAnchor:cardView.centerXAnchor],
+    [iconImageView.widthAnchor constraintEqualToConstant:44.0],
+    [iconImageView.heightAnchor constraintEqualToConstant:44.0],
+
+    [titleLabel.topAnchor constraintEqualToAnchor:iconImageView.bottomAnchor constant:16.0],
+    [titleLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:24.0],
+    [titleLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-24.0],
+
+    [subtitleLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:8.0],
+    [subtitleLabel.leadingAnchor constraintEqualToAnchor:cardView.leadingAnchor constant:24.0],
+    [subtitleLabel.trailingAnchor constraintEqualToAnchor:cardView.trailingAnchor constant:-24.0],
+    [subtitleLabel.bottomAnchor constraintEqualToAnchor:cardView.bottomAnchor constant:-32.0]
+  ]];
+
+  return container;
 }
 
 - (NSString *)recipeIdentifierForCardControl:(UIControl *)control {
