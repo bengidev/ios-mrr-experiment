@@ -102,12 +102,10 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
 
 - (void)layoutSubviews {
   [super layoutSubviews];
-  self.titleLabel.preferredMaxLayoutWidth = CGRectGetWidth(self.titleLabel.bounds);
-}
-
-- (void)updateConstraints {
-  [super updateConstraints];
-  self.titleLabel.preferredMaxLayoutWidth = CGRectGetWidth(self.titleLabel.bounds);
+  CGFloat availableWidth = CGRectGetWidth(self.titleLabel.bounds);
+  if (availableWidth > 0.0) {
+    self.titleLabel.preferredMaxLayoutWidth = availableWidth;
+  }
 }
 
 - (void)buildItemViewHierarchy {
@@ -146,8 +144,11 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
   titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
   titleLabel.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
   titleLabel.textColor = MRRSavedPrimaryTextColor();
-  titleLabel.numberOfLines = 2;
+  titleLabel.numberOfLines = 0;
+  titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
   titleLabel.adjustsFontForContentSizeCategory = YES;
+  [titleLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+  [titleLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
   titleLabel.isAccessibilityElement = NO;
   titleLabel.accessibilityIdentifier = @"saved.listItem.title";
   [itemContainerView addSubview:titleLabel];
@@ -159,6 +160,8 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
   subtitleLabel.textColor = MRRSavedSecondaryTextColor();
   subtitleLabel.numberOfLines = 1;
   subtitleLabel.adjustsFontForContentSizeCategory = YES;
+  [subtitleLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+  [subtitleLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
   subtitleLabel.isAccessibilityElement = NO;
   subtitleLabel.accessibilityIdentifier = @"saved.listItem.subtitle";
   [itemContainerView addSubview:subtitleLabel];
@@ -169,12 +172,13 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
   favoriteButton.accessibilityIdentifier = @"saved.listItem.removeButton";
   favoriteButton.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
   favoriteButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+  [favoriteButton setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+  [favoriteButton setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
   [favoriteButton setImage:MRRSavedSymbolImage(@"xmark.circle.fill", 24.0, UIFontWeightMedium) forState:UIControlStateNormal];
   favoriteButton.tintColor = MRRSavedSecondaryTextColor();
   [itemContainerView addSubview:favoriteButton];
   _favoriteButton = [favoriteButton retain];
 
-  UILayoutGuide *safeArea = itemContainerView.safeAreaLayoutGuide;
   [NSLayoutConstraint activateConstraints:@[
     [itemContainerView.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:6.0],
     [itemContainerView.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:20.0],
@@ -203,7 +207,7 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
     [subtitleLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:4.0],
     [subtitleLabel.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
     [subtitleLabel.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
-    [subtitleLabel.bottomAnchor constraintLessThanOrEqualToAnchor:itemContainerView.bottomAnchor constant:-18.0]
+    [subtitleLabel.bottomAnchor constraintEqualToAnchor:itemContainerView.bottomAnchor constant:-18.0]
   ]];
 }
 
