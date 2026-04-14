@@ -19,6 +19,12 @@
 #import "../MRR Project/Persistence/UserRecipes/MRRUserRecipesStore.h"
 #import "../MRR Project/Persistence/UserRecipes/Sync/MRRNoOpUserRecipesSyncEngine.h"
 
+@interface SavedViewController (Testing)
+
+- (void)presentRecipeDetailForSnapshot:(MRRSavedRecipeSnapshot *)snapshot;
+
+@end
+
 static UIColor *MRRMainMenuTestDynamicFallbackColor(UIColor *lightColor, UIColor *darkColor) {
   if (@available(iOS 13.0, *)) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
@@ -337,31 +343,32 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   [savedNavigationController.topViewController loadViewIfNeeded];
 
   UIView *savedView = savedNavigationController.topViewController.view;
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionsStack" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.breakfast" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.lunch" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.dessert" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.dinner" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.sectionHeader.snack" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView]);
-  XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.spinachFeta" inView:savedView]);
+  UITableView *tableView = (UITableView *)[self findViewWithAccessibilityIdentifier:@"saved.tableView" inView:savedView];
+  UIView *emptyStateView = [self findViewWithAccessibilityIdentifier:@"saved.emptyState" inView:savedView];
+
+  XCTAssertNotNil(tableView);
+  XCTAssertNotNil(emptyStateView);
+  XCTAssertFalse(tableView.hidden);
+  XCTAssertTrue(emptyStateView.hidden);
+  XCTAssertEqual([tableView numberOfRowsInSection:0], 2);
 }
 
 - (void)testSavedRecipeCardPresentsRecipeDetail {
   self.tabBarController.selectedIndex = 1;
 
   UINavigationController *savedNavigationController = [self navigationControllerAtIndex:1];
-  [savedNavigationController.topViewController loadViewIfNeeded];
+  SavedViewController *savedViewController = (SavedViewController *)savedNavigationController.topViewController;
+  [savedViewController loadViewIfNeeded];
 
-  UIView *savedView = savedNavigationController.topViewController.view;
+  UIView *savedView = savedViewController.view;
   [savedView layoutIfNeeded];
-  UIControl *recipeCardControl = (UIControl *)[self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView];
+  UITableViewCell *recipeCardCell = (UITableViewCell *)[self findViewWithAccessibilityIdentifier:@"saved.recipeCard.caesarCrunch" inView:savedView];
 
-  XCTAssertNotNil(recipeCardControl);
-  XCTAssertTrue([recipeCardControl isKindOfClass:[UIControl class]]);
-  XCTAssertEqualObjects(recipeCardControl.accessibilityHint, @"Double tap to view recipe details.");
-
-  [recipeCardControl sendActionsForControlEvents:UIControlEventTouchUpInside];
+  XCTAssertNotNil(recipeCardCell);
+  XCTAssertEqualObjects(recipeCardCell.accessibilityHint, @"Double tap to view recipe details.");
+  [savedViewController presentRecipeDetailForSnapshot:[self savedRecipeSnapshotWithRecipeID:@"caesarCrunch"
+                                                                                      title:@"Garden Caesar Crunch"
+                                                                                   subtitle:@"Crisp lunch favorite"]];
 
   __block UINavigationController *detailNavigationController = nil;
   __block UILabel *titleLabel = nil;
@@ -401,6 +408,7 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
   XCTAssertTrue([favoriteButton isKindOfClass:[UIButton class]]);
   XCTAssertTrue((favoriteButton.accessibilityTraits & UIAccessibilityTraitButton) != 0);
   XCTAssertTrue(favoriteButton.selected);
+  XCTAssertTrue((favoriteButton.accessibilityTraits & UIAccessibilityTraitSelected) != 0);
   XCTAssertGreaterThanOrEqual(CGRectGetWidth(favoriteButton.bounds), 44.0);
   XCTAssertGreaterThanOrEqual(CGRectGetHeight(favoriteButton.bounds), 44.0);
   XCTAssertNotNil(favoriteButton.accessibilityLabel);
@@ -457,10 +465,13 @@ static UIColor *MRRMainMenuTestBackgroundColor(void) {
                                                                                         subtitle:@"Savory morning bite"]
                                                      error:&saveError]);
   XCTAssertNil(saveError);
+  [savedView layoutIfNeeded];
+  [self spinMainRunLoop];
   XCTAssertNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.roastedTomatoes" inView:savedView]);
 
   [savedViewController viewWillAppear:NO];
   [savedView layoutIfNeeded];
+  [self spinMainRunLoop];
 
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:@"saved.recipeCard.roastedTomatoes" inView:savedView]);
 }

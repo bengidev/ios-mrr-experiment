@@ -132,26 +132,40 @@ static NSString *const MRRSavedRecipesSyncLogPrefix = @"[SavedRecipesSync]";
 static NSString *const MRRFirestoreUnavailableMessageFragment = @"Cloud Firestore API has not been used in project";
 static NSString *const MRRFirestoreAPIMessageFragment = @"firestore.googleapis.com";
 
+static FIRFirestore *MRRSavedRecipesCreateFirestoreSafely(void) {
+  @try {
+    return [FIRFirestore firestore];
+  } @catch (NSException *exception) {
+    NSLog(@"%@ Firestore unavailable before FirebaseApp.configure(). Falling back to local-only mode. exception=%@",
+          MRRSavedRecipesSyncLogPrefix, exception.reason ?: exception.name);
+    return nil;
+  }
+}
+
 - (instancetype)initWithStore:(MRRSavedRecipesStore *)store {
   NSParameterAssert(store != nil);
 
   self = [super init];
   if (self) {
     _store = [store retain];
-    _firestore = [[FIRFirestore firestore] retain];
+    _firestore = [MRRSavedRecipesCreateFirestoreSafely() retain];
     _pendingCompletions = [[NSMutableArray alloc] init];
     _listenerTargetBox = [[MRRSavedRecipesSyncEngineTargetBox alloc] init];
     _listenerTargetBox.target = self;
 
-    FIRFirestoreSettings *settings = [[[_firestore settings] copy] autorelease];
-    if (settings == nil) {
-      settings = [[[FIRFirestoreSettings alloc] init] autorelease];
-    }
-    if (![settings.cacheSettings isKindOfClass:[FIRMemoryCacheSettings class]]) {
-      settings.cacheSettings = [[[FIRMemoryCacheSettings alloc] init] autorelease];
-      @try {
-        _firestore.settings = settings;
-      } @catch (__unused NSException *exception) {
+    if (_firestore == nil) {
+      _cloudSyncDisabled = YES;
+    } else {
+      FIRFirestoreSettings *settings = [[[_firestore settings] copy] autorelease];
+      if (settings == nil) {
+        settings = [[[FIRFirestoreSettings alloc] init] autorelease];
+      }
+      if (![settings.cacheSettings isKindOfClass:[FIRMemoryCacheSettings class]]) {
+        settings.cacheSettings = [[[FIRMemoryCacheSettings alloc] init] autorelease];
+        @try {
+          _firestore.settings = settings;
+        } @catch (__unused NSException *exception) {
+        }
       }
     }
   }

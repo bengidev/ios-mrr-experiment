@@ -15,6 +15,8 @@
                            syncEngine:(nullable id<MRRUserRecipesCloudSyncing>)syncEngine
                          photoStorage:(nullable id<MRRUserRecipePhotoStorage>)photoStorage;
 - (void)handleAddButtonTapped:(id)sender;
+- (void)presentEditorForRecipe:(nullable MRRUserRecipeSnapshot *)recipe;
+- (void)showDeleteConfirmationForRecipe:(MRRUserRecipeSnapshot *)recipe;
 
 @end
 
@@ -79,6 +81,7 @@
 - (void)populateRequiredFieldsInEditor:(MRRYoursRecipeEditorViewController *)editor title:(NSString *)title;
 - (UIImage *)sampleImageWithColor:(UIColor *)color;
 - (void)spinMainRunLoop;
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout;
 
 @end
 
@@ -151,7 +154,10 @@
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
   [self populateRequiredFieldsInEditor:editor title:@"Nasi Goreng Rumahan"];
   [editor handleSaveTapped:nil];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self.navigationController.topViewController isKindOfClass:[YoursViewController class]];
+  }
+                 timeout:1.5];
 
   NSArray<MRRUserRecipeSnapshot *> *recipes = [self currentRecipes];
   XCTAssertEqual(recipes.count, 1);
@@ -190,21 +196,26 @@
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
   [self populateRequiredFieldsInEditor:editor title:@"Pasta Lemon"];
   [editor handleSaveTapped:nil];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self.navigationController.topViewController isKindOfClass:[YoursViewController class]];
+  }
+                 timeout:1.5];
 
   MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
-  UIButton *editButton = (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.editButton." stringByAppendingString:recipe.recipeID]
-                                                                        inView:self.viewController.view];
-  XCTAssertNotNil(editButton);
-
-  [editButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self spinMainRunLoop];
+  [self.viewController presentEditorForRecipe:recipe];
+  [self waitForCondition:^BOOL {
+    return [self.navigationController.topViewController isKindOfClass:[MRRYoursRecipeEditorViewController class]];
+  }
+                 timeout:1.5];
 
   MRRYoursRecipeEditorViewController *editEditor = [self presentedEditor];
   UITextField *titleField = (UITextField *)[self findViewWithAccessibilityIdentifier:@"yours.editor.titleField" inView:editEditor.view];
   titleField.text = @"Pasta Lemon Creamy";
   [editEditor handleSaveTapped:nil];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self.navigationController.topViewController isKindOfClass:[YoursViewController class]];
+  }
+                 timeout:1.5];
 
   XCTAssertEqualObjects([self currentRecipes].firstObject.title, @"Pasta Lemon Creamy");
   XCTAssertNotNil([self findViewWithAccessibilityIdentifier:[@"yours.recipeCard." stringByAppendingString:recipe.recipeID]
@@ -491,15 +502,17 @@
   MRRYoursRecipeEditorViewController *editor = [self presentedEditor];
   [self populateRequiredFieldsInEditor:editor title:@"Soto Ayam Kilat"];
   [editor handleSaveTapped:nil];
-  [self spinMainRunLoop];
+  [self waitForCondition:^BOOL {
+    return [self.navigationController.topViewController isKindOfClass:[YoursViewController class]];
+  }
+                 timeout:1.5];
 
   MRRUserRecipeSnapshot *recipe = [self currentRecipes].firstObject;
-  UIButton *deleteButton = (UIButton *)[self findViewWithAccessibilityIdentifier:[@"yours.deleteButton." stringByAppendingString:recipe.recipeID]
-                                                                          inView:self.viewController.view];
-  XCTAssertNotNil(deleteButton);
-
-  [deleteButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-  [self spinMainRunLoop];
+  [self.viewController showDeleteConfirmationForRecipe:recipe];
+  [self waitForCondition:^BOOL {
+    return [self.viewController.presentedViewController isKindOfClass:[UIAlertController class]];
+  }
+                 timeout:1.5];
 
   XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
   XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"yours.deleteAlert");
@@ -592,6 +605,17 @@
 
 - (void)spinMainRunLoop {
   [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.15]];
+}
+
+- (void)waitForCondition:(BOOL (^)(void))condition timeout:(NSTimeInterval)timeout {
+  NSDate *timeoutDate = [NSDate dateWithTimeIntervalSinceNow:timeout];
+  while (!condition()) {
+    if ([timeoutDate timeIntervalSinceNow] <= 0.0) {
+      XCTFail(@"Condition not met before timeout");
+      return;
+    }
+    [self spinMainRunLoop];
+  }
 }
 
 @end

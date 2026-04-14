@@ -222,9 +222,16 @@ static UIImage *MRRSavedSymbolImage(NSString *systemName, CGFloat pointSize, CGF
     self.thumbnailImageView.backgroundColor = MRRSavedMutedSurfaceColor();
   }
 
+  self.accessibilityIdentifier = [NSString stringWithFormat:@"saved.recipeCard.%@", recipe.recipeID];
   self.accessibilityLabel = [NSString stringWithFormat:@"%@, %@", recipe.title, subtitle];
   self.accessibilityHint = @"Double tap to view recipe details.";
   self.accessibilityTraits = UIAccessibilityTraitButton;
+
+  self.favoriteButton.selected = YES;
+  self.favoriteButton.accessibilityLabel = [NSString stringWithFormat:@"Remove %@ from saved recipes", recipe.title ?: @"recipe"];
+  self.favoriteButton.accessibilityHint = @"Double tap to remove this recipe from Saved.";
+  self.favoriteButton.accessibilityValue = @"Saved";
+  self.favoriteButton.accessibilityTraits = UIAccessibilityTraitButton | UIAccessibilityTraitSelected;
 }
 
 - (void)applyPressedAppearance:(BOOL)pressed {

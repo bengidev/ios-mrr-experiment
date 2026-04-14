@@ -143,6 +143,16 @@ static NSString *const MRRUserRecipesSyncLogPrefix = @"[UserRecipesSync]";
 static NSString *const MRRUserRecipesFirestoreUnavailableMessageFragment = @"Cloud Firestore API has not been used in project";
 static NSString *const MRRUserRecipesFirestoreAPIMessageFragment = @"firestore.googleapis.com";
 
+static FIRFirestore *MRRUserRecipesCreateFirestoreSafely(void) {
+  @try {
+    return [FIRFirestore firestore];
+  } @catch (NSException *exception) {
+    NSLog(@"%@ Firestore unavailable before FirebaseApp.configure(). Falling back to local-only mode. exception=%@",
+          MRRUserRecipesSyncLogPrefix, exception.reason ?: exception.name);
+    return nil;
+  }
+}
+
 - (instancetype)initWithStore:(MRRUserRecipesStore *)store {
   return [self initWithStore:store firestore:nil];
 }
@@ -153,12 +163,18 @@ static NSString *const MRRUserRecipesFirestoreAPIMessageFragment = @"firestore.g
   self = [super init];
   if (self) {
     _store = [store retain];
-    _firestore = [(firestore ?: [FIRFirestore firestore]) retain];
+    FIRFirestore *resolvedFirestore = firestore;
+    if (resolvedFirestore == nil) {
+      resolvedFirestore = MRRUserRecipesCreateFirestoreSafely();
+    }
+    _firestore = [resolvedFirestore retain];
     _pendingCompletions = [[NSMutableArray alloc] init];
     _listenerTargetBox = [[MRRUserRecipesSyncEngineTargetBox alloc] init];
     _listenerTargetBox.target = self;
 
-    if (_firestore != nil) {
+    if (_firestore == nil) {
+      _cloudSyncDisabled = YES;
+    } else {
       FIRFirestoreSettings *settings = [[[_firestore settings] copy] autorelease];
       if (settings == nil) {
         settings = [[[FIRFirestoreSettings alloc] init] autorelease];
