@@ -361,6 +361,9 @@
     return;
   }
 
+  NSLog(@"[AppRoot] Observed auth session uid=%@ email=%@",
+        session.userID.length > 0 ? session.userID : @"(nil)",
+        session.email.length > 0 ? session.email : @"(nil)");
   [self updateRootForSession:session animated:[self shouldAnimateRootTransitions]];
 }
 
