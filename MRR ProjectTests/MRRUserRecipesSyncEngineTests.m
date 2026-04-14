@@ -5,6 +5,7 @@
 #import "../MRR Project/Persistence/UserRecipes/Sync/MRRUserRecipesSyncEngine.h"
 
 @class FIRFirestore;
+@import FirebaseFirestore;
 
 @interface MRRUserRecipesSyncEngine (Testing)
 
@@ -13,6 +14,8 @@
 - (nullable MRRUserRecipeSnapshot *)snapshotFromDictionary:(NSDictionary<NSString *, id> *)data
                                                     userID:(NSString *)userID
                                                 documentID:(NSString *)documentID;
+- (BOOL)shouldFallbackToLocalModeForError:(nullable NSError *)error;
+- (void)disableCloudSyncForError:(NSError *)error context:(NSString *)context completePendingFlushes:(BOOL)completePendingFlushes;
 
 @end
 
@@ -129,6 +132,34 @@
   XCTAssertEqualObjects(snapshot.photos[0].remoteURLString, @"https://example.com/cover.jpg");
   XCTAssertEqualObjects(snapshot.photos[1].remoteURLString, @"https://example.com/detail.jpg");
   XCTAssertEqualObjects(snapshot.heroImageURLString, @"https://example.com/cover.jpg");
+}
+
+- (void)testShouldFallbackToLocalModeForUnavailableFirestoreError {
+  NSError *error = [NSError errorWithDomain:FIRFirestoreErrorDomain code:FIRFirestoreErrorCodeUnavailable userInfo:nil];
+
+  XCTAssertTrue([self.syncEngine shouldFallbackToLocalModeForError:error]);
+}
+
+- (void)testShouldFallbackToLocalModeForDisabledAPIMessage {
+  NSError *error = [NSError errorWithDomain:@"CustomTests"
+                                       code:42
+                                   userInfo:@{NSLocalizedDescriptionKey : @"Cloud Firestore API has not been used in project culina-mrr-project before."}];
+
+  XCTAssertTrue([self.syncEngine shouldFallbackToLocalModeForError:error]);
+}
+
+- (void)testFlushPendingChangesCompletesImmediatelyAfterFallbackModeEnabled {
+  NSError *error = [NSError errorWithDomain:FIRFirestoreErrorDomain code:FIRFirestoreErrorCodeFailedPrecondition userInfo:nil];
+  [self.syncEngine disableCloudSyncForError:error context:@"test" completePendingFlushes:NO];
+
+  XCTestExpectation *completionExpectation = [self expectationWithDescription:@"flush completion"];
+  [self.syncEngine flushPendingChangesForUserID:@"user-a"
+                                     completion:^(NSError *flushError) {
+                                       XCTAssertNil(flushError);
+                                       [completionExpectation fulfill];
+                                     }];
+
+  [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
 }
 
 @end
