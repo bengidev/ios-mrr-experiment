@@ -13,6 +13,7 @@ typedef void (^MRRLogoutCompletion)(NSError *_Nullable error);
 @protocol MRRLogoutCoordinating <NSObject>
 
 - (void)performLogoutForSession:(MRRAuthSession *)session completion:(MRRLogoutCompletion)completion;
+- (void)proceedWithForcedLogoutForSession:(MRRAuthSession *)session error:(NSError **)error;
 
 @end
 
