@@ -63,6 +63,7 @@
 		C10000000000000000000008 /* MRRProjectDataModel.xcdatamodeld in Resources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000115 /* MRRProjectDataModel.xcdatamodeld */; };
 		C10000000000000000000009 /* MRRSavedRecipesStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */; };
 		C1000000000000000000000A /* MRRSyncingLogoutControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */; };
+		C1000000000000000000000B /* MRRSavedRecipesSyncEngineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000118 /* MRRSavedRecipesSyncEngineTests.m */; };
 		E20000000000000000000001 /* YoursViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000102 /* YoursViewController.m */; };
 		E20000000000000000000002 /* YoursCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000104 /* YoursCoordinator.m */; };
 		E20000000000000000000003 /* MRRUserRecipesStore.m in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000106 /* MRRUserRecipesStore.m */; };
@@ -183,6 +184,7 @@
 		C10000000000000000000114 /* MRRProjectDataModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MRRProjectDataModel.xcdatamodel; sourceTree = "<group>"; };
 		C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipesStoreTests.m; sourceTree = "<group>"; };
 		C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSyncingLogoutControllerTests.m; sourceTree = "<group>"; };
+		C10000000000000000000118 /* MRRSavedRecipesSyncEngineTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRRSavedRecipesSyncEngineTests.m; sourceTree = "<group>"; };
 		E20000000000000000000101 /* YoursViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YoursViewController.h; sourceTree = "<group>"; };
 		E20000000000000000000102 /* YoursViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YoursViewController.m; sourceTree = "<group>"; };
 		E20000000000000000000103 /* YoursCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YoursCoordinator.h; sourceTree = "<group>"; };
@@ -277,6 +279,7 @@
 				D10000000000000000000110 /* MainMenuTabBarControllerTests.m */,
 				C10000000000000000000117 /* MRRSyncingLogoutControllerTests.m */,
 				C10000000000000000000116 /* MRRSavedRecipesStoreTests.m */,
+				C10000000000000000000118 /* MRRSavedRecipesSyncEngineTests.m */,
 				E20000000000000000000110 /* MRRUserRecipesStoreTests.m */,
 				E20000000000000000000116 /* MRRUserRecipePhotoStorageTests.m */,
 				E20000000000000000000117 /* MRRUserRecipesSyncEngineTests.m */,
@@ -795,6 +798,7 @@
 				F10000000000000000000005 /* HomeViewControllerTests.m in Sources */,
 				D10000000000000000000008 /* MainMenuTabBarControllerTests.m in Sources */,
 				C10000000000000000000009 /* MRRSavedRecipesStoreTests.m in Sources */,
+				C1000000000000000000000B /* MRRSavedRecipesSyncEngineTests.m in Sources */,
 				E20000000000000000000008 /* MRRUserRecipesStoreTests.m in Sources */,
 				E2000000000000000000000C /* MRRUserRecipePhotoStorageTests.m in Sources */,
 				E2000000000000000000000D /* MRRUserRecipesSyncEngineTests.m in Sources */,
