@@ -3,10 +3,12 @@
 #import "../MRR Project/Features/Authentication/MRRAuthenticationController.h"
 #import "../MRR Project/Features/Authentication/MRRAuthSession.h"
 #import "../MRR Project/Features/Profile/ProfileViewController.h"
+#import "../MRR Project/Persistence/SavedRecipes/Sync/MRRSyncingLogoutController.h"
 
 @interface ProfileViewController (Testing)
 
 - (void)performConfirmedLogout;
+- (void)retryLogoutAfterTimeout;
 
 @end
 
@@ -82,6 +84,48 @@
     self.authStateHandler(nil);
   }
   return YES;
+}
+
+@end
+
+@interface ProfileLogoutControllerSpy : NSObject <MRRLogoutCoordinating>
+
+@property(nonatomic, assign) NSInteger performLogoutCallCount;
+@property(nonatomic, assign) NSInteger forcedLogoutCallCount;
+@property(nonatomic, strong) NSMutableArray<NSError *> *queuedLogoutErrors;
+@property(nonatomic, strong, nullable) NSError *forcedLogoutError;
+
+@end
+
+@implementation ProfileLogoutControllerSpy
+
+- (instancetype)init {
+  self = [super init];
+  if (self) {
+    _queuedLogoutErrors = [[NSMutableArray alloc] init];
+  }
+  return self;
+}
+
+- (void)performLogoutForSession:(MRRAuthSession *)session completion:(MRRLogoutCompletion)completion {
+#pragma unused(session)
+  self.performLogoutCallCount += 1;
+  NSError *error = nil;
+  if (self.queuedLogoutErrors.count > 0) {
+    error = [self.queuedLogoutErrors objectAtIndex:0];
+    [self.queuedLogoutErrors removeObjectAtIndex:0];
+  }
+  if (completion != nil) {
+    completion(error);
+  }
+}
+
+- (void)proceedWithForcedLogoutForSession:(MRRAuthSession *)session error:(NSError **)error {
+#pragma unused(session)
+  self.forcedLogoutCallCount += 1;
+  if (error != NULL) {
+    *error = self.forcedLogoutError;
+  }
 }
 
 @end
@@ -178,6 +222,33 @@
 
   XCTAssertTrue([self.viewController.presentedViewController isKindOfClass:[UIAlertController class]]);
   XCTAssertEqualObjects(self.viewController.presentedViewController.view.accessibilityIdentifier, @"profile.logoutErrorAlert");
+}
+
+- (void)testRetryLogoutAfterTimeoutStartsANewLogoutAttempt {
+  ProfileLogoutControllerSpy *logoutController = [[ProfileLogoutControllerSpy alloc] init];
+  NSError *timeoutError = [NSError errorWithDomain:@"MRRSavedRecipesSyncEngine"
+                                              code:-2001
+                                          userInfo:@{NSLocalizedDescriptionKey : @"Sync flush timed out. Proceeding with logout."}];
+  [logoutController.queuedLogoutErrors addObject:timeoutError];
+
+  ProfileViewController *viewController = [[ProfileViewController alloc] initWithAuthenticationController:self.authenticationController
+                                                                                                 session:self.authenticationController.stubSession
+                                                                                        logoutController:logoutController];
+  self.window.rootViewController = viewController;
+  [viewController loadViewIfNeeded];
+  [viewController.view layoutIfNeeded];
+
+  [viewController performConfirmedLogout];
+  [self spinMainRunLoop];
+
+  XCTAssertEqual(logoutController.performLogoutCallCount, 1);
+  XCTAssertEqualObjects(viewController.presentedViewController.view.accessibilityIdentifier, @"profile.logoutTimeoutAlert");
+
+  [viewController dismissViewControllerAnimated:NO completion:nil];
+  [self spinMainRunLoop];
+  [viewController retryLogoutAfterTimeout];
+
+  XCTAssertEqual(logoutController.performLogoutCallCount, 2);
 }
 
 - (UIView *)findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)view {
