@@ -117,8 +117,9 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 @property(nonatomic, retain) NSMutableArray *pendingCompletions;
 @property(nonatomic, retain) MRRUserRecipesSyncEngineTargetBox *listenerTargetBox;
 @property(nonatomic, assign) BOOL syncInFlight;
+@property(nonatomic, assign) BOOL cloudSyncDisabled;
+@property(nonatomic, retain, nullable) dispatch_source_t flushTimeoutTimer;
 
-- (instancetype)initWithStore:(MRRUserRecipesStore *)store firestore:(nullable FIRFirestore *)firestore;
 - (FIRCollectionReference *)userRecipesCollectionForUserID:(NSString *)userID;
 - (NSDictionary<NSString *, id> *)firestorePayloadForSnapshot:(MRRUserRecipeSnapshot *)snapshot updatedAt:(NSDate *)updatedAt;
 - (nullable MRRUserRecipeSnapshot *)snapshotFromDocument:(FIRDocumentSnapshot *)document userID:(NSString *)userID;
@@ -128,10 +129,19 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 - (void)drainNextPendingChangeForUserID:(NSString *)userID completion:(nullable MRRUserRecipesSyncCompletion)completion;
 - (void)completeQueuedCompletionsWithError:(nullable NSError *)error;
 - (void)handleRemoteSnapshot:(FIRQuerySnapshot *)snapshot userID:(NSString *)userID;
+- (void)scheduleFlushTimeoutWithUserID:(NSString *)userID;
+- (void)cancelFlushTimeout;
+- (void)flushTimedOut;
+- (BOOL)shouldFallbackToLocalModeForError:(nullable NSError *)error;
+- (void)disableCloudSyncForError:(NSError *)error context:(NSString *)context completePendingFlushes:(BOOL)completePendingFlushes;
 
 @end
 
 @implementation MRRUserRecipesSyncEngine
+
+static NSString *const MRRUserRecipesSyncLogPrefix = @"[UserRecipesSync]";
+static NSString *const MRRUserRecipesFirestoreUnavailableMessageFragment = @"Cloud Firestore API has not been used in project";
+static NSString *const MRRUserRecipesFirestoreAPIMessageFragment = @"firestore.googleapis.com";
 
 - (instancetype)initWithStore:(MRRUserRecipesStore *)store {
   return [self initWithStore:store firestore:nil];
@@ -168,6 +178,8 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 - (void)dealloc {
   self.listenerTargetBox.target = nil;
   [self.listenerRegistration remove];
+  [self cancelFlushTimeout];
+  [_flushTimeoutTimer release];
   [_listenerTargetBox release];
   [_pendingCompletions release];
   [_activeUserID release];
@@ -184,6 +196,12 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
     }
     return;
   }
+  if (self.cloudSyncDisabled) {
+    if (completion != nil) {
+      completion(nil);
+    }
+    return;
+  }
 
   if (self.listenerRegistration != nil) {
     [self.listenerRegistration remove];
@@ -195,6 +213,13 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   MRRUserRecipesSyncEngineTargetBox *targetBox = [[self.listenerTargetBox retain] autorelease];
   [collection getDocumentsWithCompletion:^(FIRQuerySnapshot *snapshot, NSError *error) {
     MRRUserRecipesSyncEngine *target = targetBox.target;
+    if (target != nil && [target shouldFallbackToLocalModeForError:error]) {
+      [target disableCloudSyncForError:error context:@"initial fetch" completePendingFlushes:NO];
+      if (completion != nil) {
+        completion(nil);
+      }
+      return;
+    }
     if (target != nil && error == nil && snapshot != nil) {
       [target handleRemoteSnapshot:snapshot userID:userID];
     }
@@ -205,7 +230,14 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 
   self.listenerRegistration = [[collection addSnapshotListener:^(FIRQuerySnapshot *snapshot, NSError *error) {
     MRRUserRecipesSyncEngine *target = targetBox.target;
-    if (target == nil || error != nil || snapshot == nil) {
+    if (target == nil) {
+      return;
+    }
+    if ([target shouldFallbackToLocalModeForError:error]) {
+      [target disableCloudSyncForError:error context:@"listener" completePendingFlushes:YES];
+      return;
+    }
+    if (error != nil || snapshot == nil) {
       return;
     }
     [target handleRemoteSnapshot:snapshot userID:userID];
@@ -220,14 +252,67 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
   self.activeUserID = nil;
   [self.pendingCompletions removeAllObjects];
   self.syncInFlight = NO;
+  [self cancelFlushTimeout];
 }
 
 - (void)requestImmediateSyncForUserID:(NSString *)userID {
   [self flushPendingChangesForUserID:userID completion:nil];
 }
 
+static const NSTimeInterval MRRUserRecipesFlushTimeoutSeconds = 30.0;
+
+- (void)scheduleFlushTimeoutWithUserID:(NSString *)userID {
+  [self cancelFlushTimeout];
+
+  __block NSString *capturedUserID = [userID copy];
+  dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+  if (timer == nil) {
+    [capturedUserID release];
+    return;
+  }
+
+  __weak typeof(self) weakSelf = self;
+  dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MRRUserRecipesFlushTimeoutSeconds * NSEC_PER_SEC)),
+                           DISPATCH_TIME_FOREVER, (1ull * NSEC_PER_SEC));
+  dispatch_source_set_event_handler(timer, ^{
+    __strong typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf == nil) {
+      return;
+    }
+    if (strongSelf.syncInFlight) {
+      [strongSelf flushTimedOut];
+    }
+    [strongSelf cancelFlushTimeout];
+    [capturedUserID release];
+  });
+
+  self.flushTimeoutTimer = timer;
+  dispatch_resume(timer);
+}
+
+- (void)cancelFlushTimeout {
+  if (self.flushTimeoutTimer != nil) {
+    dispatch_source_cancel(self.flushTimeoutTimer);
+    self.flushTimeoutTimer = nil;
+  }
+}
+
+- (void)flushTimedOut {
+  self.syncInFlight = NO;
+  NSError *timeoutError = [NSError errorWithDomain:@"MRRUserRecipesSyncEngine"
+                                               code:-2001
+                                           userInfo:@{NSLocalizedDescriptionKey : @"User recipes sync flush timed out. Proceeding with logout."}];
+  [self completeQueuedCompletionsWithError:timeoutError];
+}
+
 - (void)flushPendingChangesForUserID:(NSString *)userID completion:(MRRUserRecipesSyncCompletion)completion {
   if (userID.length == 0) {
+    if (completion != nil) {
+      completion(nil);
+    }
+    return;
+  }
+  if (self.cloudSyncDisabled) {
     if (completion != nil) {
       completion(nil);
     }
@@ -240,6 +325,7 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
     return;
   }
   self.syncInFlight = YES;
+  [self scheduleFlushTimeoutWithUserID:userID];
   [self drainNextPendingChangeForUserID:userID completion:nil];
 }
 
@@ -439,6 +525,10 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
                          merge:YES
                     completion:^(NSError *error) {
                       if (error != nil) {
+                        if ([self shouldFallbackToLocalModeForError:error]) {
+                          [self disableCloudSyncForError:error context:@"delete flush" completePendingFlushes:YES];
+                          return;
+                        }
                         self.syncInFlight = NO;
                         if (completion != nil) {
                           completion(error);
@@ -495,6 +585,10 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
                        merge:YES
                   completion:^(NSError *error) {
                     if (error != nil) {
+                      if ([self shouldFallbackToLocalModeForError:error]) {
+                        [self disableCloudSyncForError:error context:@"upsert flush" completePendingFlushes:YES];
+                        return;
+                      }
                       self.syncInFlight = NO;
                       if (completion != nil) {
                         completion(error);
@@ -520,11 +614,43 @@ static NSInteger MRRUserRecipesFirestoreIntegerValue(id candidate) {
 }
 
 - (void)completeQueuedCompletionsWithError:(NSError *)error {
+  [self cancelFlushTimeout];
   NSArray *completions = [[self.pendingCompletions copy] autorelease];
   [self.pendingCompletions removeAllObjects];
   for (id completionObject in completions) {
     MRRUserRecipesSyncCompletion completion = completionObject;
     completion(error);
+  }
+}
+
+- (BOOL)shouldFallbackToLocalModeForError:(NSError *)error {
+  if (error == nil) {
+    return NO;
+  }
+
+  if ([error.domain isEqualToString:FIRFirestoreErrorDomain]) {
+    return (error.code == FIRFirestoreErrorCodeUnavailable || error.code == FIRFirestoreErrorCodeFailedPrecondition ||
+            error.code == FIRFirestoreErrorCodeUnimplemented);
+  }
+
+  NSString *description = error.localizedDescription ?: @"";
+  return ([description rangeOfString:MRRUserRecipesFirestoreUnavailableMessageFragment options:NSCaseInsensitiveSearch].location != NSNotFound ||
+          [description rangeOfString:MRRUserRecipesFirestoreAPIMessageFragment options:NSCaseInsensitiveSearch].location != NSNotFound);
+}
+
+- (void)disableCloudSyncForError:(NSError *)error context:(NSString *)context completePendingFlushes:(BOOL)completePendingFlushes {
+  if (!self.cloudSyncDisabled) {
+    NSLog(@"%@ Firestore unavailable during %@. Switching to local-only mode. domain=%@ code=%ld description=%@",
+          MRRUserRecipesSyncLogPrefix, context, error.domain ?: @"(nil)", (long)error.code, error.localizedDescription ?: @"");
+  }
+  self.cloudSyncDisabled = YES;
+  [self.listenerRegistration remove];
+  self.listenerRegistration = nil;
+  self.activeUserID = nil;
+  self.syncInFlight = NO;
+  [self cancelFlushTimeout];
+  if (completePendingFlushes) {
+    [self completeQueuedCompletionsWithError:nil];
   }
 }
 
