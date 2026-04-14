@@ -5,7 +5,84 @@
 ![Platform](https://img.shields.io/badge/platform-iOS%2012%2B-0A84FF)
 ![Objective-C MRR](https://img.shields.io/badge/Objective--C-MRR-5C4EE5)
 
-An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polished first-launch onboarding flow.
+An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polished onboarding flow, Firebase authentication, a coordinator-driven authenticated shell, and Firestore-backed recipe persistence.
+
+## Feature Highlights
+
+- **Firebase Authentication**
+  Email/password sign up, sign in, password reset, session observation, and sign out are all wired through `MRRFirebaseAuthenticationController`.
+- **Google Sign-In + Firebase**
+  Google login is live from onboarding, including callback handling in `AppDelegate` and Firebase credential sign-in.
+- **Account linking fallback**
+  If a Google account collides with an existing email/password account, the app pushes a prefilled sign-in flow to finish linking the pending Firebase credential.
+- **Auth-driven root navigation**
+  `AppDelegate` observes Firebase auth state and automatically swaps between onboarding and the authenticated tab shell.
+- **Coordinator-based main shell**
+  Authenticated users land in a four-tab experience: `Home`, `Saved`, `Yours`, and `Profile`.
+- **Home browsing experience**
+  Browse recipes by category, see recommendation and weekly sections, run debounced search, apply filters, and open recipe detail from the home feed.
+- **Saved recipes**
+  Recipes can be bookmarked from detail screens, stored locally in Core Data, and synced to Firestore under the signed-in user.
+- **Your recipes**
+  Users can create, edit, and delete their own recipes, attach multiple photos from the photo library, preview images, and manage recipes in multi-select mode.
+- **Sync-safe logout**
+  Logout goes through `MRRSyncingLogoutController`, which flushes saved-recipe and user-recipe sync work before ending the Firebase session.
+- **Polished UIKit UI**
+  Fully programmatic UIKit screens, adaptive layout helpers, Liquid Glass styling, and named colors for dark/light appearance.
+
+## Demo Videos
+
+Animated previews for GitHub README. Click any preview to open the original `.MP4`.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="videos/signup.MP4"><img src="README-assets/gifs/signup.gif" alt="Sign Up Demo" width="100%" /></a><br />
+      <strong>Sign Up</strong>
+    </td>
+    <td align="center" width="50%">
+      <a href="videos/login.MP4"><img src="README-assets/gifs/login.gif" alt="Login Demo" width="100%" /></a><br />
+      <strong>Login</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="videos/google_login.MP4"><img src="README-assets/gifs/google_login.gif" alt="Google Login Demo" width="100%" /></a><br />
+      <strong>Google Login</strong>
+    </td>
+    <td align="center" width="50%">
+      <a href="videos/home.MP4"><img src="README-assets/gifs/home.gif" alt="Home Demo" width="100%" /></a><br />
+      <strong>Home</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="videos/saved.MP4"><img src="README-assets/gifs/saved.gif" alt="Saved Demo" width="100%" /></a><br />
+      <strong>Saved</strong>
+    </td>
+    <td align="center" width="50%">
+      <a href="videos/yours.MP4"><img src="README-assets/gifs/yours.gif" alt="Yours Demo" width="100%" /></a><br />
+      <strong>Yours</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="videos/tabs.MP4"><img src="README-assets/gifs/tabs.gif" alt="Tabs Demo" width="100%" /></a><br />
+      <strong>Tabs</strong>
+    </td>
+    <td align="center" width="50%">
+      <a href="videos/dynamic_photos.MP4"><img src="README-assets/gifs/dynamic_photos.gif" alt="Dynamic Photos Demo" width="100%" /></a><br />
+      <strong>Dynamic Photos</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="videos/dark_light.MP4"><img src="README-assets/gifs/dark_light.gif" alt="Dark Light Demo" width="100%" /></a><br />
+      <strong>Dark / Light Mode</strong>
+    </td>
+    <td align="center" width="50%"></td>
+  </tr>
+</table>
 
 ## Current Flow
 
@@ -13,10 +90,13 @@ An Objective-C iOS project for studying Manual Retain-Release (MRR) with a polis
 - Onboarding displays the `Culina` brand header, app icon, looping recipe carousel, and auth entry points
 - `Sign up with email` pushes a dedicated full-screen sign-up screen with separate fields for first name, last name, email, and password
 - `Sign in` pushes a dedicated full-screen sign-in screen with email/password plus a live `Forgot Password?` flow that sends a Firebase reset email and returns to onboarding after confirmation
-- `Continue with Google` now starts live Google Sign-In from onboarding, while `Continue with Apple` remains a structured stub
-- Auth success routes into `MainMenuCoordinator`, which builds a `MainMenuTabBarController` with `Home`, `Saved`, and `Profile`
-- `Home` and `Saved` are plug-and-run placeholder sub-features that can mount inside the tab bar or stand alone as full screens through their coordinators
-- `Profile` is the current real authenticated sub-feature. It owns the signed-in account summary, auth provider details, email-verification status, and the destructive `Log Out` action
+- `Continue with Google` starts live Google Sign-In from onboarding and signs into Firebase, while `Continue with Apple` remains a structured stub
+- Google auth collisions with an existing email account are routed into a prefilled sign-in flow so the pending Google credential can be linked safely
+- Auth success routes into `MainMenuCoordinator`, which builds a `MainMenuTabBarController` with `Home`, `Saved`, `Yours`, and `Profile`
+- `Home` shows categories, recommendations, weekly picks, search, filters, and recipe detail presentation
+- `Saved` shows bookmarked recipes backed by Core Data and Firestore sync, with removal directly from the list or detail screen
+- `Yours` manages user-created recipes with an editor, multi-photo support, image preview, context actions, and bulk delete
+- `Profile` owns the signed-in account summary, auth provider details, email-verification status, and a logout flow that flushes sync work before sign-out
 - A live auth-state observer now drives root switching in both directions, so logging out or losing the Firebase session returns the app to onboarding without view-controller-specific root wiring
 
 The recipe detail flow now stays entirely local to onboarding: tapping a carousel card opens the curated recipe detail immediately, without any remote recipe lookup or enrichment step.
@@ -31,11 +111,13 @@ Within recipe detail, `Ingredients`, `Methods`, `Tools & Equipment`, and `Tags` 
 - `MRR Project/Features/MainMenu`
   Authenticated shell coordinator plus the `UITabBarController` that mounts authenticated sub-features
 - `MRR Project/Features/Home`
-  Plug-and-run `Home` sub-feature with its own coordinator and standalone placeholder screen
+  Coordinator-backed home feed with category rails, search, filters, recipe lists, detail presentation, and saved-recipe integration
 - `MRR Project/Features/Saved`
-  Plug-and-run `Saved` sub-feature with its own coordinator and standalone placeholder screen
+  Saved-recipes tab with Core Data snapshots, Firestore sync, removal actions, and recipe detail reopening
+- `MRR Project/Features/Yours`
+  User-recipes tab with editor flow, photo-library integration, context menu, image popup, and multi-select delete
 - `MRR Project/Features/Profile`
-  Plug-and-run `Profile` sub-feature, migrated account summary UI, and logout flow
+  Account summary, provider/email verification state, and sync-aware logout flow
 - `MRR Project/Resources`
   Shared application resources, including `Info.plist`, `Assets.xcassets`, the safe `GoogleService-Info.example.plist` template, and the future-facing `RecipeAPIConfig.example.plist` template
 - `MRR Project/Features/Onboarding`
