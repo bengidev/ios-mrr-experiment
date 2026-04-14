@@ -23,6 +23,10 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   return namedColor ?: MRRProfileDynamicFallbackColor(lightColor, darkColor);
 }
 
+static NSString *const MRRSavedRecipesSyncEngineDomain = @"MRRSavedRecipesSyncEngine";
+static NSString *const MRRUserRecipesSyncEngineDomain = @"MRRUserRecipesSyncEngine";
+static const NSInteger MRRSyncTimeoutErrorCode = -2001;
+
 @interface ProfileViewController ()
 
 @property(nonatomic, retain) id<MRRAuthenticationController> authenticationController;
@@ -36,6 +40,7 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 @property(nonatomic, retain) UILabel *emailVerificationLabel;
 @property(nonatomic, retain) UILabel *statusLabel;
 @property(nonatomic, retain) UIButton *logoutButton;
+@property(nonatomic, retain) UIActivityIndicatorView *syncActivityIndicator;
 @property(nonatomic, assign, getter=isPerformingLogout) BOOL performingLogout;
 
 - (void)buildViewHierarchy;
@@ -45,6 +50,9 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 - (void)updateLogoutUIForInProgress:(BOOL)inProgress;
 - (void)presentLogoutConfirmationAlert;
 - (void)presentLogoutError:(NSError *)error;
+- (void)presentTimeoutLogoutNotice:(NSError *)error;
+- (void)retryLogoutAfterTimeout;
+- (void)proceedWithForcedLogout;
 
 @end
 
@@ -71,6 +79,7 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 }
 
 - (void)dealloc {
+  [_syncActivityIndicator release];
   [_logoutButton release];
   [_statusLabel release];
   [_emailVerificationLabel release];
@@ -181,6 +190,17 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
   [stackView addArrangedSubview:logoutButton];
   self.logoutButton = logoutButton;
 
+  UIActivityIndicatorView *activityIndicator = nil;
+  if (@available(iOS 13.0, *)) {
+    activityIndicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium] autorelease];
+  } else {
+    activityIndicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray] autorelease];
+  }
+  activityIndicator.translatesAutoresizingMaskIntoConstraints = NO;
+  activityIndicator.hidesWhenStopped = YES;
+  [stackView addArrangedSubview:activityIndicator];
+  self.syncActivityIndicator = activityIndicator;
+
   [NSLayoutConstraint activateConstraints:@[
     [stackView.centerYAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.centerYAnchor],
     [stackView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:24.0],
@@ -211,7 +231,8 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
     [statusLabel.trailingAnchor constraintEqualToAnchor:summaryCardView.trailingAnchor constant:-22.0],
     [statusLabel.bottomAnchor constraintEqualToAnchor:summaryCardView.bottomAnchor constant:-22.0],
 
-    [logoutButton.heightAnchor constraintEqualToConstant:54.0]
+    [logoutButton.heightAnchor constraintEqualToConstant:54.0],
+    [activityIndicator.heightAnchor constraintEqualToConstant:54.0]
   ]];
 }
 
@@ -241,8 +262,14 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
     [self.logoutController performLogoutForSession:self.session
                                         completion:^(NSError *error) {
                                           dispatch_async(dispatch_get_main_queue(), ^{
-                                            [strongSelf updateLogoutUIForInProgress:NO];
-                                            if (error != nil) {
+                                            BOOL isSyncTimeout = (error != nil &&
+                                                error.code == MRRSyncTimeoutErrorCode &&
+                                                ([error.domain isEqualToString:MRRSavedRecipesSyncEngineDomain] ||
+                                                 [error.domain isEqualToString:MRRUserRecipesSyncEngineDomain]));
+                                            if (isSyncTimeout) {
+                                              [strongSelf presentTimeoutLogoutNotice:error];
+                                            } else if (error != nil) {
+                                              [strongSelf updateLogoutUIForInProgress:NO];
                                               [strongSelf presentLogoutError:error];
                                             }
                                           });
@@ -261,11 +288,18 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
 - (void)updateLogoutUIForInProgress:(BOOL)inProgress {
   self.performingLogout = inProgress;
   self.logoutButton.enabled = !inProgress;
-  [self.logoutButton setTitle:(inProgress ? @"Syncing your recipes..." : @"Log Out") forState:UIControlStateNormal];
-  [self.logoutButton setTitle:(inProgress ? @"Syncing your recipes..." : @"Log Out") forState:UIControlStateDisabled];
-  self.statusLabel.text = inProgress
-                              ? @"Syncing saved recipes and your created recipes before logout so everything stays available after you sign back in."
-                              : @"Your authentication session is active and ready for future subscription wiring.";
+  if (inProgress) {
+    [self.syncActivityIndicator startAnimating];
+    self.logoutButton.hidden = YES;
+    self.statusLabel.text =
+        @"Syncing saved recipes and your created recipes before logout so everything stays available after you sign back in.";
+  } else {
+    [self.syncActivityIndicator stopAnimating];
+    self.logoutButton.hidden = NO;
+    [self.logoutButton setTitle:@"Log Out" forState:UIControlStateNormal];
+    [self.logoutButton setTitle:@"Log Out" forState:UIControlStateDisabled];
+    self.statusLabel.text = @"Your authentication session is active and ready for future subscription wiring.";
+  }
 }
 
 - (void)presentLogoutConfirmationAlert {
@@ -296,6 +330,48 @@ static UIColor *MRRProfileNamedColor(NSString *name, UIColor *lightColor, UIColo
                                                       [self performConfirmedLogout];
                                                     }]];
   [self presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)presentTimeoutLogoutNotice:(NSError *)error {
+#pragma unused(error)
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Sync Timed Out"
+                                                                            message:@"Saved recipes sync timed out. Some changes may not have reached the cloud yet.\n\nYou can log out anyway — your local data is safe, and changes will sync next time you sign in."
+                                                                     preferredStyle:UIAlertControllerStyleAlert];
+  alertController.view.accessibilityIdentifier = @"profile.logoutTimeoutAlert";
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Wait Longer"
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:^(__unused UIAlertAction *action) {
+                                                      [self retryLogoutAfterTimeout];
+                                                    }]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Log Out Anyway"
+                                                        style:UIAlertActionStyleDestructive
+                                                      handler:^(__unused UIAlertAction *action) {
+                                                        [self proceedWithForcedLogout];
+                                                      }]];
+  [self presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)retryLogoutAfterTimeout {
+  [self updateLogoutUIForInProgress:NO];
+  [self performConfirmedLogout];
+}
+
+- (void)proceedWithForcedLogout {
+  if (self.logoutController != nil) {
+    NSError *signOutError = nil;
+    [self.logoutController proceedWithForcedLogoutForSession:self.session error:&signOutError];
+    [self updateLogoutUIForInProgress:NO];
+    if (signOutError != nil) {
+      [self presentLogoutError:signOutError];
+    }
+  } else {
+    NSError *signOutError = nil;
+    [self.authenticationController signOut:&signOutError];
+    [self updateLogoutUIForInProgress:NO];
+    if (signOutError != nil) {
+      [self presentLogoutError:signOutError];
+    }
+  }
 }
 
 @end
