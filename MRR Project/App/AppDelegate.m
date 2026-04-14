@@ -218,9 +218,9 @@
 
 - (UIViewController *)buildOnboardingViewController {
   self.mainMenuCoordinator = nil;
-  self.visibleAuthenticatedUserID = nil;
   [self.savedRecipesSyncEngine stopSync];
   [self.userRecipesSyncEngine stopSync];
+  self.visibleAuthenticatedUserID = nil;
 
   OnboardingViewController *viewController = [[[OnboardingViewController alloc] initWithStateController:self.onboardingStateController
                                                                                authenticationController:self.authenticationController] autorelease];
