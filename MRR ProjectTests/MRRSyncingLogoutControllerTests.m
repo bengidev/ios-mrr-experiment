@@ -18,6 +18,7 @@
 
 @property(nonatomic, assign) BOOL signOutCalled;
 @property(nonatomic, retain, nullable) NSError *signOutError;
+@property(nonatomic, assign) BOOL forceSignOutFailureWithoutError;
 
 @end
 
@@ -64,7 +65,10 @@
   if (self.signOutError != nil && error != nil) {
     *error = self.signOutError;
   }
-  return self.signOutError == nil;
+  if (self.signOutError != nil) {
+    return NO;
+  }
+  return !self.forceSignOutFailureWithoutError;
 }
 
 @end
@@ -74,6 +78,7 @@
 @property(nonatomic, copy, nullable) NSString *flushedUserID;
 @property(nonatomic, retain, nullable) NSError *flushError;
 @property(nonatomic, assign) NSUInteger flushInvocationCount;
+@property(nonatomic, assign) NSUInteger stopSyncInvocationCount;
 
 @end
 
@@ -86,6 +91,7 @@
 }
 
 - (void)stopSync {
+  self.stopSyncInvocationCount += 1;
 }
 
 - (void)requestImmediateSyncForUserID:(NSString *)userID {
@@ -106,6 +112,7 @@
 @property(nonatomic, copy, nullable) NSString *flushedUserID;
 @property(nonatomic, retain, nullable) NSError *flushError;
 @property(nonatomic, assign) NSUInteger flushInvocationCount;
+@property(nonatomic, assign) NSUInteger stopSyncInvocationCount;
 
 @end
 
@@ -119,6 +126,7 @@
 }
 
 - (void)stopSync {
+  self.stopSyncInvocationCount += 1;
 }
 
 - (void)requestImmediateSyncForUserID:(NSString *)userID {
@@ -217,6 +225,118 @@
                                  }];
 
   [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
+}
+
+- (void)testPerformLogoutReturnsFallbackErrorWhenSignOutFailsWithoutNSError {
+  MRRSyncingLogoutControllerAuthSpy *authenticationSpy = [[MRRSyncingLogoutControllerAuthSpy alloc] init];
+  authenticationSpy.forceSignOutFailureWithoutError = YES;
+  MRRSyncingLogoutControllerSyncEngineSpy *savedSyncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
+  MRRSyncingLogoutControllerUserSyncEngineSpy *userSyncEngineSpy = [[MRRSyncingLogoutControllerUserSyncEngineSpy alloc] init];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                               savedRecipesSyncEngine:savedSyncEngineSpy
+                                                                                                userRecipesSyncEngine:userSyncEngineSpy];
+  MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                             email:@"cook@example.com"
+                                                       displayName:@"Cook"
+                                                      providerType:MRRAuthProviderTypeEmail
+                                                     emailVerified:YES];
+
+  XCTestExpectation *completionExpectation = [self expectationWithDescription:@"logout completion"];
+  [logoutController performLogoutForSession:session
+                                 completion:^(NSError *error) {
+                                   XCTAssertNotNil(error);
+                                   XCTAssertEqualObjects(error.localizedDescription, @"Logout did not complete. Please try again.");
+                                   XCTAssertTrue(authenticationSpy.signOutCalled);
+                                   [completionExpectation fulfill];
+                                 }];
+
+  [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
+}
+
+- (void)testPerformLogoutProceedsWhenSavedRecipesSyncTimesOut {
+  MRRSyncingLogoutControllerAuthSpy *authenticationSpy = [[MRRSyncingLogoutControllerAuthSpy alloc] init];
+  MRRSyncingLogoutControllerSyncEngineSpy *savedSyncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
+  savedSyncEngineSpy.flushError = [NSError errorWithDomain:@"MRRSavedRecipesSyncEngine"
+                                                      code:-2001
+                                                  userInfo:@{NSLocalizedDescriptionKey : @"Sync flush timed out. Proceeding with logout."}];
+  MRRSyncingLogoutControllerUserSyncEngineSpy *userSyncEngineSpy = [[MRRSyncingLogoutControllerUserSyncEngineSpy alloc] init];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                               savedRecipesSyncEngine:savedSyncEngineSpy
+                                                                                                userRecipesSyncEngine:userSyncEngineSpy];
+  MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                             email:@"cook@example.com"
+                                                       displayName:@"Cook"
+                                                      providerType:MRRAuthProviderTypeEmail
+                                                     emailVerified:YES];
+
+  XCTestExpectation *completionExpectation = [self expectationWithDescription:@"logout completion"];
+  [logoutController performLogoutForSession:session
+                                 completion:^(NSError *error) {
+                                   XCTAssertNil(error);
+                                   XCTAssertTrue(authenticationSpy.signOutCalled);
+                                   XCTAssertEqual(savedSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertEqual(savedSyncEngineSpy.stopSyncInvocationCount, 1u);
+                                   XCTAssertEqual(userSyncEngineSpy.stopSyncInvocationCount, 1u);
+                                   XCTAssertEqual(userSyncEngineSpy.flushInvocationCount, 0u);
+                                   [completionExpectation fulfill];
+                                 }];
+
+  [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
+}
+
+- (void)testPerformLogoutProceedsWhenUserRecipesSyncTimesOut {
+  MRRSyncingLogoutControllerAuthSpy *authenticationSpy = [[MRRSyncingLogoutControllerAuthSpy alloc] init];
+  MRRSyncingLogoutControllerSyncEngineSpy *savedSyncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
+  MRRSyncingLogoutControllerUserSyncEngineSpy *userSyncEngineSpy = [[MRRSyncingLogoutControllerUserSyncEngineSpy alloc] init];
+  userSyncEngineSpy.flushError = [NSError errorWithDomain:@"MRRUserRecipesSyncEngine"
+                                                     code:-2001
+                                                 userInfo:@{NSLocalizedDescriptionKey : @"User recipes sync flush timed out. Proceeding with logout."}];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                               savedRecipesSyncEngine:savedSyncEngineSpy
+                                                                                                userRecipesSyncEngine:userSyncEngineSpy];
+  MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                             email:@"cook@example.com"
+                                                       displayName:@"Cook"
+                                                      providerType:MRRAuthProviderTypeEmail
+                                                     emailVerified:YES];
+
+  XCTestExpectation *completionExpectation = [self expectationWithDescription:@"logout completion"];
+  [logoutController performLogoutForSession:session
+                                 completion:^(NSError *error) {
+                                   XCTAssertNil(error);
+                                   XCTAssertTrue(authenticationSpy.signOutCalled);
+                                   XCTAssertEqual(savedSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertEqual(userSyncEngineSpy.flushInvocationCount, 1u);
+                                   XCTAssertEqual(savedSyncEngineSpy.stopSyncInvocationCount, 1u);
+                                   XCTAssertEqual(userSyncEngineSpy.stopSyncInvocationCount, 1u);
+                                   [completionExpectation fulfill];
+                                 }];
+
+  [self waitForExpectations:@[ completionExpectation ] timeout:1.0];
+}
+
+- (void)testProceedWithForcedLogoutReturnsFallbackErrorWhenSignOutFailsWithoutNSError {
+  MRRSyncingLogoutControllerAuthSpy *authenticationSpy = [[MRRSyncingLogoutControllerAuthSpy alloc] init];
+  authenticationSpy.forceSignOutFailureWithoutError = YES;
+  MRRSyncingLogoutControllerSyncEngineSpy *savedSyncEngineSpy = [[MRRSyncingLogoutControllerSyncEngineSpy alloc] init];
+  MRRSyncingLogoutControllerUserSyncEngineSpy *userSyncEngineSpy = [[MRRSyncingLogoutControllerUserSyncEngineSpy alloc] init];
+  MRRSyncingLogoutController *logoutController = [[MRRSyncingLogoutController alloc] initWithAuthenticationController:authenticationSpy
+                                                                                               savedRecipesSyncEngine:savedSyncEngineSpy
+                                                                                                userRecipesSyncEngine:userSyncEngineSpy];
+  MRRAuthSession *session = [[MRRAuthSession alloc] initWithUserID:@"firebase-uid"
+                                                             email:@"cook@example.com"
+                                                       displayName:@"Cook"
+                                                      providerType:MRRAuthProviderTypeEmail
+                                                     emailVerified:YES];
+
+  NSError *error = nil;
+  [logoutController proceedWithForcedLogoutForSession:session error:&error];
+
+  XCTAssertTrue(authenticationSpy.signOutCalled);
+  XCTAssertEqual(savedSyncEngineSpy.stopSyncInvocationCount, 1u);
+  XCTAssertEqual(userSyncEngineSpy.stopSyncInvocationCount, 1u);
+  XCTAssertNotNil(error);
+  XCTAssertEqualObjects(error.localizedDescription, @"Logout did not complete. Please try again.");
 }
 
 @end
