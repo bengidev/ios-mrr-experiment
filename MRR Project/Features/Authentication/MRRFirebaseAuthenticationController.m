@@ -340,14 +340,28 @@ static void MRRAuthDebugLog(__unused NSString *format, ...) {}
 }
 
 - (BOOL)signOut:(NSError *_Nullable *_Nullable)error {
+  NSString *currentUserID = [FIRAuth auth].currentUser.uid;
+  MRRAuthDebugLog(@"Sign-out requested. firebaseConfigured=%@ currentUID=%@",
+                  [self isFirebaseConfigured] ? @"YES" : @"NO",
+                  currentUserID.length > 0 ? currentUserID : @"(nil)");
   [[GIDSignIn sharedInstance] signOut];
   [self clearPendingCredentialLinkState];
 
   if (![self isFirebaseConfigured]) {
+    MRRAuthDebugLog(@"Sign-out treated as success because Firebase is not configured.");
     return YES;
   }
 
-  return [[FIRAuth auth] signOut:error];
+  BOOL didSignOut = [[FIRAuth auth] signOut:error];
+  NSError *signOutError = (error != NULL) ? *error : nil;
+  NSString *remainingUserID = [FIRAuth auth].currentUser.uid;
+  MRRAuthDebugLog(@"Sign-out finished. success=%@ remainingUID=%@ errorDomain=%@ code=%ld description=%@",
+                  didSignOut ? @"YES" : @"NO",
+                  remainingUserID.length > 0 ? remainingUserID : @"(nil)",
+                  signOutError.domain ?: @"(nil)",
+                  (long)signOutError.code,
+                  signOutError.localizedDescription ?: @"");
+  return didSignOut;
 }
 
 - (BOOL)isFirebaseConfigured {
